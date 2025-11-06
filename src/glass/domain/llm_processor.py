@@ -1,0 +1,742 @@
+"""LLM processing for translations, feedback, and suggestions."""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+import uuid
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from .ports import LLMPort
+
+LOGGER = logging.getLogger(__name__)
+
+
+class LLMProcessor:
+    """Handle LLM-related operations like translation, feedback, suggestions."""
+
+    def __init__(
+        self,
+        session_id: str,
+        llm: LLMPort,
+        emit_callback,
+        llm_gate: asyncio.Semaphore,
+    ):
+        self.session_id = session_id
+        self.llm = llm
+        self._emit = emit_callback
+        self._llm_gate = llm_gate
+        
+        # Configuration
+        self.feedback_mode: str = "auto"
+        self.suggest_mode: str = "auto"
+        self.mode: str = "real"
+        self.scenario: str | None = None
+        self.learning_lang: str = "en"
+        self.native_lang: str = "ko"
+        self.proficiency: str | None = None
+        self.pronunciation_mode: str | None = None
+        
+        # State
+        self._translations: dict[str, str] = {}
+        self._suggested_for: set[str] = set()
+        self.all_feedback: list[dict] = []
+
+    async def do_translation(
+        self, 
+        text: str, 
+        utterance_id: str, 
+        source_lang: str, 
+        source: str, 
+        is_user: bool,
+        event_type_translation,
+    ) -> None:
+        """Translate text and emit translation event."""
+        try:
+            # Determine target language
+            if self.mode == 'practice':
+                target_lang = self._lang_code_to_name(self.native_lang)
+            else:
+                target_lang = self._lang_code_to_name(self.learning_lang if is_user else self.native_lang)
+            
+            LOGGER.info(f"[Translation] Starting for utterance {utterance_id}")
+            
+            if hasattr(self.llm, 'translate'):
+                translation = await self.llm.translate(text, source_lang, target_lang)
+            else:
+                translation = f"[Translation: {text}]"
+            
+            if translation:
+                self._translations[utterance_id] = translation
+                await self._emit(
+                    event_type_translation,
+                    {
+                        "utterance_id": utterance_id,
+                        "text": translation,
+                        "source_lang": source_lang,
+                        "target_lang": target_lang.lower(),
+                    },
+                    source=source,
+                )
+                LOGGER.info(f"[Translation] Completed for {utterance_id}")
+        except Exception as e:
+            LOGGER.error(f"[Translation] Failed for {utterance_id}: {e}", exc_info=True)
+
+    async def translate_and_emit(
+        self, 
+        text: str, 
+        utterance_id: str, 
+        source_lang: str, 
+        source: str, 
+        is_user: bool,
+        event_type_translation,
+        event_type_feedback,
+        event_type_answer,
+        event_type_follow_up,
+        event_type_transcript,
+        tail: list[dict],
+        start: float | None = None,
+        duration: float | None = None,
+    ) -> None:
+        """Process translation, feedback, AI response, suggestions in parallel."""
+        tasks = []
+        
+        # 1. Translation (always)
+        tasks.append(asyncio.create_task(
+            self.do_translation(text, utterance_id, source_lang, source, is_user, event_type_translation)
+        ))
+        
+        # 2. Feedback (user only, if enabled)
+        if is_user and self.feedback_mode != 'off':
+            tasks.append(asyncio.create_task(
+                self.do_feedback(text, utterance_id, source, event_type_feedback)
+            ))
+        
+        # 3. AI Response (practice mode, user only)
+        if self.mode == 'practice' and is_user:
+            # Calculate end time of user message
+            user_message_end_time = None
+            if start is not None and duration is not None:
+                user_message_end_time = start + duration
+            tasks.append(asyncio.create_task(
+                self.do_ai_response(text, utterance_id, tail, event_type_transcript, event_type_translation, event_type_answer, user_message_end_time)
+            ))
+        
+        # 4. Answer Suggestion (partner messages, avoid duplicates)
+        if not is_user and self.suggest_mode != 'off' and source != 'ai':
+            suggestion_key = f"{utterance_id}:answer"
+            if suggestion_key not in self._suggested_for:
+                self._suggested_for.add(suggestion_key)
+                tasks.append(asyncio.create_task(
+                    self.do_answer_suggestion(text, utterance_id, tail, event_type_answer)
+                ))
+        
+        # 5. Follow-up Suggestion (user messages, avoid duplicates)
+        if is_user and self.suggest_mode != 'off':
+            suggestion_key = f"{utterance_id}:follow_up"
+            if suggestion_key not in self._suggested_for:
+                self._suggested_for.add(suggestion_key)
+                tasks.append(asyncio.create_task(
+                    self.do_followup_suggestion(text, utterance_id, tail, event_type_follow_up)
+                ))
+        
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def do_feedback(self, text: str, utterance_id: str, source: str, event_type_feedback) -> None:
+        """Generate and emit feedback for user utterance."""
+        try:
+            LOGGER.info(f"[Feedback] Starting for utterance {utterance_id}")
+            
+            if not hasattr(self.llm, 'feedback'):
+                return
+            
+            feedback_text = await self.llm.feedback(
+                text,
+                self.learning_lang,
+                target_lang=self._lang_code_to_name(self.learning_lang),
+                native_lang=self._lang_code_to_name(self.native_lang),
+                mode=self.mode
+            )
+            
+            # Normalize NONE/empty for Always mode: always surface something user-visible
+            normalized = (feedback_text or "").strip()
+            if self.feedback_mode == 'always':
+                if not normalized or normalized.upper() == "NONE":
+                    # Provide a short encouraging affirmation in the user's native language
+                    feedback_text = self._default_affirmation(self.native_lang)
+                    normalized = feedback_text.strip()
+            
+            # Emit based on mode
+            should_emit = False
+            if self.feedback_mode == 'always':
+                should_emit = bool(normalized)
+            elif self.feedback_mode == 'auto':
+                should_emit = bool(normalized and normalized.upper() != "NONE")
+            
+            if should_emit:
+                feedback_data = {
+                    "utterance_id": utterance_id,
+                    "text": feedback_text,
+                }
+                self.all_feedback.append(feedback_data)
+                await self._emit(event_type_feedback, feedback_data, source=source)
+                LOGGER.info(f"[Feedback] Completed for {utterance_id}")
+            else:
+                LOGGER.info(f"[Feedback] Skipped for {utterance_id}")
+        except Exception as e:
+            LOGGER.error(f"[Feedback] Failed for {utterance_id}: {e}", exc_info=True)
+
+    async def do_ai_response(
+        self, 
+        text: str, 
+        utterance_id: str, 
+        tail: list[dict],
+        event_type_transcript,
+        event_type_translation,
+        event_type_answer,
+        user_message_end_time: float | None = None,
+    ) -> None:
+        """Generate AI response in practice mode."""
+        try:
+            LOGGER.info(f"[AI Response] Starting for utterance {utterance_id}")
+            
+            if not hasattr(self.llm, 'generate_ai_response'):
+                return
+            
+            target_lang = self._lang_code_to_name(self.learning_lang)
+            ai_response = await self.llm.generate_ai_response(text, self.scenario, list(tail), target_lang)
+            
+            if not ai_response or not ai_response.strip():
+                return
+            
+            ai_utterance_id = str(uuid.uuid4())
+            
+            # Calculate AI response timing
+            # If user_message_end_time is provided, AI responds shortly after
+            # Otherwise, default to start=0 (first message)
+            ai_start_time = user_message_end_time + 0.5 if user_message_end_time is not None else 0.0
+            ai_duration = len(ai_response) * 0.05  # Rough estimate: ~0.05s per character
+            
+            # Emit AI transcript with TTS flag and timing
+            await self._emit(
+                event_type_transcript,
+                {
+                    "utterance_id": ai_utterance_id,
+                    "text": ai_response,
+                    "is_final": True,
+                    "speech_final": True,
+                    "lang": target_lang.lower()[:2],
+                    "auto_tts": True,
+                    "start": ai_start_time,
+                    "duration": ai_duration,
+                },
+                source="ai",
+                speaker="ai",
+            )
+            
+            # Translate AI response
+            native_lang_name = self._lang_code_to_name(self.native_lang)
+            if hasattr(self.llm, 'translate'):
+                ai_translation = await self.llm.translate(ai_response, target_lang, native_lang_name)
+                if ai_translation:
+                    self._translations[ai_utterance_id] = ai_translation
+                    await self._emit(
+                        event_type_translation,
+                        {
+                            "utterance_id": ai_utterance_id,
+                            "text": ai_translation,
+                            "source_lang": target_lang.lower()[:2],
+                            "target_lang": native_lang_name.lower(),
+                        },
+                        source="ai",
+                    )
+            
+            LOGGER.info(f"[AI Response] Completed for {utterance_id}")
+            
+            # Return message for tail/conversation storage
+            return {"speaker": "ai", "source": "ai", "text": ai_response, "utterance_id": ai_utterance_id}
+        except Exception as e:
+            LOGGER.error(f"[AI Response] Failed for {utterance_id}: {e}", exc_info=True)
+            return None
+
+    async def do_answer_suggestion(
+        self, 
+        text: str, 
+        utterance_id: str | None, 
+        tail: list[dict],
+        event_type_answer,
+    ) -> None:
+        """Generate answer suggestion for partner messages."""
+        try:
+            LOGGER.info(f"[Answer Suggestion] Starting for utterance {utterance_id or 'unknown'}")
+            
+            # Decide whether to suggest
+            should = self.suggest_mode == 'always'
+            if not should and self.suggest_mode == 'auto':
+                try:
+                    if hasattr(self.llm, 'should_suggest'):
+                        async with self._llm_gate:
+                            should = bool(await self.llm.should_suggest(list(tail), 'answer', mode=self.mode))
+                    else:
+                        should = '?' in (text or '')
+                except Exception:
+                    should = '?' in (text or '')
+            
+            if not should:
+                return
+            
+            target_lang_name = self._lang_code_to_name(self.learning_lang)
+            native_lang_name = self._lang_code_to_name(self.native_lang)
+            require_pronunciation = self.proficiency == 'cant_read'
+            pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
+            
+            suggestion_obj: dict | None = None
+            if hasattr(self.llm, 'answer_structured'):
+                try:
+                    suggestion_obj = await self.llm.answer_structured(
+                        list(tail),
+                        target_lang=target_lang_name,
+                        native_lang=native_lang_name,
+                        pronunciation_mode=pronunciation_mode,
+                    )
+                except Exception as e:
+                    LOGGER.error(f"Answer suggestion failed: {e}")
+            
+            if suggestion_obj is None and hasattr(self.llm, 'answer'):
+                plain = await self.llm.answer(list(tail), self.learning_lang, mode=self.mode, target_lang=target_lang_name)
+                if plain:
+                    suggestion_obj = {"target_text": plain, "native_explanation": ""}
+            
+            if suggestion_obj and isinstance(suggestion_obj, dict):
+                suggestion_obj = self._normalize_suggestion(suggestion_obj)
+                await self._emit(
+                    event_type_answer,
+                    {"text": suggestion_obj.get("target_text", ""), "suggestion": suggestion_obj, "auto": True},
+                )
+                LOGGER.info(f"[Answer Suggestion] Completed")
+        except Exception as e:
+            LOGGER.error(f"[Answer Suggestion] Failed: {e}", exc_info=True)
+
+    async def do_followup_suggestion(
+        self, 
+        text: str, 
+        utterance_id: str | None, 
+        tail: list[dict],
+        event_type_follow_up,
+    ) -> None:
+        """Generate follow-up suggestion after user's turn."""
+        try:
+            LOGGER.info(f"[Follow-up Suggestion] Starting for utterance {utterance_id or 'unknown'}")
+            
+            # Skip if user asked a question
+            if text and ('?' in text or text.rstrip().endswith('?')):
+                LOGGER.info(f"[Follow-up Suggestion] Skipped - user asked a question")
+                return
+            
+            # Decide whether to suggest
+            should = self.suggest_mode == 'always'
+            if not should and self.suggest_mode == 'auto':
+                try:
+                    if hasattr(self.llm, 'should_suggest'):
+                        async with self._llm_gate:
+                            should = bool(await self.llm.should_suggest(list(tail), 'follow_up', mode=self.mode))
+                    else:
+                        should = len((text or '').split()) >= 3 and '?' not in text
+                except Exception:
+                    should = len((text or '').split()) >= 3 and '?' not in text
+            
+            if not should:
+                return
+            
+            target_lang_name = self._lang_code_to_name(self.learning_lang)
+            native_lang_name = self._lang_code_to_name(self.native_lang)
+            require_pronunciation = self.proficiency == 'cant_read'
+            pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
+            
+            suggestion_obj: dict | None = None
+            if hasattr(self.llm, 'follow_up_structured'):
+                try:
+                    suggestion_obj = await self.llm.follow_up_structured(
+                        list(tail),
+                        target_lang=target_lang_name,
+                        native_lang=native_lang_name,
+                        pronunciation_mode=pronunciation_mode,
+                    )
+                except Exception:
+                    pass
+            
+            if suggestion_obj is None and hasattr(self.llm, 'follow_up'):
+                plain = await self.llm.follow_up(list(tail), self.learning_lang)
+                if plain:
+                    suggestion_obj = {"target_text": plain, "native_explanation": ""}
+            
+            if suggestion_obj and isinstance(suggestion_obj, dict):
+                suggestion_obj = self._normalize_suggestion(suggestion_obj)
+                await self._emit(
+                    event_type_follow_up,
+                    {"text": suggestion_obj.get("target_text", ""), "suggestion": suggestion_obj, "auto": True},
+                )
+                LOGGER.info(f"[Follow-up Suggestion] Completed")
+        except Exception as e:
+            LOGGER.error(f"[Follow-up Suggestion] Failed: {e}", exc_info=True)
+
+    async def generate_answer(self, tail: list[dict], lang: str) -> dict:
+        """Generate answer suggestion on demand."""
+        target_lang_name = self._lang_code_to_name(self.learning_lang)
+        native_lang_name = self._lang_code_to_name(self.native_lang)
+        require_pronunciation = self.proficiency == 'cant_read'
+        pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
+        
+        if hasattr(self.llm, 'answer_structured'):
+            result = await self.llm.answer_structured(
+                list(tail),
+                target_lang=target_lang_name,
+                native_lang=native_lang_name,
+                pronunciation_mode=pronunciation_mode,
+            )
+            return self._normalize_suggestion(result)
+        if hasattr(self.llm, 'answer'):
+            if self.mode == 'practice':
+                plain = await self.llm.answer(list(tail), lang, mode=self.mode, target_lang=target_lang_name)
+            else:
+                plain = await self.llm.answer(list(tail), lang, mode=self.mode)
+            return {"target_text": plain, "native_explanation": ""}
+        return {"target_text": "Answer generation not supported", "native_explanation": ""}
+
+    async def generate_follow_up(self, tail: list[dict], lang: str) -> dict:
+        """Generate follow-up suggestion on demand."""
+        target_lang_name = self._lang_code_to_name(self.learning_lang)
+        native_lang_name = self._lang_code_to_name(self.native_lang)
+        require_pronunciation = self.proficiency == 'cant_read'
+        pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
+        
+        if hasattr(self.llm, 'follow_up_structured'):
+            result = await self.llm.follow_up_structured(
+                list(tail),
+                target_lang=target_lang_name,
+                native_lang=native_lang_name,
+                pronunciation_mode=pronunciation_mode,
+            )
+            return self._normalize_suggestion(result)
+        if hasattr(self.llm, 'follow_up'):
+            plain = await self.llm.follow_up(list(tail), lang)
+            return {"target_text": plain, "native_explanation": ""}
+        return {"target_text": "Follow-up generation not supported", "native_explanation": ""}
+
+    async def generate_initial_greeting(
+        self, 
+        tail: list[dict],
+        full_conversation: list[dict],
+        event_type_transcript,
+        event_type_translation,
+        event_type_answer,
+    ) -> dict | None:
+        """Generate initial AI greeting in practice mode."""
+        try:
+            LOGGER.info(f"Generating initial greeting for practice mode")
+            if not hasattr(self.llm, 'generate_ai_response'):
+                return None
+            
+            target_lang = self._lang_code_to_name(self.learning_lang)
+            initial_prompt = self._get_initial_prompt()
+            
+            ai_greeting = await self.llm.generate_ai_response(initial_prompt, self.scenario, [], target_lang)
+            
+            if not ai_greeting or not ai_greeting.strip():
+                return None
+            
+            ai_utterance_id = str(uuid.uuid4())
+            
+            # Calculate timing for initial greeting (first message)
+            ai_start_time = 0.0
+            ai_duration = len(ai_greeting) * 0.05  # Rough estimate: ~0.05s per character
+            
+            # Emit AI transcript
+            await self._emit(
+                event_type_transcript,
+                {
+                    "utterance_id": ai_utterance_id,
+                    "text": ai_greeting,
+                    "is_final": True,
+                    "speech_final": True,
+                    "lang": target_lang.lower()[:2],
+                    "auto_tts": True,
+                    "start": ai_start_time,
+                    "duration": ai_duration,
+                },
+                source="ai",
+                speaker="ai",
+            )
+            
+            # Translate greeting
+            native_lang_name = self._lang_code_to_name(self.native_lang)
+            if hasattr(self.llm, 'translate'):
+                greeting_translation = await self.llm.translate(ai_greeting, target_lang, native_lang_name)
+                if greeting_translation:
+                    self._translations[ai_utterance_id] = greeting_translation
+                    await self._emit(
+                        event_type_translation,
+                        {
+                            "utterance_id": ai_utterance_id,
+                            "text": greeting_translation,
+                            "source_lang": target_lang.lower()[:2],
+                            "target_lang": native_lang_name.lower(),
+                        },
+                        source="ai",
+                    )
+            
+            LOGGER.info(f"Emitted initial AI greeting: {ai_greeting}")
+            
+            # Generate answer suggestion after initial greeting
+            try:
+                if self.suggest_mode != 'off':
+                    should_ans = self.suggest_mode == 'always'
+                    if not should_ans and self.suggest_mode == 'auto':
+                        try:
+                            if hasattr(self.llm, 'should_suggest'):
+                                async with self._llm_gate:
+                                    should_ans = bool(await self.llm.should_suggest([{"speaker": "ai", "source": "ai", "text": ai_greeting}], 'answer', mode=self.mode))
+                            else:
+                                should_ans = '?' in (ai_greeting or '')
+                        except Exception:
+                            should_ans = '?' in (ai_greeting or '')
+                    
+                    if should_ans:
+                        target_lang_name = self._lang_code_to_name(self.learning_lang)
+                        native_lang_name = self._lang_code_to_name(self.native_lang)
+                        require_pronunciation = self.proficiency == 'cant_read'
+                        pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
+                        
+                        suggestion_obj: dict | None = None
+                        if hasattr(self.llm, 'answer_structured'):
+                            try:
+                                suggestion_obj = await self.llm.answer_structured(
+                                    [{"speaker": "ai", "source": "ai", "text": ai_greeting}],
+                                    target_lang=target_lang_name,
+                                    native_lang=native_lang_name,
+                                    pronunciation_mode=pronunciation_mode,
+                                )
+                            except Exception as e:
+                                LOGGER.error(f"Answer suggestion (initial) failed: {e}")
+                                suggestion_obj = None
+                        
+                        if suggestion_obj is None and hasattr(self.llm, 'answer'):
+                            plain = await self.llm.answer([{"speaker": "ai", "source": "ai", "text": ai_greeting}], target_lang.lower()[:2], mode=self.mode, target_lang=target_lang_name)
+                            if plain:
+                                suggestion_obj = {"target_text": plain, "native_explanation": ""}
+                        
+                        if suggestion_obj and isinstance(suggestion_obj, dict):
+                            suggestion_obj = self._normalize_suggestion(suggestion_obj)
+                            await self._emit(
+                                event_type_answer,
+                                {"text": suggestion_obj.get("target_text", ""), "suggestion": suggestion_obj, "auto": True},
+                            )
+                            LOGGER.info(f"Emitted initial answer suggestion")
+            except Exception as e:
+                LOGGER.error(f"Initial answer suggestion failed: {e}")
+            
+            # Return message for storage
+            return {
+                "speaker": "ai", 
+                "source": "ai", 
+                "text": ai_greeting, 
+                "utterance_id": ai_utterance_id,
+                "start": ai_start_time,
+                "duration": ai_duration,
+            }
+        except Exception as e:
+            LOGGER.error(f"Failed to generate initial greeting: {e}", exc_info=True)
+            return None
+
+    async def analyze_conversation(
+        self, 
+        full_conversation: list[dict], 
+        all_feedback: list[dict],
+        native_lang: str,
+        learning_lang: str,
+    ) -> dict:
+        """Analyze conversation and return scores, insights, feedback."""
+        if not full_conversation:
+            return {
+                "scores": {"fluency": 0, "accuracy": 0, "comprehensibility": 0},
+                "extracted_info": [],
+                "overall_feedback": "No conversation data to analyze.",
+            }
+        
+        # Build transcript
+        transcript_lines = []
+        for msg in full_conversation:
+            speaker = msg.get("speaker", "unknown")
+            text = msg.get("text", "")
+            transcript_lines.append(f"{speaker}: {text}")
+        transcript = "\n".join(transcript_lines)
+        
+        # Build feedback summary
+        feedback_summary = ""
+        if all_feedback:
+            feedback_lines = [f"- {fb.get('text', '')}" for fb in all_feedback]
+            feedback_summary = "\n".join(feedback_lines)
+        
+        native_lang_name = self._lang_code_to_name(native_lang)
+        learning_lang_name = self._lang_code_to_name(learning_lang)
+        
+        analysis_prompt = f"""You are analyzing a language learning conversation. The user is learning {learning_lang_name} and their native language is {native_lang_name}.
+
+Conversation transcript:
+{transcript}
+
+Feedback given during conversation:
+{feedback_summary or 'No feedback was given.'}
+
+IMPORTANT: 
+- Provide ALL text (labels, values, and feedback) in {native_lang_name}
+- This is SPOKEN conversation transcribed by speech-to-text. DO NOT criticize punctuation, capitalization, or formatting - these are STT artifacts, not user mistakes
+- Focus feedback on: vocabulary choice, grammar patterns, natural expression, conversation flow, and communication effectiveness
+
+Please provide a comprehensive analysis with:
+
+1. SCORES (0-100 scale):
+   - Fluency: How smoothly and naturally the user spoke
+   - Accuracy: Grammar, vocabulary, and pronunciation correctness
+   - Comprehensibility: How easy it was to understand the user
+
+2. EXTRACTED INFORMATION: Categorize key facts about the user using these entity types (translate the type name to {native_lang_name}):
+   - User: User's name, identity, role
+   - Preference: User's preferences, choices, opinions, likes/dislikes (PRIORITIZE THIS)
+   - Location: Places mentioned (physical or virtual)
+   - Event: Time-bound activities, occurrences
+   - Object: Physical items, tools, devices
+   - Topic: Subjects of interest, knowledge domains
+   - Organization: Companies, institutions, groups
+   - Document: Information content
+
+3. FEEDBACK: Write conversational feedback in {native_lang_name} as a teacher would speak to a student. Be warm, encouraging, and natural. 
+   Discuss strengths and areas for improvement in a flowing, narrative style - not as bullet points.
+   Speak directly to the user in a supportive, conversational tone.
+
+Format your response as JSON:
+{{
+  "scores": {{
+    "fluency": <number 0-100>,
+    "accuracy": <number 0-100>,
+    "comprehensibility": <number 0-100>
+  }},
+  "extracted_info": [
+    {{"label": "User", "value": "Name is...", "editable": true}},
+    {{"label": "Preference", "value": "Likes/prefers...", "editable": true}},
+    {{"label": "Topic", "value": "Interested in...", "editable": true}}
+  ],
+  "feedback": "I'm really impressed with how you... You did a great job with... One thing to work on would be... Keep practicing and you'll see improvement in..."
+}}
+
+Remember: ALL text content (label, value, feedback) must be in {native_lang_name}!"""
+
+        try:
+            if hasattr(self.llm, 'generate_text'):
+                response = await self.llm.generate_text(analysis_prompt)
+                import json
+                import re
+                json_match = re.search(r'\{[\s\S]*\}', response)
+                if json_match:
+                    result = json.loads(json_match.group())
+                    return result
+            
+            # Fallback
+            return {
+                "scores": {"fluency": 70, "accuracy": 75, "comprehensibility": 80},
+                "extracted_info": [
+                    {"label": "Event", "value": f"Exchanged {len(full_conversation)} messages", "editable": False}
+                ],
+                "feedback": "✨ Strengths:\n• Engaged in conversation\n• Attempted to communicate\n\n🎯 Areas for Improvement:\n• Continue practicing\n• Focus on fluency",
+            }
+        except Exception as e:
+            LOGGER.error(f"Failed to analyze conversation: {e}", exc_info=True)
+            return {
+                "scores": {"fluency": 0, "accuracy": 0, "comprehensibility": 0},
+                "extracted_info": [],
+                "feedback": f"Analysis failed: {str(e)}",
+            }
+
+    def _normalize_suggestion(self, suggestion: dict) -> dict:
+        """Clean up suggestion object."""
+        try:
+            target_text = str(suggestion.get("target_text") or "")
+            tokens = suggestion.get("pronunciation_tokens")
+            if isinstance(tokens, list) and tokens:
+                try:
+                    readings = []
+                    def _key(t: dict) -> int:
+                        try:
+                            return int(t.get("start", 0))
+                        except Exception:
+                            return 0
+                    for item in sorted([t for t in tokens if isinstance(t, dict)], key=_key):
+                        r = str(item.get("reading") or "").strip()
+                        if r:
+                            readings.append(r)
+                    if readings and "pronunciation" not in suggestion:
+                        suggestion["pronunciation"] = " ".join(readings)
+                except Exception:
+                    pass
+                suggestion.pop("pronunciation_tokens", None)
+            
+            # Drop pronunciation if it duplicates translation or target text
+            try:
+                pron = str(suggestion.get("pronunciation") or "").strip()
+                if pron and (pron == str(suggestion.get("native_translation") or "").strip() or pron == target_text.strip()):
+                    suggestion.pop("pronunciation", None)
+            except Exception:
+                pass
+        except Exception:
+            pass
+        return suggestion
+
+    def _get_initial_prompt(self) -> str:
+        """Get initial prompt for scenario-based greeting."""
+        if not self.scenario:
+            return "[Start conversation]"
+        
+        if self.scenario.startswith("custom:"):
+            return "[Start conversation in this scenario]"
+        
+        scenario_prompts = {
+            "airport": "[I approach the check-in counter]",
+            "restaurant": "[I enter the restaurant]",
+            "interview": "[I enter the interview room]",
+            "shopping": "[I enter the store]",
+            "casual": "[Start casual conversation]",
+            "phone": "[Phone rings]",
+        }
+        return scenario_prompts.get(self.scenario, "[Start conversation]")
+
+    @staticmethod
+    def _lang_code_to_name(code: str) -> str:
+        """Convert language code to full name."""
+        lang_map = {
+            'en': 'English',
+            'ko': 'Korean',
+            'ja': 'Japanese',
+            'zh': 'Chinese',
+            'es': 'Spanish',
+            'fr': 'French',
+        }
+        return lang_map.get(code, code.capitalize())
+
+    @staticmethod
+    def _default_affirmation(lang_code: str) -> str:
+        """Return a short, encouraging default feedback in the user's native language.
+        Used when feedback_mode is 'always' but the model indicates no feedback (e.g., "NONE").
+        """
+        messages = {
+            'ko': "좋아요! 지금처럼 말해도 자연스러워요.",
+            'en': "Great! That sounded natural as is.",
+            'ja': "いいですね！今の表現で自然です。",
+            'zh': "很好！这样说很自然。",
+            'es': "¡Genial! Suena natural tal como está.",
+            'fr': "Super ! C’est naturel comme ça.",
+        }
+        return messages.get(lang_code, "Great! That sounded natural as is.")
+

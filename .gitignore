@@ -1,0 +1,116 @@
+# macOS
+.DS_Store
+
+# Editors/IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Env files (keep example templates)
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.pytest_cache/
+.mypy_cache/
+.pytype/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+dist/
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Node / JS / Web
+**/node_modules/
+**/.npmrc
+**/.eslintcache
+**/.tsbuildinfo
+**/.cache/
+**/.parcel-cache/
+**/coverage/
+
+# Next.js / Vercel / Turborepo
+**/.next/
+**/out/
+**/.vercel/
+**/.turbo/
+
+# pnpm / yarn / npm caches
+.pnpm-store/
+**/.pnpm-store/
+**/.yarn/*
+!**/.yarn/patches
+!**/.yarn/releases
+!**/.yarn/plugins
+!**/.yarn/sdks
+!**/.yarn/versions
+**/.pnp.*
+
+# Misc
+.DS_Store
+Thumbs.db
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+env/
+
+# Cache / Logs
+.pytest_cache/
+.mypy_cache/
+ruff_cache/
+*.log
+
+# Flutter / Dart
+build/
+.dart_tool/
+flutter_app/build/
+flutter_app/.dart_tool/
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.swp
+
+# Project artifacts
+var/
+.env

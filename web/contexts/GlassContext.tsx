@@ -1,0 +1,1246 @@
+'use client';
+
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+
+export interface Message {
+  type: 'user_message' | 'partner_message';
+  message: {
+    role: 'user' | 'partner';
+    content: string;
+  };
+  receivedAt: Date;
+  translation?: string;
+  // Ephemeral live text for ongoing utterance (partial transcript)
+  partial?: string;
+  // Backend utterance identifier (segment id for final, active id for partial)
+  utteranceId?: string;
+  // Deepgram timing information
+  start?: number; // Start time in seconds
+  duration?: number; // Duration in seconds
+}
+
+export interface VoiceStatus {
+  value: 'idle' | 'connecting' | 'connected' | 'disconnected' | 'analyzing';
+}
+
+export type FeedbackMode = 'always' | 'auto' | 'off';
+export type SuggestMode = 'always' | 'auto' | 'off';
+
+export interface LanguageSettings {
+  learningLang: string; // Language user wants to learn
+  nativeLang: string; // User's native language
+}
+
+export interface VoiceSettings {
+  micDeviceId: string | null;
+  feedbackMode: FeedbackMode;
+  languages: LanguageSettings;
+  suggestMode?: SuggestMode;
+  countryCode?: string; // ISO country code
+  proficiency?: 'cant_read' | 'can_read';
+  pronunciationMode?: 'native' | 'romaji';
+  suggestionDurationSec?: number;
+  glassMode?: boolean;
+}
+
+export interface SessionConfig {
+  languages: LanguageSettings;
+  mode: 'practice' | 'real';
+  scenario?: string; // For practice mode
+}
+
+export type StructuredSuggestion = {
+  target_text: string;
+  native_translation?: string;
+  pronunciation?: string;
+  target_lang?: string;
+  native_lang?: string;
+};
+
+export interface ConversationScores {
+  fluency: number;
+  accuracy: number;
+  comprehensibility: number;
+}
+
+export interface ExtractedInfo {
+  label: string;
+  value: string;
+  editable: boolean;
+}
+
+export interface ConversationAnalysis {
+  sessionId: string;
+  scores: ConversationScores;
+  extractedInfo: ExtractedInfo[];
+  feedback: string;
+  messages: Array<{ speaker: string; source: string; text: string; utterance_id?: string; translation?: string }>;
+  feedbackItems: Array<{ utterance_id: string; text: string }>;
+}
+
+interface GlassContextValue {
+  status: VoiceStatus;
+  messages: Message[];
+  isMuted: boolean;
+  micFft: number[];
+  settings: VoiceSettings;
+  conversationAnalysis: ConversationAnalysis | null;
+  showSummary: boolean;
+  updateSettings: (partial: Partial<VoiceSettings>) => void;
+  updateFeedbackMode: (mode: FeedbackMode) => void;
+  updateSuggestMode: (mode: SuggestMode) => void;
+  connect: (config: SessionConfig) => Promise<void>;
+  disconnect: () => Promise<void>;
+  mute: () => void;
+  unmute: () => void;
+  requestAnswer: () => Promise<StructuredSuggestion>;
+  requestFollowUp: () => Promise<StructuredSuggestion>;
+  setOnAISuggestion: (callback: (type: 'answer' | 'follow_up' | 'feedback', payload: any) => void) => void;
+  speakText: (text: string) => Promise<void>;
+  isSpeaking: boolean;
+  stopSpeaking: () => void;
+  closeSummary: () => void;
+  startNewCallWithContext: (contextInfo: ExtractedInfo[]) => void;
+}
+
+const GlassContext = createContext<GlassContextValue | null>(null);
+
+export function GlassProvider({
+  children,
+  onMessage,
+  onError,
+}: {
+  children: React.ReactNode;
+  onMessage?: () => void;
+  onError?: (error: Error) => void;
+}) {
+  const router = useRouter();
+  const [status, setStatus] = useState<VoiceStatus>({ value: 'idle' });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isMuted, setIsMuted] = useState(false);
+  const [micFft, setMicFft] = useState<number[]>(new Array(24).fill(0));
+  const [conversationAnalysis, setConversationAnalysis] = useState<ConversationAnalysis | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
+  const [settings, setSettings] = useState<VoiceSettings>(() => {
+    if (typeof window === 'undefined')
+      return {
+        micDeviceId: null,
+        feedbackMode: 'auto',
+        languages: { learningLang: 'en', nativeLang: 'ko' },
+        suggestMode: 'off',
+        countryCode: undefined,
+        proficiency: undefined,
+        pronunciationMode: 'native',
+        suggestionDurationSec: 10,
+        glassMode: false,
+      };
+    try {
+      const raw = window.localStorage.getItem('glass:settings');
+      if (raw) {
+        const parsed = JSON.parse(raw) as VoiceSettings;
+        return {
+          micDeviceId: parsed.micDeviceId || null,
+          feedbackMode: parsed.feedbackMode || 'auto',
+          languages: parsed.languages || { learningLang: 'en', nativeLang: 'ko' },
+          suggestMode: parsed.suggestMode || 'off',
+          countryCode: parsed.countryCode,
+          proficiency: parsed.proficiency,
+          pronunciationMode: parsed.pronunciationMode || 'native',
+          suggestionDurationSec: parsed.suggestionDurationSec || 10,
+          glassMode: parsed.glassMode ?? false,
+        };
+      }
+    } catch {}
+    return {
+      micDeviceId: null,
+      feedbackMode: 'auto',
+      languages: { learningLang: 'en', nativeLang: 'ko' },
+      suggestMode: 'off',
+      countryCode: undefined,
+      proficiency: undefined,
+      pronunciationMode: 'native',
+      suggestionDurationSec: 10,
+      glassMode: false,
+    };
+  });
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const onAISuggestionCallbackRef = useRef<
+    ((type: 'answer' | 'follow_up' | 'feedback', payload: any) => void) | undefined
+  >();
+  const ttsAudioContextRef = useRef<AudioContext | null>(null);
+  const ttsAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const ttsAudioChunksRef = useRef<Uint8Array[]>([]);
+
+  const setOnAISuggestion = useCallback(
+    (callback: (type: 'answer' | 'follow_up' | 'feedback', payload: any) => void) => {
+      onAISuggestionCallbackRef.current = callback;
+    },
+    []
+  );
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const systemStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const streamingContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const sessionIdRef = useRef<string>('');
+  const processorNodesRef = useRef<ScriptProcessorNode[]>([]);
+  const isMutedRef = useRef<boolean>(false);
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isIntentionalDisconnectRef = useRef<boolean>(false);
+
+  const updateSettings = useCallback((partial: Partial<VoiceSettings>) => {
+    setSettings((prev) => {
+      const next = { ...prev, ...partial };
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('glass:settings', JSON.stringify(next));
+        }
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const updateFeedbackMode = useCallback(
+    (mode: FeedbackMode) => {
+      updateSettings({ feedbackMode: mode });
+
+      // Send update to backend if connected
+      const ws = wsRef.current;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: 'set_feedback_mode',
+            mode,
+          })
+        );
+      }
+    },
+    [updateSettings]
+  );
+
+  const updateSuggestMode = useCallback(
+    (mode: SuggestMode) => {
+      updateSettings({ suggestMode: mode });
+
+      const ws = wsRef.current;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: 'set_suggest_mode',
+            mode,
+          })
+        );
+      }
+    },
+    [updateSettings]
+  );
+
+  // Generate session ID
+  const generateSessionId = useCallback(() => {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }, []);
+
+  // Update FFT visualization
+  const updateFFT = useCallback(() => {
+    if (!analyserRef.current) return;
+
+    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+    analyserRef.current.getByteFrequencyData(dataArray);
+
+    const fftValues: number[] = [];
+    const barCount = 24;
+    const samplesPerBar = Math.floor(dataArray.length / barCount);
+
+    for (let i = 0; i < barCount; i++) {
+      let sum = 0;
+      for (let j = 0; j < samplesPerBar; j++) {
+        sum += dataArray[i * samplesPerBar + j];
+      }
+      fftValues.push(sum / samplesPerBar / 255);
+    }
+
+    setMicFft(fftValues);
+    animationFrameRef.current = requestAnimationFrame(updateFFT);
+  }, []);
+
+  // Connect to Glass API
+  const connect = useCallback(
+    async (config: SessionConfig) => {
+      const { languages, mode, scenario } = config;
+      // Update settings with selected languages
+      updateSettings({ languages });
+
+      // Reset disconnect flag for new connection
+      isIntentionalDisconnectRef.current = false;
+
+      try {
+        setStatus({ value: 'connecting' });
+        // Reset conversation state for a fresh session
+        setMessages([]);
+
+        // Load latest settings from localStorage
+        let currentSettings = settings;
+        try {
+          if (typeof window !== 'undefined') {
+            const raw = window.localStorage.getItem('glass:settings');
+            if (raw) {
+              currentSettings = JSON.parse(raw) as VoiceSettings;
+            }
+          }
+        } catch {}
+
+        // Generate session ID
+        sessionIdRef.current = generateSessionId();
+
+        // Request microphone access with selected device if provided
+        const micConstraints: MediaTrackConstraints = {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        };
+        if (currentSettings.micDeviceId) {
+          micConstraints.deviceId = { exact: currentSettings.micDeviceId } as unknown as ConstrainDOMString;
+        }
+        const micStream = await navigator.mediaDevices.getUserMedia({ audio: micConstraints });
+        micStreamRef.current = micStream;
+
+        // Request screen share with audio (only for Real Talk mode)
+        let systemStream: MediaStream | null = null;
+        let screenShareSkipped = false;
+        let screenShareError: string | null = null;
+
+        if (mode === 'real') {
+          try {
+            systemStream = await navigator.mediaDevices.getDisplayMedia({
+              audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false,
+              },
+              video: true, // video must be true for screen capture
+            });
+
+            // Check if audio track is present
+            const audioTracks = systemStream.getAudioTracks();
+            if (audioTracks.length === 0) {
+              console.warn('Screen share selected without audio track');
+              systemStream.getTracks().forEach((track) => track.stop());
+              systemStream = null;
+              screenShareSkipped = true;
+              screenShareError = 'no_audio';
+            } else {
+              // Stop video tracks as we only need audio
+              const videoTracks = systemStream.getVideoTracks();
+              videoTracks.forEach((track) => track.stop());
+              systemStreamRef.current = systemStream;
+            }
+          } catch (err: any) {
+            // User cancelled or denied permission - don't retry
+            screenShareSkipped = true;
+            if (err.name === 'NotAllowedError') {
+              console.log('Screen share permission denied by user');
+              screenShareError = 'denied';
+            } else if (err.name === 'AbortError') {
+              console.log('Screen share cancelled by user');
+              screenShareError = 'cancelled';
+            } else {
+              console.warn('Screen share not available:', err);
+              screenShareError = 'failed';
+            }
+          }
+
+          // If screen share was skipped in Real Talk mode, disconnect and show clear instructions
+          if (screenShareSkipped) {
+            // Clean up microphone stream
+            if (micStreamRef.current) {
+              micStreamRef.current.getTracks().forEach((track) => track.stop());
+              micStreamRef.current = null;
+            }
+            setStatus({ value: 'disconnected' });
+
+            // Show clear instruction message
+            setTimeout(() => {
+              toast.error('Screen audio sharing required', {
+                description:
+                  'Please share your screen with audio from your meeting platform (Zoom, Google Meet, Teams).',
+                duration: 8000,
+              });
+            }, 100);
+            return;
+          }
+        } else {
+          // Practice mode: no screen share needed
+          console.log('Practice mode: skipping screen share');
+        }
+
+        // Setup audio context for FFT visualization
+        const audioContext = new AudioContext({ sampleRate: 16000 });
+        audioContextRef.current = audioContext;
+
+        const micSource = audioContext.createMediaStreamSource(micStream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.8;
+        micSource.connect(analyser);
+        analyserRef.current = analyser;
+
+        // Start FFT animation
+        updateFFT();
+
+        // Connect WebSocket to Glass API with language parameters
+        const wsUrl = process.env.NEXT_PUBLIC_GLASS_WS_URL || 'ws://localhost:8000';
+        const params = new URLSearchParams({
+          sid: sessionIdRef.current,
+          events: 'true',
+          learning_lang: languages.learningLang,
+          native_lang: languages.nativeLang,
+          mode: mode,
+        });
+        const ws = new WebSocket(`${wsUrl}/ws/audio-multi?${params.toString()}`);
+        wsRef.current = ws;
+
+        ws.binaryType = 'arraybuffer';
+
+        ws.onopen = () => {
+          console.log('WebSocket connected to Glass API');
+          setStatus({ value: 'connected' });
+          startAudioStreaming(ws, micStream, systemStream);
+
+          // Send settings to backend
+          ws.send(
+            JSON.stringify({
+              type: 'set_feedback_mode',
+              mode: currentSettings.feedbackMode,
+            })
+          );
+
+          ws.send(
+            JSON.stringify({
+              type: 'set_suggest_mode',
+              mode: currentSettings.suggestMode || 'off',
+            })
+          );
+
+          ws.send(
+            JSON.stringify({
+              type: 'session_config',
+              learning_lang: languages.learningLang,
+              native_lang: languages.nativeLang,
+              mode: mode,
+              scenario: scenario || null,
+            })
+          );
+
+          // Send user profile (country, proficiency) so backend can tailor suggestions
+          ws.send(
+            JSON.stringify({
+              type: 'set_profile',
+              proficiency: currentSettings.proficiency || null,
+              pronunciation_mode: currentSettings.pronunciationMode || 'native',
+            })
+          );
+
+          // Send heartbeat every 20 seconds to keep connection alive
+          heartbeatIntervalRef.current = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'ping' }));
+            }
+          }, 20000);
+        };
+
+        ws.onmessage = (event) => {
+          if (typeof event.data === 'string') {
+            try {
+              const data = JSON.parse(event.data);
+              // Limits
+              if (data.t === 'limit_reached') {
+                const reason = data.reason as 'sessions' | 'conversation' | undefined;
+                if (reason === 'conversation') {
+                  try {
+                    toast.info('Session length limit reached', {
+                      description: 'We saved your progress. Showing summary...',
+                    });
+                  } catch {}
+                  // Run End Call flow (analyze and show summary)
+                  disconnect().catch(() => {});
+                } else {
+                  setStatus({ value: 'idle' });
+                  try {
+                    toast.info('You’ve used your demo sessions', {
+                      description: 'Join the waitlist to get more access.',
+                    });
+                  } catch {}
+                  try {
+                    window.dispatchEvent(
+                      new CustomEvent('glass:open-waitlist', {
+                        detail: { sessionId: sessionIdRef.current },
+                      })
+                    );
+                  } catch {}
+                  try {
+                    ws.close();
+                  } catch {}
+                }
+                return;
+              }
+              handleServerMessage(data);
+            } catch (err) {
+              // Ignore non-JSON messages (could be ping/pong)
+            }
+          } else if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
+            // Handle TTS audio chunks
+            handleTTSAudioChunk(event.data);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          onError?.(new Error('WebSocket connection error'));
+          try {
+            router.push('/connect/failure');
+          } catch {}
+        };
+
+        ws.onclose = () => {
+          console.log('WebSocket closed');
+          // Only set disconnected status if this wasn't an intentional disconnect
+          if (!isIntentionalDisconnectRef.current) {
+            setStatus({ value: 'disconnected' });
+          }
+          if (heartbeatIntervalRef.current) {
+            clearInterval(heartbeatIntervalRef.current);
+            heartbeatIntervalRef.current = null;
+          }
+        };
+      } catch (error) {
+        console.error('Failed to connect:', error);
+        setStatus({ value: 'disconnected' });
+        onError?.(error as Error);
+        try {
+          router.push('/connect/failure');
+        } catch {}
+        throw error;
+      }
+    },
+    [generateSessionId, updateFFT, onError]
+  );
+
+  // Handle TTS audio chunks
+  const handleTTSAudioChunk = useCallback(async (data: ArrayBuffer | Blob) => {
+    try {
+      const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
+      const uint8Array = new Uint8Array(arrayBuffer);
+      ttsAudioChunksRef.current.push(uint8Array);
+    } catch (error) {
+      console.error('Failed to handle TTS audio chunk:', error);
+    }
+  }, []);
+
+  // Handle messages from Glass API
+  const handleServerMessage = useCallback(
+    (data: any) => {
+      // Handle TTS events
+      if (data.t === 'tts_start') {
+        setIsSpeaking(true);
+        ttsAudioChunksRef.current = [];
+        return;
+      }
+
+      if (data.t === 'tts_end') {
+        playTTSAudio();
+        return;
+      }
+
+      if (data.t === 'tts_error') {
+        console.error('TTS error:', data.error);
+        setIsSpeaking(false);
+        ttsAudioChunksRef.current = [];
+        return;
+      }
+
+      // Log all events for debugging
+      if (data.t === 'utterance_end' || data.t === 'translation') {
+        console.log('Received event:', data.t, data);
+      }
+
+      // PARTIAL TRANSCRIPT: ephemeral overlay per utterance (simple overwrite)
+      if (data.t === 'partial_transcript') {
+        const text = (data.text || '').trim();
+        if (!text) return;
+
+        const utteranceId = data.utterance_id;
+        if (!utteranceId) return;
+
+        // Determine role from source
+        let role: 'user' | 'partner' = 'partner';
+        if (data.role) {
+          role = data.role === 'user' ? 'user' : 'partner';
+        } else if (data.source) {
+          role =
+            data.source === 'mic' || (typeof data.source === 'string' && data.source.startsWith('mic_'))
+              ? 'user'
+              : 'partner';
+        } else if (data.speaker) {
+          role = data.speaker === 'user' ? 'user' : 'partner';
+        }
+
+        const isSpeechFinal = Boolean(data.speech_final);
+
+        setMessages((prev) => {
+          const next = [...prev];
+          if (isSpeechFinal) {
+            const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.partial);
+            if (idx >= 0) next.splice(idx, 1);
+            return next;
+          }
+
+          const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.message.role === role);
+          if (idx >= 0) {
+            const existing = next[idx];
+            next[idx] = {
+              ...existing,
+              partial: text,
+              receivedAt: new Date(),
+              start: typeof data.start === 'number' ? data.start : existing.start,
+              duration: typeof data.duration === 'number' ? data.duration : existing.duration,
+            };
+            return next;
+          }
+
+          next.push({
+            type: role === 'user' ? 'user_message' : 'partner_message',
+            message: { role, content: '' },
+            receivedAt: new Date(),
+            utteranceId,
+            partial: text,
+            start: typeof data.start === 'number' ? data.start : undefined,
+            duration: typeof data.duration === 'number' ? data.duration : undefined,
+          });
+          return next;
+        });
+        onMessage?.();
+        return;
+      }
+
+      // FINAL TRANSCRIPT: upsert final message for utterance (no concatenation)
+      if (data.t === 'transcript') {
+        const text = (data.text || '').trim();
+        if (!text) return;
+
+        const utteranceId = data.utterance_id;
+        if (!utteranceId) return;
+
+        // Auto-play TTS for AI responses when requested
+        if (data.auto_tts && data.source === 'ai') {
+          requestTTSForAI(text);
+        }
+
+        // Determine role from source
+        let role: 'user' | 'partner' = 'partner';
+        if (data.role) {
+          role = data.role === 'user' ? 'user' : 'partner';
+        } else if (data.source) {
+          role =
+            data.source === 'mic' || (typeof data.source === 'string' && data.source.startsWith('mic_'))
+              ? 'user'
+              : 'partner';
+        } else if (data.speaker) {
+          role = data.speaker === 'user' ? 'user' : 'partner';
+        }
+
+        setMessages((prev) => {
+          const next = [...prev];
+          const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.message.role === role);
+          const translation = typeof data.translation === 'string' ? data.translation : undefined;
+
+          if (idx >= 0) {
+            const existing = next[idx];
+            const prevText = (existing.message.content || '').trim();
+            const newText = (text || '').trim();
+            const needsSpace = Boolean(prevText) && !/[\.!?\u3002\uFF01\uFF1F]$/.test(prevText);
+            const merged = prevText ? (needsSpace ? `${prevText} ${newText}` : `${prevText} ${newText}`) : newText;
+            next[idx] = {
+              ...existing,
+              message: { ...existing.message, content: merged },
+              translation: translation ?? existing.translation,
+              partial: undefined,
+              receivedAt: new Date(),
+              // Keep simple: preserve existing timing if present, else use provided
+              start:
+                typeof existing.start === 'number'
+                  ? existing.start
+                  : typeof data.start === 'number'
+                  ? data.start
+                  : existing.start,
+              duration:
+                typeof existing.duration === 'number'
+                  ? existing.duration
+                  : typeof data.duration === 'number'
+                  ? data.duration
+                  : existing.duration,
+            };
+            return next;
+          }
+
+          next.push({
+            type: role === 'user' ? 'user_message' : 'partner_message',
+            message: { role, content: text },
+            translation,
+            receivedAt: new Date(),
+            utteranceId,
+            start: typeof data.start === 'number' ? data.start : undefined,
+            duration: typeof data.duration === 'number' ? data.duration : undefined,
+          });
+          return next;
+        });
+        onMessage?.();
+        return;
+      }
+
+      // Handle translation events
+      if (data.t === 'translation') {
+        const utteranceId = data.utterance_id;
+        const translation = data.text;
+
+        if (!utteranceId || !translation) {
+          return;
+        }
+
+        setMessages((prev) => {
+          const next = [...prev];
+          // Find message with this utterance_id
+          const existingIndex = next.findIndex((msg) => msg.utteranceId === utteranceId);
+
+          if (existingIndex >= 0) {
+            // Update message with translation
+            const existing = next[existingIndex];
+            next[existingIndex] = {
+              ...existing,
+              translation: translation,
+            };
+            return next;
+          }
+          return next;
+        });
+
+        onMessage?.();
+        return;
+      }
+
+      // Handle utterance end: clear any remaining partial overlay for that utterance
+      if (data.t === 'utterance_end') {
+        const utteranceId = data.utterance_id;
+        if (!utteranceId) return;
+        setMessages((prev) => {
+          const next = [...prev];
+          const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.partial);
+          if (idx >= 0) {
+            next.splice(idx, 1);
+          }
+          return next;
+        });
+        return;
+      }
+
+      // Handle feedback events - show as AI suggestion
+      if (data.t === 'feedback') {
+        const feedback = data.text;
+        if (feedback && onAISuggestionCallbackRef.current) {
+          onAISuggestionCallbackRef.current('feedback', feedback);
+        }
+        return;
+      }
+
+      // Auto suggestions from backend (structured payload supported)
+      if (data.t === 'answer' && data.auto && onAISuggestionCallbackRef.current) {
+        const payload = data.suggestion || (data.text ? { target_text: data.text } : null);
+        if (payload) onAISuggestionCallbackRef.current('answer', payload);
+        return;
+      }
+      if (data.t === 'follow_up' && data.auto && onAISuggestionCallbackRef.current) {
+        const payload = data.suggestion || (data.text ? { target_text: data.text } : null);
+        if (payload) onAISuggestionCallbackRef.current('follow_up', payload);
+        return;
+      }
+
+      // Optional: Surface LLM responses as partner messages
+      if (data.t === 'response') {
+        const message: Message = {
+          type: 'partner_message',
+          message: {
+            role: 'partner',
+            content: data.text || data.content || '',
+          },
+          receivedAt: new Date(),
+        };
+        setMessages((prev) => [...prev, message]);
+        onMessage?.();
+        return;
+      }
+    },
+    [onMessage]
+  );
+
+  // Stream audio to WebSocket
+  const startAudioStreaming = useCallback((ws: WebSocket, micStream: MediaStream, systemStream: MediaStream | null) => {
+    const audioContext = new AudioContext({ sampleRate: 16000 });
+    streamingContextRef.current = audioContext;
+    const micSource = audioContext.createMediaStreamSource(micStream);
+    const micProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+
+    micProcessor.onaudioprocess = (e) => {
+      if (ws.readyState === WebSocket.OPEN && !isMutedRef.current) {
+        const inputData = e.inputBuffer.getChannelData(0);
+        const pcm16 = convertFloat32ToPCM16(inputData);
+        const payload = new Uint8Array(pcm16.length + 1);
+        payload[0] = 0x01; // mic channel
+        payload.set(pcm16, 1);
+        ws.send(payload.buffer);
+      }
+    };
+
+    micSource.connect(micProcessor);
+    micProcessor.connect(audioContext.destination);
+    processorNodesRef.current.push(micProcessor);
+
+    // Stream system audio if available
+    if (systemStream) {
+      const systemSource = audioContext.createMediaStreamSource(systemStream);
+      const systemProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+
+      systemProcessor.onaudioprocess = (e) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          const inputData = e.inputBuffer.getChannelData(0);
+          const pcm16 = convertFloat32ToPCM16(inputData);
+          const payload = new Uint8Array(pcm16.length + 1);
+          payload[0] = 0x02; // system channel
+          payload.set(pcm16, 1);
+          ws.send(payload.buffer);
+        }
+      };
+
+      systemSource.connect(systemProcessor);
+      systemProcessor.connect(audioContext.destination);
+      processorNodesRef.current.push(systemProcessor);
+    }
+  }, []);
+
+  // Convert Float32 to PCM16
+  const convertFloat32ToPCM16 = (float32Array: Float32Array): Uint8Array => {
+    const pcm16 = new Int16Array(float32Array.length);
+    for (let i = 0; i < float32Array.length; i++) {
+      const s = Math.max(-1, Math.min(1, float32Array[i]));
+      pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+    }
+    return new Uint8Array(pcm16.buffer);
+  };
+
+  // Disconnect
+  const disconnect = useCallback(async () => {
+    // Mark this as an intentional disconnect
+    isIntentionalDisconnectRef.current = true;
+
+    // Stop FFT animation
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    // Disconnect processor nodes
+    processorNodesRef.current.forEach((processor) => {
+      processor.disconnect();
+    });
+    processorNodesRef.current = [];
+
+    // Stop heartbeat
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+
+    // Close WebSocket
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
+    // Stop media streams
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach((track) => track.stop());
+      micStreamRef.current = null;
+    }
+
+    if (systemStreamRef.current) {
+      systemStreamRef.current.getTracks().forEach((track) => track.stop());
+      systemStreamRef.current = null;
+    }
+
+    // Close audio contexts
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    if (streamingContextRef.current) {
+      streamingContextRef.current.close();
+      streamingContextRef.current = null;
+    }
+
+    setMicFft(new Array(24).fill(0));
+
+    // Set analyzing status while we process the conversation
+    setStatus({ value: 'analyzing' });
+
+    // Request conversation analysis if we have a session
+    const currentSessionId = sessionIdRef.current;
+    if (currentSessionId) {
+      console.log('[GlassContext] Requesting conversation analysis for session:', currentSessionId);
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${apiUrl}/analyze-conversation`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            session_id: currentSessionId,
+          }),
+        });
+
+        if (response.ok) {
+          const rawData: any = await response.json();
+          console.log('[GlassContext] Analysis received:', rawData);
+
+          // Backend now includes translations directly, but we can supplement with frontend translations if missing
+          const translationMap = new Map<string, string>();
+          messages.forEach((msg) => {
+            if (msg.translation) {
+              translationMap.set(msg.message.content, msg.translation);
+            }
+          });
+
+          // Use backend translations if available, otherwise use frontend translations
+          const messagesWithTranslations = (rawData.messages || []).map((msg: any) => {
+            if (msg.translation) {
+              // Backend already provided translation
+              return msg;
+            }
+            // Fallback to frontend translation if available
+            const translation = translationMap.get(msg.text);
+            return translation ? { ...msg, translation } : msg;
+          });
+
+          // Convert snake_case API response to camelCase
+          const analysisData: ConversationAnalysis = {
+            sessionId: rawData.session_id,
+            scores: rawData.scores,
+            extractedInfo: rawData.extracted_info || [],
+            feedback: rawData.feedback || '',
+            messages: messagesWithTranslations,
+            feedbackItems: rawData.feedback_items || [],
+          };
+
+          // Always show summary if we got a response, even if no messages
+          // The summary component can handle empty states
+          setConversationAnalysis(analysisData);
+          setShowSummary(true);
+          console.log('[GlassContext] Showing summary');
+          // Stay in analyzing status while showing summary
+          // Don't reset flag or change status - let user close the summary
+          return;
+        } else {
+          console.error('[GlassContext] Failed to analyze conversation:', response.statusText);
+        }
+      } catch (error) {
+        console.error('[GlassContext] Error analyzing conversation:', error);
+      }
+    } else {
+      console.log('[GlassContext] No session ID, skipping analysis');
+    }
+
+    // Only reach here if no session or API failed - go to idle state
+    setStatus({ value: 'idle' });
+
+    // Reset the flag
+    isIntentionalDisconnectRef.current = false;
+  }, []);
+
+  // Mute/Unmute
+  const mute = useCallback(() => {
+    setIsMuted(true);
+    isMutedRef.current = true;
+  }, []);
+  const unmute = useCallback(() => {
+    setIsMuted(false);
+    isMutedRef.current = false;
+  }, []);
+
+  // Request answer via WebSocket
+  const requestAnswer = useCallback((): Promise<StructuredSuggestion> => {
+    return new Promise((resolve, reject) => {
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        reject(new Error('WebSocket not connected'));
+        return;
+      }
+
+      // Set up one-time listener for answer event
+      const handleAnswer = (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.t === 'answer') {
+            ws.removeEventListener('message', handleAnswer);
+            const payload = data.suggestion || (data.text ? { target_text: data.text } : { target_text: '' });
+            resolve(payload);
+          }
+        } catch (e) {
+          // Ignore parsing errors, keep listening
+        }
+      };
+
+      ws.addEventListener('message', handleAnswer);
+
+      // Send request
+      ws.send(JSON.stringify({ type: 'request_answer' }));
+
+      // Timeout after 15 seconds
+      setTimeout(() => {
+        ws.removeEventListener('message', handleAnswer);
+        reject(new Error('Answer request timeout'));
+      }, 15000);
+    });
+  }, []);
+
+  // Request follow-up via WebSocket
+  const requestFollowUp = useCallback((): Promise<StructuredSuggestion> => {
+    return new Promise((resolve, reject) => {
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        reject(new Error('WebSocket not connected'));
+        return;
+      }
+
+      // Set up one-time listener for follow_up event
+      const handleFollowUp = (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.t === 'follow_up') {
+            ws.removeEventListener('message', handleFollowUp);
+            const payload = data.suggestion || (data.text ? { target_text: data.text } : { target_text: '' });
+            resolve(payload);
+          }
+        } catch (e) {
+          // Ignore parsing errors, keep listening
+        }
+      };
+
+      ws.addEventListener('message', handleFollowUp);
+
+      // Send request
+      ws.send(JSON.stringify({ type: 'request_follow_up' }));
+
+      // Timeout after 15 seconds
+      setTimeout(() => {
+        ws.removeEventListener('message', handleFollowUp);
+        reject(new Error('Follow-up request timeout'));
+      }, 15000);
+    });
+  }, []);
+
+  // Play accumulated TTS audio
+  const playTTSAudio = useCallback(async () => {
+    try {
+      if (ttsAudioChunksRef.current.length === 0) {
+        setIsSpeaking(false);
+        return;
+      }
+
+      // Concatenate all chunks
+      const totalLength = ttsAudioChunksRef.current.reduce((sum, chunk) => sum + chunk.length, 0);
+      const concatenated = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const chunk of ttsAudioChunksRef.current) {
+        concatenated.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      // Initialize audio context if needed
+      if (!ttsAudioContextRef.current) {
+        // Handle prefixed webkitAudioContext without using 'any'
+        const Ctor: typeof AudioContext = (() => {
+          if (typeof window !== 'undefined' && 'AudioContext' in window && window.AudioContext) {
+            return window.AudioContext;
+          }
+          // @ts-expect-error - webkitAudioContext is not in TS lib typings
+          if (typeof window !== 'undefined' && window.webkitAudioContext) {
+            // @ts-expect-error - webkitAudioContext is not in TS lib typings
+            return window.webkitAudioContext as typeof AudioContext;
+          }
+          return AudioContext;
+        })();
+        ttsAudioContextRef.current = new Ctor();
+      }
+
+      const audioContext = ttsAudioContextRef.current;
+
+      // Decode audio data (ElevenLabs returns MP3)
+      const audioBuffer = await audioContext.decodeAudioData(concatenated.buffer);
+
+      // Stop previous audio if playing
+      if (ttsAudioSourceRef.current) {
+        try {
+          ttsAudioSourceRef.current.stop();
+        } catch (e) {
+          // Ignore if already stopped
+        }
+      }
+
+      // Create and play audio source
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
+
+      source.onended = () => {
+        setIsSpeaking(false);
+        ttsAudioSourceRef.current = null;
+      };
+
+      ttsAudioSourceRef.current = source;
+      source.start(0);
+
+      // Clear chunks
+      ttsAudioChunksRef.current = [];
+    } catch (error) {
+      console.error('Failed to play TTS audio:', error);
+      setIsSpeaking(false);
+      ttsAudioChunksRef.current = [];
+    }
+  }, []);
+
+  // Stop speaking
+  const stopSpeaking = useCallback(() => {
+    if (ttsAudioSourceRef.current) {
+      try {
+        ttsAudioSourceRef.current.stop();
+        ttsAudioSourceRef.current = null;
+      } catch (e) {
+        // Ignore if already stopped
+      }
+    }
+    setIsSpeaking(false);
+    ttsAudioChunksRef.current = [];
+  }, []);
+
+  // Request TTS for text
+  const speakText = useCallback(
+    async (text: string, voiceId?: string) => {
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        throw new Error('WebSocket not connected');
+      }
+
+      if (isSpeaking) {
+        stopSpeaking();
+      }
+
+      ws.send(
+        JSON.stringify({
+          type: 'request_tts',
+          text: text,
+          voice_id: voiceId,
+          request_id: Math.random().toString(36).substr(2, 9),
+        })
+      );
+    },
+    [isSpeaking, stopSpeaking]
+  );
+
+  // Request TTS for AI voice (auto-play)
+  const requestTTSForAI = useCallback((text: string) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    // Use AI voice ID (Male voice)
+    ws.send(
+      JSON.stringify({
+        type: 'request_tts',
+        text: text,
+        voice_id: 'iP95p4xoKVk53GoZ742B', // Male AI voice
+        request_id: 'ai_' + Math.random().toString(36).substr(2, 9),
+      })
+    );
+  }, []);
+
+  // Close summary
+  const closeSummary = useCallback(() => {
+    setShowSummary(false);
+    setConversationAnalysis(null);
+    // Return to idle status to show start screen
+    setStatus({ value: 'idle' });
+    // Reset the flag
+    isIntentionalDisconnectRef.current = false;
+  }, []);
+
+  // Start new call after saving to waitlist
+  const startNewCallWithContext = useCallback((contextInfo: ExtractedInfo[]) => {
+    // Close summary and return to start screen
+    // (Context is not actually saved, just sent to waitlist API for Discord notification)
+    setShowSummary(false);
+    setConversationAnalysis(null);
+    // Return to idle status to show start screen
+    setStatus({ value: 'idle' });
+    // Reset the flag
+    isIntentionalDisconnectRef.current = false;
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Call disconnect without awaiting (fire and forget)
+      disconnect().catch(console.error);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const value: GlassContextValue = {
+    status,
+    messages,
+    isMuted,
+    micFft,
+    settings,
+    conversationAnalysis,
+    showSummary,
+    updateSettings,
+    updateFeedbackMode,
+    updateSuggestMode,
+    connect,
+    disconnect,
+    mute,
+    unmute,
+    requestAnswer,
+    requestFollowUp,
+    setOnAISuggestion,
+    speakText,
+    isSpeaking,
+    stopSpeaking,
+    closeSummary,
+    startNewCallWithContext,
+  };
+
+  return <GlassContext.Provider value={value}>{children}</GlassContext.Provider>;
+}
+
+export function useGlass() {
+  const context = useContext(GlassContext);
+  if (!context) {
+    throw new Error('useGlass must be used within GlassProvider');
+  }
+  return context;
+}
