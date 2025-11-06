@@ -1,10 +1,11 @@
 'use client';
 import { cn } from '@/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Sparkles, Zap, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { track, setUserId, setUserProperties } from '@/utils/analytics';
 
 interface ExtractedInfo {
   label: string;
@@ -32,6 +33,9 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const lastMappedEmailRef = useRef<string | null>(null);
+
+  const isLikelyValidEmail = (value: string) => /.+@.+\..+/.test(value);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +47,14 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
 
     setIsSubmitting(true);
     setError('');
+
+    const emailDomain = email.split('@')[1]?.toLowerCase() ?? '';
+    track('Waitlist Submit Attempted', {
+      sessionId,
+      emailDomain,
+      extractedFieldCount: extractedInfo?.length ?? 0,
+      scores,
+    });
 
     try {
       const response = await fetch('https://api.speakglass.com/waitlist', {
@@ -62,13 +74,16 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
         try {
           onSuccess();
         } catch {}
+        track('Waitlist Submit Succeeded', { sessionId, emailDomain });
         router.push('/waitlist/success');
       } else {
         setError('We had trouble adding you. Please try again later.');
+        track('Waitlist Submit Failed', { sessionId, emailDomain, status: response.status });
       }
     } catch (error) {
       console.error('Error joining waitlist:', error);
       setError('Network error. Please check your connection and try again.');
+      track('Waitlist Submit Failed', { sessionId, emailDomain, error: 'network' });
     } finally {
       setIsSubmitting(false);
     }
@@ -203,6 +218,16 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
                     onChange={(e) => {
                       setEmail(e.target.value);
                       setError('');
+                      const value = e.target.value.trim();
+                      if (isLikelyValidEmail(value) && value !== lastMappedEmailRef.current) {
+                        lastMappedEmailRef.current = value;
+                        setUserId(value);
+                        setUserProperties({ email: value });
+                        track('Waitlist Email Captured', {
+                          sessionId,
+                          emailDomain: value.split('@')[1]?.toLowerCase() ?? '',
+                        });
+                      }
                     }}
                     placeholder="you@example.com"
                     className={cn(
