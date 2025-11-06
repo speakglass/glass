@@ -160,7 +160,7 @@ export default function Settings() {
               </div>
               <Switch
                 checked={settings.glassMode ?? false}
-                onCheckedChange={(v) => updateSettings({ glassMode: v })}
+                onCheckedChange={(v: boolean) => updateSettings({ glassMode: v })}
                 aria-label="Toggle Glass Mode"
               />
             </div>
@@ -173,7 +173,7 @@ export default function Settings() {
               </div>
               <Switch
                 checked={(theme || 'light') === 'light'}
-                onCheckedChange={(v) => setTheme(v ? 'light' : 'dark')}
+                onCheckedChange={(v: boolean) => setTheme(v ? 'light' : 'dark')}
                 aria-label="Toggle Light Mode"
               />
             </div>

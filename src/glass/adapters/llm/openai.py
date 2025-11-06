@@ -77,8 +77,8 @@ class OpenAILLMAdapter:
                 speaker = entry.get("speaker", "unknown")
                 source = entry.get("source", "")
                 text = entry.get("text", "")
-                # Format: [You/Mic]: "text" or [Remote/System]: "text"
-                label = "You" if source == "mic" else ("Remote" if source == "system" else speaker)
+                # Robust role mapping to ensure the model sees user's vs partner's turns clearly
+                label = self._role_label(speaker, source)
                 transcript_lines.append(f"[{label}]: {text}")
             else:
                 # Backward compatibility with old string format
@@ -96,6 +96,20 @@ class OpenAILLMAdapter:
             user_parts.extend(memory_lines)
         user_parts.append("\nProvide a single actionable suggestion for what You should say next (under 24 words).")
         user_text = "\n".join(user_parts)
+
+        # Log prompt preview for debugging suggest behavior
+        try:
+            self._logger.info(
+                "[Suggest Prompt]\nLang=%s | Tone=%s\n--- Transcript ---\n%s\n--- Screen ---\n%s\n--- Memory ---\n%s\n--- Instruction ---\n%s",
+                lang,
+                tone,
+                transcript_text or "(none)",
+                screen or "(none)",
+                ("\n".join(memory_lines)) if memory_lines else "(none)",
+                "Provide a single actionable suggestion for what You should say next (under 24 words).",
+            )
+        except Exception:
+            pass
         return [
             {
                 "role": "system",
@@ -234,11 +248,12 @@ Suggest a follow-up:"""
                 "ASCII only (no macrons). NEVER use kana/kanji or any non-ASCII."
             )
         elif pronunciation_mode == 'native':
+            example_hint = self._build_pronunciation_example(native_lang, target_lang)
             pronunciation_rule = (
                 f"Include a single field 'pronunciation' which is ONE LINE showing how to pronounce target_text using {native_lang} script. "
                 f"This is a PHONETIC TRANSCRIPTION (not a translation). "
                 f"You MUST write the sounds using {native_lang} alphabet/characters, NEVER {target_lang} script. "
-                f"Example: If target is Japanese '行きましょう' and native is Korean, write '이키마쇼' (Korean Hangul for the sounds), NOT '행きましょう' or Japanese characters."
+                f"{example_hint}"
             )
         else:
             pronunciation_rule = "Do not include a pronunciation field."
@@ -266,6 +281,19 @@ Conversation:
 
 JSON:
 """
+
+        # Log answer prompt preview for debugging
+        try:
+            self._logger.info(
+                "[Answer Prompt]\nTarget=%s | Native=%s | PronunciationMode=%s\n--- Transcript ---\n%s\n--- Prompt ---\n%s",
+                target_lang,
+                native_lang,
+                pronunciation_mode or "(none)",
+                transcript_lines or "(none)",
+                prompt.strip(),
+            )
+        except Exception:
+            pass
 
         payload = {
             "model": "gpt-4.1-mini",
@@ -325,11 +353,12 @@ JSON:
                 "ASCII only (no macrons). NEVER use kana/kanji or any non-ASCII."
             )
         elif pronunciation_mode == 'native':
+            example_hint = self._build_pronunciation_example(native_lang, target_lang)
             pronunciation_rule = (
                 f"Include a single field 'pronunciation' which is ONE LINE showing how to pronounce target_text using {native_lang} script. "
                 f"This is a PHONETIC TRANSCRIPTION (not a translation). "
                 f"You MUST write the sounds using {native_lang} alphabet/characters, NEVER {target_lang} script. "
-                f"Example: If target is Japanese '行きましょう' and native is Korean, write '이키마쇼' (Korean Hangul for the sounds), NOT '행きましょう' or Japanese characters."
+                f"{example_hint}"
             )
         else:
             pronunciation_rule = "Do not include a pronunciation field."
@@ -357,6 +386,19 @@ Conversation:
 
 JSON:
 """
+
+        # Log follow-up prompt preview for debugging
+        try:
+            self._logger.info(
+                "[FollowUp Prompt]\nTarget=%s | Native=%s | PronunciationMode=%s\n--- Transcript ---\n%s\n--- Prompt ---\n%s",
+                target_lang,
+                native_lang,
+                pronunciation_mode or "(none)",
+                transcript_lines or "(none)",
+                prompt.strip(),
+            )
+        except Exception:
+            pass
 
         payload = {
             "model": "gpt-4.1-mini",
@@ -397,6 +439,49 @@ JSON:
         # Fallback to unstructured follow-up
         plain = await self.follow_up(transcript_tail, lang=target_lang)
         return {"target_text": plain}
+
+    def _build_pronunciation_example(self, native_lang: str, target_lang: str) -> str:
+        """Return a concise, native-language-specific example hint for pronunciation.
+
+        The hint illustrates how to render SOUNDS using the learner's native script.
+        Keep it short and language-appropriate.
+        """
+        try:
+            lang = (native_lang or "").strip().lower()
+            # Default generic example (safe fallback in ASCII)
+            generic = (
+                "Example: Write the sounds in your native script, e.g., split syllables naturally (no translation)."
+            )
+
+            if lang == "korean":
+                return (
+                    "Example: If target is Japanese '行きましょう', write '이키마쇼' (Hangul for sounds)."
+                )
+            if lang == "english":
+                return (
+                    "Example: If target is Japanese '行きましょう', write 'ee-kee-mah-shoh' (plain Latin letters)."
+                )
+            if lang == "japanese":
+                return (
+                    "Example: If target is English 'thank you', write 'サンキュー' (katakana for sounds)."
+                )
+            if lang == "chinese":
+                return (
+                    "Example: Use Hanyu Pinyin for sounds, e.g., English 'hello' → 'ha lou' (ASCII)."
+                )
+            if lang == "spanish":
+                return (
+                    "Example: Use plain Latin letters for sounds, e.g., 'ee-kee-mah-shoh'."
+                )
+            if lang == "french":
+                return (
+                    "Example: Use plain Latin letters for sounds, e.g., 'i-ki-ma-sho'."
+                )
+            return generic
+        except Exception:
+            return (
+                "Example: Write sounds using your native script (phonetic, not translation)."
+            )
 
     async def feedback(self, user_text: str, lang: str, target_lang: str | None = None, native_lang: str | None = None, mode: str = "real") -> str:
         """Provide feedback on what the user just said - suggest improvements."""
@@ -532,7 +617,8 @@ Return YES or NO only.
         decision = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip().upper()
         try:
             self._logger.info(f"Should suggest: {decision}")
-            self._logger.debug(f"should_suggest prompt: {prompt}")
+            # Elevate prompt to INFO for easier field debugging
+            self._logger.info("[ShouldSuggest Prompt]\nKind=%s | Mode=%s\n--- Transcript ---\n%s\n--- Prompt ---\n%s", kind, mode, transcript_lines, prompt)
         except Exception:
             pass
         return "YES" in decision
@@ -545,11 +631,32 @@ Return YES or NO only.
                 speaker = entry.get("speaker", "unknown")
                 source = entry.get("source", "")
                 text = entry.get("text", "")
-                label = "You" if source == "mic" else ("Remote" if source == "system" else speaker)
+                label = self._role_label(speaker, source)
                 lines.append(f"[{label}]: {text}")
             else:
                 lines.append(str(entry))
         return "\n".join(lines)
+
+    def _role_label(self, speaker: str | None, source: str | None) -> str:
+        """Normalize transcript speaker labels to 'You' or 'Partner' when possible.
+
+        Falls back to the provided speaker string if it can't confidently map.
+        """
+        src = (source or "").strip().lower()
+        spk = (speaker or "").strip().lower()
+
+        # Consider any microphone-origin messages as the user
+        if src.startswith("mic") or spk == "user":
+            return "You"
+
+        # Common partner/remote markers across our stack
+        partner_sources = {"ws", "remote", "system", "ai", "server"}
+        partner_speakers = {"ai", "remote", "partner"}
+        if src in partner_sources or spk in partner_speakers:
+            return "Partner"
+
+        # Fallback to the raw speaker, or a generic Partner if missing
+        return speaker or "Partner"
 
     async def generate_ai_response(
         self,

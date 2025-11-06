@@ -209,8 +209,25 @@ class SessionPipeline:
         if duration is not None:
             msg["duration"] = duration
         
-        # For tail: always append (tail is a fixed-size deque, duplicates are acceptable for recency)
-        self.tail.append(msg)
+        # For tail: upsert by (utterance_id, source) to avoid duplicate fragments of the same utterance
+        # Keep order by replacing in place when possible; append if new.
+        if utterance_id:
+            existing_idx = None
+            for idx, tmsg in enumerate(self.tail):
+                if tmsg.get("utterance_id") == utterance_id and tmsg.get("source") == (source or "unknown"):
+                    existing_idx = idx
+                    break
+            if existing_idx is not None:
+                # Replace existing entry with latest message
+                try:
+                    self.tail[existing_idx] = msg
+                except Exception:
+                    # Fallback: append if deque does not support item assignment in this environment
+                    self.tail.append(msg)
+            else:
+                self.tail.append(msg)
+        else:
+            self.tail.append(msg)
         
         # For full_conversation: update existing message with same utterance_id, or append if new
         if utterance_id:
@@ -260,6 +277,29 @@ class SessionPipeline:
 
     async def _generate_suggestion(self, context: Sequence[dict], tone: str, lang: str) -> dict:
         # Access LLM through processor
+        try:
+            # Compact preview of tail for debugging suggest behavior
+            preview_lines: list[str] = []
+            for entry in list(self.tail)[-8:]:
+                if isinstance(entry, dict):
+                    src = entry.get("source", "?")
+                    spk = entry.get("speaker", "?")
+                    txt = (entry.get("text", "") or "").replace("\n", " ")
+                    if len(txt) > 200:
+                        txt = txt[:200] + "…"
+                    preview_lines.append(f"[{src}|{spk}] {txt}")
+                else:
+                    preview_lines.append(str(entry))
+
+            print(f"[Suggest Tail] lang: {lang} tone: {tone} preview lines: {preview_lines}")
+            LOGGER.info(
+                "[Suggest Tail] lang=%s tone=%s\n%s",
+                lang,
+                tone,
+                "\n".join(preview_lines) or "(empty tail)",
+            )
+        except Exception:
+            pass
         raw = await self.llm_processor.llm.suggest(
             transcript_tail=list(self.tail),
             screen=self.screen_hint,

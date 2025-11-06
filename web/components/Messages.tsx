@@ -76,16 +76,18 @@ const SuggestionBubble = ({ suggestion, onClose, durationSec }: SuggestionBubble
               <span className={'text-xs font-medium text-muted-foreground'}>{typeLabels[suggestion.type]}</span>
             </div>
             <div className={'flex items-center gap-1'}>
-              <button
-                onClick={handleSpeak}
-                className={cn(
-                  'text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-accent/50',
-                  isPlayingThis && 'text-primary'
-                )}
-                aria-label="Speak"
-              >
-                <Volume2 className={cn('size-3.5', isPlayingThis && 'animate-pulse')} />
-              </button>
+              {suggestion.type !== 'feedback' && (
+                <button
+                  onClick={handleSpeak}
+                  className={cn(
+                    'text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-accent/50',
+                    isPlayingThis && 'text-primary'
+                  )}
+                  aria-label="Speak"
+                >
+                  <Volume2 className={cn('size-3.5', isPlayingThis && 'animate-pulse')} />
+                </button>
+              )}
               <button
                 onClick={onClose}
                 className={'text-muted-foreground hover:text-foreground transition-colors p-1'}
