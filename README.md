@@ -1,4 +1,4 @@
-<img width="1461" height="751" alt="app-mockup" src="https://github.com/user-attachments/assets/0e678490-e9e0-4ce0-b15d-7b0656f5b1c1" />
+<img width="1511" height="828" alt="web-app" src="https://github.com/user-attachments/assets/01c8a960-90c1-4b39-81b9-84f6091323a8" />
 
 # Glass
 
