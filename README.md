@@ -1,3 +1,5 @@
+<img width="1461" height="751" alt="app-mockup" src="https://github.com/user-attachments/assets/0e678490-e9e0-4ce0-b15d-7b0656f5b1c1" />
+
 # Glass
 
 AI that helps you speak any language in the real world.
