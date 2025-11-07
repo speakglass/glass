@@ -28,6 +28,21 @@ def _client_id_from_ws(websocket: WebSocket) -> str:
     return getattr(client, "host", "unknown")
 
 
+def _is_origin_allowed(origin: str | None) -> bool:
+    """Check Origin against GLASS_ALLOW_ORIGIN, supporting comma-separated values and wildcard.
+
+    Mirrors the logic used in HTTP CORS setup so WS behaves consistently.
+    """
+    settings = get_settings()
+    # Build list from comma-separated env string
+    items = [part.strip() for part in (settings.allow_origin or "").split(",")]
+    allow_list = [item for item in items if item]
+    # Wildcard or empty means allow all
+    if not allow_list or "*" in allow_list:
+        return True
+    return origin in allow_list
+
+
 @router.websocket("/ws/audio")
 async def audio_stream(
     websocket: WebSocket,
@@ -40,8 +55,7 @@ async def audio_stream(
     # Minimal origin check before accepting
     settings = get_settings()
     origin = websocket.headers.get("origin")
-    allowed = settings.allow_origin
-    if allowed != "*" and origin != allowed:
+    if not _is_origin_allowed(origin):
         await websocket.close(code=1008)
         return
 
@@ -81,8 +95,7 @@ async def audio_stream_multiplexed(
     """Multiplexed audio: 0x01=mic, 0x02=system."""
     settings = get_settings()
     origin = websocket.headers.get("origin")
-    allowed = settings.allow_origin
-    if allowed != "*" and origin != allowed:
+    if not _is_origin_allowed(origin):
         await websocket.close(code=1008)
         return
 
@@ -148,8 +161,7 @@ async def _queue_to_iter(queue: asyncio.Queue):
 async def session_events(websocket: WebSocket, sid: str) -> None:
     settings = get_settings()
     origin = websocket.headers.get("origin")
-    allowed = settings.allow_origin
-    if allowed != "*" and origin != allowed:
+    if not _is_origin_allowed(origin):
         await websocket.close(code=1008)
         return
 
