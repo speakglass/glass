@@ -28,8 +28,16 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Glass API", version="0.1.0")
     app.state.app_state = build_app_state(settings)
 
-    allow_origins = [settings.allow_origin] if settings.allow_origin != "*" else ["*"]
-    allow_credentials = settings.allow_credentials and settings.allow_origin != "*"
+    # Build CORS allow_origins list from GLASS_ALLOW_ORIGIN (supports comma-separated)
+    items = [part.strip() for part in (settings.allow_origin or "").split(",")]
+    items = [item for item in items if item]
+    if not items or "*" in items:
+        allow_origins = ["*"]
+    else:
+        allow_origins = items
+
+    # Only allow credentials when not using wildcard
+    allow_credentials = settings.allow_credentials and not (len(allow_origins) == 1 and allow_origins[0] == "*")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allow_origins,
