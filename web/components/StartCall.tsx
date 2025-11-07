@@ -172,6 +172,7 @@ export default function StartCall() {
     <AnimatePresence>
       {status.value === 'idle' || status.value === 'connecting' || status.value === 'disconnected' ? (
         <motion.div
+          key="overlay"
           ref={containerRef}
           className={'fixed inset-0 p-4 flex items-center justify-center bg-background'}
           style={
@@ -756,6 +757,7 @@ export default function StartCall() {
 
       {/* Global Waitlist Modal */}
       <WaitlistModal
+        key="waitlist-modal"
         isOpen={showWaitlistModal}
         onClose={() => setShowWaitlistModal(false)}
         onSuccess={() => setShowWaitlistModal(false)}

@@ -3,7 +3,7 @@ import Messages from './Messages';
 import Controls from './Controls';
 import StartCall from './StartCall';
 import CallSummary from './CallSummary';
-import { ComponentRef, useEffect, useRef, useState } from 'react';
+import { ComponentRef, useEffect, useRef, useState, forwardRef } from 'react';
 import { useGlass, FeedbackMode, SuggestMode, AISuggestion } from '@/contexts/GlassContext';
 import { AnimatePresence, motion } from 'motion/react';
 import { Loader2, Sparkles, MessageCircleMore, ChevronDown, Check, Volume2, X, SlidersHorizontal } from 'lucide-react';
@@ -11,245 +11,248 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/utils';
 import Progress from '@/components/ui/progress';
 
-function SuggestionBubble({
-  suggestion,
-  onClose,
-  durationSec,
-}: {
+type SuggestionBubbleProps = {
   suggestion: AISuggestion;
   onClose: () => void;
   durationSec: number;
-}) {
-  const {
-    speakText,
-    isSpeaking,
-    stopSpeaking,
-    messages,
-    pauseSuggestionTimer,
-    resumeSuggestionTimer,
-    getSuggestionRemainingMs,
-  } = useGlass();
-  const [isPlayingThis, setIsPlayingThis] = useState(false);
-  const [matchedChars, setMatchedChars] = useState(0);
-  const maxMatchedRef = useRef(0);
-  const progressRef = useRef<HTMLDivElement | null>(null);
+};
 
-  const typeLabels = {
-    answer: 'Suggested Answer',
-    follow_up: 'Follow-up Suggestion',
-    feedback: 'Feedback',
-  } as const;
+const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
+  ({ suggestion, onClose, durationSec }, ref) => {
+    const {
+      speakText,
+      isSpeaking,
+      stopSpeaking,
+      messages,
+      pauseSuggestionTimer,
+      resumeSuggestionTimer,
+      getSuggestionRemainingMs,
+    } = useGlass();
+    const [isPlayingThis, setIsPlayingThis] = useState(false);
+    const [matchedChars, setMatchedChars] = useState(0);
+    const maxMatchedRef = useRef(0);
+    const progressRef = useRef<HTMLDivElement | null>(null);
 
-  const handleSpeak = async () => {
-    if (isPlayingThis) {
-      stopSpeaking();
-      setIsPlayingThis(false);
-      return;
-    }
-    const textToSpeak = suggestion.type === 'feedback' ? suggestion.text : suggestion.target_text;
-    if (textToSpeak) {
-      try {
-        setIsPlayingThis(true);
-        await speakText(textToSpeak);
-        const interval = setInterval(() => {
-          if (!isSpeaking) {
-            setIsPlayingThis(false);
-            clearInterval(interval);
-          }
-        }, 100);
-      } catch {
+    const typeLabels = {
+      answer: 'Suggested Answer',
+      follow_up: 'Follow-up Suggestion',
+      feedback: 'Feedback',
+    } as const;
+
+    const handleSpeak = async () => {
+      if (isPlayingThis) {
+        stopSpeaking();
         setIsPlayingThis(false);
+        return;
       }
-    }
-  };
+      const textToSpeak = suggestion.type === 'feedback' ? suggestion.text : suggestion.target_text;
+      if (textToSpeak) {
+        try {
+          setIsPlayingThis(true);
+          await speakText(textToSpeak);
+          const interval = setInterval(() => {
+            if (!isSpeaking) {
+              setIsPlayingThis(false);
+              clearInterval(interval);
+            }
+          }, 100);
+        } catch {
+          setIsPlayingThis(false);
+        }
+      }
+    };
 
-  // --- Karaoke matching --------------------------------------------------
-  const normalizeToken = (t: string) => t.toLowerCase().replace(/[\.,!?;:\()"'`]/g, '');
-  const tokenizeWithIndex = (text: string) => {
-    const tokens: { token: string; start: number; end: number }[] = [];
-    const re = /\S+/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(text)) !== null) {
-      tokens.push({ token: m[0], start: m.index, end: m.index + m[0].length });
-    }
-    return tokens;
-  };
-  const lev1 = (a: string, b: string) => {
-    if (a === b) return 0;
-    if (Math.abs(a.length - b.length) > 1) return 2;
-    // simple O(n) for small tokens: only allow <=1 edits
-    let i = 0,
-      j = 0,
-      edits = 0;
-    while (i < a.length && j < b.length) {
-      if (a[i] === b[j]) {
-        i++;
-        j++;
-      } else {
-        edits++;
-        if (edits > 1) return 2;
-        if (a.length > b.length) i++;
-        else if (b.length > a.length) j++;
-        else {
+    // --- Karaoke matching --------------------------------------------------
+    const normalizeToken = (t: string) => t.toLowerCase().replace(/[\.,!?;:\()"'`]/g, '');
+    const tokenizeWithIndex = (text: string) => {
+      const tokens: { token: string; start: number; end: number }[] = [];
+      const re = /\S+/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(text)) !== null) {
+        tokens.push({ token: m[0], start: m.index, end: m.index + m[0].length });
+      }
+      return tokens;
+    };
+    const lev1 = (a: string, b: string) => {
+      if (a === b) return 0;
+      if (Math.abs(a.length - b.length) > 1) return 2;
+      // simple O(n) for small tokens: only allow <=1 edits
+      let i = 0,
+        j = 0,
+        edits = 0;
+      while (i < a.length && j < b.length) {
+        if (a[i] === b[j]) {
           i++;
           j++;
+        } else {
+          edits++;
+          if (edits > 1) return 2;
+          if (a.length > b.length) i++;
+          else if (b.length > a.length) j++;
+          else {
+            i++;
+            j++;
+          }
         }
       }
-    }
-    if (i < a.length || j < b.length) edits++;
-    return edits;
-  };
-  const similar = (a: string, b: string) => {
-    const na = normalizeToken(a);
-    const nb = normalizeToken(b);
-    if (!na || !nb) return false;
-    if (na === nb) return true;
-    if ((na.length >= 3 && nb.includes(na)) || (nb.length >= 3 && na.includes(nb))) return true;
-    return Math.max(na.length, nb.length) >= 4 && lev1(na, nb) <= 1;
-  };
-
-  useEffect(() => {
-    if (suggestion.type === 'feedback') return;
-    const text = suggestion.target_text || '';
-    if (!text) return;
-    const sugTokens = tokenizeWithIndex(text);
-    if (sugTokens.length === 0) return;
-
-    // Find latest user partial or final content
-    let spoken = '';
-    for (let k = messages.length - 1; k >= 0; k--) {
-      const msg = messages[k];
-      if (msg.message.role === 'user') {
-        spoken = (msg.partial && msg.partial.trim()) || msg.message.content || '';
-        if (spoken) break;
-      }
-    }
-    if (!spoken) return;
-    const speakTokens = tokenizeWithIndex(spoken);
-    let j = 0;
-    let lastMatchEndIndex = 0;
-    for (let i = 0; i < sugTokens.length; i++) {
-      let matched = false;
-      for (; j < speakTokens.length; j++) {
-        if (similar(sugTokens[i].token, speakTokens[j].token)) {
-          matched = true;
-          lastMatchEndIndex = sugTokens[i].end; // end index within original suggestion text
-          j++;
-          break;
-        }
-      }
-      if (!matched) break;
-    }
-    if (lastMatchEndIndex > maxMatchedRef.current) {
-      maxMatchedRef.current = lastMatchEndIndex;
-      setMatchedChars(lastMatchEndIndex);
-      // If fully matched, close immediately
-      if (lastMatchEndIndex >= text.length) {
-        onClose();
-      }
-    }
-  }, [messages, suggestion, onClose]);
-
-  // Smooth visual countdown via requestAnimationFrame (no React state churn)
-  useEffect(() => {
-    let rafId: number;
-    const tick = () => {
-      const ms = getSuggestionRemainingMs(suggestion.id);
-      const ratio = Math.max(0, Math.min(1, ms / (durationSec * 1000)));
-      if (progressRef.current) {
-        progressRef.current.style.width = `${ratio * 100}%`;
-      }
-      rafId = requestAnimationFrame(tick);
+      if (i < a.length || j < b.length) edits++;
+      return edits;
     };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [getSuggestionRemainingMs, suggestion.id, durationSec]);
+    const similar = (a: string, b: string) => {
+      const na = normalizeToken(a);
+      const nb = normalizeToken(b);
+      if (!na || !nb) return false;
+      if (na === nb) return true;
+      if ((na.length >= 3 && nb.includes(na)) || (nb.length >= 3 && na.includes(nb))) return true;
+      return Math.max(na.length, nb.length) >= 4 && lev1(na, nb) <= 1;
+    };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      onPointerEnter={() => pauseSuggestionTimer(suggestion.id)}
-      onPointerLeave={() => resumeSuggestionTimer(suggestion.id)}
-      onPointerCancel={() => resumeSuggestionTimer(suggestion.id)}
-    >
-      <div className={'relative'}>
-        <div className={'p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-xl overflow-hidden'}>
-          <div className={'flex items-start justify-between gap-2 mb-2'}>
-            <div className={'flex items-center gap-2'}>
-              {suggestion.type === 'feedback' ? (
-                <MessageCircleMore className={'size-4 text-primary'} />
-              ) : (
-                <Sparkles className={'size-4 text-primary'} />
-              )}
-              <span className={'text-xs font-medium text-muted-foreground'}>{typeLabels[suggestion.type]}</span>
-            </div>
-            <div className={'flex items-center gap-1'}>
-              {suggestion.type !== 'feedback' && (
-                <button
-                  onClick={handleSpeak}
-                  className={cn(
-                    'text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-accent/50',
-                    isPlayingThis && 'text-primary'
-                  )}
-                  aria-label="Speak"
-                >
-                  <Volume2 className={cn('size-3.5', isPlayingThis && 'animate-pulse')} />
-                </button>
-              )}
-              <button
-                onClick={onClose}
-                className={'text-muted-foreground hover:text-foreground transition-colors p-1'}
-                aria-label="Close"
-              >
-                <X className={'size-3.5'} />
-              </button>
-            </div>
-          </div>
-          {suggestion.type === 'feedback' ? (
-            // Render feedback consistently: structured if available, else plain text
-            suggestion.target_text || suggestion.pronunciation ? (
-              <div className={'space-y-1.5'}>
-                {suggestion.reason_native && (
-                  <div className={'text-sm text-foreground'}>{suggestion.reason_native}</div>
+    useEffect(() => {
+      if (suggestion.type === 'feedback') return;
+      const text = suggestion.target_text || '';
+      if (!text) return;
+      const sugTokens = tokenizeWithIndex(text);
+      if (sugTokens.length === 0) return;
+
+      // Find latest user partial or final content
+      let spoken = '';
+      for (let k = messages.length - 1; k >= 0; k--) {
+        const msg = messages[k];
+        if (msg.message.role === 'user') {
+          spoken = (msg.partial && msg.partial.trim()) || msg.message.content || '';
+          if (spoken) break;
+        }
+      }
+      if (!spoken) return;
+      const speakTokens = tokenizeWithIndex(spoken);
+      let j = 0;
+      let lastMatchEndIndex = 0;
+      for (let i = 0; i < sugTokens.length; i++) {
+        let matched = false;
+        for (; j < speakTokens.length; j++) {
+          if (similar(sugTokens[i].token, speakTokens[j].token)) {
+            matched = true;
+            lastMatchEndIndex = sugTokens[i].end; // end index within original suggestion text
+            j++;
+            break;
+          }
+        }
+        if (!matched) break;
+      }
+      if (lastMatchEndIndex > maxMatchedRef.current) {
+        maxMatchedRef.current = lastMatchEndIndex;
+        setMatchedChars(lastMatchEndIndex);
+        // If fully matched, close immediately
+        if (lastMatchEndIndex >= text.length) {
+          onClose();
+        }
+      }
+    }, [messages, suggestion, onClose]);
+
+    // Smooth visual countdown via requestAnimationFrame (no React state churn)
+    useEffect(() => {
+      let rafId: number;
+      const tick = () => {
+        const ms = getSuggestionRemainingMs(suggestion.id);
+        const ratio = Math.max(0, Math.min(1, ms / (durationSec * 1000)));
+        if (progressRef.current) {
+          progressRef.current.style.width = `${ratio * 100}%`;
+        }
+        rafId = requestAnimationFrame(tick);
+      };
+      rafId = requestAnimationFrame(tick);
+      return () => cancelAnimationFrame(rafId);
+    }, [getSuggestionRemainingMs, suggestion.id, durationSec]);
+
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        onPointerEnter={() => pauseSuggestionTimer(suggestion.id)}
+        onPointerLeave={() => resumeSuggestionTimer(suggestion.id)}
+        onPointerCancel={() => resumeSuggestionTimer(suggestion.id)}
+      >
+        <div className={'relative'}>
+          <div className={'p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-xl overflow-hidden'}>
+            <div className={'flex items-start justify-between gap-2 mb-2'}>
+              <div className={'flex items-center gap-2'}>
+                {suggestion.type === 'feedback' ? (
+                  <MessageCircleMore className={'size-4 text-primary'} />
+                ) : (
+                  <Sparkles className={'size-4 text-primary'} />
                 )}
-                {suggestion.target_text && (
-                  <div className={'text-xs text-muted-foreground'}>
-                    <span>{suggestion.target_text}</span>
+                <span className={'text-xs font-medium text-muted-foreground'}>{typeLabels[suggestion.type]}</span>
+              </div>
+              <div className={'flex items-center gap-1'}>
+                {suggestion.type !== 'feedback' && (
+                  <button
+                    onClick={handleSpeak}
+                    className={cn(
+                      'text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-accent/50',
+                      isPlayingThis && 'text-primary'
+                    )}
+                    aria-label="Speak"
+                  >
+                    <Volume2 className={cn('size-3.5', isPlayingThis && 'animate-pulse')} />
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className={'text-muted-foreground hover:text-foreground transition-colors p-1'}
+                  aria-label="Close"
+                >
+                  <X className={'size-3.5'} />
+                </button>
+              </div>
+            </div>
+            {suggestion.type === 'feedback' ? (
+              // Render feedback consistently: structured if available, else plain text
+              suggestion.target_text || suggestion.pronunciation ? (
+                <div className={'space-y-1.5'}>
+                  {suggestion.reason_native && (
+                    <div className={'text-sm text-foreground'}>{suggestion.reason_native}</div>
+                  )}
+                  {suggestion.target_text && (
+                    <div className={'text-xs text-muted-foreground'}>
+                      <span>{suggestion.target_text}</span>
+                    </div>
+                  )}
+                  {suggestion.pronunciation && (
+                    <div className={'text-sm text-emerald-400 opacity-90'}>{suggestion.pronunciation}</div>
+                  )}
+                </div>
+              ) : (
+                <p className={'text-sm'}>{suggestion.text}</p>
+              )
+            ) : (
+              <div className={'space-y-1.5'}>
+                {'target_text' in suggestion && suggestion.target_text && (
+                  <div className={'text-sm text-foreground'}>
+                    <span className={'text-primary'}>{suggestion.target_text.slice(0, matchedChars)}</span>
+                    <span>{suggestion.target_text.slice(matchedChars)}</span>
                   </div>
                 )}
-                {suggestion.pronunciation && (
+                {'pronunciation' in suggestion && suggestion.pronunciation && (
                   <div className={'text-sm text-emerald-400 opacity-90'}>{suggestion.pronunciation}</div>
                 )}
+                {'native_translation' in suggestion && suggestion.native_translation && (
+                  <div className={'text-xs text-muted-foreground'}>{suggestion.native_translation}</div>
+                )}
               </div>
-            ) : (
-              <p className={'text-sm'}>{suggestion.text}</p>
-            )
-          ) : (
-            <div className={'space-y-1.5'}>
-              {'target_text' in suggestion && suggestion.target_text && (
-                <div className={'text-sm text-foreground'}>
-                  <span className={'text-primary'}>{suggestion.target_text.slice(0, matchedChars)}</span>
-                  <span>{suggestion.target_text.slice(matchedChars)}</span>
-                </div>
-              )}
-              {'pronunciation' in suggestion && suggestion.pronunciation && (
-                <div className={'text-sm text-emerald-400 opacity-90'}>{suggestion.pronunciation}</div>
-              )}
-              {'native_translation' in suggestion && suggestion.native_translation && (
-                <div className={'text-xs text-muted-foreground'}>{suggestion.native_translation}</div>
-              )}
+            )}
+            <div className={'absolute bottom-0 left-0 right-0 h-[2px] bg-border/30'}>
+              <div ref={progressRef} className={'h-full bg-primary/40'} style={{ width: '100%' }} />
             </div>
-          )}
-          <div className={'absolute bottom-0 left-0 right-0 h-[2px] bg-border/30'}>
-            <div ref={progressRef} className={'h-full bg-primary/40'} style={{ width: '100%' }} />
           </div>
         </div>
-      </div>
-    </motion.div>
-  );
-}
+      </motion.div>
+    );
+  }
+);
+
+SuggestionBubble.displayName = 'SuggestionBubble';
 
 export default function Chat() {
   const ref = useRef<ComponentRef<typeof Messages> | null>(null);
@@ -375,6 +378,7 @@ export default function Chat() {
                 <AnimatePresence>
                   {showManualButtons && (
                     <motion.div
+                      key={'manual-buttons'}
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
@@ -433,7 +437,9 @@ export default function Chat() {
                           initial={{ opacity: 0, y: -8 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -8 }}
-                          className={'absolute right-0 top-full mt-1 w-56 bg-card border border-border/50 rounded-lg shadow-lg overflow-hidden z-50'}
+                          className={
+                            'absolute right-0 top-full mt-1 w-56 bg-card border border-border/50 rounded-lg shadow-lg overflow-hidden z-50'
+                          }
                         >
                           <div className={'py-1'}>
                             <div className={'px-3 py-1.5 text-[11px] uppercase tracking-wide opacity-60'}>Suggest</div>
@@ -453,7 +459,11 @@ export default function Chat() {
                                 {suggestMode === mode && <Check className={'size-3'} />}
                               </button>
                             ))}
-                            <div className={'px-3 py-1.5 text-[11px] uppercase tracking-wide opacity-60 border-t border-border/50'}>
+                            <div
+                              className={
+                                'px-3 py-1.5 text-[11px] uppercase tracking-wide opacity-60 border-t border-border/50'
+                              }
+                            >
                               Feedback
                             </div>
                             {(['always', 'auto', 'off'] as FeedbackMode[]).map((mode) => (
@@ -594,7 +604,11 @@ export default function Chat() {
                         />
                       ))
                     ) : (
-                      <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}>
+                      <motion.div
+                        key={'listening-fallback'}
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                      >
                         <div className={'p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-xl'}>
                           <div className={'flex items-center justify-between'}>
                             <div className={'flex items-center gap-2'}>
@@ -656,6 +670,7 @@ export default function Chat() {
       <AnimatePresence>
         {showSummary && conversationAnalysis && (
           <CallSummary
+            key={'call-summary'}
             sessionId={conversationAnalysis.sessionId}
             scores={conversationAnalysis.scores}
             extractedInfo={conversationAnalysis.extractedInfo}

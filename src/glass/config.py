@@ -38,8 +38,6 @@ class Settings(BaseSettings):
     # Security limits (minimal defaults)
     ws_max_session_seconds: int = 120
     ws_max_message_bytes: int = 131072  # 128 KiB
-    # Usage limits (None disables)
-    max_sessions_per_client: int | None = None
     # Conversation length cap for auto-ending sessions (None disables)
     max_full_conversation: int | None = None
     default_tone: str = "neutral"

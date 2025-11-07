@@ -17,6 +17,7 @@ export default function Controls() {
     unmute,
     mute,
     micFft,
+    budgetStatus,
     remainingSeconds,
     totalSeconds,
     startRemainingSeconds,
@@ -80,21 +81,26 @@ export default function Controls() {
               <MicFFT fft={micFft} className={'fill-current'} />
             </div>
 
-            {(typeof elapsedSeconds === 'number' || typeof remainingSeconds === 'number') &&
-            (typeof startRemainingSeconds === 'number' || typeof totalSeconds === 'number') ? (
+            {status.value === 'connected' &&
+            (budgetStatus === 'unknown' || typeof startRemainingSeconds === 'number') ? (
               <div className={'relative flex items-center gap-2'}>
                 {(() => {
-                  const base =
-                    typeof startRemainingSeconds === 'number' ? startRemainingSeconds : (totalSeconds as number);
-                  const elapsed =
-                    typeof elapsedSeconds === 'number'
-                      ? elapsedSeconds
-                      : Math.max(0, base - (remainingSeconds as number));
+                  const baseKnown = typeof startRemainingSeconds === 'number';
+                  const base = baseKnown
+                    ? (startRemainingSeconds as number)
+                    : typeof totalSeconds === 'number'
+                    ? (totalSeconds as number)
+                    : undefined;
+                  const elapsed = typeof elapsedSeconds === 'number' ? elapsedSeconds : 0;
                   return (
                     <span className={'text-sm tabular-nums'}>
                       <span className={lowTime ? 'text-rose-600 dark:text-rose-400' : undefined}>{fmt(elapsed)}</span>
                       {' / '}
-                      <span>{fmt(base)}</span>
+                      {baseKnown ? (
+                        <span>{fmt(base)}</span>
+                      ) : (
+                        <span className={'inline-block align-middle w-10 h-4 rounded bg-muted/60 animate-pulse'} />
+                      )}
                     </span>
                   );
                 })()}

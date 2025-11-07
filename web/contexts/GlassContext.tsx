@@ -110,6 +110,7 @@ interface GlassContextValue {
   suggestions: AISuggestion[];
   conversationAnalysis: ConversationAnalysis | null;
   showSummary: boolean;
+  budgetStatus: 'unknown' | 'enabled' | 'disabled';
   remainingSeconds?: number;
   totalSeconds?: number;
   startRemainingSeconds?: number;
@@ -158,11 +159,13 @@ export function GlassProvider({
   const [totalSeconds, setTotalSeconds] = useState<number | undefined>(undefined);
   const [startRemainingSeconds, setStartRemainingSeconds] = useState<number | undefined>(undefined);
   const [elapsedSeconds, setElapsedSeconds] = useState<number | undefined>(undefined);
+  const [budgetStatus, setBudgetStatus] = useState<'unknown' | 'enabled' | 'disabled'>('disabled');
   const serverRemainingRef = useRef<number | undefined>(undefined);
   const lastSyncTsRef = useRef<number | undefined>(undefined);
   const localTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRemainingRef = useRef<number | undefined>(undefined);
+  const budgetProbeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [settings, setSettings] = useState<VoiceSettings>(() => {
     if (typeof window === 'undefined')
       return {
@@ -251,17 +254,14 @@ export function GlassProvider({
               timestamp,
             };
       setSuggestions((prev) => [...prev, suggestion]);
-
-      const durationMs = Math.max(1, settings.suggestionDurationSec ?? 10) * 1000;
-      setTimeout(() => {
-        setSuggestions((prev) => prev.filter((s) => s.id !== id));
-      }, durationMs);
     },
     [settings.suggestionDurationSec]
   );
 
   const removeSuggestion = useCallback((id: string) => {
     setSuggestions((prev) => prev.filter((s) => s.id !== id));
+    // Clean up any paused state for this suggestion
+    pausedMapRef.current.delete(id);
   }, []);
 
   const getSuggestionRemainingMs = useCallback(
@@ -297,6 +297,33 @@ export function GlassProvider({
     info.pausedAt = 0;
     pausedMapRef.current.set(id, info);
   }, []);
+
+  // Auto-remove expired suggestions in a loop that respects pause/resume
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const total = Math.max(1, settings.suggestionDurationSec ?? 10) * 1000;
+      const now = Date.now();
+      setSuggestions((prev) => {
+        let changed = false;
+        const next = prev.filter((s) => {
+          const pausedInfo = pausedMapRef.current.get(s.id);
+          const pausedDelta = pausedInfo
+            ? pausedInfo.accumulated + (pausedInfo.paused ? Math.max(0, now - pausedInfo.pausedAt) : 0)
+            : 0;
+          const elapsed = now - (s.timestamp || 0) - pausedDelta;
+          const remaining = total - elapsed;
+          if (remaining <= 0) {
+            pausedMapRef.current.delete(s.id);
+            changed = true;
+            return false;
+          }
+          return true;
+        });
+        return changed ? next : prev;
+      });
+    }, 100);
+    return () => clearInterval(intervalId);
+  }, [settings.suggestionDurationSec]);
 
   const wsRef = useRef<WebSocket | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
@@ -527,6 +554,13 @@ export function GlassProvider({
         ws.onopen = () => {
           console.log('WebSocket connected to Glass API');
           setStatus({ value: 'connected' });
+          // Assume budget unknown at connect; show skeleton for a short probe window
+          setBudgetStatus('unknown');
+          if (budgetProbeTimerRef.current) clearTimeout(budgetProbeTimerRef.current);
+          budgetProbeTimerRef.current = setTimeout(() => {
+            // If no time event arrived during probe, hide timer UI (no limit)
+            setBudgetStatus((prev) => (prev === 'unknown' ? 'disabled' : prev));
+          }, 2000);
           startAudioStreaming(ws, micStream, systemStream);
           // Initialize elapsed timer (client-side, 1s tick)
           try {
@@ -586,34 +620,38 @@ export function GlassProvider({
           if (typeof event.data === 'string') {
             try {
               const data = JSON.parse(event.data);
-              // Limits
+              // Limits (time-based only)
               if (data.t === 'limit_reached') {
-                const reason = data.reason as 'sessions' | 'conversation' | undefined;
-                if (reason === 'conversation') {
-                  try {
-                    toast.info('Session length limit reached', {
-                      description: 'We saved your progress. Showing summary...',
-                    });
-                  } catch {}
-                  // Run End Call flow (analyze and show summary)
-                  disconnect().catch(() => {});
-                } else {
-                  setStatus({ value: 'idle' });
-                  try {
-                    toast.info('You’ve used your demo sessions', {
-                      description: 'Join the waitlist to get more access.',
-                    });
-                  } catch {}
-                  try {
-                    window.dispatchEvent(
-                      new CustomEvent('glass:open-waitlist', {
-                        detail: { sessionId: sessionIdRef.current },
-                      })
-                    );
-                  } catch {}
-                  try {
-                    ws.close();
-                  } catch {}
+                const reason = data.reason as 'time' | undefined;
+                const receivedAnyTime = startRemainingRef.current !== undefined;
+                if (reason === 'time') {
+                  // Time-limited is confirmed
+                  setBudgetStatus('enabled');
+                  if (receivedAnyTime) {
+                    try {
+                      toast.info('Trial session ended due to time limit.');
+                    } catch {}
+                    // Run End Call flow (analyze and show summary)
+                    disconnect().catch(() => {});
+                  } else {
+                    // No time available at session start → waitlist path
+                    setStatus({ value: 'idle' });
+                    try {
+                      toast.info("You've used your free time", {
+                        description: 'Join the waitlist to get more access.',
+                      });
+                    } catch {}
+                    try {
+                      window.dispatchEvent(
+                        new CustomEvent('glass:open-waitlist', {
+                          detail: { sessionId: sessionIdRef.current },
+                        })
+                      );
+                    } catch {}
+                    try {
+                      ws.close();
+                    } catch {}
+                  }
                 }
                 return;
               }
@@ -640,6 +678,11 @@ export function GlassProvider({
           // Only set disconnected status if this wasn't an intentional disconnect
           if (!isIntentionalDisconnectRef.current) {
             setStatus({ value: 'disconnected' });
+          }
+          // Clear budget probe timer
+          if (budgetProbeTimerRef.current) {
+            clearTimeout(budgetProbeTimerRef.current);
+            budgetProbeTimerRef.current = null;
           }
           if (heartbeatIntervalRef.current) {
             clearInterval(heartbeatIntervalRef.current);
@@ -705,6 +748,7 @@ export function GlassProvider({
       if (data.t === 'time_remaining') {
         const secs = typeof data.seconds === 'number' ? data.seconds : undefined;
         const total = typeof data.total === 'number' ? data.total : undefined;
+        setBudgetStatus('enabled');
         // On first receipt during a session, capture the starting remaining seconds (guarded by ref)
         if (typeof secs === 'number' && startRemainingRef.current === undefined) {
           startRemainingRef.current = secs;
@@ -1407,6 +1451,7 @@ export function GlassProvider({
     suggestions,
     conversationAnalysis,
     showSummary,
+    budgetStatus,
     updateSettings,
     updateFeedbackMode,
     updateSuggestMode,

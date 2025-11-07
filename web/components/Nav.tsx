@@ -22,7 +22,7 @@ export const Nav = () => {
     <div className={'fixed top-0 left-0 right-0 px-4 py-2 flex items-center justify-between h-14 z-50'}>
       <div className={'flex items-center gap-2'}>
         <a href="https://www.speakglass.com" aria-label="Go to speakglass.com">
-          <Image src={logoSrc} alt="Glass" width={48} height={24} className={'object-contain'} />
+          <Image src={logoSrc} alt="Glass" width={48} height={24} className={'object-contain'} style={{ height: 'auto' }} />
         </a>
       </div>
       <div className={'flex items-center gap-1'}>

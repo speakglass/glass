@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import time
 import uuid
+import logging
 
 from .adapters.asr import build_asr_adapter
 from .adapters.diarization import build_diarization_adapter
@@ -15,6 +16,7 @@ from .adapters.vision import build_vision_adapter
 from .config import Settings
 from .domain.pipeline import SessionPipeline
 
+LOGGER = logging.getLogger(__name__)    
 
 class SessionManager:
     """Registry for session pipelines."""
@@ -82,9 +84,24 @@ class AppState:
             if settings.redis_url:
                 # Lazy import; optional dependency
                 from redis.asyncio import Redis  # type: ignore
-                self._redis = Redis.from_url(settings.redis_url, encoding="utf-8", decode_responses=True)
-        except Exception:
+                # Add socket timeouts to avoid hangs on connect/read
+                self._redis = Redis.from_url(
+                    settings.redis_url,
+                    encoding="utf-8",
+                    decode_responses=True,
+                    socket_connect_timeout=5.0,
+                    socket_timeout=5.0,
+                )
+        except Exception as e:
             self._redis = None
+
+        # Strict fail if time budget is enabled but Redis client is unavailable
+        if settings.free_minutes_per_user is not None and self._redis is None:
+            raise RuntimeError(
+                "GLASS_FREE_MINUTES_PER_USER is set, but Redis client is unavailable. "
+                "Ensure redis>=5 is installed and GLASS_REDIS_URL is a valid, reachable URL (e.g., rediss://...:6380/0), "
+                "or disable GLASS_FREE_MINUTES_PER_USER."
+            )
         asr_adapter = build_asr_adapter(settings)
         llm_adapter = build_llm_adapter(settings)
         memory_adapter = build_memory_adapter(settings)
@@ -99,93 +116,118 @@ class AppState:
             full_conversation_cap=int(settings.max_full_conversation or 0),
             tail_size=int(settings.tail_size or 20),
         )
-        # Minimal in-memory usage tracking (per-client unique sessions)
-        self._usage_lock = asyncio.Lock()
-        # Tracks per-client unique session ids for the current UTC day
-        # { client_id: { 'day': 'YYYY-MM-DD', 'sids': set([...]) } }
-        self._client_usage: dict[str, dict[str, object]] = {}
         # Guard to avoid multiple budget decrement watchers per client (per-process)
         self._budget_watchers_lock = asyncio.Lock()
         self._budget_watchers: set[str] = set()
+        # In-memory fallback remaining seconds per client (used if Redis temporarily fails)
+        self._fallback_remaining: dict[str, int] = {}
+        # In-memory fallback deadline (epoch seconds) per client for deadline-based budget
+        self._fallback_end_at: dict[str, int] = {}
 
-    async def record_session_and_check_limit(self, client_id: str, session_id: str) -> tuple[bool, int]:
-        """Record unique session for client for the current UTC day.
-
-        Returns (allowed, remaining_for_today). Duplicate session_id does not re-count.
-        Resets counts automatically when the UTC day changes.
-        """
-        # If disabled
-        if self.settings.max_sessions_per_client is None:
-            return True, 0
-
-        limit = int(self.settings.max_sessions_per_client or 0)
-        current_day = time.strftime("%Y-%m-%d", time.gmtime())
-        async with self._usage_lock:
-            entry = self._client_usage.get(client_id)
-            if entry is None or entry.get("day") != current_day:
-                entry = {"day": current_day, "sids": set()}
-                self._client_usage[client_id] = entry
-            sids = entry["sids"]  # type: ignore[assignment]
-            # mypy: sids is a set[str]
-            if isinstance(sids, set):
-                if session_id in sids:
-                    remaining = max(0, limit - len(sids))
-                    return True, remaining
-                if len(sids) >= limit:
-                    return False, 0
-                sids.add(session_id)
-                remaining = max(0, limit - len(sids))
-                return True, remaining
-            # Fallback safeguard
-            self._client_usage[client_id] = {"day": current_day, "sids": {session_id}}
-            remaining = max(0, limit - 1)
-            return True, remaining
+    # Removed per-day session cap logic
 
     # --------- Time budget (shared across sessions) ----------
     def has_budget_store(self) -> bool:
         """True if time budget is enabled and Redis is configured."""
         return self.settings.free_minutes_per_user is not None and self._redis is not None
 
-    async def get_remaining_seconds(self, client_id: str) -> int:
-        """Return remaining free-usage seconds for a client from Redis; initializes if missing.
-        If budget is disabled or Redis not configured, returns a large sentinel.
+    # --------- Deadline-based budget helpers (no per-second decrement) ----------
+    async def get_or_init_end_at(self, client_id: str) -> int:
+        """Return per-client deadline (epoch seconds). Initialize if missing.
+
+        Uses Redis SETNX semantics; falls back to in-memory storage if Redis fails.
         """
-        if not self.has_budget_store():
-            return 10**12
         default_seconds = max(0, int(self.settings.free_minutes_per_user or 0) * 60)
+        now = int(time.time())
+        if not self.has_budget_store():
+            end_at = self._fallback_end_at.get(client_id)
+            if end_at is None:
+                end_at = now + default_seconds
+                self._fallback_end_at[client_id] = end_at
+            return end_at
+        try:
+            key = f"glass:budget:{client_id}:end_at"
+            end_at_val = await self._redis.get(key)  # type: ignore[operator]
+            if end_at_val is None:
+                # Attempt to initialize; race-safe via NX
+                desired = now + default_seconds
+                await self._redis.set(key, desired, nx=True)  # type: ignore[operator]
+                end_at_val = await self._redis.get(key)  # type: ignore[operator]
+                if end_at_val is None:
+                    end_at_val = desired
+            end_at = int(end_at_val)
+            # Cache fallback
+            self._fallback_end_at[client_id] = end_at
+            return end_at
+        except Exception as e:
+            LOGGER.warning("[Budget] get_or_init_end_at Redis error: %s; using fallback", e)
+            end_at = self._fallback_end_at.get(client_id)
+            if end_at is None:
+                end_at = now + default_seconds
+                self._fallback_end_at[client_id] = end_at
+            return end_at
+
+    async def get_remaining_seconds_deadline(self, client_id: str) -> int:
+        """Compute remaining seconds from stored deadline; never returns sentinel."""
+        end_at = await self.get_or_init_end_at(client_id)
+        now = int(time.time())
+        return max(0, int(end_at - now))
+
+    async def get_remaining_seconds(self, client_id: str) -> int:
+        """Return remaining free-usage seconds; never return sentinel values.
+
+        - If budget disabled, return full allowance (no special handling upstream).
+        - If Redis errors, return last known fallback or full allowance.
+        """
+        default_seconds = max(0, int(self.settings.free_minutes_per_user or 0) * 60)
+        if not self.has_budget_store():
+            return default_seconds
         try:
             key = f"glass:budget:{client_id}"
             val = await self._redis.get(key)  # type: ignore[operator]
             if val is None:
                 await self._redis.set(key, default_seconds)  # type: ignore[operator]
+                self._fallback_remaining[client_id] = default_seconds
                 return default_seconds
-            return max(0, int(val))
-        except Exception:
-            # If Redis errors, fail-safe to large sentinel so we don't block users
-            return 10**12
+            remaining = max(0, int(val))
+            self._fallback_remaining[client_id] = remaining
+            return remaining
+        except Exception as e:
+            LOGGER.warning("[Budget] get_remaining_seconds Redis error: %s; using fallback", e)
+            return int(self._fallback_remaining.get(client_id, default_seconds))
 
     async def decrement_seconds(self, client_id: str, seconds: int = 1) -> int:
-        """Atomically decrement remaining seconds in Redis. Returns remaining (>=0).
-        If budget disabled or Redis is unavailable, returns a large sentinel.
+        """Atomically decrement remaining seconds; clamp >= 0; no sentinel values.
+
+        - If budget disabled, return full allowance.
+        - On Redis error, use in-memory fallback decrement.
         """
+        default_seconds = max(0, int(self.settings.free_minutes_per_user or 0) * 60)
         if not self.has_budget_store():
-            return 10**12
+            return default_seconds
         seconds = max(1, int(seconds))
         try:
             key = f"glass:budget:{client_id}"
             # Initialize if missing
             if await self._redis.get(key) is None:  # type: ignore[operator]
-                await self._redis.set(key, max(0, int(self.settings.free_minutes_per_user or 0) * 60))  # type: ignore[operator]
+                await self._redis.set(key, default_seconds)  # type: ignore[operator]
+                self._fallback_remaining[client_id] = default_seconds
             remaining = await self._redis.decrby(key, seconds)  # type: ignore[attr-defined]
             if remaining is None:
-                return 0
-            if remaining < 0:
+                remaining_val = 0
+            elif remaining < 0:
                 await self._redis.set(key, 0)  # type: ignore[operator]
-                return 0
-            return int(remaining)
-        except Exception:
-            # Fail-safe to large sentinel to avoid hard-blocking on Redis errors
-            return 10**12
+                remaining_val = 0
+            else:
+                remaining_val = int(remaining)
+            self._fallback_remaining[client_id] = remaining_val
+            return remaining_val
+        except Exception as e:
+            LOGGER.warning("[Budget] decrement_seconds Redis error: %s; using fallback", e)
+            current = int(self._fallback_remaining.get(client_id, default_seconds))
+            current = max(0, current - seconds)
+            self._fallback_remaining[client_id] = current
+            return current
 
     # --------- Budget watcher guard (per-process) ----------
     async def acquire_budget_watcher(self, client_id: str) -> bool:
