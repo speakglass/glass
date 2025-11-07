@@ -5,11 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "glass"
 version = "0.1.0"
-description = "Multimodal meeting copilot with port-adapter architecture."
+description = "AI that helps you speak any language in the real world."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary" }
-authors = [{ name = "Jinho Kim" }]
+authors = [{ name = "Jin Kim <jin.kim@speakglass.com>" }]
 dependencies = [
     "fastapi>=0.110",
     "uvicorn[standard]>=0.27",
