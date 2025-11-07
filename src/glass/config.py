@@ -38,8 +38,6 @@ class Settings(BaseSettings):
     # Security limits (minimal defaults)
     ws_max_session_seconds: int = 120
     ws_max_message_bytes: int = 131072  # 128 KiB
-    # Conversation length cap for auto-ending sessions (None disables)
-    max_full_conversation: int | None = None
     default_tone: str = "neutral"
     default_language: str = "en"
     storage_dir: str = "./var/uploads"

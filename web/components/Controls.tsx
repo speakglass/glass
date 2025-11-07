@@ -81,8 +81,7 @@ export default function Controls() {
               <MicFFT fft={micFft} className={'fill-current'} />
             </div>
 
-            {status.value === 'connected' &&
-            (budgetStatus === 'unknown' || typeof startRemainingSeconds === 'number') ? (
+            {status.value === 'connected' ? (
               <div className={'relative flex items-center gap-2'}>
                 {(() => {
                   const baseKnown = typeof startRemainingSeconds === 'number';
@@ -95,9 +94,9 @@ export default function Controls() {
                   return (
                     <span className={'text-sm tabular-nums'}>
                       <span className={lowTime ? 'text-rose-600 dark:text-rose-400' : undefined}>{fmt(elapsed)}</span>
-                      {' / '}
+                      <span className={'text-muted-foreground'}>{' / '}</span>
                       {baseKnown ? (
-                        <span>{fmt(base)}</span>
+                        <span className={'text-muted-foreground'}>{fmt(base)}</span>
                       ) : (
                         <span className={'inline-block align-middle w-10 h-4 rounded bg-muted/60 animate-pulse'} />
                       )}

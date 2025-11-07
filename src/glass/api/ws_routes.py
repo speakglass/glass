@@ -50,9 +50,6 @@ async def audio_stream(
     client_id = _client_id_from_ws(websocket)
     events_adapter = WebSocketEventsAdapter(websocket) if events else None
     pipeline = await app_state.session_manager.get_or_create(sid, events_port=events_adapter)
-    # Force conversation length limit by closing when cap is reached
-    if settings.max_full_conversation is not None and int(settings.max_full_conversation or 0) > 0:
-        asyncio.create_task(_enforce_conversation_cap(websocket, pipeline, int(settings.max_full_conversation)))
     audio_iter = iter_websocket_audio(websocket)
     # Enforce per-client time budget using deadline-based approach (async init)
     if app_state.settings.free_minutes_per_user is not None:
@@ -97,8 +94,6 @@ async def audio_stream_multiplexed(
         asyncio.create_task(_init_budget_and_schedule_close(websocket, app_state, client_id))
     events_adapter = WebSocketEventsAdapter(websocket) if events else None
     pipeline = await app_state.session_manager.get_or_create(sid, events_port=events_adapter)
-    if settings.max_full_conversation is not None and int(settings.max_full_conversation or 0) > 0:
-        asyncio.create_task(_enforce_conversation_cap(websocket, pipeline, int(settings.max_full_conversation)))
     
     # Set initial language configuration before starting ASR streams
     # Ensure ASR picks up correct Deepgram language/model from the outset
@@ -224,12 +219,11 @@ async def _close_when_deadline(websocket: WebSocket, remaining_sec: int, total_s
 
 
 async def _init_budget_and_schedule_close(websocket: WebSocket, app_state, client_id: str) -> None:
-    """Initialize budget asynchronously, send initial time, and schedule close at deadline."""
+    """Initialize daily cumulative quota and start usage metering loop."""
     try:
         settings = get_settings()
-        remaining_sec = await app_state.get_remaining_seconds_deadline(client_id)
         total_sec = int(settings.free_minutes_per_user or 0) * 60
-        # Keep quiet here; failures are logged below
+        remaining_sec = await app_state.get_remaining_seconds_quota(client_id)
         if remaining_sec <= 0:
             try:
                 await websocket.send_json({"t": "limit_reached", "reason": "time", "max": total_sec})
@@ -244,18 +238,21 @@ async def _init_budget_and_schedule_close(websocket: WebSocket, app_state, clien
             await websocket.send_json({"t": "time_remaining", "seconds": int(remaining_sec), "total": total_sec})
         except Exception:
             pass
-        asyncio.create_task(_close_when_deadline(websocket, int(remaining_sec), total_sec))
+        # Start per-connection metering loop (increments 1s every second)
+        asyncio.create_task(_usage_meter_loop(websocket, app_state, client_id, total_sec))
     except Exception as e:
-        LOGGER.exception("[Budget]/ws/init failed: %s", e)
+        LOGGER.exception("[Budget]/ws/init(daily) failed: %s", e)
 
-async def _enforce_conversation_cap(websocket: WebSocket, pipeline, cap: int) -> None:
+async def _usage_meter_loop(websocket: WebSocket, app_state, client_id: str, total_sec: int) -> None:
+    """Increment daily usage each second while connection is alive; close at limit."""
     try:
-        # Poll every 300ms; when cap reached, notify and close
         while True:
-            await asyncio.sleep(0.3)
-            if len(getattr(pipeline, "full_conversation", [])) >= cap:
+            await asyncio.sleep(1)
+            used = await app_state.incr_used_seconds(client_id, 1)
+            remaining = max(0, int(total_sec - used))
+            if remaining <= 0:
                 try:
-                    await websocket.send_json({"t": "limit_reached", "reason": "conversation", "max": cap})
+                    await websocket.send_json({"t": "limit_reached", "reason": "time", "max": total_sec})
                 except Exception:
                     pass
                 try:
@@ -264,4 +261,7 @@ async def _enforce_conversation_cap(websocket: WebSocket, pipeline, cap: int) ->
                     pass
                 return
     except Exception:
+        # Suppress exceptions (websocket may be closed)
         return
+
+ 

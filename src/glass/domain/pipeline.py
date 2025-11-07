@@ -33,7 +33,6 @@ class SessionPipeline:
         tail_size: int = 12,
         default_lang: str = "en",
         default_tone: str = "neutral",
-        full_conversation_cap: int = 400,
     ) -> None:
         self.session_id = session_id
         self.memory = memory
@@ -46,7 +45,6 @@ class SessionPipeline:
         self.lang = default_lang
         self._llm_gate = llm_semaphore or asyncio.Semaphore(4)
         self.session_start_time = time.time()
-        self.full_conversation_cap = max(1, int(full_conversation_cap or 400))
         
         # Full conversation history (not limited like tail)
         self.full_conversation: list[dict] = []

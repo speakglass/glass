@@ -6,6 +6,7 @@ import asyncio
 import time
 import uuid
 import logging
+from datetime import datetime, timezone, timedelta
 
 from .adapters.asr import build_asr_adapter
 from .adapters.diarization import build_diarization_adapter
@@ -29,7 +30,6 @@ class SessionManager:
         memory_adapter,
         vision_adapter=None,
         diarizer_adapter=None,
-        full_conversation_cap: int = 400,
         tail_size: int = 20,
     ) -> None:
         self.asr_adapter = asr_adapter
@@ -37,7 +37,6 @@ class SessionManager:
         self.memory_adapter = memory_adapter
         self.vision_adapter = vision_adapter
         self.diarizer_adapter = diarizer_adapter
-        self.full_conversation_cap = full_conversation_cap
         self.tail_size = tail_size
         self._pipelines: dict[str, SessionPipeline] = {}
         self._lock = asyncio.Lock()
@@ -54,7 +53,6 @@ class SessionManager:
                     events=events_port or NullEventsAdapter(),
                     vision=self.vision_adapter,
                     diarizer=self.diarizer_adapter,
-                    full_conversation_cap=self.full_conversation_cap,
                     tail_size=self.tail_size,
                 )
                 self._pipelines[session_id] = pipeline
@@ -113,7 +111,6 @@ class AppState:
             memory_adapter=memory_adapter,
             vision_adapter=vision_adapter,
             diarizer_adapter=diarizer_adapter,
-            full_conversation_cap=int(settings.max_full_conversation or 0),
             tail_size=int(settings.tail_size or 20),
         )
         # Guard to avoid multiple budget decrement watchers per client (per-process)
@@ -123,6 +120,9 @@ class AppState:
         self._fallback_remaining: dict[str, int] = {}
         # In-memory fallback deadline (epoch seconds) per client for deadline-based budget
         self._fallback_end_at: dict[str, int] = {}
+        # In-memory fallback for daily usage (used if Redis temporarily fails)
+        # key: client_id, value: (date_str_utc, used_seconds)
+        self._fallback_daily_usage: dict[str, tuple[str, int]] = {}
 
     # Removed per-day session cap logic
 
@@ -228,6 +228,85 @@ class AppState:
             current = max(0, current - seconds)
             self._fallback_remaining[client_id] = current
             return current
+
+    # --------- Daily cumulative usage (resets every UTC midnight) ----------
+    def _today_str_utc(self) -> str:
+        now = datetime.now(timezone.utc)
+        return now.strftime("%Y%m%d")
+
+    def _seconds_until_utc_midnight(self) -> int:
+        now = datetime.now(timezone.utc)
+        tomorrow = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        return max(1, int((tomorrow - now).total_seconds()))
+
+    async def get_used_seconds_today(self, client_id: str) -> int:
+        """Return seconds used today for this client (UTC day). Ensures key is initialized with TTL.
+
+        Requires Redis when feature is enabled; uses in-proc fallback on transient errors.
+        """
+        total_allowance = max(0, int(self.settings.free_minutes_per_user or 0) * 60)
+        if not self.has_budget_store():
+            # With budget disabled, treat as 0 used so upstream returns full allowance
+            return 0
+        date_str = self._today_str_utc()
+        key = f"glass:usage:{client_id}:{date_str}"
+        try:
+            # Initialize key with TTL to next midnight if missing
+            if not await self._redis.exists(key):  # type: ignore[operator]
+                await self._redis.set(key, 0, ex=self._seconds_until_utc_midnight(), nx=True)  # type: ignore[operator]
+            val = await self._redis.get(key)  # type: ignore[operator]
+            used = max(0, int(val or 0))
+            # Ensure key has TTL; if not, set it
+            ttl = await self._redis.ttl(key)  # type: ignore[operator]
+            if ttl is not None and ttl < 0:
+                await self._redis.expire(key, self._seconds_until_utc_midnight())  # type: ignore[operator]
+            # Cache fallback
+            self._fallback_daily_usage[client_id] = (date_str, used)
+            return used
+        except Exception as e:
+            LOGGER.warning("[Budget] get_used_seconds_today Redis error: %s; using fallback", e)
+            cached = self._fallback_daily_usage.get(client_id)
+            if cached is None or cached[0] != date_str:
+                # New day or no cache → reset fallback
+                self._fallback_daily_usage[client_id] = (date_str, 0)
+                return 0
+            return int(cached[1])
+
+    async def incr_used_seconds(self, client_id: str, seconds: int = 1) -> int:
+        """Increment seconds used today and return updated used total (UTC day)."""
+        seconds = max(1, int(seconds))
+        if not self.has_budget_store():
+            # If budget disabled, do nothing and return 0 used
+            return 0
+        date_str = self._today_str_utc()
+        key = f"glass:usage:{client_id}:{date_str}"
+        try:
+            # Ensure key exists with TTL to midnight
+            if not await self._redis.exists(key):  # type: ignore[operator]
+                await self._redis.set(key, 0, ex=self._seconds_until_utc_midnight(), nx=True)  # type: ignore[operator]
+            used = await self._redis.incrby(key, seconds)  # type: ignore[operator]
+            # Ensure expiry is still present
+            ttl = await self._redis.ttl(key)  # type: ignore[operator]
+            if ttl is not None and ttl < 0:
+                await self._redis.expire(key, self._seconds_until_utc_midnight())  # type: ignore[operator]
+            # Cache fallback
+            self._fallback_daily_usage[client_id] = (date_str, int(used))
+            return int(used)
+        except Exception as e:
+            LOGGER.warning("[Budget] incr_used_seconds Redis error: %s; using fallback", e)
+            cached = self._fallback_daily_usage.get(client_id)
+            if cached is None or cached[0] != date_str:
+                new_used = seconds
+            else:
+                new_used = int(cached[1]) + seconds
+            self._fallback_daily_usage[client_id] = (date_str, new_used)
+            return new_used
+
+    async def get_remaining_seconds_quota(self, client_id: str) -> int:
+        """Return remaining seconds available today for this client (UTC day)."""
+        total = max(0, int(self.settings.free_minutes_per_user or 0) * 60)
+        used = await self.get_used_seconds_today(client_id)
+        return max(0, total - used)
 
     # --------- Budget watcher guard (per-process) ----------
     async def acquire_budget_watcher(self, client_id: str) -> bool:
