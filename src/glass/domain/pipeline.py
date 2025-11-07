@@ -366,6 +366,58 @@ class SessionPipeline:
         source: str | None = None,
         speaker: str | None = None,
     ) -> None:
+        # Persist AI transcript events into conversation storage (practice mode AI turns)
+        try:
+            if event_type == EventType.TRANSCRIPT:
+                evt_source = (payload.get("source") if isinstance(payload, dict) else None) or source or None
+                if evt_source == "ai":
+                    msg_text = (payload.get("text") if isinstance(payload, dict) else None) or ""
+                    utterance_id = (payload.get("utterance_id") if isinstance(payload, dict) else None)
+                    msg: dict = {
+                        "speaker": speaker or "ai",
+                        "source": "ai",
+                        "text": msg_text,
+                        "utterance_id": utterance_id,
+                    }
+                    # Optional timing
+                    if isinstance(payload, dict):
+                        if payload.get("start") is not None:
+                            msg["start"] = payload.get("start")
+                        if payload.get("duration") is not None:
+                            msg["duration"] = payload.get("duration")
+                    # Upsert into full_conversation
+                    if utterance_id:
+                        existing_idx = None
+                        for idx, conv_msg in enumerate(self.full_conversation):
+                            if conv_msg.get("utterance_id") == utterance_id and conv_msg.get("source") == "ai":
+                                existing_idx = idx
+                                break
+                        if existing_idx is not None:
+                            self.full_conversation[existing_idx] = msg
+                        else:
+                            self.full_conversation.append(msg)
+                    else:
+                        self.full_conversation.append(msg)
+                    # Upsert into tail
+                    if utterance_id:
+                        existing_idx = None
+                        for idx, tmsg in enumerate(self.tail):
+                            if tmsg.get("utterance_id") == utterance_id and tmsg.get("source") == "ai":
+                                existing_idx = idx
+                                break
+                        if existing_idx is not None:
+                            try:
+                                self.tail[existing_idx] = msg
+                            except Exception:
+                                self.tail.append(msg)
+                        else:
+                            self.tail.append(msg)
+                    else:
+                        self.tail.append(msg)
+        except Exception:
+            # Do not let persistence errors block event delivery
+            pass
+
         if not self.events_ports:
             return
         enriched = dict(payload)
@@ -426,9 +478,6 @@ class SessionPipeline:
             EventType.TRANSLATION,
             EventType.ANSWER,
         )
-        if ai_msg:
-            self.tail.append(ai_msg)
-            self.full_conversation.append(ai_msg)
 
     # --- LLM-Related Methods (Delegated to LLMProcessor) -----------------
     async def generate_answer(self) -> dict:

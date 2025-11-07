@@ -255,7 +255,7 @@ export default function StartCall() {
                   We'll show how to read suggestions in your alphabet when helpful
                 </p>
               </div>
-              <div className={'flex gap-6'}>
+              <div className={'flex flex-col md:flex-row gap-4 md:gap-6 w-full'}>
                 <button
                   onClick={() => {
                     setProficiency('cant_read');
@@ -263,7 +263,7 @@ export default function StartCall() {
                     setStep('mode');
                   }}
                   className={cn(
-                    'px-8 py-6 h-[200px] rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-[300px]',
+                    'px-5 py-5 md:px-8 md:py-6 h-auto md:h-[200px] rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full md:w-[300px] max-w-[360px] md:max-w-none mx-auto md:mx-0',
                     getCardClass(),
                     getScaleClass(),
                     proficiency === 'cant_read' && getSelectedRingClass()
@@ -271,23 +271,25 @@ export default function StartCall() {
                 >
                   <div className={'flex h-full flex-col'}>
                     <div className={'text-center'}>
-                      <div className={`${getTextClass('title')} font-medium mb-1`}>Yes, show pronunciation</div>
+                      <div className={`${getTextClass('title')} font-medium mb-1 text-base md:text-lg`}>
+                        Yes, show pronunciation
+                      </div>
                       <div className={`${getTextClass('body')} text-xs`}>Make suggestions readable for me</div>
                     </div>
-                    <div className={'mt-auto'}>
+                    <div className={'mt-3 md:mt-auto'}>
                       <div
                         className={cn(
-                          'rounded-md px-3 py-2 text-left',
+                          'rounded-md px-3 py-2 text-left max-w-[320px] mx-auto md:mx-0',
                           glassMode ? 'bg-white/5 border border-white/10' : 'bg-muted border border-border'
                         )}
                       >
-                        <div className={'flex items-end gap-3'}>
+                        <div className={'flex items-center md:items-end gap-3'}>
                           <div>
-                            <div className={`${getTextClass('title')} text-sm tracking-wide`}>ありがとう</div>
+                            <div className={`${getTextClass('title')} text-sm leading-snug`}>ありがとう</div>
                             <div className={'text-emerald-400 opacity-80 text-sm mt-0.5'}>arigatou</div>
                           </div>
                           <div>
-                            <div className={`${getTextClass('title')} text-sm tracking-wide`}>ございます</div>
+                            <div className={`${getTextClass('title')} text-sm leading-snug`}>ございます</div>
                             <div className={'text-emerald-400 opacity-80 text-sm mt-0.5'}>gozaimasu</div>
                           </div>
                         </div>
@@ -304,7 +306,7 @@ export default function StartCall() {
                     setStep('mode');
                   }}
                   className={cn(
-                    'px-8 py-6 h-[200px] rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-[300px]',
+                    'px-5 py-5 md:px-8 md:py-6 h-auto md:h-[200px] rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full md:w-[300px] max-w-[360px] md:max-w-none mx-auto md:mx-0',
                     getCardClass(),
                     getScaleClass(),
                     proficiency === 'can_read' && getSelectedRingClass()
@@ -312,17 +314,19 @@ export default function StartCall() {
                 >
                   <div className={'flex h-full flex-col'}>
                     <div className={'text-center'}>
-                      <div className={`${getTextClass('title')} font-medium mb-1`}>No, I'm fine</div>
+                      <div className={`${getTextClass('title')} font-medium mb-1 text-base md:text-lg`}>
+                        No, I'm fine
+                      </div>
                       <div className={`${getTextClass('body')} text-xs`}>Show suggestions only</div>
                     </div>
-                    <div className={'mt-auto'}>
+                    <div className={'mt-3 md:mt-auto'}>
                       <div
                         className={cn(
-                          'rounded-md px-3 py-2 text-left',
+                          'rounded-md px-3 py-2 text-left max-w-[320px] mx-auto md:mx-0',
                           glassMode ? 'bg-white/5 border border-white/10' : 'bg-muted border border-border'
                         )}
                       >
-                        <div className={`${getTextClass('title')} text-sm tracking-wide`}>ありがとうございます</div>
+                        <div className={`${getTextClass('title')} text-sm leading-snug`}>ありがとうございます</div>
                         <div className={`${getTextClass('muted')} text-[11px] mt-1`}>Thank you very much</div>
                       </div>
                     </div>

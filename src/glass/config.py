@@ -5,12 +5,14 @@ from __future__ import annotations
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1-mini"
     openai_vision_model: str = "gpt-4.1-mini"
+    openai_analysis_model: str = "gpt-5-mini"
     openai_base_url: str = "https://api.openai.com/v1"
     openai_timeout: float = 15.0
     openai_role: str = "progress"
@@ -62,10 +64,27 @@ class Settings(BaseSettings):
     discord_webhook_url: str | None = None
     # Conversation window for LLM context
     tail_size: int = 20
+    # Optional Redis (usage tracking)
+    redis_url: str | None = None
+    # Free usage budget per client (in minutes) across sessions (None disables)
+    free_minutes_per_user: int | None = 30
     # Logging
     log_level: str = "INFO"  # e.g., DEBUG, INFO, WARNING
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="GLASS_")
+
+    # Coerce empty string/None-like values to None (disables limit)
+    @field_validator("free_minutes_per_user", mode="before")
+    @classmethod
+    def _coerce_free_minutes(cls, value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            s = value.strip().lower()
+            if s == "" or s in {"none", "null", "unset"}:
+                return None
+            # Let pydantic handle proper int parsing afterwards if it's numeric
+        return value
 
 
 @lru_cache(maxsize=1)

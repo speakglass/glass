@@ -61,6 +61,35 @@ async def audio_stream(
     if settings.max_full_conversation is not None and int(settings.max_full_conversation or 0) > 0:
         asyncio.create_task(_enforce_conversation_cap(websocket, pipeline, int(settings.max_full_conversation)))
     audio_iter = iter_websocket_audio(websocket)
+    # Enforce per-client time budget (shared across sessions) if enabled
+    if app_state.has_budget_store():
+        try:
+            remaining_sec = await app_state.get_remaining_seconds(client_id)
+            if remaining_sec <= 0:
+                await websocket.send_json({
+                    "t": "limit_reached",
+                    "reason": "sessions",
+                    "max": int(app_state.settings.free_minutes_per_user or 0) * 60,
+                })
+                await websocket.close(code=1013)
+                return
+            # Send initial remaining budget to client
+            try:
+                await websocket.send_json({
+                    "t": "time_remaining",
+                    "seconds": int(remaining_sec),
+                    "total": int(app_state.settings.free_minutes_per_user or 0) * 60,
+                })
+            except Exception:
+                pass
+            # Start only one watcher per client (per-process)
+            try:
+                if await app_state.acquire_budget_watcher(client_id):
+                    asyncio.create_task(_enforce_time_budget(websocket, app_state, client_id))
+            except Exception:
+                pass
+        except Exception:
+            pass
     try:
         # Enforce session TTL
         asyncio.create_task(_close_after_ttl(websocket, settings.ws_max_session_seconds))
@@ -101,6 +130,35 @@ async def audio_stream_multiplexed(
         await websocket.send_json({"t": "limit_reached", "reason": "sessions", "max": settings.max_sessions_per_client})
         await websocket.close(code=1013)
         return
+    # Enforce per-client time budget if enabled
+    if app_state.has_budget_store():
+        try:
+            remaining_sec = await app_state.get_remaining_seconds(client_id)
+            if remaining_sec <= 0:
+                await websocket.send_json({
+                    "t": "limit_reached",
+                    "reason": "sessions",
+                    "max": int(app_state.settings.free_minutes_per_user or 0) * 60,
+                })
+                await websocket.close(code=1013)
+                return
+            # Send initial remaining budget to client
+            try:
+                await websocket.send_json({
+                    "t": "time_remaining",
+                    "seconds": int(remaining_sec),
+                    "total": int(app_state.settings.free_minutes_per_user or 0) * 60,
+                })
+            except Exception:
+                pass
+            # Start only one watcher per client (per-process)
+            try:
+                if await app_state.acquire_budget_watcher(client_id):
+                    asyncio.create_task(_enforce_time_budget(websocket, app_state, client_id))
+            except Exception:
+                pass
+        except Exception:
+            pass
     events_adapter = WebSocketEventsAdapter(websocket) if events else None
     pipeline = await app_state.session_manager.get_or_create(sid, events_port=events_adapter)
     if settings.max_full_conversation is not None and int(settings.max_full_conversation or 0) > 0:
@@ -183,6 +241,43 @@ async def _close_after_ttl(websocket: WebSocket, ttl_seconds: int) -> None:
     except Exception:
         pass
 
+
+async def _enforce_time_budget(websocket: WebSocket, app_state, client_id: str) -> None:
+    """Decrement per-client budget every second and close when exhausted."""
+    try:
+        while True:
+            await asyncio.sleep(1.0)
+            remaining = await app_state.decrement_seconds(client_id, 1)
+            # Stream remaining budget to client
+            try:
+                await websocket.send_json({
+                    "t": "time_remaining",
+                    "seconds": int(remaining),
+                    "total": int(app_state.settings.free_minutes_per_user or 0) * 60,
+                })
+            except Exception:
+                pass
+            if remaining <= 0:
+                try:
+                    await websocket.send_json({
+                        "t": "limit_reached",
+                        "reason": "sessions",
+                        "max": int(app_state.settings.free_minutes_per_user or 0) * 60,
+                    })
+                except Exception:
+                    pass
+                try:
+                    await websocket.close(code=1000)
+                except Exception:
+                    pass
+                return
+    except Exception:
+        return
+    finally:
+        try:
+            await app_state.release_budget_watcher(client_id)
+        except Exception:
+            pass
 
 async def _enforce_conversation_cap(websocket: WebSocket, pipeline, cap: int) -> None:
     try:

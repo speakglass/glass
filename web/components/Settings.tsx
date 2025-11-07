@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Settings as SettingsIcon, RefreshCw, Mic } from 'lucide-react';
+import { Settings as SettingsIcon, RefreshCw, Mic, Sun, Moon, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
-import { Switch } from './ui/switch';
 import { useTheme } from 'next-themes';
 import { useGlass } from '@/contexts/GlassContext';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 interface AudioDevice {
   deviceId: string;
@@ -24,6 +24,8 @@ export default function Settings() {
   const localMicDeviceId = settings.micDeviceId || '';
 
   const audioInputs = useMemo(() => devices.filter((d) => d.kind === 'audioinput'), [devices]);
+  const appearance: 'light' | 'dark' | 'glass' =
+    settings.glassMode ?? false ? 'glass' : (theme as 'light' | 'dark') || 'light';
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -55,6 +57,17 @@ export default function Settings() {
   }, [open]);
 
   const setMic = (micDeviceId: string | null) => updateSettings({ micDeviceId });
+
+  const selectAppearance = (mode: 'light' | 'dark' | 'glass') => {
+    if (mode === 'glass') {
+      updateSettings({ glassMode: true });
+      setTheme('dark'); // ensure good contrast for glass
+      return;
+    }
+    // light or dark -> disable glass, set theme
+    updateSettings({ glassMode: false });
+    setTheme(mode);
+  };
 
   return (
     <div className={'relative'} ref={panelRef}>
@@ -152,30 +165,68 @@ export default function Settings() {
             {/* Divider */}
             <div className={'h-px bg-border'} />
 
-            {/* Glass Mode */}
+            {/* Theme (Light / Dark / Glass) */}
             <div className={'flex items-center justify-between'}>
-              <div className={'flex flex-col'}>
-                <span className={'text-sm font-medium'}>Glass Mode</span>
-                <span className={'text-xs text-muted-foreground'}>Enable glass effects</span>
+              <div className={'text-sm font-medium'}>Theme</div>
+              <div
+                className={'inline-flex items-center gap-0.5 rounded-md border border-input bg-background p-0.5 w-auto'}
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => selectAppearance('light')}
+                      className={[
+                        'inline-flex items-center justify-center rounded-sm p-1.5 size-7 transition-colors',
+                        appearance === 'light'
+                          ? 'bg-accent text-foreground'
+                          : 'hover:bg-accent/60 text-muted-foreground',
+                      ].join(' ')}
+                      aria-label="Light theme"
+                    >
+                      <Sun className={'size-4 shrink-0'} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Light</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => selectAppearance('dark')}
+                      className={[
+                        'inline-flex items-center justify-center rounded-sm p-1.5 size-7 transition-colors',
+                        appearance === 'dark'
+                          ? 'bg-accent text-foreground'
+                          : 'hover:bg-accent/60 text-muted-foreground',
+                      ].join(' ')}
+                      aria-label="Dark theme"
+                    >
+                      <Moon className={'size-4 shrink-0'} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Dark</TooltipContent>
+                </Tooltip>
+                <div className={'w-px h-5 bg-border/80 mx-0'} />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => selectAppearance('glass')}
+                      className={[
+                        'inline-flex items-center justify-center rounded-sm p-1.5 size-7 transition-colors',
+                        appearance === 'glass'
+                          ? 'bg-accent text-foreground'
+                          : 'hover:bg-accent/60 text-muted-foreground',
+                      ].join(' ')}
+                      aria-label="Glass mode"
+                    >
+                      <Sparkles className={'size-4 shrink-0'} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Glass</TooltipContent>
+                </Tooltip>
               </div>
-              <Switch
-                checked={settings.glassMode ?? false}
-                onCheckedChange={(v: boolean) => updateSettings({ glassMode: v })}
-                aria-label="Toggle Glass Mode"
-              />
-            </div>
-
-            {/* Light Mode */}
-            <div className={'flex items-center justify-between'}>
-              <div className={'flex flex-col'}>
-                <span className={'text-sm font-medium'}>Light Mode</span>
-                <span className={'text-xs text-muted-foreground'}>Use light theme</span>
-              </div>
-              <Switch
-                checked={(theme || 'light') === 'light'}
-                onCheckedChange={(v: boolean) => setTheme(v ? 'light' : 'dark')}
-                aria-label="Toggle Light Mode"
-              />
             </div>
           </div>
         </div>

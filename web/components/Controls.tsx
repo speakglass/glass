@@ -1,14 +1,42 @@
 'use client';
 import { useGlass } from '@/contexts/GlassContext';
 import { Button } from './ui/button';
-import { Mic, MicOff, Phone } from 'lucide-react';
+import { Mic, MicOff, Phone, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { AnimatePresence, motion } from 'motion/react';
 import { Toggle } from './ui/toggle';
 import MicFFT from './MicFFT';
 import { cn } from '@/utils';
+import { useMemo } from 'react';
 
 export default function Controls() {
-  const { disconnect, status, isMuted, unmute, mute, micFft } = useGlass();
+  const {
+    disconnect,
+    status,
+    isMuted,
+    unmute,
+    mute,
+    micFft,
+    remainingSeconds,
+    totalSeconds,
+    startRemainingSeconds,
+    elapsedSeconds,
+  } = useGlass();
+
+  const fmt = (secs?: number) => {
+    if (typeof secs !== 'number' || !isFinite(secs) || secs < 0) secs = 0;
+    const m = Math.floor(secs / 60)
+      .toString()
+      .padStart(2, '0');
+    const s = Math.floor(secs % 60)
+      .toString()
+      .padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  const lowTime = useMemo(() => {
+    return typeof remainingSeconds === 'number' && remainingSeconds <= 300;
+  }, [remainingSeconds]);
 
   return (
     <div
@@ -51,6 +79,41 @@ export default function Controls() {
             <div className={'relative grid h-8 w-48 shrink grow-0'}>
               <MicFFT fft={micFft} className={'fill-current'} />
             </div>
+
+            {(typeof elapsedSeconds === 'number' || typeof remainingSeconds === 'number') &&
+            (typeof startRemainingSeconds === 'number' || typeof totalSeconds === 'number') ? (
+              <div className={'relative flex items-center gap-2'}>
+                {(() => {
+                  const base =
+                    typeof startRemainingSeconds === 'number' ? startRemainingSeconds : (totalSeconds as number);
+                  const elapsed =
+                    typeof elapsedSeconds === 'number'
+                      ? elapsedSeconds
+                      : Math.max(0, base - (remainingSeconds as number));
+                  return (
+                    <span className={'text-sm tabular-nums'}>
+                      <span className={lowTime ? 'text-rose-600 dark:text-rose-400' : undefined}>{fmt(elapsed)}</span>
+                      {' / '}
+                      <span>{fmt(base)}</span>
+                    </span>
+                  );
+                })()}
+                {/* Info tooltip appears when lowTime; no effect on time colors */}
+                {lowTime ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        className={'inline-flex items-center justify-center w-4 h-4 rounded-full'}
+                        aria-label="Remaining time info"
+                      >
+                        <Info className={'size-3 text-rose-600 dark:text-rose-400'} />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Ending soon: under 5 minutes left</TooltipContent>
+                  </Tooltip>
+                ) : null}
+              </div>
+            ) : null}
 
             <Button
               className={'flex items-center gap-1 rounded-full'}

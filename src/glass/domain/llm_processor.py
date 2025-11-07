@@ -6,6 +6,7 @@ import asyncio
 import logging
 import uuid
 from typing import TYPE_CHECKING
+from ..config import get_settings
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -111,41 +112,61 @@ class LLMProcessor:
         # 2. Feedback (user only, if enabled)
         if is_user and self.feedback_mode != 'off':
             tasks.append(asyncio.create_task(
-                self.do_feedback(text, utterance_id, source, event_type_feedback)
+                self.do_feedback(text, utterance_id, source, event_type_feedback, tail=list(tail))
             ))
         
-        # 3. AI Response (practice mode, user only)
+        # 3. AI Response (practice mode, user only) - run BEFORE unified suggestion
+        ai_msg: dict | None = None
         if self.mode == 'practice' and is_user:
             # Calculate end time of user message
             user_message_end_time = None
             if start is not None and duration is not None:
                 user_message_end_time = start + duration
-            tasks.append(asyncio.create_task(
-                self.do_ai_response(text, utterance_id, tail, event_type_transcript, event_type_translation, event_type_answer, user_message_end_time)
-            ))
+            # Run AI response now so follow-up can include it in context
+            ai_msg = await self.do_ai_response(
+                text,
+                utterance_id,
+                tail,
+                event_type_transcript,
+                event_type_translation,
+                event_type_answer,
+                user_message_end_time,
+            )
         
-        # 4. Answer Suggestion (partner messages, avoid duplicates)
-        if not is_user and self.suggest_mode != 'off' and source != 'ai':
-            suggestion_key = f"{utterance_id}:answer"
-            if suggestion_key not in self._suggested_for:
-                self._suggested_for.add(suggestion_key)
+        # 4. Unified Suggestion trigger (single suggestion only)
+        if self.suggest_mode != 'off':
+            # Partner/remote message in real mode → suggest once based on decision
+            if not is_user and source != 'ai':
                 tasks.append(asyncio.create_task(
-                    self.do_answer_suggestion(text, utterance_id, tail, event_type_answer)
+                    self.do_unified_suggestion(
+                        text,
+                        utterance_id,
+                        list(tail),
+                        event_type_answer,
+                        event_type_follow_up,
+                    )
+                ))
+            # After AI response in practice mode → suggest once using latest AI msg in context
+            elif is_user and ai_msg and isinstance(ai_msg, dict):
+                augmented_tail = list(tail)
+                augmented_tail.append(ai_msg)
+                ai_utt_id = ai_msg.get("utterance_id") or utterance_id
+                tasks.append(asyncio.create_task(
+                    self.do_unified_suggestion(
+                        ai_msg.get("text", ""),
+                        ai_utt_id,
+                        augmented_tail,
+                        event_type_answer,
+                        event_type_follow_up,
+                    )
                 ))
         
-        # 5. Follow-up Suggestion (user messages, avoid duplicates)
-        if is_user and self.suggest_mode != 'off':
-            suggestion_key = f"{utterance_id}:follow_up"
-            if suggestion_key not in self._suggested_for:
-                self._suggested_for.add(suggestion_key)
-                tasks.append(asyncio.create_task(
-                    self.do_followup_suggestion(text, utterance_id, tail, event_type_follow_up)
-                ))
+        # 5. (Removed) Separate follow-up/answer auto triggers — unified suggestion handles it
         
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def do_feedback(self, text: str, utterance_id: str, source: str, event_type_feedback) -> None:
+    async def do_feedback(self, text: str, utterance_id: str, source: str, event_type_feedback, tail: list[dict] | None = None) -> None:
         """Generate and emit feedback for user utterance."""
         try:
             LOGGER.info(f"[Feedback] Starting for utterance {utterance_id}")
@@ -153,12 +174,17 @@ class LLMProcessor:
             if not hasattr(self.llm, 'feedback'):
                 return
             
+            # Decide whether to request pronunciation from the model (cant_read only)
+            want_pron = self.proficiency == 'cant_read'
             feedback_text = await self.llm.feedback(
                 text,
                 self.learning_lang,
                 target_lang=self._lang_code_to_name(self.learning_lang),
                 native_lang=self._lang_code_to_name(self.native_lang),
-                mode=self.mode
+                mode=self.mode,
+                include_pronunciation=bool(want_pron),
+                pronunciation_mode=self.pronunciation_mode if want_pron else None,
+                transcript_tail=(list(tail)[-4:] if tail else None),
             )
             
             # Normalize NONE/empty for Always mode: always surface something user-visible
@@ -169,6 +195,39 @@ class LLMProcessor:
                     feedback_text = self._default_affirmation(self.native_lang)
                     normalized = feedback_text.strip()
             
+            # Parse structured JSON if present, then format to one-line text for legacy UI
+            display_text = None
+            structured_payload: dict | None = None
+            try:
+                import json as _json
+                parsed = _json.loads(normalized)
+                if isinstance(parsed, dict):
+                    reason = str(parsed.get('reason_native') or '').strip()
+                    suggestion = str(parsed.get('suggestion_target') or '').strip()
+                    pron = str(parsed.get('pronunciation') or '').strip()
+                    # Gate pronunciation by proficiency
+                    if self.proficiency != 'cant_read':
+                        pron = ''
+                    # Build user-visible line
+                    if suggestion:
+                        display_text = f"{reason} → {suggestion}" if reason else suggestion
+                        if pron:
+                            display_text = f"{display_text} | {pron}"
+                        # Build structured suggestion object for frontend
+                        structured_payload = {"target_text": suggestion}
+                        if pron:
+                            structured_payload["pronunciation"] = pron
+                        if reason:
+                            structured_payload["reason_native"] = reason
+                    else:
+                        display_text = reason or ''
+            except Exception:
+                # Not JSON; keep as-is
+                pass
+
+            if display_text:
+                feedback_text = display_text
+
             # Emit based on mode
             should_emit = False
             if self.feedback_mode == 'always':
@@ -181,6 +240,9 @@ class LLMProcessor:
                     "utterance_id": utterance_id,
                     "text": feedback_text,
                 }
+                if structured_payload:
+                    feedback_data["suggestion"] = structured_payload
+                    feedback_data["auto"] = True
                 self.all_feedback.append(feedback_data)
                 await self._emit(event_type_feedback, feedback_data, source=source)
                 LOGGER.info(f"[Feedback] Completed for {utterance_id}")
@@ -319,6 +381,50 @@ class LLMProcessor:
                 LOGGER.info(f"[Answer Suggestion] Completed")
         except Exception as e:
             LOGGER.error(f"[Answer Suggestion] Failed: {e}", exc_info=True)
+
+    async def do_unified_suggestion(
+        self,
+        text: str,
+        anchor_utterance_id: str | None,
+        tail: list[dict],
+        event_type_answer,
+        event_type_follow_up,
+    ) -> None:
+        """Generate exactly one suggestion (answer or follow-up) based on model decision."""
+        try:
+            LOGGER.info(f"[Unified Suggestion] Starting for anchor {anchor_utterance_id or 'unknown'}")
+
+            # Ask model which to produce
+            kind: str = "none"
+            if hasattr(self.llm, 'decide_suggestion_kind'):
+                try:
+                    async with self._llm_gate:
+                        kind = await self.llm.decide_suggestion_kind(list(tail), mode=self.mode)
+                except Exception:
+                    kind = "none"
+            else:
+                # Fallback heuristic: if last partner text has '?', prefer answer; else follow_up for user turns
+                last_text = ""
+                if tail:
+                    last = tail[-1] if isinstance(tail[-1], dict) else {}
+                    last_text = (last.get("text") if isinstance(last, dict) else "") or ""
+                kind = "answer" if ("?" in last_text) else "follow_up"
+
+            if kind not in {"answer", "follow_up"}:
+                LOGGER.info("[Unified Suggestion] Skipped (kind=%s)", kind)
+                return
+
+            # Deduplicate per anchor/kind
+            if not self._dedupe_once(self._dedupe_key(anchor_utterance_id, kind)):
+                LOGGER.info(f"[Unified Suggestion] Skipped duplicate for {anchor_utterance_id}:{kind}")
+                return
+
+            # Generate and emit
+            suggestion_obj = await self._generate_suggestion_for_kind(kind, list(tail))
+            if suggestion_obj:
+                await self._emit_suggestion(kind, suggestion_obj, event_type_answer, event_type_follow_up)
+        except Exception as e:
+            LOGGER.error(f"[Unified Suggestion] Failed: {e}", exc_info=True)
 
     async def do_followup_suggestion(
         self, 
@@ -595,6 +701,11 @@ IMPORTANT:
 - Provide ALL text (labels, values, and feedback) in {native_lang_name}
 - This is SPOKEN conversation transcribed by speech-to-text. DO NOT criticize punctuation, capitalization, or formatting - these are STT artifacts, not user mistakes
 - Focus feedback on: vocabulary choice, grammar patterns, natural expression, conversation flow, and communication effectiveness
+- Evaluate ONLY the learner's utterances (speaker 'user' / microphone-origin). Use partner lines only for context.
+- If there are ZERO learner utterances, return scores all 0, empty extracted_info, and feedback: "사용자 발화가 없어 평가할 수 없어요."
+- If there is very little learner data (e.g., 1 utterance), be conservative and avoid generic over-praise.
+- Output STRICT JSON ONLY. No backticks, no prose outside JSON. Numbers must be numbers (not strings).
+- Keep feedback short and natural (3–5 sentences), warm but specific.
 
 Please provide a comprehensive analysis with:
 
@@ -613,9 +724,15 @@ Please provide a comprehensive analysis with:
    - Organization: Companies, institutions, groups
    - Document: Information content
 
-3. FEEDBACK: Write conversational feedback in {native_lang_name} as a teacher would speak to a student. Be warm, encouraging, and natural. 
-   Discuss strengths and areas for improvement in a flowing, narrative style - not as bullet points.
-   Speak directly to the user in a supportive, conversational tone.
+Rules for EXTRACTED INFORMATION:
+- Include ONLY items that are supported by the user's utterances; do not invent.
+- Omit placeholder entries and any item whose value is empty or generic.
+- If no items qualify, set "extracted_info": [].
+
+3. FEEDBACK: Write conversational feedback in {native_lang_name} as a teacher would speak to a student.
+   - Be warm, encouraging, and natural, but concise.
+   - Discuss strengths and one or two concrete improvement tips (no bullet points).
+   - Speak directly to the user in a supportive tone.
 
 Format your response as JSON:
 {{
@@ -636,12 +753,43 @@ Remember: ALL text content (label, value, feedback) must be in {native_lang_name
 
         try:
             if hasattr(self.llm, 'generate_text'):
-                response = await self.llm.generate_text(analysis_prompt)
+                # Use configurable analysis model from settings (defaults to gpt-5-mini)
+                settings = get_settings()
+                analysis_model = getattr(settings, "openai_analysis_model", None) or "gpt-5-mini"
+                response = await self.llm.generate_text(analysis_prompt, model=analysis_model)
                 import json
                 import re
                 json_match = re.search(r'\{[\s\S]*\}', response)
                 if json_match:
                     result = json.loads(json_match.group())
+                    # Post-process to drop placeholder/empty extracted info and dedupe
+                    try:
+                        raw_items = result.get("extracted_info", []) or []
+                        seen: set[tuple[str, str]] = set()
+                        filtered: list[dict] = []
+                        for item in raw_items:
+                            if not isinstance(item, dict):
+                                continue
+                            label = str(item.get("label") or "").strip()
+                            value = str(item.get("value") or "").strip()
+                            if not label or not value:
+                                continue
+                            lower_value = value.lower()
+                            if lower_value in {"none", "n/a", "na", "unknown"}:
+                                continue
+                            key = (label, value)
+                            if key in seen:
+                                continue
+                            seen.add(key)
+                            filtered.append({
+                                "label": label,
+                                "value": value,
+                                "editable": bool(item.get("editable", True)),
+                            })
+                        result["extracted_info"] = filtered
+                    except Exception:
+                        # Non-fatal; keep original result if filtering fails
+                        pass
                     return result
             
             # Fallback
@@ -693,6 +841,69 @@ Remember: ALL text content (label, value, feedback) must be in {native_lang_name
         except Exception:
             pass
         return suggestion
+
+    # --- Small helpers to keep unified suggestion readable -----------------
+    @staticmethod
+    def _dedupe_key(anchor_utterance_id: str | None, kind: str) -> str:
+        return f"{(anchor_utterance_id or 'unknown')}:{kind}"
+
+    def _dedupe_once(self, key: str) -> bool:
+        if key in self._suggested_for:
+            return False
+        self._suggested_for.add(key)
+        return True
+
+    def _get_lang_params(self) -> tuple[str, str, str | None]:
+        target_lang_name = self._lang_code_to_name(self.learning_lang)
+        native_lang_name = self._lang_code_to_name(self.native_lang)
+        require_pronunciation = self.proficiency == 'cant_read'
+        pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
+        return target_lang_name, native_lang_name, pronunciation_mode
+
+    async def _generate_suggestion_for_kind(self, kind: str, tail: list[dict]) -> dict | None:
+        target_lang_name, native_lang_name, pronunciation_mode = self._get_lang_params()
+        suggestion_obj: dict | None = None
+        if kind == "answer":
+            if hasattr(self.llm, 'answer_structured'):
+                try:
+                    suggestion_obj = await self.llm.answer_structured(
+                        list(tail),
+                        target_lang=target_lang_name,
+                        native_lang=native_lang_name,
+                        pronunciation_mode=pronunciation_mode,
+                    )
+                except Exception as e:
+                    LOGGER.error(f"Unified answer suggestion failed: {e}")
+            if suggestion_obj is None and hasattr(self.llm, 'answer'):
+                plain = await self.llm.answer(list(tail), self.learning_lang, mode=self.mode, target_lang=target_lang_name)
+                if plain:
+                    suggestion_obj = {"target_text": plain, "native_explanation": ""}
+        elif kind == "follow_up":
+            if hasattr(self.llm, 'follow_up_structured'):
+                try:
+                    suggestion_obj = await self.llm.follow_up_structured(
+                        list(tail),
+                        target_lang=target_lang_name,
+                        native_lang=native_lang_name,
+                        pronunciation_mode=pronunciation_mode,
+                    )
+                except Exception:
+                    pass
+            if suggestion_obj is None and hasattr(self.llm, 'follow_up'):
+                plain = await self.llm.follow_up(list(tail), self.learning_lang)
+                if plain:
+                    suggestion_obj = {"target_text": plain, "native_explanation": ""}
+        return suggestion_obj
+
+    async def _emit_suggestion(self, kind: str, suggestion_obj: dict, event_type_answer, event_type_follow_up) -> None:
+        suggestion_obj = self._normalize_suggestion(suggestion_obj)
+        payload = {"text": suggestion_obj.get("target_text", ""), "suggestion": suggestion_obj, "auto": True}
+        if kind == "answer":
+            await self._emit(event_type_answer, payload)
+            LOGGER.info("[Unified Suggestion] Emitted: answer")
+        else:
+            await self._emit(event_type_follow_up, payload)
+            LOGGER.info("[Unified Suggestion] Emitted: follow_up")
 
     def _get_initial_prompt(self) -> str:
         """Get initial prompt for scenario-based greeting."""

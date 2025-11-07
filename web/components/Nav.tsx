@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from './ui/button';
-import { Moon, Sun } from 'lucide-react';
 import Github from './logos/GitHub';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
@@ -22,7 +21,9 @@ export const Nav = () => {
   return (
     <div className={'fixed top-0 left-0 right-0 px-4 py-2 flex items-center justify-between h-14 z-50'}>
       <div className={'flex items-center gap-2'}>
-        <Image src={logoSrc} alt="Glass" width={48} height={24} className={'object-contain'} />
+        <a href="https://www.speakglass.com" aria-label="Go to speakglass.com">
+          <Image src={logoSrc} alt="Glass" width={48} height={24} className={'object-contain'} />
+        </a>
       </div>
       <div className={'flex items-center gap-1'}>
         <Button

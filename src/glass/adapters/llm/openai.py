@@ -45,6 +45,12 @@ class OpenAILLMAdapter:
             "model": self.model,
             "input": prompt,
         }
+        # For GPT-5 family models, request lower reasoning effort for faster responses
+        try:
+            if str(self.model).startswith("gpt-5"):
+                payload["reasoning"] = {"effort": "low"}
+        except Exception:
+            pass
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -97,19 +103,6 @@ class OpenAILLMAdapter:
         user_parts.append("\nProvide a single actionable suggestion for what You should say next (under 24 words).")
         user_text = "\n".join(user_parts)
 
-        # Log prompt preview for debugging suggest behavior
-        try:
-            self._logger.info(
-                "[Suggest Prompt]\nLang=%s | Tone=%s\n--- Transcript ---\n%s\n--- Screen ---\n%s\n--- Memory ---\n%s\n--- Instruction ---\n%s",
-                lang,
-                tone,
-                transcript_text or "(none)",
-                screen or "(none)",
-                ("\n".join(memory_lines)) if memory_lines else "(none)",
-                "Provide a single actionable suggestion for what You should say next (under 24 words).",
-            )
-        except Exception:
-            pass
         return [
             {
                 "role": "system",
@@ -282,19 +275,6 @@ Conversation:
 JSON:
 """
 
-        # Log answer prompt preview for debugging
-        try:
-            self._logger.info(
-                "[Answer Prompt]\nTarget=%s | Native=%s | PronunciationMode=%s\n--- Transcript ---\n%s\n--- Prompt ---\n%s",
-                target_lang,
-                native_lang,
-                pronunciation_mode or "(none)",
-                transcript_lines or "(none)",
-                prompt.strip(),
-            )
-        except Exception:
-            pass
-
         payload = {
             "model": "gpt-4.1-mini",
             "messages": [
@@ -387,19 +367,6 @@ Conversation:
 JSON:
 """
 
-        # Log follow-up prompt preview for debugging
-        try:
-            self._logger.info(
-                "[FollowUp Prompt]\nTarget=%s | Native=%s | PronunciationMode=%s\n--- Transcript ---\n%s\n--- Prompt ---\n%s",
-                target_lang,
-                native_lang,
-                pronunciation_mode or "(none)",
-                transcript_lines or "(none)",
-                prompt.strip(),
-            )
-        except Exception:
-            pass
-
         payload = {
             "model": "gpt-4.1-mini",
             "messages": [
@@ -483,60 +450,118 @@ JSON:
                 "Example: Write sounds using your native script (phonetic, not translation)."
             )
 
-    async def feedback(self, user_text: str, lang: str, target_lang: str | None = None, native_lang: str | None = None, mode: str = "real") -> str:
-        """Provide feedback on what the user just said - suggest improvements."""
+    async def feedback(
+        self,
+        user_text: str,
+        lang: str,
+        target_lang: str | None = None,
+        native_lang: str | None = None,
+        mode: str = "real",
+        *,
+        include_pronunciation: bool = False,
+        pronunciation_mode: str | None = None,
+        transcript_tail: Sequence[str | dict] | None = None,
+    ) -> str:
+        """Provide structured feedback (JSON) on the user's utterance."""
         if not target_lang:
             target_lang = "English"
         if not native_lang:
             native_lang = "Korean"
         
-        if mode == "practice":
-            # In practice mode, user is trying to speak in target language
-            prompt = f"""The user is practicing {target_lang}. They just said:
-"{user_text}"
+        # Build pronunciation guidance consistent with answer/follow_up structured prompts
+        pronounce_rule = "Do not include a pronunciation field."
+        if include_pronunciation:
+            if (pronunciation_mode or "").strip().lower() == "romaji":
+                pronounce_rule = (
+                    "Include a single field 'pronunciation' which is ONE LINE of Hepburn romaji. "
+                    "ASCII only (no macrons). NEVER use kana/kanji or any non-ASCII."
+                )
+            else:
+                # native script reading hint
+                example_hint = self._build_pronunciation_example(native_lang, target_lang)
+                pronounce_rule = (
+                    "Include a single field 'pronunciation' which is ONE LINE showing how to pronounce suggestion_target using "
+                    f"{native_lang} script. This is a PHONETIC TRANSCRIPTION (not a translation). "
+                    f"You MUST write the sounds using {native_lang} alphabet/characters ONLY. "
+                    f"{example_hint}"
+                )
 
-Provide feedback in {native_lang} ONLY IF there is a CLEAR, HIGH-VALUE improvement (grammar/word choice/register). If the sentence is acceptable/natural enough or corrections are merely stylistic/nitpicky/minor, reply EXACTLY "NONE".
+        # Optional short transcript context (last 2 turns)
+        transcript_context = ""
+        try:
+            if transcript_tail:
+                transcript_lines = self._format_transcript(list(transcript_tail))
+                if transcript_lines:
+                    transcript_context = f"""Recent conversation (last {len(transcript_tail)} turns):\n{transcript_lines}\n\n"""
+        except Exception:
+            pass
 
-Format when feedback is needed: [Brief reason in {native_lang}] → [Better phrase in {target_lang}]
-Examples:
-- "완전한 문장으로 말하는 게 더 자연스러워요 → I'd like to check in for my reservation today."
-- "과거형을 사용해야 해요 → I went to the store yesterday."
-- "관사를 빠뜨리지 마세요 → I need a booking reference."
-Say "NONE" if already good or only trivial stylistic changes would be suggested.
-
-Rules:
-- Prefer making no suggestion over making a weak one.
-- Only suggest if you are at least moderately confident (≥0.7) a learner benefits.
-- Keep the whole feedback under 40 words.
-
-Feedback:"""
+        # Build output format instruction (plain one-line text, optional inline parentheses PRON)
+        if include_pronunciation:
+            if (pronunciation_mode or "").strip().lower() == "romaji":
+                pronounce_instr = (
+                    " (<ONE-LINE Hepburn romaji, ASCII only, words separated by spaces, minimal hyphens>)"
+                )
+            else:
+                pronounce_instr = (
+                    f" (<ONE-LINE reading in {native_lang} script; phonetic only, not translation>)"
+                )
         else:
-            # In real mode, user speaks in native language, wants to know target language
-            prompt = f"""The user is learning {target_lang}. They just said something in {native_lang}:
-"{user_text}"
+            pronounce_instr = ""
 
-Provide a brief explanation and suggestion in {native_lang} showing how to say this in {target_lang} ONLY IF doing so adds clear value. If the utterance is already fine or suggested change is marginal/stylistic, reply EXACTLY "NONE".
+        # Compose system rules (concise, generalized) and user prompt (context + output spec)
+        system_rules = (
+            f"You are a concise language coach.\n\n"
+            "Output: ONE LINE or 'NONE' only.\n"
+            f"Format: <coach in {native_lang}> → <phrase in {target_lang}>(PRON if provided)\n"
+            "PRON: inline parentheses with ONE-LINE phonetic reading ONLY WHEN requested.\n\n"
+            "Rules (keep it robust & brief):\n"
+            "- Suggest ONLY if there's a clear, high-value improvement. Else return NONE.\n"
+            "- Preserve learner perspective & intent (no switching to partner's POV).\n"
+            "- Prefer minimal edits (articles/tense/register). No new info.\n"
+            "- If parroting or off-topic, give a short response/bridge that advances the talk.\n"
+            "- Treat punctuation/casing as STT noise.\n"
+        )
 
-Format when feedback is needed: [Brief tip in {native_lang}] → [phrase in {target_lang}]
-Examples:
-- "예약할 때는 이렇게 말해요 → I'd like to make a reservation for two people."
-- "정중하게 요청하려면 → Could you please help me with check-in?"
-Say "NONE" if not needed.
+        pron_block = (
+            "- PRON: use Hepburn romaji (ASCII only, words separated by spaces)"
+            if include_pronunciation and (pronunciation_mode or "").strip().lower() == "romaji"
+            else (
+                f"- PRON: one-line {native_lang} phonetic reading (sounds only, not translation)"
+                if include_pronunciation
+                else "- PRON: (omit)"
+            )
+        )
 
-Rules:
-- Prefer making no suggestion over making a weak one.
-- Only suggest if you are at least moderately confident (≥0.7) a learner benefits.
-- Keep it under 40 words.
+        # Add a concrete PRON example (like suggestions) for readability
+        pron_example_text = ""
+        if include_pronunciation:
+            if (pronunciation_mode or "").strip().lower() == "romaji":
+                # Keep generic but concrete
+                pron_example_text = "PRON example: Japanese '行きましょう' → (ee kee mah shoh)"
+            else:
+                # Use native-language-specific example hint
+                example_hint = self._build_pronunciation_example(native_lang, target_lang)
+                pron_example_text = f"PRON example: {example_hint}"
 
-Feedback:"""
+        user_prompt = (
+            f"Native: {native_lang}\n"
+            f"Target: {target_lang}\n\n"
+            f"{transcript_context}Utterance:\n\"{user_text}\"\n\n"
+            f"Output: <coach in {native_lang}> → <phrase in {target_lang}>{pronounce_instr}\n"
+            f"Limits: coach ≤ 25 chars; phrase ≤ 15 words.\n"
+            f"{pron_block}\n"
+            f"{pron_example_text}\n"
+        )
         
         payload = {
             "model": "gpt-4.1-mini",
             "messages": [
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": system_rules},
+                {"role": "user", "content": user_prompt},
             ],
             "temperature": 0.2,
-            "max_tokens": 100,
+            "max_tokens": 300,
         }
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -546,7 +571,20 @@ Feedback:"""
             response = await client.post("/chat/completions", json=payload, headers=headers)
             response.raise_for_status()
             data = response.json()
-        return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+
+
+        # Log prompt preview for debugging suggest behavior
+        try:
+            self._logger.info(
+                "[Feedback Prompt]\nSystem ---\n%s\n\nUser ---\n%s",
+                system_rules,
+                user_prompt,
+            )
+        except Exception:
+            pass
+
+        # Return raw content (JSON string) or NONE; caller will parse/gate pronunciation
+        return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip() # type: ignore
 
     async def should_suggest(
         self,
@@ -615,12 +653,6 @@ Return YES or NO only.
             response.raise_for_status()
             data = response.json()
         decision = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip().upper()
-        try:
-            self._logger.info(f"Should suggest: {decision}")
-            # Elevate prompt to INFO for easier field debugging
-            self._logger.info("[ShouldSuggest Prompt]\nKind=%s | Mode=%s\n--- Transcript ---\n%s\n--- Prompt ---\n%s", kind, mode, transcript_lines, prompt)
-        except Exception:
-            pass
         return "YES" in decision
 
     def _format_transcript(self, transcript_tail: Sequence[str | dict]) -> str:
@@ -657,6 +689,55 @@ Return YES or NO only.
 
         # Fallback to the raw speaker, or a generic Partner if missing
         return speaker or "Partner"
+
+    async def decide_suggestion_kind(self, transcript_tail: Sequence[str | dict], *, mode: str = "real") -> str:
+        """Decide which single suggestion kind to produce: 'answer', 'follow_up', or 'none'.
+
+        Returns lowercase string in {"answer", "follow_up", "none"}.
+        """
+        transcript_lines = self._format_transcript(transcript_tail)
+        prompt = f"""
+You are a concise conversation assistant. Decide ONE suggestion type for the learner now.
+
+Output exactly one of:
+- ANSWER: suggest a direct reply to Partner's last message
+- FOLLOW_UP: suggest a new question the learner could ask to continue
+- NONE: do not suggest anything now
+
+Guidelines:
+- Prefer ANSWER if Partner's last message directly invites a response or asks a question.
+- Prefer FOLLOW_UP when a reply is already clear, and a next question would move the conversation forward.
+- Use NONE if suggesting would be noisy or redundant.
+{"- Be slightly more proactive in practice mode." if mode == "practice" else ""}
+
+Conversation:
+{transcript_lines}
+
+Return only one token: ANSWER or FOLLOW_UP or NONE.
+"""
+        payload = {
+            "model": "gpt-4.1-mini",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.1,
+            "max_tokens": 5,
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        try:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
+                response = await client.post("/chat/completions", json=payload, headers=headers)
+                response.raise_for_status()
+                data = response.json()
+            decision = (data.get("choices", [{}])[0].get("message", {}).get("content", "").strip() or "").upper()
+            if "ANSWER" in decision:
+                return "answer"
+            if "FOLLOW_UP" in decision or "FOLLOWUP" in decision:
+                return "follow_up"
+            return "none"
+        except Exception:
+            return "none"
 
     async def generate_ai_response(
         self,
@@ -756,21 +837,40 @@ AI:"""
                     parts.append(fragment.get("text", ""))
         return " ".join(part.strip() for part in parts if part).strip()
 
-    async def generate_text(self, prompt: str, max_tokens: int = 2000) -> str:
-        """Generate text response from a prompt using chat completions."""
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.7,
-            "max_tokens": max_tokens,
-        }
+    async def generate_text(self, prompt: str, max_tokens: int = 2000, model: str | None = None) -> str:
+        """Generate text response; use Responses API for gpt-5*, Chat Completions otherwise."""
+        chosen_model = model or self.model
+        use_responses_api = chosen_model.startswith("gpt-5")
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
         async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
+            if use_responses_api:
+                # Responses API expects 'input' and 'max_output_tokens'
+                payload = {
+                    "model": chosen_model,
+                    "input": prompt,
+                    "max_output_tokens": max_tokens,
+                }
+                # For GPT-5 family models, request lower reasoning effort for faster responses
+                try:
+                    payload["reasoning"] = {"effort": "low"}
+                except Exception:
+                    pass
+                response = await client.post("/responses", json=payload, headers=headers)
+                response.raise_for_status()
+                data = response.json()
+                return self._extract_text(data)
+            else:
+                payload = {
+                    "model": chosen_model,
+                    "messages": [
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.7,
+                    "max_tokens": max_tokens,
+                }
             response = await client.post("/chat/completions", json=payload, headers=headers)
             response.raise_for_status()
             data = response.json()
