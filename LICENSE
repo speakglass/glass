@@ -1,0 +1,91 @@
+Business Source License 1.1
+
+Parameters
+Licensor: Glass
+Licensed Work: Glass (the “Licensed Work”)
+Additional Use Grant:
+You may use, copy, modify, self-host, and host the Licensed Work to provide a service
+to yourself or to third parties (“Hosted Use”), provided such use is Non‑Competitive.
+
+“Non‑Competitive” means all of the following:
+(a) you do not offer, market, or sell a product or service that is substantially
+similar to, or that is a substitute for, Glass; and
+(b) your gross revenue attributable to the Licensed Work over the prior 12 months
+is less than $100,000; and
+(c) you do not present the service as “Glass” or imply sponsorship or endorsement
+by the Licensor.
+
+For clarity, personal projects, educational use, research, demos, and internal
+evaluation at any organization are Non‑Competitive.
+
+Change Date: 2028-01-01
+Change License: Apache License, Version 2.0
+
+Terms
+The Licensor hereby grants you the right to copy, modify, create derivative works,
+redistribute, and make non-production and production use of the Licensed Work, in
+each case subject to the limitations and conditions set forth in this license.
+
+1. Purpose
+   The Business Source License is intended to allow the broadest possible right to use,
+   modify, and redistribute the Licensed Work, while protecting the Licensor against
+   free-riding by commercial competitors for a limited period.
+
+2. Grant of Rights
+   Subject to the Additional Use Grant and the Restrictions below, you are granted a
+   license to the Licensed Work, including the rights to use, copy, modify, and create
+   derivative works, and to redistribute the Licensed Work and any derivative works in
+   source or object form, and to make the Licensed Work available as a hosted service.
+
+3. Restrictions
+   The rights granted above do not include, prior to the Change Date, the right to use
+   the Licensed Work for any Competitive Use. “Competitive Use” means offering, marketing,
+   or selling a product or service to third parties that competes with the Licensed Work
+   or provides substantially similar functionality, whether provided as software or as a
+   hosted/managed service, and whether payment is direct or indirect.
+
+4. Change License
+   On the Change Date, the license granted by this license will automatically, and
+   without any further action by the parties, become the Change License for the Licensed
+   Work. Any copies, modifications, or derivative works you create and distribute after
+   the Change Date must be licensed under the Change License.
+
+5. No Trademark License
+   This license does not grant you rights to use the Licensor’s trade names, trademarks,
+   service marks, logos, or product names, except as required to describe the origin of
+   the Licensed Work and to reproduce the content of the copyright notice file.
+
+6. Disclaimer of Warranty
+   THE LICENSED WORK IS PROVIDED “AS IS” AND WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, EITHER EXPRESS OR IMPLIED, INCLUDING, WITHOUT LIMITATION, ANY WARRANTIES OR
+   CONDITIONS OF TITLE, NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR
+   PURPOSE. YOU ARE SOLELY RESPONSIBLE FOR DETERMINING THE APPROPRIATENESS OF USING OR
+   REDISTRIBUTING THE LICENSED WORK AND ASSUME ANY RISKS ASSOCIATED WITH YOUR EXERCISE
+   OF PERMISSIONS UNDER THIS LICENSE.
+
+7. Limitation of Liability
+   IN NO EVENT AND UNDER NO LEGAL THEORY, WHETHER IN TORT (INCLUDING NEGLIGENCE),
+   CONTRACT, OR OTHERWISE, UNLESS REQUIRED BY APPLICABLE LAW (SUCH AS DELIBERATE AND
+   GROSSLY NEGLIGENT ACTS) OR AGREED TO IN WRITING, SHALL THE LICENSOR BE LIABLE TO YOU
+   FOR DAMAGES, INCLUDING ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
+   DAMAGES OF ANY CHARACTER ARISING AS A RESULT OF THIS LICENSE OR THE USE OF THE
+   LICENSED WORK INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF GOODWILL, WORK
+   STOPPAGE, COMPUTER FAILURE OR MALFUNCTION, OR ANY AND ALL OTHER COMMERCIAL DAMAGES OR
+   LOSSES, EVEN IF THE LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+8. Termination
+   If you violate the terms of this license, your rights under this license will
+   terminate automatically. Upon termination, you must cease all use and distribution
+   of the Licensed Work and destroy all copies in your possession or control.
+
+9. Notices
+   You must keep intact all copyright and license notices for the Licensed Work and, if
+   you distribute the Licensed Work or any derivative work, you must include a copy of
+   this license.
+
+10. Governing Law
+    This license will be governed by and construed in accordance with the laws applicable
+    in the jurisdiction of the Licensor, without regard to its conflict of law principles.
+
+For the avoidance of doubt, after the Change Date the Licensed Work will be available
+under the Change License (Apache License, Version 2.0).
