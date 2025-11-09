@@ -174,7 +174,7 @@ export default function StartCall() {
         <motion.div
           key="overlay"
           ref={containerRef}
-          className={'fixed inset-0 p-4 flex items-center justify-center bg-background'}
+          className={'fixed inset-0 p-3 sm:p-4 flex items-center justify-center bg-background'}
           style={
             glassMode
               ? {
@@ -246,7 +246,7 @@ export default function StartCall() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className={'flex flex-col items-center gap-8 max-w-xl mx-auto'}
+              className={'flex flex-col items-center gap-6 sm:gap-8 px-1.5'}
             >
               <div className={'text-center'}>
                 <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
@@ -256,7 +256,7 @@ export default function StartCall() {
                   We'll show how to read suggestions in your alphabet when helpful
                 </p>
               </div>
-              <div className={'flex flex-col md:flex-row gap-4 md:gap-6 w-full'}>
+              <div className={'flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start'}>
                 <button
                   onClick={() => {
                     setProficiency('cant_read');
@@ -264,27 +264,27 @@ export default function StartCall() {
                     setStep('mode');
                   }}
                   className={cn(
-                    'px-5 py-5 md:px-8 md:py-6 h-auto md:h-[200px] rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full md:w-[300px] max-w-[360px] md:max-w-none mx-auto md:mx-0',
+                    'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[200px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
                     getCardClass(),
                     getScaleClass(),
                     proficiency === 'cant_read' && getSelectedRingClass()
                   )}
                 >
-                  <div className={'flex h-full flex-col'}>
+                  <div className={'flex flex-col gap-3'}>
                     <div className={'text-center'}>
-                      <div className={`${getTextClass('title')} font-medium mb-1 text-base md:text-lg`}>
+                      <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
                         Yes, show pronunciation
                       </div>
                       <div className={`${getTextClass('body')} text-xs`}>Make suggestions readable for me</div>
                     </div>
-                    <div className={'mt-3 md:mt-auto'}>
+                    <div className={'mt-auto'}>
                       <div
                         className={cn(
-                          'rounded-md px-3 py-2 text-left max-w-[320px] mx-auto md:mx-0',
+                          'rounded-md px-3 py-2 text-left',
                           glassMode ? 'bg-white/5 border border-white/10' : 'bg-muted border border-border'
                         )}
                       >
-                        <div className={'flex items-center md:items-end gap-3'}>
+                        <div className={'flex items-center gap-3'}>
                           <div>
                             <div className={`${getTextClass('title')} text-sm leading-snug`}>ありがとう</div>
                             <div className={'text-emerald-400 opacity-80 text-sm mt-0.5'}>arigatou</div>
@@ -294,7 +294,7 @@ export default function StartCall() {
                             <div className={'text-emerald-400 opacity-80 text-sm mt-0.5'}>gozaimasu</div>
                           </div>
                         </div>
-                        <div className={`${getTextClass('muted')} text-[11px] mt-1`}>Thank you very much</div>
+                        <div className={`${getTextClass('muted')} text-xs mt-1`}>Thank you very much</div>
                       </div>
                     </div>
                   </div>
@@ -307,35 +307,33 @@ export default function StartCall() {
                     setStep('mode');
                   }}
                   className={cn(
-                    'px-5 py-5 md:px-8 md:py-6 h-auto md:h-[200px] rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full md:w-[300px] max-w-[360px] md:max-w-none mx-auto md:mx-0',
+                    'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[200px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
                     getCardClass(),
                     getScaleClass(),
                     proficiency === 'can_read' && getSelectedRingClass()
                   )}
                 >
-                  <div className={'flex h-full flex-col'}>
+                  <div className={'flex flex-col gap-3'}>
                     <div className={'text-center'}>
-                      <div className={`${getTextClass('title')} font-medium mb-1 text-base md:text-lg`}>
-                        No, I'm fine
-                      </div>
+                      <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>No, I'm fine</div>
                       <div className={`${getTextClass('body')} text-xs`}>Show suggestions only</div>
                     </div>
-                    <div className={'mt-3 md:mt-auto'}>
+                    <div className={'mt-auto'}>
                       <div
                         className={cn(
-                          'rounded-md px-3 py-2 text-left max-w-[320px] mx-auto md:mx-0',
+                          'rounded-md px-3 py-2 text-left',
                           glassMode ? 'bg-white/5 border border-white/10' : 'bg-muted border border-border'
                         )}
                       >
                         <div className={`${getTextClass('title')} text-sm leading-snug`}>ありがとうございます</div>
-                        <div className={`${getTextClass('muted')} text-[11px] mt-1`}>Thank you very much</div>
+                        <div className={`${getTextClass('muted')} text-xs mt-1`}>Thank you very much</div>
                       </div>
                     </div>
                   </div>
                 </button>
               </div>
 
-              <div className={'flex justify-between items-center w-full max-w-xl'}>
+              <div className={'flex justify-between items-center w-full'}>
                 <button onClick={() => setStep('languages')} className={getBackButtonClass()}>
                   ← Back
                 </button>
@@ -356,18 +354,18 @@ export default function StartCall() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className={'flex flex-col items-center gap-8 max-w-2xl mx-auto'}
+              className={'flex flex-col items-center gap-6 sm:gap-8 max-w-2xl mx-auto px-1.5'}
             >
               <div className={'text-center'}>
                 <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>Choose Your Languages</h2>
                 <p className={`${getTextClass('body')} text-sm`}>Select the language you want to practice</p>
               </div>
 
-              <div className={'flex flex-col gap-6 w-full'}>
+              <div className={'flex flex-col gap-5 sm:gap-6 w-full'}>
                 {/* Learning Language */}
                 <div className={'flex flex-col gap-3'}>
                   <p className={`${getTextClass('subtitle')} text-sm font-medium text-center`}>I want to learn</p>
-                  <div className={'flex gap-2 flex-wrap justify-center'}>
+                  <div className={'flex gap-1.5 sm:gap-2 flex-wrap justify-center'}>
                     {LANGUAGES.map((lang) => (
                       <Button
                         key={`learn-${lang.code}`}
@@ -385,7 +383,7 @@ export default function StartCall() {
                         onClick={() => handleLanguageSelect('learning', lang.code)}
                       >
                         <span className={'text-lg'}>{lang.flag}</span>
-                        <span className={'font-medium'}>{lang.name}</span>
+                        <span className={'font-medium text-sm'}>{lang.name}</span>
                       </Button>
                     ))}
                   </div>
@@ -394,7 +392,7 @@ export default function StartCall() {
                 {/* Native Language */}
                 <div className={'flex flex-col gap-3'}>
                   <p className={`${getTextClass('subtitle')} text-sm font-medium text-center`}>I speak</p>
-                  <div className={'flex gap-2 flex-wrap justify-center'}>
+                  <div className={'flex gap-1.5 sm:gap-2 flex-wrap justify-center'}>
                     {LANGUAGES.map((lang) => (
                       <Button
                         key={`native-${lang.code}`}
@@ -412,7 +410,7 @@ export default function StartCall() {
                         onClick={() => handleLanguageSelect('native', lang.code)}
                       >
                         <span className={'text-lg'}>{lang.flag}</span>
-                        <span className={'font-medium'}>{lang.name}</span>
+                        <span className={'font-medium text-sm'}>{lang.name}</span>
                       </Button>
                     ))}
                   </div>
@@ -445,7 +443,7 @@ export default function StartCall() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className={'flex flex-col items-center gap-8'}
+              className={'flex flex-col items-center gap-6 sm:gap-8 px-1.5'}
             >
               <div className={'text-center'}>
                 <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
@@ -454,11 +452,11 @@ export default function StartCall() {
                 <p className={`${getTextClass('body')} text-sm`}>Choose your preferred mode</p>
               </div>
 
-              <div className={'flex gap-6'}>
+              <div className={'flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start'}>
                 <button
                   onClick={() => handleModeSelect('practice')}
                   className={cn(
-                    'px-8 py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-[200px]',
+                    'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[200px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
                     getCardClass(),
                     getScaleClass()
                   )}
@@ -467,10 +465,10 @@ export default function StartCall() {
                     <img
                       src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=facearea&facepad=2&w=80&h=80&q=80"
                       alt="Practice person"
-                      className={'h-[28px] w-[28px] object-cover rounded-full'}
+                      className={'h-[24px] w-[24px] sm:h-[28px] sm:w-[28px] object-cover rounded-full'}
                     />
                     <div className={'text-center'}>
-                      <div className={`${getTextClass('title')} font-medium mb-1`}>Practice</div>
+                      <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>Practice</div>
                       <div className={`${getTextClass('body')} text-xs`}>Tutorial with AI</div>
                     </div>
                   </div>
@@ -479,9 +477,11 @@ export default function StartCall() {
                 <button
                   onClick={() => handleModeSelect('real')}
                   className={cn(
-                    'px-8 py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-[200px] relative',
+                    'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[200px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0 relative',
                     getCardClass(),
-                    getScaleClass()
+                    getScaleClass(),
+                    // Disable interactions and subtly dim on mobile
+                    'pointer-events-none opacity-60 sm:pointer-events-auto sm:opacity-100'
                   )}
                 >
                   {/* Recommended Badge */}
@@ -513,15 +513,24 @@ export default function StartCall() {
                       />
                     </div>
                     <div className={'text-center'}>
-                      <div className={`${getTextClass('title')} font-medium mb-1`}>Real Talk</div>
+                      <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>Real Talk</div>
                       <div className={`${getTextClass('body')} text-xs`}>Language Exchange • Meetings</div>
+                      {/* Mobile unavailability notice */}
+                      <div
+                        className={
+                          'sm:hidden inline-flex items-center gap-1 mt-2 text-[11px] px-2 py-1 rounded-full border ' +
+                          (glassMode ? 'border-white/30 text-white/70' : 'border-border text-muted-foreground')
+                        }
+                      >
+                        <span className={'leading-none text-xs'}>Unavailable on mobile</span>
+                      </div>
                     </div>
                   </div>
                 </button>
               </div>
 
               <div className={'flex justify-between items-center w-full'}>
-                <button onClick={() => setStep('languages')} className={getBackButtonClass()}>
+                <button onClick={() => setStep('level')} className={getBackButtonClass()}>
                   ← Back
                 </button>
                 <Button
@@ -543,14 +552,14 @@ export default function StartCall() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className={'flex flex-col items-center gap-6 max-w-2xl mx-auto'}
+              className={'flex flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5'}
             >
               <div className={'text-center'}>
                 <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>Choose a scenario</h2>
                 <p className={`${getTextClass('body')} text-sm`}>What would you like to practice?</p>
               </div>
 
-              <div className={'grid grid-cols-2 gap-4 w-full'}>
+              <div className={'grid grid-cols-2 gap-3.5 sm:gap-4 w-full'}>
                 {[
                   { id: 'casual', emoji: '💬', title: 'Casual Chat', desc: 'Everyday conversation' },
                   { id: 'airport', emoji: '✈️', title: 'Airport Check-in', desc: 'Travel & Immigration' },
@@ -563,17 +572,19 @@ export default function StartCall() {
                     key={scenario.id}
                     onClick={() => handleScenarioSelect(scenario.id)}
                     className={cn(
-                      'px-6 py-4 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
+                      'px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
                       getCardClass(),
                       getScaleClass(),
                       selectedScenario === scenario.id &&
                         (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent border-foreground/30')
                     )}
                   >
-                    <div className={'flex items-start gap-3'}>
-                      <span className={'text-2xl'}>{scenario.emoji}</span>
+                    <div className={'flex items-start gap-2 sm:gap-3'}>
+                      <span className={'text-lg sm:text-2xl'}>{scenario.emoji}</span>
                       <div>
-                        <div className={`${getTextClass('title')} font-medium mb-0.5`}>{scenario.title}</div>
+                        <div className={`${getTextClass('title')} font-medium mb-0.5 text-sm sm:text-base`}>
+                          {scenario.title}
+                        </div>
                         <div className={`${getTextClass('muted')} text-xs`}>{scenario.desc}</div>
                       </div>
                     </div>
@@ -586,7 +597,7 @@ export default function StartCall() {
                 <button
                   onClick={() => handleScenarioSelect('custom')}
                   className={cn(
-                    'w-full px-6 py-4 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2',
+                    'w-full px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2',
                     getCardClass(),
                     getScaleClass(),
                     selectedScenario === 'custom' &&
@@ -594,9 +605,11 @@ export default function StartCall() {
                   )}
                 >
                   <div className={'flex items-center gap-3'}>
-                    <span className={'text-2xl'}>✨</span>
+                    <span className={'text-lg sm:text-2xl'}>✨</span>
                     <div className={'text-left'}>
-                      <div className={`${getTextClass('title')} font-medium mb-0.5`}>Custom Scenario</div>
+                      <div className={`${getTextClass('title')} font-medium mb-0.5 text-sm sm:text-base`}>
+                        Custom Scenario
+                      </div>
                       <div className={`${getTextClass('muted')} text-xs`}>Describe your own situation</div>
                     </div>
                   </div>
@@ -613,7 +626,7 @@ export default function StartCall() {
                       onChange={(e) => setCustomScenario(e.target.value)}
                       placeholder="Describe the scenario you want to practice..."
                       className={cn(
-                        'w-full px-4 py-3 rounded-lg resize-none focus:outline-none',
+                        'w-full px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-lg resize-none focus:outline-none text-sm',
                         glassMode
                           ? 'backdrop-blur-sm bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:border-white/40'
                           : 'bg-background border border-input text-foreground placeholder:text-muted-foreground focus:border-ring'
@@ -633,7 +646,7 @@ export default function StartCall() {
                   disabled={!selectedScenario || (selectedScenario === 'custom' && !customScenario.trim())}
                   variant={glassMode ? 'translucent' : 'default'}
                   className={cn(
-                    'rounded-full px-8 py-2.5',
+                    'rounded-full px-6 py-2 sm:px-8 sm:py-2.5',
                     (!selectedScenario || (selectedScenario === 'custom' && !customScenario.trim())) &&
                       'opacity-50 cursor-not-allowed'
                   )}
@@ -650,7 +663,7 @@ export default function StartCall() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className={'flex flex-col items-center gap-6 max-w-lg mx-auto'}
+              className={'flex flex-col items-center gap-5 sm:gap-6 max-w-lg mx-auto px-1.5'}
             >
               <div className={'text-center'}>
                 <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
@@ -660,7 +673,7 @@ export default function StartCall() {
 
               <div
                 className={cn(
-                  'rounded-2xl p-6',
+                  'rounded-2xl p-4 sm:p-6',
                   glassMode ? 'bg-white/10 backdrop-blur-sm border border-white/20' : 'bg-card border border-border'
                 )}
               >
@@ -668,12 +681,12 @@ export default function StartCall() {
                   <div className={getTextClass('title')}>
                     {selectedScenario === 'custom' && customScenario ? (
                       <div>
-                        <p className={`text-xs ${getTextClass('muted')} mb-2`}>Scenario:</p>
+                        <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>Scenario:</p>
                         <p className={'text-sm'}>{customScenario}</p>
                       </div>
                     ) : selectedScenario ? (
                       <div>
-                        <p className={`text-xs ${getTextClass('muted')} mb-2`}>Scenario:</p>
+                        <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>Scenario:</p>
                         <p className={'text-base font-medium'}>
                           {selectedScenario === 'airport' && '✈️ Airport Check-in'}
                           {selectedScenario === 'restaurant' && '🍽️ Restaurant'}
@@ -687,8 +700,8 @@ export default function StartCall() {
                   </div>
                 ) : (
                   <div className={cn(getTextClass('title'), 'space-y-3')}>
-                    <p className={'text-sm leading-relaxed font-medium mb-3'}>Follow these steps:</p>
-                    <div className={cn('text-sm space-y-2.5', getTextClass('subtitle'))}>
+                    <p className={'text-base leading-relaxed font-medium mb-2.5 sm:mb-3'}>Follow these steps:</p>
+                    <div className={cn('text-sm space-y-2', getTextClass('subtitle'))}>
                       <p>1. Open your meeting (Zoom, Google Meet, or Teams)</p>
                       <p>2. Click "Start" below</p>
                       <p>3. Share your meeting tab</p>
@@ -699,16 +712,13 @@ export default function StartCall() {
               </div>
 
               <div className={'flex justify-between items-center w-full'}>
-                <button
-                  onClick={() => setStep(selectedMode === 'practice' ? 'scenario' : 'mode')}
-                  className={getBackButtonClass()}
-                >
+                <button onClick={() => setStep('mode')} className={getBackButtonClass()}>
                   ← Back
                 </button>
                 <Button
                   variant={glassMode ? 'translucent' : 'default'}
                   onClick={handleStartCall}
-                  className={'rounded-full px-8 py-2.5'}
+                  className={'rounded-full px-6 py-2 sm:px-8 sm:py-2.5'}
                 >
                   Start
                 </Button>

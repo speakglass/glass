@@ -72,12 +72,14 @@ export default function Settings() {
   return (
     <div className={'relative'} ref={panelRef}>
       <Button
-        variant={'ghost'}
-        className={'ml-auto flex items-center gap-1.5 rounded-full'}
+        variant={'outline'}
+        size={'icon'}
+        aria-label="Open settings"
+        className={'ml-auto flex items-center gap-1.5 rounded-full w-9 sm:w-auto sm:px-3'}
         onClick={() => setOpen((v) => !v)}
       >
         <SettingsIcon className={'size-4'} />
-        <span>Settings</span>
+        <span className={'hidden sm:inline'}>Settings</span>
       </Button>
       {open && (
         <div

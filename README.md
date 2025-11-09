@@ -107,6 +107,7 @@ Local-hosted model adapters (LLM/ASR/TTS) will be added soon.
 | Screen capture input (on-screen context)  | 🚧 Planned | Image/screen context → help  |
 | Persistent memory/personalization         | 🚧 Planned | Zep/Graphiti adapters        |
 | Local-hosted model adapters (LLM/ASR/TTS) | 🚧 Planned | Self-hosted runtime          |
+| Docker/Compose support                    | 🚧 Planned | Backend/Web images + compose |
 
 ## License
 
@@ -118,14 +119,10 @@ This project is licensed under the Business Source License 1.1 (BSL).
 
 ## Community & contact
 
-- **GitHub Discussions**: best place for questions, product feedback, and ideas.  
-  [Open a discussion](https://github.com/speakglass/glass/discussions)
+- **[GitHub Discussions](https://github.com/speakglass/glass/discussions)**: best place for questions, product feedback, and ideas.
 
-- **GitHub Issues**: report bugs and propose features so we can track them.  
-  [Create an issue](https://github.com/speakglass/glass/issues)
+- **[GitHub Issues](https://github.com/speakglass/glass/issues)**: report bugs and propose features so we can track them.
 
-- **Discord**: share what you’re building and chat with the community.  
-  [Join our Discord](https://discord.gg/W7RAzUdYaj)
+- **[Discord](https://discord.gg/W7RAzUdYaj)**: share what you’re building and chat with the community.
 
-- **X (Twitter)**: follow updates, launches, and community highlights.  
-  [Follow @speakglass](https://x.com/speakglass)
+- **[X (Twitter)](https://x.com/speakglass)**: follow updates, launches, and community highlights.

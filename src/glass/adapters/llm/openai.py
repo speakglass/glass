@@ -511,16 +511,18 @@ JSON:
 
         # Compose system rules (concise, generalized) and user prompt (context + output spec)
         system_rules = (
-            f"You are a concise language coach.\n\n"
-            "Output: ONE LINE or 'NONE' only.\n"
-            f"Format: <coach in {native_lang}> → <phrase in {target_lang}>(PRON if provided)\n"
-            "PRON: inline parentheses with ONE-LINE phonetic reading ONLY WHEN requested.\n\n"
-            "Rules (keep it robust & brief):\n"
-            "- Suggest ONLY if there's a clear, high-value improvement. Else return NONE.\n"
-            "- Preserve learner perspective & intent (no switching to partner's POV).\n"
-            "- Prefer minimal edits (articles/tense/register). No new info.\n"
-            "- If parroting or off-topic, give a short response/bridge that advances the talk.\n"
-            "- Treat punctuation/casing as STT noise.\n"
+            f"You are a strict language coach.\n\n"
+            "DEFAULT: Return 'NONE' unless feedback is truly needed.\n"
+            f"Format (when needed): <coach in {native_lang}> → <phrase in {target_lang}>(PRON if provided)\n\n"
+            "Suggest ONLY for:\n"
+            "- Clear grammar/conjugation errors\n"
+            "- Unnatural phrasing that hinders communication\n"
+            "- Significantly wrong word choice\n\n"
+            "Return NONE if:\n"
+            "- Message is understandable and natural\n"
+            "- Only minor style differences\n"
+            "- Punctuation/casing issues (STT noise)\n"
+            "- Multiple valid ways to say it\n"
         )
 
         pron_block = (

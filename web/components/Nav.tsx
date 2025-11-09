@@ -30,13 +30,15 @@ export const Nav = () => {
           onClick={() => {
             window.open('https://github.com/speakglass/glass', '_blank', 'noopener noreferrer');
           }}
-          variant={'ghost'}
-          className={'ml-auto flex items-center gap-1.5 rounded-full'}
+          variant={'outline'}
+          size={'icon'}
+          aria-label="Open GitHub"
+          className={'ml-auto flex items-center gap-1.5 rounded-full w-9 sm:w-auto sm:px-3'}
         >
           <span>
             <Github className={'size-4'} />
           </span>
-          <span>Star on GitHub</span>
+          <span className={'hidden sm:inline'}>Star on GitHub</span>
         </Button>
         <Settings />
         {/* Theme toggle removed; use Settings panel switch instead */}
