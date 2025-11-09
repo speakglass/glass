@@ -1,0 +1,41 @@
+name: Post Release Actions
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  notify-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get release info
+        id: release
+        run: |
+          echo "tag_name=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          echo "release_name=${{ github.event.release.name }}" >> $GITHUB_OUTPUT
+          echo "release_url=${{ github.event.release.html_url }}" >> $GITHUB_OUTPUT
+
+      - name: Release notification
+        run: |
+          echo "🎉 New release published!"
+          echo "Version: ${{ steps.release.outputs.tag_name }}"
+          echo "Name: ${{ steps.release.outputs.release_name }}"
+          echo "URL: ${{ steps.release.outputs.release_url }}"
+
+      # Add additional post-release actions here:
+      # - Send Discord/Slack notification
+      # - Trigger deployment
+      # - Update documentation
+      # - Generate RSS feed
+      # etc.
+
+      # Example: Comment on related issues
+      # - name: Comment on related issues
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       const release = context.payload.release;
+      #       // Add logic to comment on issues mentioned in release notes
