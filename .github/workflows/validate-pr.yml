@@ -39,5 +39,3 @@ jobs:
           # For work-in-progress PRs
           ignoreLabels: |
             ignore-semantic-pull-request
-          # Add a comment explaining the error
-          commentOnError: true
