@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/speakglass/glass/compare/v0.1.1...v0.1.2) (2025-11-09)
+
+
+### Features
+
+* **ui:** add language examples and pronunciation support in StartCall component ([e8a9385](https://github.com/speakglass/glass/commit/e8a9385dfcfe49c92161e5b8ad0798dba2fae27e))
+
 ## [0.1.1](https://github.com/speakglass/glass/compare/v0.1.0...v0.1.1) (2025-11-09)
 
 
