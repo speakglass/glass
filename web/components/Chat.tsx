@@ -10,6 +10,7 @@ import { Loader2, Sparkles, MessageCircleMore, ChevronDown, Check, Volume2, X, S
 import { Button } from '@/components/ui/button';
 import { cn } from '@/utils';
 import Progress from '@/components/ui/progress';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 type SuggestionBubbleProps = {
   suggestion: AISuggestion;
@@ -389,46 +390,46 @@ export default function Chat() {
                         size="sm"
                         onClick={handleAnswer}
                         disabled={loadingAnswer || loadingFollowUp}
-                        className={'text-xs h-7 px-3 cursor-pointer whitespace-nowrap'}
+                        className={'text-xs h-7 px-3 cursor-pointer whitespace-nowrap gap-1.5'}
                       >
                         {loadingAnswer ? (
-                          <Loader2 className={'size-3 mr-1 animate-spin'} />
+                          <Loader2 className={'size-3 animate-spin'} />
                         ) : (
-                          <MessageCircleMore className={'size-3 mr-1'} />
+                          <MessageCircleMore className={'size-3'} />
                         )}
-                        Suggest a reply
+                        <span className={'hidden sm:inline'}>Suggest a reply</span>
+                        <span className={'sm:hidden'}>Reply</span>
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={handleFollowUp}
                         disabled={loadingAnswer || loadingFollowUp}
-                        className={'text-xs h-7 px-3 cursor-pointer whitespace-nowrap'}
+                        className={'text-xs h-7 px-3 cursor-pointer whitespace-nowrap gap-1.5'}
                       >
                         {loadingFollowUp ? (
-                          <Loader2 className={'size-3 mr-1 animate-spin'} />
+                          <Loader2 className={'size-3 animate-spin'} />
                         ) : (
-                          <Sparkles className={'size-3 mr-1'} />
+                          <Sparkles className={'size-3'} />
                         )}
-                        Suggest follow-up
+                        <span className={'hidden sm:inline'}>Suggest follow-up</span>
+                        <span className={'sm:hidden'}>Follow-up</span>
                       </Button>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
                 {/* Right group: Suggest + Feedback */}
-                <div className={'flex items-center gap-2 ml-auto w-full md:w-auto justify-end md:justify-start'}>
+                <div className={'flex items-center gap-2 ml-auto justify-end md:justify-start'}>
                   {/* Mobile: single Options button to configure Suggest/Feedback */}
                   <div className={'relative md:hidden'}>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setShowOptionsMenu(!showOptionsMenu)}
-                      className={'text-xs h-7 px-3 cursor-pointer gap-1.5 whitespace-nowrap'}
+                      className={'h-7 w-7 p-0 cursor-pointer'}
                     >
                       <SlidersHorizontal className={'size-3.5'} />
-                      <span>Options</span>
-                      <ChevronDown className={'size-3 ml-0.5 opacity-50'} />
                     </Button>
 
                     <AnimatePresence>
@@ -438,50 +439,61 @@ export default function Chat() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -8 }}
                           className={
-                            'absolute right-0 top-full mt-1 w-56 bg-card border border-border/50 rounded-lg shadow-lg overflow-hidden z-50'
+                            'absolute right-0 top-full mt-1 min-w-[260px] bg-card border border-border/50 rounded-lg shadow-lg overflow-hidden z-50 p-3'
                           }
                         >
-                          <div className={'py-1'}>
-                            <div className={'px-3 py-1.5 text-[11px] uppercase tracking-wide opacity-60'}>Suggest</div>
-                            {(['always', 'auto', 'off'] as FeedbackMode[]).map((mode) => (
-                              <button
-                                key={`sug-${mode}`}
-                                onClick={() => {
-                                  updateSuggestMode(mode);
-                                  setShowOptionsMenu(false);
-                                }}
-                                className={cn(
-                                  'w-full px-3 py-2 text-xs text-left hover:bg-accent/50 transition-colors flex items-center justify-between',
-                                  suggestMode === mode && 'bg-accent/30'
-                                )}
+                          <div className={'space-y-3'}>
+                            {/* Suggest Mode */}
+                            <div>
+                              <div className={'text-[11px] font-medium text-muted-foreground mb-2'}>Suggest</div>
+                              <div
+                                className={
+                                  'inline-flex items-center gap-0.5 rounded-md border border-input bg-background p-0.5 w-full'
+                                }
                               >
-                                <span>{feedbackModeLabels[mode]}</span>
-                                {suggestMode === mode && <Check className={'size-3'} />}
-                              </button>
-                            ))}
-                            <div
-                              className={
-                                'px-3 py-1.5 text-[11px] uppercase tracking-wide opacity-60 border-t border-border/50'
-                              }
-                            >
-                              Feedback
+                                {(['always', 'auto', 'off'] as SuggestMode[]).map((mode) => (
+                                  <button
+                                    key={`sug-${mode}`}
+                                    type="button"
+                                    onClick={() => updateSuggestMode(mode)}
+                                    className={cn(
+                                      'inline-flex items-center justify-center rounded-sm px-3 py-1.5 text-xs font-medium transition-colors flex-1',
+                                      suggestMode === mode
+                                        ? 'bg-accent text-accent-foreground'
+                                        : 'hover:bg-accent/60 text-muted-foreground'
+                                    )}
+                                  >
+                                    {feedbackModeLabels[mode]}
+                                  </button>
+                                ))}
+                              </div>
                             </div>
-                            {(['always', 'auto', 'off'] as FeedbackMode[]).map((mode) => (
-                              <button
-                                key={`fb-${mode}`}
-                                onClick={() => {
-                                  updateFeedbackMode(mode);
-                                  setShowOptionsMenu(false);
-                                }}
-                                className={cn(
-                                  'w-full px-3 py-2 text-xs text-left hover:bg-accent/50 transition-colors flex items-center justify-between',
-                                  settings.feedbackMode === mode && 'bg-accent/30'
-                                )}
+
+                            {/* Feedback Mode */}
+                            <div>
+                              <div className={'text-[11px] font-medium text-muted-foreground mb-2'}>Feedback</div>
+                              <div
+                                className={
+                                  'inline-flex items-center gap-0.5 rounded-md border border-input bg-background p-0.5 w-full'
+                                }
                               >
-                                <span>{feedbackModeLabels[mode]}</span>
-                                {settings.feedbackMode === mode && <Check className={'size-3'} />}
-                              </button>
-                            ))}
+                                {(['always', 'auto', 'off'] as FeedbackMode[]).map((mode) => (
+                                  <button
+                                    key={`fb-${mode}`}
+                                    type="button"
+                                    onClick={() => updateFeedbackMode(mode)}
+                                    className={cn(
+                                      'inline-flex items-center justify-center rounded-sm px-3 py-1.5 text-xs font-medium transition-colors flex-1',
+                                      settings.feedbackMode === mode
+                                        ? 'bg-accent text-accent-foreground'
+                                        : 'hover:bg-accent/60 text-muted-foreground'
+                                    )}
+                                  >
+                                    {feedbackModeLabels[mode]}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           </div>
                         </motion.div>
                       )}

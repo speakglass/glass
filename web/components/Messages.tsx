@@ -117,7 +117,7 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, Record<never, never
                     </div>
                     <div className={'pb-3 px-3 space-y-2'}>
                       {/* Committed content + ephemeral partial (no animation) */}
-                      <span>
+                      <span className={'text-sm sm:text-base'}>
                         {msg.partial
                           ? `${msg.message.content ? msg.message.content + ' ' : ''}${msg.partial}`
                           : msg.message.content}

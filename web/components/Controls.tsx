@@ -42,7 +42,7 @@ export default function Controls() {
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 w-full p-4 pb-6 flex items-center justify-center',
+        'fixed bottom-0 left-0 w-full p-3 pb-4 sm:p-4 sm:pb-6 flex items-center justify-center',
         'bg-gradient-to-t from-card via-card/90 to-card/0'
       )}
     >
@@ -61,7 +61,7 @@ export default function Controls() {
               y: '100%',
               opacity: 0,
             }}
-            className={'p-4 bg-card border border-border/50 rounded-full flex items-center gap-4'}
+            className={'p-2.5 sm:p-4 bg-card border border-border/50 rounded-full flex items-center gap-2 sm:gap-4'}
           >
             <Toggle
               className={'rounded-full'}
@@ -77,12 +77,12 @@ export default function Controls() {
               {isMuted ? <MicOff className={'size-4'} /> : <Mic className={'size-4'} />}
             </Toggle>
 
-            <div className={'relative grid h-8 w-48 shrink grow-0'}>
+            <div className={'relative grid h-8 w-24 sm:w-48 shrink grow-0'}>
               <MicFFT fft={micFft} className={'fill-current'} />
             </div>
 
             {status.value === 'connected' ? (
-              <div className={'relative flex items-center gap-2'}>
+              <div className={'relative flex items-center gap-1 sm:gap-2'}>
                 {(() => {
                   const baseKnown = typeof startRemainingSeconds === 'number';
                   const base = baseKnown
@@ -92,7 +92,7 @@ export default function Controls() {
                     : undefined;
                   const elapsed = typeof elapsedSeconds === 'number' ? elapsedSeconds : 0;
                   return (
-                    <span className={'text-sm tabular-nums'}>
+                    <span className={'text-xs sm:text-sm tabular-nums'}>
                       <span className={lowTime ? 'text-rose-600 dark:text-rose-400' : undefined}>{fmt(elapsed)}</span>
                       <span className={'text-muted-foreground'}>{' / '}</span>
                       {baseKnown ? (
@@ -122,6 +122,7 @@ export default function Controls() {
 
             <Button
               className={'flex items-center gap-1 rounded-full'}
+              size="sm"
               onClick={() => {
                 disconnect();
               }}
@@ -130,7 +131,7 @@ export default function Controls() {
               <span>
                 <Phone className={'size-4 opacity-50 fill-current'} strokeWidth={0} />
               </span>
-              <span>End Call</span>
+              <span className={'hidden sm:inline'}>End Call</span>
             </Button>
           </motion.div>
         ) : null}
