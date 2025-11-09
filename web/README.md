@@ -3,8 +3,6 @@
   <p>Real-time voice conversation with microphone and screen audio capture</p>
 </div>
 
-![preview.png](preview.png)
-
 ## Overview
 
 Glass is a Next.js web application that connects to the Glass API backend for real-time voice conversations. It captures both microphone input and screen audio, streaming them simultaneously to the backend for processing.
