@@ -16,6 +16,21 @@ interface LanguageOption {
   flag: string;
 }
 
+interface ExamplePhrase {
+  target: string; // Text in learning language
+  pronunciation?: string; // Romanization/pronunciation guide
+  translation: string; // Translation in native language
+}
+
+interface LanguageExample {
+  withPronunciation: {
+    words: { target: string; pronunciation: string }[];
+  };
+  withoutPronunciation: {
+    target: string;
+  };
+}
+
 const LANGUAGES: LanguageOption[] = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
   { code: 'ko', name: '한국어', flag: '🇰🇷' },
@@ -24,6 +39,65 @@ const LANGUAGES: LanguageOption[] = [
   { code: 'es', name: 'Español', flag: '🇪🇸' },
   { code: 'fr', name: 'Français', flag: '🇫🇷' },
 ];
+
+// Example phrases for each language with translations
+const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = {
+  en: {
+    ko: { target: 'Thank you very much', pronunciation: '땡큐 베리 머치', translation: '정말 감사합니다' },
+    ja: {
+      target: 'Thank you very much',
+      pronunciation: 'サンキュー ベリー マッチ',
+      translation: '本当にありがとうございます',
+    },
+    zh: { target: 'Thank you very much', pronunciation: 'seng-kyou be-li ma-chi', translation: '非常感谢' },
+    es: { target: 'Thank you very much', pronunciation: 'zenk yu beri mach', translation: 'Muchas gracias' },
+    fr: { target: 'Thank you very much', pronunciation: 'sank iou vèri meutch', translation: 'Merci beaucoup' },
+  },
+  ko: {
+    en: { target: '정말 감사합니다', pronunciation: 'jeongmal gamsahamnida', translation: 'Thank you very much' },
+    ja: {
+      target: '정말 감사합니다',
+      pronunciation: 'チョンマル カムサハムニダ',
+      translation: '本当にありがとうございます',
+    },
+    zh: { target: '정말 감사합니다', pronunciation: 'jeong-ma-er kam-sa-ha-mu-ni-da', translation: '非常感谢' },
+    es: { target: '정말 감사합니다', pronunciation: 'jeongmal gamsahamnida', translation: 'Muchas gracias' },
+    fr: { target: '정말 감사합니다', pronunciation: 'jeongmal gamsahamnida', translation: 'Merci beaucoup' },
+  },
+  ja: {
+    en: { target: 'ありがとうございます', pronunciation: 'arigatou gozaimasu', translation: 'Thank you very much' },
+    ko: { target: 'ありがとうございます', pronunciation: '아리가토 고자이마스', translation: '정말 감사합니다' },
+    zh: { target: 'ありがとうございます', pronunciation: 'a-li-ga-tou go-za-i-ma-su', translation: '非常感谢' },
+    es: { target: 'ありがとうございます', pronunciation: 'arigatou gozaimasu', translation: 'Muchas gracias' },
+    fr: { target: 'ありがとうございます', pronunciation: 'arigatou gozaimasu', translation: 'Merci beaucoup' },
+  },
+  zh: {
+    en: { target: '非常感谢', pronunciation: 'fei-chang gan-xie', translation: 'Thank you very much' },
+    ko: { target: '非常感谢', pronunciation: '페이창 간시에', translation: '정말 감사합니다' },
+    ja: { target: '非常感谢', pronunciation: 'フェイチャン ガンシエ', translation: '本当にありがとうございます' },
+    es: { target: '非常感谢', pronunciation: 'fei-chang gan-xie', translation: 'Muchas gracias' },
+    fr: { target: '非常感谢', pronunciation: 'fei-chang gan-xie', translation: 'Merci beaucoup' },
+  },
+  es: {
+    en: { target: 'Muchas gracias', pronunciation: 'moo-chahs grah-see-ahs', translation: 'Thank you very much' },
+    ko: { target: 'Muchas gracias', pronunciation: '무차스 그라시아스', translation: '정말 감사합니다' },
+    ja: { target: 'Muchas gracias', pronunciation: 'ムーチャス グラシアス', translation: '本当にありがとうございます' },
+    zh: { target: 'Muchas gracias', pronunciation: 'mu-cha-si ge-la-xi-ya-si', translation: '非常感谢' },
+    fr: { target: 'Muchas gracias', translation: 'Merci beaucoup' },
+  },
+  fr: {
+    en: { target: 'Merci beaucoup', pronunciation: 'mehr-see boh-koo', translation: 'Thank you very much' },
+    ko: { target: 'Merci beaucoup', pronunciation: '메르시 보쿠', translation: '정말 감사합니다' },
+    ja: { target: 'Merci beaucoup', pronunciation: 'メルシー ボクー', translation: '本当にありがとうございます' },
+    zh: { target: 'Merci beaucoup', pronunciation: 'mei-er-xi bo-ku', translation: '非常感谢' },
+    es: { target: 'Merci beaucoup', translation: 'Muchas gracias' },
+  },
+};
+
+// Get example for language pair, fallback to Japanese->English if not found
+const getLanguageExample = (learningLang: string, nativeLang: string): ExamplePhrase | undefined => {
+  return LANGUAGE_EXAMPLES[learningLang]?.[nativeLang] || LANGUAGE_EXAMPLES['ja']?.['en'];
+};
 
 export default function StartCall() {
   const { status, connect, updateSettings, settings } = useGlass();
@@ -122,14 +196,16 @@ export default function StartCall() {
   }, [status.value]);
 
   const handleLanguageSelect = (type: 'learning' | 'native', code: string) => {
+    const wasComplete = languages.learningLang && languages.nativeLang;
     const newLanguages = {
       ...languages,
       [type === 'learning' ? 'learningLang' : 'nativeLang']: code,
     };
     setLanguages(newLanguages);
 
-    // Auto-advance when both languages are selected
-    if (newLanguages.learningLang && newLanguages.nativeLang) {
+    // Auto-advance only when both languages are selected for the first time
+    // If already complete, user must click Next to proceed
+    if (newLanguages.learningLang && newLanguages.nativeLang && !wasComplete) {
       setTimeout(() => setStep('level'), 300);
     }
   };
@@ -241,114 +317,121 @@ export default function StartCall() {
           )}
 
           {/* Level (Reading ability) Selection */}
-          {step === 'level' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className={'flex flex-col items-center gap-6 sm:gap-8 px-1.5'}
-            >
-              <div className={'text-center'}>
-                <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
-                  Do you want pronunciation help?
-                </h2>
-                <p className={`${getTextClass('body')} text-sm`}>
-                  We'll show how to read suggestions in your alphabet when helpful
-                </p>
-              </div>
-              <div className={'flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start'}>
-                <button
-                  onClick={() => {
-                    setProficiency('cant_read');
-                    updateSettings({ proficiency: 'cant_read' });
-                    setStep('mode');
-                  }}
-                  className={cn(
-                    'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[200px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
-                    getCardClass(),
-                    getScaleClass(),
-                    proficiency === 'cant_read' && getSelectedRingClass()
-                  )}
+          {step === 'level' &&
+            (() => {
+              const phrase = getLanguageExample(languages.learningLang, languages.nativeLang);
+
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className={'flex flex-col items-center gap-6 sm:gap-8 px-1.5'}
                 >
-                  <div className={'flex flex-col gap-3'}>
-                    <div className={'text-center'}>
-                      <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
-                        Yes, show pronunciation
-                      </div>
-                      <div className={`${getTextClass('body')} text-xs`}>Make suggestions readable for me</div>
-                    </div>
-                    <div className={'mt-auto'}>
-                      <div
-                        className={cn(
-                          'rounded-md px-3 py-2 text-left',
-                          glassMode ? 'bg-white/5 border border-white/10' : 'bg-muted border border-border'
-                        )}
-                      >
-                        <div className={'flex items-center gap-3'}>
-                          <div>
-                            <div className={`${getTextClass('title')} text-sm leading-snug`}>ありがとう</div>
-                            <div className={'text-emerald-400 opacity-80 text-sm mt-0.5'}>arigatou</div>
+                  <div className={'text-center'}>
+                    <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
+                      Do you want pronunciation help?
+                    </h2>
+                    <p className={`${getTextClass('body')} text-sm`}>
+                      We'll show how to read suggestions in your alphabet when helpful
+                    </p>
+                  </div>
+                  <div className={'flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start'}>
+                    <button
+                      onClick={() => {
+                        setProficiency('cant_read');
+                        updateSettings({ proficiency: 'cant_read' });
+                        setStep('mode');
+                      }}
+                      className={cn(
+                        'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[200px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
+                        getCardClass(),
+                        getScaleClass(),
+                        proficiency === 'cant_read' && getSelectedRingClass()
+                      )}
+                    >
+                      <div className={'flex flex-col gap-3'}>
+                        <div className={'text-center'}>
+                          <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
+                            Yes, show pronunciation
                           </div>
-                          <div>
-                            <div className={`${getTextClass('title')} text-sm leading-snug`}>ございます</div>
-                            <div className={'text-emerald-400 opacity-80 text-sm mt-0.5'}>gozaimasu</div>
+                          <div className={`${getTextClass('body')} text-xs`}>Make suggestions readable for me</div>
+                        </div>
+                        <div className={'mt-auto'}>
+                          <div
+                            className={cn(
+                              'rounded-md px-3 py-2 text-left',
+                              glassMode ? 'bg-white/5 border border-white/10' : 'bg-muted border border-border'
+                            )}
+                          >
+                            <div className={`${getTextClass('title')} text-sm leading-snug`}>
+                              {phrase?.target || 'Example phrase'}
+                            </div>
+                            {phrase?.pronunciation && (
+                              <div className={'text-emerald-400 opacity-80 text-sm mt-0.5'}>{phrase.pronunciation}</div>
+                            )}
+                            {phrase?.translation && (
+                              <div className={`${getTextClass('muted')} text-xs mt-1`}>{phrase.translation}</div>
+                            )}
                           </div>
                         </div>
-                        <div className={`${getTextClass('muted')} text-xs mt-1`}>Thank you very much</div>
                       </div>
-                    </div>
-                  </div>
-                </button>
+                    </button>
 
-                <button
-                  onClick={() => {
-                    setProficiency('can_read');
-                    updateSettings({ proficiency: 'can_read' });
-                    setStep('mode');
-                  }}
-                  className={cn(
-                    'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[200px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
-                    getCardClass(),
-                    getScaleClass(),
-                    proficiency === 'can_read' && getSelectedRingClass()
-                  )}
-                >
-                  <div className={'flex flex-col gap-3'}>
-                    <div className={'text-center'}>
-                      <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>No, I'm fine</div>
-                      <div className={`${getTextClass('body')} text-xs`}>Show suggestions only</div>
-                    </div>
-                    <div className={'mt-auto'}>
-                      <div
-                        className={cn(
-                          'rounded-md px-3 py-2 text-left',
-                          glassMode ? 'bg-white/5 border border-white/10' : 'bg-muted border border-border'
-                        )}
-                      >
-                        <div className={`${getTextClass('title')} text-sm leading-snug`}>ありがとうございます</div>
-                        <div className={`${getTextClass('muted')} text-xs mt-1`}>Thank you very much</div>
+                    <button
+                      onClick={() => {
+                        setProficiency('can_read');
+                        updateSettings({ proficiency: 'can_read' });
+                        setStep('mode');
+                      }}
+                      className={cn(
+                        'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[200px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
+                        getCardClass(),
+                        getScaleClass(),
+                        proficiency === 'can_read' && getSelectedRingClass()
+                      )}
+                    >
+                      <div className={'flex flex-col gap-3'}>
+                        <div className={'text-center'}>
+                          <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>No, I'm fine</div>
+                          <div className={`${getTextClass('body')} text-xs`}>Show suggestions only</div>
+                        </div>
+                        <div className={'mt-auto'}>
+                          <div
+                            className={cn(
+                              'rounded-md px-3 py-2 text-left',
+                              glassMode ? 'bg-white/5 border border-white/10' : 'bg-muted border border-border'
+                            )}
+                          >
+                            <div className={`${getTextClass('title')} text-sm leading-snug`}>
+                              {phrase?.target || 'Example phrase'}
+                            </div>
+                            {phrase?.translation && (
+                              <div className={`${getTextClass('muted')} text-xs mt-1`}>{phrase.translation}</div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    </button>
                   </div>
-                </button>
-              </div>
 
-              <div className={'flex justify-between items-center w-full'}>
-                <button onClick={() => setStep('languages')} className={getBackButtonClass()}>
-                  ← Back
-                </button>
-                <Button
-                  onClick={() => setStep('mode')}
-                  disabled={!proficiency}
-                  variant={glassMode ? 'ghost' : 'ghost'}
-                  size="sm"
-                  className={cn('text-sm', !proficiency && 'opacity-50 cursor-not-allowed')}
-                >
-                  Next →
-                </Button>
-              </div>
-            </motion.div>
-          )}
+                  <div className={'flex justify-between items-center w-full'}>
+                    <button onClick={() => setStep('languages')} className={getBackButtonClass()}>
+                      ← Back
+                    </button>
+                    <Button
+                      onClick={() => setStep('mode')}
+                      disabled={!proficiency}
+                      variant={glassMode ? 'ghost' : 'ghost'}
+                      size="sm"
+                      className={cn('text-sm', !proficiency && 'opacity-50 cursor-not-allowed')}
+                    >
+                      Next →
+                    </Button>
+                  </div>
+                </motion.div>
+              );
+            })()}
           {step === 'languages' && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -393,26 +476,32 @@ export default function StartCall() {
                 <div className={'flex flex-col gap-3'}>
                   <p className={`${getTextClass('subtitle')} text-sm font-medium text-center`}>I speak</p>
                   <div className={'flex gap-1.5 sm:gap-2 flex-wrap justify-center'}>
-                    {LANGUAGES.map((lang) => (
-                      <Button
-                        key={`native-${lang.code}`}
-                        variant={glassMode ? 'translucent' : 'outline'}
-                        size="sm"
-                        className={cn(
-                          'rounded-full focus-visible:ring-2 transition-all',
-                          getScaleClass(),
-                          languages.nativeLang === lang.code
-                            ? glassMode
-                              ? 'scale-105 bg-white/20 border-white/40 ring-2 ring-white/50'
-                              : 'bg-accent border-foreground/30 ring-1 ring-foreground/20 text-foreground dark:bg-primary/10 dark:text-primary'
-                            : 'opacity-90 hover:opacity-100'
-                        )}
-                        onClick={() => handleLanguageSelect('native', lang.code)}
-                      >
-                        <span className={'text-lg'}>{lang.flag}</span>
-                        <span className={'font-medium text-sm'}>{lang.name}</span>
-                      </Button>
-                    ))}
+                    {LANGUAGES.map((lang) => {
+                      const isDisabled = languages.learningLang === lang.code;
+                      return (
+                        <Button
+                          key={`native-${lang.code}`}
+                          variant={glassMode ? 'translucent' : 'outline'}
+                          size="sm"
+                          disabled={isDisabled}
+                          className={cn(
+                            'rounded-full focus-visible:ring-2 transition-all',
+                            !isDisabled && getScaleClass(),
+                            languages.nativeLang === lang.code
+                              ? glassMode
+                                ? 'scale-105 bg-white/20 border-white/40 ring-2 ring-white/50'
+                                : 'bg-accent border-foreground/30 ring-1 ring-foreground/20 text-foreground dark:bg-primary/10 dark:text-primary'
+                              : isDisabled
+                              ? 'opacity-40 cursor-not-allowed'
+                              : 'opacity-90 hover:opacity-100'
+                          )}
+                          onClick={() => !isDisabled && handleLanguageSelect('native', lang.code)}
+                        >
+                          <span className={'text-lg'}>{lang.flag}</span>
+                          <span className={'font-medium text-sm'}>{lang.name}</span>
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
