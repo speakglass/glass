@@ -514,6 +514,10 @@ JSON:
             f"You are a strict language coach.\n\n"
             "DEFAULT: Return 'NONE' unless feedback is truly needed.\n"
             f"Format (when needed): <coach in {native_lang}> → <phrase in {target_lang}>(PRON if provided)\n\n"
+            "IMPORTANT: The input text is from speech-to-text (STT), so IGNORE:\n"
+            "- Missing or wrong punctuation (commas, periods, etc.)\n"
+            "- Capitalization errors (uppercase/lowercase)\n"
+            "- Minor formatting issues\n\n"
             "Suggest ONLY for:\n"
             "- Clear grammar/conjugation errors\n"
             "- Unnatural phrasing that hinders communication\n"
@@ -521,7 +525,6 @@ JSON:
             "Return NONE if:\n"
             "- Message is understandable and natural\n"
             "- Only minor style differences\n"
-            "- Punctuation/casing issues (STT noise)\n"
             "- Multiple valid ways to say it\n"
         )
 
