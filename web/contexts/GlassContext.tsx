@@ -172,7 +172,7 @@ export function GlassProvider({
         micDeviceId: null,
         feedbackMode: 'auto',
         languages: { learningLang: 'en', nativeLang: 'ko' },
-        suggestMode: 'off',
+        suggestMode: 'auto',
         countryCode: undefined,
         proficiency: undefined,
         pronunciationMode: 'native',
@@ -188,7 +188,7 @@ export function GlassProvider({
           micDeviceId: parsed.micDeviceId || null,
           feedbackMode: parsed.feedbackMode || 'auto',
           languages: parsed.languages || { learningLang: 'en', nativeLang: 'ko' },
-          suggestMode: parsed.suggestMode || 'off',
+          suggestMode: parsed.suggestMode || 'auto',
           countryCode: parsed.countryCode,
           proficiency: parsed.proficiency,
           pronunciationMode: parsed.pronunciationMode || 'native',
@@ -202,7 +202,7 @@ export function GlassProvider({
       micDeviceId: null,
       feedbackMode: 'auto',
       languages: { learningLang: 'en', nativeLang: 'ko' },
-      suggestMode: 'off',
+      suggestMode: 'auto',
       countryCode: undefined,
       proficiency: undefined,
       pronunciationMode: 'native',
@@ -585,7 +585,7 @@ export function GlassProvider({
           ws.send(
             JSON.stringify({
               type: 'set_suggest_mode',
-              mode: currentSettings.suggestMode || 'off',
+              mode: currentSettings.suggestMode || 'auto',
             })
           );
 

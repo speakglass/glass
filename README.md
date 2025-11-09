@@ -8,6 +8,24 @@ Glass is your live language coach: speak in the moment with real-time feedback,
 sentence suggestions, and pronunciation you can read—even if you can’t read the
 script yet.
 
+<p>
+  <a href="https://discord.gg/W7RAzUdYaj">
+    <img alt="Discord" src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" />
+  </a>
+  <a href="https://x.com/speakglass">
+    <img alt="Follow on X" src="https://img.shields.io/twitter/follow/speakglass?style=social" />
+  </a>
+  <a href="https://github.com/speakglass/glass/stargazers">
+    <img alt="GitHub Stars" src="https://img.shields.io/github/stars/speakglass/glass?style=social" />
+  </a>
+  <a href="https://github.com/speakglass/glass/fork">
+    <img alt="GitHub Forks" src="https://img.shields.io/github/forks/speakglass/glass?style=social" />
+  </a>
+  <a href="./LICENSE">
+    <img alt="License: BSL 1.1 → Apache-2.0" src="https://img.shields.io/badge/License-BSL%201.1%20%E2%86%92%20Apache--2.0-0b7285?style=flat-square" />
+  </a>
+</p>
+
 ## Features
 
 - 🎧 Real-time feedback and sentence suggestions
@@ -89,3 +107,25 @@ Local-hosted model adapters (LLM/ASR/TTS) will be added soon.
 | Screen capture input (on-screen context)  | 🚧 Planned | Image/screen context → help  |
 | Persistent memory/personalization         | 🚧 Planned | Zep/Graphiti adapters        |
 | Local-hosted model adapters (LLM/ASR/TTS) | 🚧 Planned | Self-hosted runtime          |
+
+## License
+
+This project is licensed under the Business Source License 1.1 (BSL).
+
+- Hosted use is allowed, but commercial competition is restricted until the Change Date.
+- On 2028‑01‑01, the license automatically changes to Apache‑2.0.
+- See the full terms in [LICENSE](./LICENSE), including the Non‑Competitive definition and a small‑scale revenue exception.
+
+## Community & contact
+
+- **GitHub Discussions**: best place for questions, product feedback, and ideas.  
+  [Open a discussion](https://github.com/speakglass/glass/discussions)
+
+- **GitHub Issues**: report bugs and propose features so we can track them.  
+  [Create an issue](https://github.com/speakglass/glass/issues)
+
+- **Discord**: share what you’re building and chat with the community.  
+  [Join our Discord](https://discord.gg/W7RAzUdYaj)
+
+- **X (Twitter)**: follow updates, launches, and community highlights.  
+  [Follow @speakglass](https://x.com/speakglass)
