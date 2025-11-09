@@ -10,7 +10,6 @@ import { Loader2, Sparkles, MessageCircleMore, ChevronDown, Check, Volume2, X, S
 import { Button } from '@/components/ui/button';
 import { cn } from '@/utils';
 import Progress from '@/components/ui/progress';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 type SuggestionBubbleProps = {
   suggestion: AISuggestion;
