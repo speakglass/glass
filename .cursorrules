@@ -1,0 +1,96 @@
+# Cursor AI Rules for Glass Project
+
+## Git Commit Messages
+
+When generating commit messages, ALWAYS follow the Conventional Commits specification:
+
+### Format
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer]
+```
+
+### Required Types
+
+- `feat`: New feature (minor version bump)
+- `fix`: Bug fix (patch version bump)
+- `docs`: Documentation changes
+- `style`: Code style/formatting (no code change)
+- `refactor`: Code refactoring (no functional change)
+- `perf`: Performance improvements
+- `test`: Adding or updating tests
+- `build`: Build system or dependency changes
+- `ci`: CI/CD configuration changes
+- `chore`: Other changes (no src/test files)
+- `revert`: Revert previous commit
+
+### Breaking Changes
+
+For breaking changes, add `!` after type or add `BREAKING CHANGE:` in footer:
+
+```
+feat!: redesign API authentication
+fix(api)!: remove deprecated endpoints
+```
+
+### Scope (Optional but Recommended)
+
+Common scopes in this project:
+
+- `asr`: Speech recognition related
+- `llm`: Language model processing
+- `api`: API endpoints
+- `websocket`: WebSocket functionality
+- `ui`: User interface
+- `config`: Configuration
+- `deps`: Dependencies
+
+### Examples
+
+✅ GOOD:
+
+- `feat(asr): add Whisper integration`
+- `fix(websocket): prevent connection timeout`
+- `docs: update installation guide`
+- `perf(llm): optimize prompt caching`
+- `feat(api)!: change authentication to OAuth2`
+
+❌ BAD:
+
+- `added new feature`
+- `Fix bug`
+- `update code`
+- `WIP`
+
+### Special Cases
+
+- Multiple changes: Split into separate commits
+- Work in progress: Use `chore(wip): description` if necessary
+- Merge commits: Let Git handle these automatically
+
+## Code Style
+
+### Python
+
+- Follow PEP 8
+- Use type hints for all function parameters and returns
+- Write docstrings for public APIs
+- Use descriptive variable names
+
+### TypeScript/React
+
+- Use functional components with hooks
+- Prefer `const` over `let`
+- Use TypeScript types/interfaces (no `any`)
+- Follow existing code patterns
+
+## General Guidelines
+
+- Keep changes focused and atomic
+- Write tests for new features
+- Update documentation when needed
+- Review your own changes before committing
