@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/speakglass/glass/compare/v0.1.0...v0.1.1) (2025-11-09)
+
+
+### Features
+
+* initialize Glass voice AI assistant ([f4a9055](https://github.com/speakglass/glass/commit/f4a9055211204bafa58040121ce01faf740f2f70))
+
 ## [0.1.0] - 2025-10-09
 
 ### Features
