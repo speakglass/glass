@@ -708,31 +708,38 @@ JSON:
         pronunciation_mode: str | None = None,
         transcript_tail: Sequence[str | dict] | None = None,
     ) -> str:
-        """Provide structured feedback (JSON) on the user's utterance."""
+        """Provide structured feedback (JSON) on the user's utterance.
+
+        When feedback is needed, returns STRICT JSON string with keys:
+          - "reason_native": short conversational feedback in the learner's native language
+          - "suggestion_target": corrected/natural phrasing in the target language
+          - "pronunciation": OPTIONAL one-line phonetic reading (only when include_pronunciation=True)
+
+        When feedback is NOT needed, returns the plain string "NONE".
+        """
         if not target_lang:
             target_lang = "English"
         if not native_lang:
             native_lang = "Korean"
         
-        # Build pronunciation guidance consistent with answer/follow_up structured prompts
-        pronounce_rule = "Do not include a pronunciation field."
+        # Build pronunciation guidance consistent with other structured prompts
+        pronounce_rule = "Do NOT include a 'pronunciation' field."
         if include_pronunciation:
             if (pronunciation_mode or "").strip().lower() == "romaji":
                 pronounce_rule = (
-                    "Include a single field 'pronunciation' which is ONE LINE of Hepburn romaji. "
+                    "Include a single field 'pronunciation' with ONE LINE of Hepburn romaji. "
                     "ASCII only (no macrons). NEVER use kana/kanji or any non-ASCII."
                 )
             else:
-                # native script reading hint
                 example_hint = self._build_pronunciation_example(native_lang, target_lang)
                 pronounce_rule = (
-                    "Include a single field 'pronunciation' which is ONE LINE showing how to pronounce suggestion_target using "
+                    "Include a single field 'pronunciation' with ONE LINE showing how to pronounce suggestion_target using "
                     f"{native_lang} script. This is a PHONETIC TRANSCRIPTION (not a translation). "
-                    f"You MUST write the sounds using {native_lang} alphabet/characters ONLY. "
+                    f"Write sounds using {native_lang} alphabet/characters ONLY. "
                     f"{example_hint}"
                 )
 
-        # Optional short transcript context (last 2 turns)
+        # Optional short transcript context (last few turns)
         transcript_context = ""
         try:
             if transcript_tail:
@@ -741,68 +748,31 @@ JSON:
                     transcript_context = f"""Recent conversation (last {len(transcript_tail)} turns):\n{transcript_lines}\n\n"""
         except Exception:
             pass
-
-        # Build output format instruction (plain one-line text, optional inline parentheses PRON)
-        if include_pronunciation:
-            if (pronunciation_mode or "").strip().lower() == "romaji":
-                pronounce_instr = (
-                    " (<ONE-LINE Hepburn romaji, ASCII only, words separated by spaces, minimal hyphens>)"
-                )
-            else:
-                pronounce_instr = (
-                    f" (<ONE-LINE reading in {native_lang} script; phonetic only, not translation>)"
-                )
-        else:
-            pronounce_instr = ""
-
-        # Compose system rules (concise, generalized) and user prompt (context + output spec)
+        # System rules: JSON schema and gating
         system_rules = (
-            f"You are a strict language coach.\n\n"
-            "DEFAULT: Return 'NONE' unless feedback is truly needed.\n"
-            f"Format (when needed): <coach in {native_lang}> → <phrase in {target_lang}>(PRON if provided)\n\n"
-            "IMPORTANT: The input text is from speech-to-text (STT), so IGNORE:\n"
-            "- Missing or wrong punctuation (commas, periods, etc.)\n"
-            "- Capitalization errors (uppercase/lowercase)\n"
-            "- Minor formatting issues\n\n"
-            "Suggest ONLY for:\n"
-            "- Clear grammar/conjugation errors\n"
-            "- Unnatural phrasing that hinders communication\n"
-            "- Significantly wrong word choice\n\n"
-            "Return NONE if:\n"
-            "- Message is understandable and natural\n"
-            "- Only minor style differences\n"
-            "- Multiple valid ways to say it\n"
+            "You are a strict but supportive language coach.\n\n"
+            "DEFAULT: If feedback is not truly needed, return the single word: NONE\n"
+            "IMPORTANT: Input is from speech-to-text (STT). IGNORE punctuation/capitalization/minor formatting issues.\n"
+            "Only give feedback for: clear grammar/conjugation errors, unnatural phrasing that hinders communication, or significantly wrong word choice.\n\n"
+            "WHEN feedback IS needed, output STRICT JSON ONLY with keys:\n"
+            "  - \\\"reason_native\\\": short conversational feedback in the learner's native language\n"
+            f'  - \"suggestion_target\": corrected/natural phrasing in {target_lang}\n'
+            f"  - \"pronunciation\": OPTIONAL one-line phonetic reading (only if requested)\n\n"
+            "Rules:\n"
+            "- JSON only. No backticks, no extra prose.\n"
+            "- Keep reason_native warm and conversational (≤ 25 chars if possible).\n"
+            "- Keep suggestion_target concise (≤ 15 words).\n"
+            f"- {pronounce_rule}\n"
         )
 
-        pron_block = (
-            "- PRON: use Hepburn romaji (ASCII only, words separated by spaces)"
-            if include_pronunciation and (pronunciation_mode or "").strip().lower() == "romaji"
-            else (
-                f"- PRON: one-line {native_lang} phonetic reading (sounds only, not translation)"
-                if include_pronunciation
-                else "- PRON: (omit)"
-            )
-        )
-
-        # Add a concrete PRON example (like suggestions) for readability
-        pron_example_text = ""
-        if include_pronunciation:
-            if (pronunciation_mode or "").strip().lower() == "romaji":
-                # Keep generic but concrete
-                pron_example_text = "PRON example: Japanese '行きましょう' → (ee kee mah shoh)"
-            else:
-                # Use native-language-specific example hint
-                example_hint = self._build_pronunciation_example(native_lang, target_lang)
-                pron_example_text = f"PRON example: {example_hint}"
-
+        # User prompt describing the specific task
         user_prompt = (
-            f"Native: {native_lang}\n"
-            f"Target: {target_lang}\n\n"
-            f"{transcript_context}Utterance:\n\"{user_text}\"\n\n"
-            f"Output: <coach in {native_lang}> → <phrase in {target_lang}>{pronounce_instr}\n"
-            f"Limits: coach ≤ 25 chars; phrase ≤ 15 words.\n"
-            f"{pron_block}\n"
-            f"{pron_example_text}\n"
+            f"Native language: {native_lang}\n"
+            f"Target language: {target_lang}\n\n"
+            f"{transcript_context}"
+            f"Utterance:\n\"{user_text}\"\n\n"
+            "If no feedback needed, return NONE.\n"
+            "If feedback is needed, respond with STRICT JSON only using the specified keys."
         )
         
         payload = {
@@ -834,7 +804,7 @@ JSON:
         except Exception:
             pass
 
-        # Return raw content (JSON string) or NONE; caller will parse/gate pronunciation
+        # Return raw content (STRICT JSON string when feedback is needed) or 'NONE'
         return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip() # type: ignore
 
     async def should_suggest(
