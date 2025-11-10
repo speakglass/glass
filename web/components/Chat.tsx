@@ -6,8 +6,19 @@ import CallSummary from './CallSummary';
 import { ComponentRef, useEffect, useRef, useState, forwardRef } from 'react';
 import { useGlass, FeedbackMode, SuggestMode, AISuggestion } from '@/contexts/GlassContext';
 import { AnimatePresence, motion } from 'motion/react';
-import { Loader2, Sparkles, MessageCircleMore, ChevronDown, Check, Volume2, X, SlidersHorizontal } from 'lucide-react';
+import {
+  Loader2,
+  Sparkles,
+  MessageCircleMore,
+  ChevronDown,
+  Check,
+  Volume2,
+  X,
+  SlidersHorizontal,
+  Languages,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/utils';
 import Progress from '@/components/ui/progress';
 
@@ -262,8 +273,8 @@ export default function Chat() {
     showSummary,
     closeSummary,
     startNewCallWithContext,
-    requestAnswer,
-    requestFollowUp,
+    requestSuggestion,
+    requestTranslate,
     updateFeedbackMode,
     updateSuggestMode,
     settings,
@@ -272,15 +283,42 @@ export default function Chat() {
     removeSuggestion,
     isSpeaking,
   } = useGlass();
-  const [loadingAnswer, setLoadingAnswer] = useState(false);
-  const [loadingFollowUp, setLoadingFollowUp] = useState(false);
+  const [loadingSuggestion, setLoadingSuggestion] = useState(false);
+  const [translateInput, setTranslateInput] = useState('');
+  const [loadingTranslate, setLoadingTranslate] = useState(false);
   const [showManualButtons, setShowManualButtons] = useState(false);
   const manualButtonsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showFeedbackMenu, setShowFeedbackMenu] = useState(false);
-  const [showSuggestMenu, setShowSuggestMenu] = useState(false);
+  const translateInputRef = useRef<HTMLInputElement>(null);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const suggestMode: SuggestMode = settings.suggestMode ?? 'auto';
   const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Get language-specific placeholder for translate input
+  const getTranslatePlaceholder = (short: boolean = false) => {
+    const learningLang = settings.languages.learningLang.toLowerCase();
+    const langNames: Record<string, string> = {
+      ja: 'Japanese',
+      ko: 'Korean',
+      zh: 'Chinese',
+      es: 'Spanish',
+      fr: 'French',
+      de: 'German',
+      it: 'Italian',
+      pt: 'Portuguese',
+      en: 'English',
+    };
+    const langName = langNames[learningLang] || 'target language';
+    return short ? `To ${langName}...` : `Translate to ${langName}...`;
+  };
 
   // Fake analysis progress: reach ~95% at 6s, then inch subtly while waiting
   useEffect(() => {
@@ -318,34 +356,43 @@ export default function Chat() {
     off: 'Off',
   };
 
-  const handleAnswer = async () => {
-    setLoadingAnswer(true);
+  const handleSuggestion = async () => {
+    setLoadingSuggestion(true);
     try {
-      const suggestion = await requestAnswer();
-      addSuggestion('answer', suggestion);
+      const { type, suggestion } = await requestSuggestion();
+      addSuggestion(type, suggestion);
     } catch (e) {
       // no-op
     } finally {
-      setLoadingAnswer(false);
+      setLoadingSuggestion(false);
     }
   };
 
-  const handleFollowUp = async () => {
-    setLoadingFollowUp(true);
+  const handleTranslate = async () => {
+    if (!translateInput.trim() || loadingTranslate) return;
+
+    setLoadingTranslate(true);
     try {
-      const suggestion = await requestFollowUp();
-      addSuggestion('follow_up', suggestion);
+      const suggestion = await requestTranslate(translateInput.trim());
+      addSuggestion('answer', suggestion);
+      setTranslateInput('');
     } catch (e) {
       // no-op
     } finally {
-      setLoadingFollowUp(false);
+      setLoadingTranslate(false);
+    }
+  };
+
+  const handleTranslateKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey && translateInput.trim()) {
+      e.preventDefault();
+      handleTranslate();
     }
   };
 
   // Auto-show manual buttons when idle (no suggestions) for 2s; hide on activity
   useEffect(() => {
-    const isIdle =
-      status.value === 'connected' && suggestions.length === 0 && !isSpeaking && !loadingAnswer && !loadingFollowUp;
+    const isIdle = status.value === 'connected' && suggestions.length === 0 && !isSpeaking && !loadingSuggestion;
     if (isIdle) {
       if (manualButtonsTimerRef.current) clearTimeout(manualButtonsTimerRef.current);
       manualButtonsTimerRef.current = setTimeout(() => setShowManualButtons(true), 2000);
@@ -362,7 +409,7 @@ export default function Chat() {
         manualButtonsTimerRef.current = null;
       }
     };
-  }, [status.value, suggestions.length, isSpeaking, loadingAnswer, loadingFollowUp]);
+  }, [status.value, suggestions.length, isSpeaking, loadingSuggestion]);
 
   return (
     <div className={'relative grow flex flex-col mx-auto w-full overflow-hidden h-0 pt-14 pb-28 sm:pb-0'}>
@@ -373,60 +420,77 @@ export default function Chat() {
         <div className={'mx-auto w-full'}>
           <div className={'max-w-2xl mx-auto w-full px-4'}>
             <div className={'border-t border-border/30 pt-3 pb-3'}>
-              <div className={'flex flex-wrap items-center gap-2 md:gap-3 mb-3'}>
-                {/* Left group: action buttons (auto suggest reveal) */}
+              <div className={'flex items-center gap-2 md:gap-3 mb-3'}>
+                {/* Translate input - always visible, grows to fill space */}
+                <div className={'relative flex-1 min-w-0'}>
+                  <Languages
+                    className={
+                      'absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none'
+                    }
+                  />
+                  <Input
+                    ref={translateInputRef}
+                    type="text"
+                    value={translateInput}
+                    onChange={(e) => setTranslateInput(e.target.value)}
+                    onKeyDown={handleTranslateKeyDown}
+                    placeholder={getTranslatePlaceholder(isMobile)}
+                    className={'h-8 pl-9 pr-12 text-xs w-full bg-muted'}
+                  />
+                  {translateInput && !loadingTranslate && (
+                    <button
+                      type="button"
+                      onClick={handleTranslate}
+                      className={
+                        'absolute right-2 top-1/2 -translate-y-1/2 flex h-5 items-center justify-center rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground hover:bg-primary/90'
+                      }
+                    >
+                      ⏎
+                    </button>
+                  )}
+                  {loadingTranslate && (
+                    <Loader2
+                      className={'absolute right-3 top-1/2 -translate-y-1/2 size-3 animate-spin text-muted-foreground'}
+                    />
+                  )}
+                </div>
+
+                {/* Suggest button - only when idle */}
                 <AnimatePresence>
                   {showManualButtons && (
                     <motion.div
-                      key={'manual-buttons'}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      className={'flex items-center gap-2'}
+                      key={'suggest-button'}
+                      initial={{ opacity: 0, x: -4 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -4 }}
                     >
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={handleAnswer}
-                        disabled={loadingAnswer || loadingFollowUp}
-                        className={'text-xs h-7 px-3 cursor-pointer whitespace-nowrap gap-1.5'}
+                        onClick={handleSuggestion}
+                        disabled={loadingSuggestion}
+                        className={'text-xs h-8 px-3 cursor-pointer whitespace-nowrap gap-1.5'}
                       >
-                        {loadingAnswer ? (
-                          <Loader2 className={'size-3 animate-spin'} />
-                        ) : (
-                          <MessageCircleMore className={'size-3'} />
-                        )}
-                        <span className={'hidden sm:inline'}>Suggest a reply</span>
-                        <span className={'sm:hidden'}>Reply</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleFollowUp}
-                        disabled={loadingAnswer || loadingFollowUp}
-                        className={'text-xs h-7 px-3 cursor-pointer whitespace-nowrap gap-1.5'}
-                      >
-                        {loadingFollowUp ? (
+                        {loadingSuggestion ? (
                           <Loader2 className={'size-3 animate-spin'} />
                         ) : (
                           <Sparkles className={'size-3'} />
                         )}
-                        <span className={'hidden sm:inline'}>Suggest follow-up</span>
-                        <span className={'sm:hidden'}>Follow-up</span>
+                        <span>Suggest</span>
                       </Button>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
-                {/* Right group: Suggest + Feedback */}
-                <div className={'flex items-center gap-2 ml-auto justify-end md:justify-start'}>
-                  {/* Mobile: single Options button to configure Suggest/Feedback */}
-                  <div className={'relative md:hidden'}>
+                {/* Right group: Settings */}
+                <div className={'flex items-center gap-2 shrink-0'}>
+                  {/* Unified Options button for both mobile and desktop */}
+                  <div className={'relative'}>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setShowOptionsMenu(!showOptionsMenu)}
-                      className={'h-7 w-7 p-0 cursor-pointer'}
+                      className={'h-8 w-8 p-0 cursor-pointer'}
                     >
                       <SlidersHorizontal className={'size-3.5'} />
                     </Button>
@@ -493,99 +557,6 @@ export default function Chat() {
                                 ))}
                               </div>
                             </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Desktop: separate Suggest and Feedback controls */}
-                  {/* Suggest Mode Selector */}
-                  <div className={'relative hidden md:block'}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowSuggestMenu(!showSuggestMenu)}
-                      className={'text-xs h-7 px-3 cursor-pointer gap-1'}
-                    >
-                      <span className={'opacity-70'}>Suggest:</span>
-                      <span>{feedbackModeLabels[suggestMode]}</span>
-                      <ChevronDown className={'size-3 ml-0.5 opacity-50'} />
-                    </Button>
-
-                    <AnimatePresence>
-                      {showSuggestMenu && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          className={
-                            'absolute left-0 top-full mt-1 w-40 bg-card border border-border/50 rounded-lg shadow-lg overflow-hidden z-50'
-                          }
-                        >
-                          <div className={'py-1'}>
-                            {(['always', 'auto', 'off'] as FeedbackMode[]).map((mode) => (
-                              <button
-                                key={mode}
-                                onClick={() => {
-                                  updateSuggestMode(mode);
-                                  setShowSuggestMenu(false);
-                                }}
-                                className={cn(
-                                  'w-full px-3 py-2 text-xs text-left hover:bg-accent/50 transition-colors flex items-center justify-between',
-                                  suggestMode === mode && 'bg-accent/30'
-                                )}
-                              >
-                                <span>{feedbackModeLabels[mode]}</span>
-                                {suggestMode === mode && <Check className={'size-3'} />}
-                              </button>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Feedback Mode Selector */}
-                  <div className={'relative hidden md:block'}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowFeedbackMenu(!showFeedbackMenu)}
-                      className={'text-xs h-7 px-3 cursor-pointer gap-1'}
-                    >
-                      <span className={'opacity-70'}>Feedback:</span>
-                      <span>{feedbackModeLabels[settings.feedbackMode]}</span>
-                      <ChevronDown className={'size-3 ml-0.5 opacity-50'} />
-                    </Button>
-
-                    <AnimatePresence>
-                      {showFeedbackMenu && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          className={
-                            'absolute right-0 top-full mt-1 w-40 bg-card border border-border/50 rounded-lg shadow-lg overflow-hidden z-50'
-                          }
-                        >
-                          <div className={'py-1'}>
-                            {(['always', 'auto', 'off'] as FeedbackMode[]).map((mode) => (
-                              <button
-                                key={mode}
-                                onClick={() => {
-                                  updateFeedbackMode(mode);
-                                  setShowFeedbackMenu(false);
-                                }}
-                                className={cn(
-                                  'w-full px-3 py-2 text-xs text-left hover:bg-accent/50 transition-colors flex items-center justify-between',
-                                  settings.feedbackMode === mode && 'bg-accent/30'
-                                )}
-                              >
-                                <span>{feedbackModeLabels[mode]}</span>
-                                {settings.feedbackMode === mode && <Check className={'size-3'} />}
-                              </button>
-                            ))}
                           </div>
                         </motion.div>
                       )}

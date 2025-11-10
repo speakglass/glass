@@ -36,7 +36,6 @@ class Settings(BaseSettings):
     allow_credentials: bool = False
     max_ws_conn: int = 100
     # Security limits (minimal defaults)
-    ws_max_session_seconds: int = 120
     ws_max_message_bytes: int = 131072  # 128 KiB
     default_tone: str = "neutral"
     default_language: str = "en"

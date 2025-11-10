@@ -77,29 +77,39 @@ class AppState:
                 "GLASS_FREE_MINUTES_PER_USER is set but GLASS_REDIS_URL is not configured. "
                 "Please provide GLASS_REDIS_URL or set GLASS_FREE_MINUTES_PER_USER=None to disable the feature."
             )
-        self._redis = None  # Optional redis client
-        try:
-            if settings.redis_url:
-                # Lazy import; optional dependency
-                from redis.asyncio import Redis  # type: ignore
-                # Add socket timeouts to avoid hangs on connect/read
+        self._redis = None
+        
+        if settings.redis_url:
+            try:
+                from redis.asyncio import Redis
+                import redis
+                
+                # Test connection on startup (fail-fast)
+                LOGGER.info("Testing Redis connection...")
+                test_client = redis.Redis.from_url(
+                    settings.redis_url,
+                    socket_connect_timeout=10.0,
+                    socket_timeout=10.0,
+                )
+                test_client.ping()
+                test_client.close()
+                LOGGER.info("✅ Redis connected")
+                
+                # Create async client for runtime
                 self._redis = Redis.from_url(
                     settings.redis_url,
                     encoding="utf-8",
                     decode_responses=True,
-                    socket_connect_timeout=5.0,
-                    socket_timeout=5.0,
+                    socket_connect_timeout=10.0,
+                    socket_timeout=10.0,
                 )
-        except Exception as e:
-            self._redis = None
-
-        # Strict fail if time budget is enabled but Redis client is unavailable
-        if settings.free_minutes_per_user is not None and self._redis is None:
-            raise RuntimeError(
-                "GLASS_FREE_MINUTES_PER_USER is set, but Redis client is unavailable. "
-                "Ensure redis>=5 is installed and GLASS_REDIS_URL is a valid, reachable URL (e.g., rediss://...:6380/0), "
-                "or disable GLASS_FREE_MINUTES_PER_USER."
-            )
+            except Exception as e:
+                LOGGER.error(f"❌ Redis connection failed: {e}")
+                if settings.free_minutes_per_user is not None:
+                    raise RuntimeError(
+                        f"Redis required for time budget but connection failed: {e}\n"
+                        f"Check: Redis URL, firewall, and port (Azure Managed Redis uses 10000)"
+                    )
         asr_adapter = build_asr_adapter(settings)
         llm_adapter = build_llm_adapter(settings)
         memory_adapter = build_memory_adapter(settings)
