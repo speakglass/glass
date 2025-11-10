@@ -744,12 +744,12 @@ JSON:
             "IMPORTANT: Input is from speech-to-text (STT). IGNORE punctuation/capitalization/minor formatting issues.\n"
             "Only give feedback for: clear grammar/conjugation errors, unnatural phrasing that hinders communication, or significantly wrong word choice.\n\n"
             "WHEN feedback IS needed, output STRICT JSON ONLY with keys:\n"
-            "  - \\\"reason_native\\\": short conversational feedback in the learner's native language\n"
+            "  - \\\"reason_native\\\": detailed explanation in the learner's native language explaining what is wrong and why\n"
             f'  - \"suggestion_target\": corrected/natural phrasing in {target_lang}\n'
             f"  - \"pronunciation\": OPTIONAL one-line phonetic reading (only if requested)\n\n"
             "Rules:\n"
             "- JSON only. No backticks, no extra prose.\n"
-            "- Keep reason_native warm and conversational (≤ 25 chars if possible).\n"
+            "- Make reason_native clear and educational: explain what's wrong, why it's wrong, and when to use correct form (2-3 sentences, up to 150 chars).\n"
             "- Keep suggestion_target concise (≤ 15 words).\n"
             f"- {pronounce_rule}\n"
         )
@@ -771,7 +771,7 @@ JSON:
                 {"role": "user", "content": user_prompt},
             ],
             "temperature": 0.2,
-            "max_tokens": 300,
+            "max_tokens": 500,
         }
         headers = {
             "Authorization": f"Bearer {self.api_key}",
