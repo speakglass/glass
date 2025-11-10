@@ -153,12 +153,12 @@ export default function Settings() {
                   className={
                     'flex-1 bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-all'
                   }
-                  value={String(settings.suggestionDurationSec ?? 10)}
-                  onChange={(e) => updateSettings({ suggestionDurationSec: parseInt(e.target.value || '10', 10) })}
+                  value={String(settings.suggestionDurationSec ?? 20)}
+                  onChange={(e) => updateSettings({ suggestionDurationSec: parseInt(e.target.value || '20', 10) })}
                 >
                   <option value="5">5 seconds</option>
-                  <option value="10">10 seconds (default)</option>
-                  <option value="15">15 seconds</option>
+                  <option value="10">10 seconds</option>
+                  <option value="20">20 seconds (default)</option>
                   <option value="30">30 seconds</option>
                 </select>
               </div>
