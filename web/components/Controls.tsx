@@ -65,7 +65,7 @@ export default function Controls() {
               y: '100%',
               opacity: 0,
             }}
-            className={'p-2.5 sm:p-4 bg-card border border-border/50 rounded-full flex items-center gap-2 sm:gap-4'}
+            className={'p-2.5 sm:p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-full flex items-center gap-2 sm:gap-4'}
           >
             <Toggle
               className={'rounded-full'}

@@ -5,6 +5,7 @@ import WaitlistModal from '@/components/WaitlistModal';
 import LiquidGlass from './LiquidGlass';
 import { toast } from 'sonner';
 import { useRef, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { cn } from '@/utils';
 
@@ -101,6 +102,7 @@ const getLanguageExample = (learningLang: string, nativeLang: string): ExamplePh
 
 export default function StartCall() {
   const { status, connect, updateSettings, settings } = useGlass();
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<SetupStep>('start');
   const [languages, setLanguages] = useState<LanguageSettings>({
@@ -113,6 +115,7 @@ export default function StartCall() {
   // Global waitlist modal trigger
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   const [waitlistSessionId, setWaitlistSessionId] = useState('');
+
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as { sessionId?: string } | undefined;
@@ -225,18 +228,34 @@ export default function StartCall() {
   };
 
   const handleStartCall = async () => {
+    // Check if user has seen onboarding
+    const hasSeenOnboarding =
+      typeof window !== 'undefined' ? localStorage.getItem('glass_onboarding_completed') === 'true' : false;
+
+    // Build config
+    const config: SessionConfig = {
+      languages,
+      mode: selectedMode!,
+      scenario:
+        selectedMode === 'practice'
+          ? selectedScenario === 'custom'
+            ? `custom:${customScenario}`
+            : selectedScenario
+          : undefined,
+    };
+
+    if (!hasSeenOnboarding) {
+      // Save config to localStorage and redirect to onboarding page
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('glass_pending_session_config', JSON.stringify(config));
+      }
+      router.push('/onboarding');
+      return;
+    }
+
+    // Proceed with connection
     setStep('connecting');
     try {
-      const config: SessionConfig = {
-        languages,
-        mode: selectedMode!,
-        scenario:
-          selectedMode === 'practice'
-            ? selectedScenario === 'custom'
-              ? `custom:${customScenario}`
-              : selectedScenario
-            : undefined,
-      };
       await connect(config);
     } catch {
       toast.error('Unable to start call');

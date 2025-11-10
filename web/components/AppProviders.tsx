@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { GlassProvider } from '@/contexts/GlassContext';
 import { toast } from 'sonner';
 import { initAnalytics } from '@/utils/analytics';
+import { NextStepProvider } from 'nextstepjs';
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -17,7 +18,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           toast.error(error.message);
         }}
       >
-        {children}
+        <NextStepProvider>{children}</NextStepProvider>
       </GlassProvider>
     </ThemeProvider>
   );

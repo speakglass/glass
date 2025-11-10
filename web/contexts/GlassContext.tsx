@@ -12,6 +12,13 @@ export interface Message {
   };
   receivedAt: Date;
   translation?: string;
+  // Structured feedback attached to this utterance
+  feedback?: {
+    reason_native?: string;
+    target_text?: string;
+    pronunciation?: string;
+    text?: string; // legacy/plain feedback
+  };
   // Ephemeral live text for ongoing utterance (partial transcript)
   partial?: string;
   // Backend utterance identifier (segment id for final, active id for partial)
@@ -135,6 +142,8 @@ interface GlassContextValue {
   stopSpeaking: () => void;
   closeSummary: () => void;
   startNewCallWithContext: (contextInfo: ExtractedInfo[]) => void;
+  // Onboarding helpers
+  loadDemoConversation: (msgs: Array<{ role: 'user' | 'partner'; content: string; translation?: string }>) => void;
 }
 
 const GlassContext = createContext<GlassContextValue | null>(null);
@@ -942,12 +951,41 @@ export function GlassProvider({
         return;
       }
 
-      // Handle feedback events - show as AI suggestion
+      // Handle feedback events - attach to the corresponding message (like translation)
       if (data.t === 'feedback') {
-        const payload = data.suggestion || data.text;
-        if (payload) addSuggestion('feedback', payload);
-        if (payload && onAISuggestionCallbackRef.current) {
-          onAISuggestionCallbackRef.current('feedback', payload);
+        const utteranceId = data.utterance_id as string | undefined;
+        const suggestion = data.suggestion as
+          | { reason_native?: string; target_text?: string; pronunciation?: string }
+          | undefined;
+        const text = typeof data.text === 'string' ? data.text : undefined;
+
+        if (utteranceId) {
+          setMessages((prev) => {
+            const next = [...prev];
+            const idx = next.findIndex((m) => m.utteranceId === utteranceId);
+            if (idx >= 0) {
+              const existing = next[idx];
+              const feedback = suggestion
+                ? {
+                    reason_native:
+                      typeof suggestion.reason_native === 'string' ? suggestion.reason_native : undefined,
+                    target_text:
+                      typeof suggestion.target_text === 'string' ? suggestion.target_text : undefined,
+                    pronunciation:
+                      typeof suggestion.pronunciation === 'string' ? suggestion.pronunciation : undefined,
+                  }
+                : { text };
+              next[idx] = {
+                ...existing,
+                feedback,
+              };
+              return next;
+            }
+            return next;
+          });
+        } else {
+          // No utterance to attach to; optionally surface as a minimal toast in future
+          // For now, ignore unattached feedback
         }
         return;
       }
@@ -1037,6 +1075,21 @@ export function GlassProvider({
     }
     return new Uint8Array(pcm16.buffer);
   };
+
+  // ---------------- Onboarding helpers ----------------
+  const loadDemoConversation = useCallback(
+    (msgs: Array<{ role: 'user' | 'partner'; content: string; translation?: string }>) => {
+      const now = Date.now();
+      const mapped: Message[] = msgs.map((m, i) => ({
+        type: m.role === 'user' ? 'user_message' : 'partner_message',
+        message: { role: m.role, content: m.content },
+        translation: m.translation,
+        receivedAt: new Date(now - (msgs.length - i) * 1000),
+      }));
+      setMessages(mapped);
+    },
+    []
+  );
 
   // Disconnect
   const disconnect = useCallback(async () => {
@@ -1485,6 +1538,7 @@ export function GlassProvider({
     totalSeconds,
     startRemainingSeconds,
     elapsedSeconds,
+    loadDemoConversation,
   };
 
   return <GlassContext.Provider value={value}>{children}</GlassContext.Provider>;
