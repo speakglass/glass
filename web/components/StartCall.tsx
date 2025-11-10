@@ -344,7 +344,7 @@ export default function StartCall() {
                         setStep('mode');
                       }}
                       className={cn(
-                        'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[200px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
+                        'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
                         getCardClass(),
                         getScaleClass(),
                         proficiency === 'cant_read' && getSelectedRingClass()
@@ -385,7 +385,7 @@ export default function StartCall() {
                         setStep('mode');
                       }}
                       className={cn(
-                        'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[200px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
+                        'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
                         getCardClass(),
                         getScaleClass(),
                         proficiency === 'can_read' && getSelectedRingClass()
@@ -545,7 +545,7 @@ export default function StartCall() {
                 <button
                   onClick={() => handleModeSelect('practice')}
                   className={cn(
-                    'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[200px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
+                    'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
                     getCardClass(),
                     getScaleClass()
                   )}
@@ -566,7 +566,7 @@ export default function StartCall() {
                 <button
                   onClick={() => handleModeSelect('real')}
                   className={cn(
-                    'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[200px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0 relative',
+                    'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0 relative',
                     getCardClass(),
                     getScaleClass(),
                     // Disable interactions and subtly dim on mobile

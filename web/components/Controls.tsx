@@ -36,8 +36,12 @@ export default function Controls() {
   };
 
   const lowTime = useMemo(() => {
-    return typeof remainingSeconds === 'number' && remainingSeconds <= 300;
-  }, [remainingSeconds]);
+    return (
+      typeof remainingSeconds === 'number' &&
+      typeof elapsedSeconds === 'number' &&
+      remainingSeconds <= 300
+    );
+  }, [remainingSeconds, elapsedSeconds]);
 
   return (
     <div

@@ -30,6 +30,7 @@ script yet.
 
 - 🎧 Real-time feedback and sentence suggestions
 - 🔤 Pronunciation with native-language hints and romanization (e.g., romaji)
+- ⚡ Context-aware quick translation (keywords → natural sentences)
 - 🗣️ Practice mode with an AI voice partner
 - 🧠 Persistent memory that personalizes over time
 

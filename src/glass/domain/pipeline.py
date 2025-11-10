@@ -486,6 +486,25 @@ class SessionPipeline:
         """Generate a structured follow-up suggestion based on conversation history."""
         return await self.llm_processor.generate_follow_up(list(self.tail), self.lang)
 
+    async def generate_suggestion(self) -> tuple[str, dict]:
+        """Generate a unified suggestion (answer or follow-up) based on conversation context.
+        
+        Returns:
+            A tuple of (suggestion_type, suggestion_dict) where suggestion_type is 'answer' or 'follow_up'
+        """
+        return await self.llm_processor.generate_suggestion(list(self.tail), self.lang)
+
+    async def translate_input(self, text: str) -> dict:
+        """Translate user input (keywords or sentence) to target language.
+        
+        Args:
+            text: User input to translate
+        
+        Returns:
+            dict with target_text, native_translation, pronunciation
+        """
+        return await self.llm_processor.translate_input(text, list(self.tail))
+
     async def analyze_conversation(self) -> dict:
         """Analyze the full conversation and return scores, extracted info, and overall feedback."""
         return await self.llm_processor.analyze_conversation(

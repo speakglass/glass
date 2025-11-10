@@ -110,12 +110,15 @@ async def iter_multiplexed_audio(websocket, source_queues: dict[str, asyncio.Que
                         pronunciation_mode = data.get("pronunciation_mode")
                         pipeline.set_user_profile(proficiency=proficiency, pronunciation_mode=pronunciation_mode)
                         LOGGER.info(f"Profile set - proficiency: {proficiency}, pronunciation_mode: {pronunciation_mode}")
-                    elif msg_type == "request_answer" and pipeline:
-                        # Generate answer and emit as event
-                        asyncio.create_task(_handle_answer_request(pipeline))
-                    elif msg_type == "request_follow_up" and pipeline:
-                        # Generate follow-up and emit as event
-                        asyncio.create_task(_handle_follow_up_request(pipeline))
+                    elif msg_type == "request_suggestion" and pipeline:
+                        # Generate unified suggestion and emit as event
+                        asyncio.create_task(_handle_suggestion_request(pipeline))
+                    elif msg_type == "request_translate" and pipeline:
+                        # Translate user input
+                        text = data.get("text", "")
+                        request_id = data.get("request_id")
+                        if text:
+                            asyncio.create_task(_handle_translate_request(pipeline, text, request_id))
                     elif msg_type == "request_tts":
                         # Stream TTS audio from ElevenLabs
                         text = data.get("text", "")
@@ -131,36 +134,48 @@ async def iter_multiplexed_audio(websocket, source_queues: dict[str, asyncio.Que
             await queue.put(None)
 
 
-async def _handle_answer_request(pipeline) -> None:
-    """Handle answer generation request."""
+async def _handle_suggestion_request(pipeline) -> None:
+    """Handle unified suggestion generation request (answer or follow-up)."""
     try:
         from ..domain.entities import EventType
-        suggestion = await pipeline.generate_answer()
+        suggestion_type, suggestion = await pipeline.generate_suggestion()
+        
         if isinstance(suggestion, dict):
+            event_type = EventType.ANSWER if suggestion_type == "answer" else EventType.FOLLOW_UP
+            await pipeline._emit(
+                event_type,
+                {"text": suggestion.get("target_text", ""), "suggestion": suggestion},
+            )
+        else:
+            event_type = EventType.ANSWER if suggestion_type == "answer" else EventType.FOLLOW_UP
+            await pipeline._emit(event_type, {"text": str(suggestion)})
+    except Exception as e:
+        LOGGER.error(f"Failed to generate suggestion: {e}")
+
+
+async def _handle_translate_request(pipeline, text: str, request_id: str | None = None) -> None:
+    """Handle translation request."""
+    try:
+        from ..domain.entities import EventType
+        result = await pipeline.translate_input(text)
+        
+        if isinstance(result, dict):
+            await pipeline._emit(
+                EventType.ANSWER,  # Reuse ANSWER event type for translations
+                {
+                    "text": result.get("target_text", ""),
+                    "suggestion": result,
+                    "request_id": request_id,
+                    "is_translation": True,
+                },
+            )
+        else:
             await pipeline._emit(
                 EventType.ANSWER,
-                {"text": suggestion.get("target_text", ""), "suggestion": suggestion},
+                {"text": str(result), "request_id": request_id, "is_translation": True},
             )
-        else:
-            await pipeline._emit(EventType.ANSWER, {"text": str(suggestion)})
     except Exception as e:
-        LOGGER.error(f"Failed to generate answer: {e}")
-
-
-async def _handle_follow_up_request(pipeline) -> None:
-    """Handle follow-up generation request."""
-    try:
-        from ..domain.entities import EventType
-        suggestion = await pipeline.generate_follow_up()
-        if isinstance(suggestion, dict):
-            await pipeline._emit(
-                EventType.FOLLOW_UP,
-                {"text": suggestion.get("target_text", ""), "suggestion": suggestion},
-            )
-        else:
-            await pipeline._emit(EventType.FOLLOW_UP, {"text": str(suggestion)})
-    except Exception as e:
-        LOGGER.error(f"Failed to generate follow-up: {e}")
+        LOGGER.error(f"Failed to translate input: {e}")
 
 
 async def _handle_tts_request(websocket, text: str, voice_id: str | None = None, request_id: str | None = None) -> None:

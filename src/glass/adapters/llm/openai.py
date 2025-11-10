@@ -146,6 +146,119 @@ class OpenAILLMAdapter:
             data = response.json()
         return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
 
+    async def translate_structured(
+        self,
+        text: str,
+        *,
+        source_lang: str,
+        target_lang: str,
+        pronunciation_mode: str | None = None,
+        context: Sequence[str | dict] | None = None,
+    ) -> dict:
+        """Translate text with structured output including pronunciation.
+        
+        Args:
+            text: Input text (keywords or full sentence) to translate
+            source_lang: Source language name
+            target_lang: Target language name
+            pronunciation_mode: 'romaji' or 'native' for pronunciation
+            context: Optional conversation context for better translation
+        
+        Returns:
+            dict with target_text, native_translation (back-translation), pronunciation
+        """
+        # Build context if provided
+        context_text = ""
+        if context:
+            context_lines = self._format_transcript(context[-4:])  # Last 2 turns
+            context_text = f"\nConversation context:\n{context_lines}\n"
+
+        if pronunciation_mode == 'romaji':
+            pronunciation_rule = (
+                "Include a single field 'pronunciation' which is ONE LINE of Hepburn romaji. "
+                "ASCII only (no macrons). NEVER use kana/kanji or any non-ASCII."
+            )
+        elif pronunciation_mode == 'native':
+            example_hint = self._build_pronunciation_example(source_lang, target_lang)
+            pronunciation_rule = (
+                f"Include a single field 'pronunciation' which is ONE LINE showing how to pronounce target_text using {source_lang} script. "
+                f"This is a PHONETIC TRANSCRIPTION (not a translation). "
+                f"You MUST write the sounds using {source_lang} alphabet/characters, NEVER {target_lang} script. "
+                f"{example_hint}"
+            )
+        else:
+            pronunciation_rule = "Do not include a pronunciation field."
+
+        prompt = f"""
+You are a translation assistant helping a user learn {target_lang}.
+
+The user provided: "{text}"
+
+This might be:
+- Keywords they want to combine into a sentence
+- A partial phrase they want completed
+- A full sentence they want translated
+{context_text}
+Your task:
+1. If keywords: combine them into a natural, contextually appropriate sentence in {target_lang}
+2. If a phrase/sentence: translate it naturally to {target_lang}
+3. Keep it conversational and natural
+
+Return STRICT JSON only with keys:
+- "target_text": the sentence in {target_lang} (<= 30 words)
+- "native_translation": back-translation to {source_lang} (so user can verify meaning)
+{"- \"pronunciation\": ONE-LINE phonetic reading of target_text (NOT a translation)" if pronunciation_mode else ""}
+
+Rules:
+- Output JSON only. No backticks, no prefixes, no prose.
+- Keep culturally appropriate tone (polite when needed).
+- {pronunciation_rule}
+- CRITICAL: Pronunciation represents SOUNDS (phonetic), never meaning.
+- Do NOT drop punctuation. Preserve natural punctuation in target_text.
+
+JSON:
+"""
+
+        payload = {
+            "model": "gpt-4.1-mini",
+            "messages": [
+                {"role": "system", "content": "You output only strict JSON matching the requested schema."},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.3,
+            "max_tokens": 1000,
+            "response_format": {"type": "json_object"},
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
+            response = await client.post("/chat/completions", json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+        content = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+
+        import json as _json
+        try:
+            parsed = _json.loads(content)
+            if isinstance(parsed, dict):
+                target_text = str(parsed.get("target_text") or "").strip()
+                native_translation = str(parsed.get("native_translation") or "").strip()
+                pronunciation = parsed.get("pronunciation")
+                out: dict = {"target_text": target_text}
+                if native_translation:
+                    out["native_translation"] = native_translation
+                if pronunciation:
+                    out["pronunciation"] = str(pronunciation).strip()
+                return out
+        except Exception:
+            pass
+
+        # Fallback to simple translation
+        simple = await self.translate(text, source_lang, target_lang)
+        return {"target_text": simple}
+
     async def answer(self, transcript_tail: Sequence[str | dict], lang: str, mode: str = "real", target_lang: str | None = None) -> str:
         """Generate an answer based on conversation history."""
         transcript_lines = self._format_transcript(transcript_tail)
@@ -406,6 +519,139 @@ JSON:
         # Fallback to unstructured follow-up
         plain = await self.follow_up(transcript_tail, lang=target_lang)
         return {"target_text": plain}
+
+    async def suggest_unified(
+        self,
+        transcript_tail: Sequence[str | dict],
+        *,
+        target_lang: str,
+        native_lang: str,
+        pronunciation_mode: str | None = None,
+        mode: str = "real",
+        suggest_mode: str = "auto",
+    ) -> dict:
+        """Generate a unified suggestion in one LLM call with type determination.
+        
+        Returns a dict with:
+        - "type": "answer" | "follow_up" | "none"
+        - "target_text": the suggested sentence (if type != "none")
+        - "native_translation": translation to native language (optional)
+        - "pronunciation": phonetic reading (optional)
+        """
+        transcript_lines = self._format_transcript(transcript_tail)
+
+        if pronunciation_mode == 'romaji':
+            pronunciation_rule = (
+                "Include a single field 'pronunciation' which is ONE LINE of Hepburn romaji. "
+                "ASCII only (no macrons). NEVER use kana/kanji or any non-ASCII."
+            )
+        elif pronunciation_mode == 'native':
+            example_hint = self._build_pronunciation_example(native_lang, target_lang)
+            pronunciation_rule = (
+                f"Include a single field 'pronunciation' which is ONE LINE showing how to pronounce target_text using {native_lang} script. "
+                f"This is a PHONETIC TRANSCRIPTION (not a translation). "
+                f"You MUST write the sounds using {native_lang} alphabet/characters, NEVER {target_lang} script. "
+                f"{example_hint}"
+            )
+        else:
+            pronunciation_rule = "Do not include a pronunciation field."
+
+        # Different prompts based on suggest_mode
+        if suggest_mode == "always":
+            # Always generate a suggestion, decide between answer and follow_up
+            type_instruction = """
+Decide which type of suggestion to provide:
+- "answer": if the conversation partner's last message invites a direct response or asks a question
+- "follow_up": if a new question/statement would help continue the conversation
+You MUST return either "answer" or "follow_up", never "none".
+"""
+        else:
+            # Auto mode: can return "none" if suggestion is not helpful
+            type_instruction = """
+Decide which type of suggestion to provide:
+- "answer": if the conversation partner's last message invites a direct response or asks a question
+- "follow_up": if a new question/statement would help continue the conversation
+- "none": if suggesting now would be redundant or unhelpful
+"""
+
+        prompt = f"""
+You are a precise language coach helping a user learn {target_lang}.
+
+Based on the conversation below, {type_instruction}
+
+Return STRICT JSON only with keys:
+- "type": "answer" | "follow_up" | "none"
+- "target_text": the suggested sentence in {target_lang} (<= 30 words) [only if type != "none"]
+- "native_translation": natural translation in {native_lang} [only if type != "none"]
+{"- \"pronunciation\": ONE-LINE phonetic reading of target_text (NOT a translation) [only if type != \"none\"]" if pronunciation_mode else ""}
+
+Rules:
+- Output JSON only. No backticks, no prefixes, no prose.
+- If type is "answer", suggest a direct reply to the partner's message.
+- If type is "follow_up", suggest a new question or statement to continue the conversation.
+- If type is "none", only include the "type" field.
+- Keep culturally appropriate tone (polite when needed). If {target_lang} is Japanese, default to polite unless clearly casual.
+- {pronunciation_rule}
+- CRITICAL: Pronunciation represents SOUNDS (phonetic), never meaning. Write sounds using the specified script ONLY.
+- If pronunciation duplicates native_translation or target_text exactly, omit it.
+- Do NOT drop punctuation. Preserve commas, periods, exclamation/question marks exactly as in target_text.
+{"- Be slightly more proactive in suggesting (prefer answer/follow_up over none)." if mode == "practice" else ""}
+
+Conversation:
+{transcript_lines}
+
+JSON:
+"""
+
+        payload = {
+            "model": "gpt-4.1-mini",
+            "messages": [
+                {"role": "system", "content": "You output only strict JSON matching the requested schema."},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.2,
+            "max_tokens": 1000,
+            "response_format": {"type": "json_object"},
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
+            response = await client.post("/chat/completions", json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+        content = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+
+        import json as _json
+        try:
+            parsed = _json.loads(content)
+            if isinstance(parsed, dict):
+                suggestion_type = str(parsed.get("type", "none")).lower()
+                
+                if suggestion_type == "none":
+                    return {"type": "none"}
+                
+                # Normalize and validate
+                target_text = str(parsed.get("target_text") or "").strip()
+                native_translation = str(parsed.get("native_translation") or "").strip()
+                pronunciation = parsed.get("pronunciation")
+                
+                out: dict = {
+                    "type": suggestion_type if suggestion_type in ["answer", "follow_up"] else "follow_up",
+                    "target_text": target_text
+                }
+                if native_translation:
+                    out["native_translation"] = native_translation
+                if pronunciation:
+                    out["pronunciation"] = str(pronunciation).strip()
+                return out
+        except Exception:
+            pass
+
+        # Fallback: generate follow_up
+        plain = await self.follow_up(transcript_tail, lang=target_lang)
+        return {"type": "follow_up", "target_text": plain}
 
     def _build_pronunciation_example(self, native_lang: str, target_lang: str) -> str:
         """Return a concise, native-language-specific example hint for pronunciation.
@@ -694,55 +940,6 @@ Return YES or NO only.
 
         # Fallback to the raw speaker, or a generic Partner if missing
         return speaker or "Partner"
-
-    async def decide_suggestion_kind(self, transcript_tail: Sequence[str | dict], *, mode: str = "real") -> str:
-        """Decide which single suggestion kind to produce: 'answer', 'follow_up', or 'none'.
-
-        Returns lowercase string in {"answer", "follow_up", "none"}.
-        """
-        transcript_lines = self._format_transcript(transcript_tail)
-        prompt = f"""
-You are a concise conversation assistant. Decide ONE suggestion type for the learner now.
-
-Output exactly one of:
-- ANSWER: suggest a direct reply to Partner's last message
-- FOLLOW_UP: suggest a new question the learner could ask to continue
-- NONE: do not suggest anything now
-
-Guidelines:
-- Prefer ANSWER if Partner's last message directly invites a response or asks a question.
-- Prefer FOLLOW_UP when a reply is already clear, and a next question would move the conversation forward.
-- Use NONE if suggesting would be noisy or redundant.
-{"- Be slightly more proactive in practice mode." if mode == "practice" else ""}
-
-Conversation:
-{transcript_lines}
-
-Return only one token: ANSWER or FOLLOW_UP or NONE.
-"""
-        payload = {
-            "model": "gpt-4.1-mini",
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.1,
-            "max_tokens": 5,
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        try:
-            async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-                response = await client.post("/chat/completions", json=payload, headers=headers)
-                response.raise_for_status()
-                data = response.json()
-            decision = (data.get("choices", [{}])[0].get("message", {}).get("content", "").strip() or "").upper()
-            if "ANSWER" in decision:
-                return "answer"
-            if "FOLLOW_UP" in decision or "FOLLOWUP" in decision:
-                return "follow_up"
-            return "none"
-        except Exception:
-            return "none"
 
     async def generate_ai_response(
         self,

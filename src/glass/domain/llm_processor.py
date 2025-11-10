@@ -390,28 +390,44 @@ class LLMProcessor:
         event_type_answer,
         event_type_follow_up,
     ) -> None:
-        """Generate exactly one suggestion (answer or follow-up) based on model decision."""
+        """Generate exactly one suggestion (answer or follow-up) in a single LLM call."""
         try:
             LOGGER.info(f"[Unified Suggestion] Starting for anchor {anchor_utterance_id or 'unknown'}")
 
-            # Ask model which to produce
-            kind: str = "none"
-            if hasattr(self.llm, 'decide_suggestion_kind'):
+            target_lang_name = self._lang_code_to_name(self.learning_lang)
+            native_lang_name = self._lang_code_to_name(self.native_lang)
+            require_pronunciation = self.proficiency == 'cant_read'
+            pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
+
+            # Use unified suggestion (one LLM call with type + content)
+            result: dict | None = None
+            if hasattr(self.llm, 'suggest_unified'):
                 try:
                     async with self._llm_gate:
-                        kind = await self.llm.decide_suggestion_kind(list(tail), mode=self.mode)
-                except Exception:
-                    kind = "none"
-            else:
-                # Fallback heuristic: if last partner text has '?', prefer answer; else follow_up for user turns
-                last_text = ""
-                if tail:
-                    last = tail[-1] if isinstance(tail[-1], dict) else {}
-                    last_text = (last.get("text") if isinstance(last, dict) else "") or ""
-                kind = "answer" if ("?" in last_text) else "follow_up"
+                        result = await self.llm.suggest_unified(
+                            list(tail),
+                            target_lang=target_lang_name,
+                            native_lang=native_lang_name,
+                            pronunciation_mode=pronunciation_mode,
+                            mode=self.mode,
+                            suggest_mode=self.suggest_mode,
+                        )
+                except Exception as e:
+                    LOGGER.error(f"Unified suggestion failed: {e}", exc_info=True)
+                    return
+
+            if not result:
+                LOGGER.info("[Unified Suggestion] No result from LLM")
+                return
+
+            kind = result.get("type", "none")
+            
+            if kind == "none":
+                LOGGER.info("[Unified Suggestion] Skipped (kind=none)")
+                return
 
             if kind not in {"answer", "follow_up"}:
-                LOGGER.info("[Unified Suggestion] Skipped (kind=%s)", kind)
+                LOGGER.warning(f"[Unified Suggestion] Invalid kind: {kind}")
                 return
 
             # Deduplicate per anchor/kind
@@ -419,8 +435,8 @@ class LLMProcessor:
                 LOGGER.info(f"[Unified Suggestion] Skipped duplicate for {anchor_utterance_id}:{kind}")
                 return
 
-            # Generate and emit
-            suggestion_obj = await self._generate_suggestion_for_kind(kind, list(tail))
+            # Normalize and emit
+            suggestion_obj = self._normalize_suggestion(result)
             if suggestion_obj:
                 await self._emit_suggestion(kind, suggestion_obj, event_type_answer, event_type_follow_up)
         except Exception as e:
@@ -531,6 +547,88 @@ class LLMProcessor:
             plain = await self.llm.follow_up(list(tail), lang)
             return {"target_text": plain, "native_explanation": ""}
         return {"target_text": "Follow-up generation not supported", "native_explanation": ""}
+
+    async def generate_suggestion(self, tail: list[dict], lang: str) -> tuple[str, dict]:
+        """Generate a unified suggestion (answer or follow-up) in one LLM call.
+        
+        Returns:
+            A tuple of (suggestion_type, suggestion_dict) where suggestion_type is 'answer' or 'follow_up'
+        """
+        target_lang_name = self._lang_code_to_name(self.learning_lang)
+        native_lang_name = self._lang_code_to_name(self.native_lang)
+        require_pronunciation = self.proficiency == 'cant_read'
+        pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
+        
+        # Use unified suggestion if available (one LLM call with type + content)
+        if hasattr(self.llm, 'suggest_unified'):
+            try:
+                result = await self.llm.suggest_unified(
+                    list(tail),
+                    target_lang=target_lang_name,
+                    native_lang=native_lang_name,
+                    pronunciation_mode=pronunciation_mode,
+                    mode=self.mode,
+                    suggest_mode=self.suggest_mode,
+                )
+                
+                suggestion_type = result.get("type", "follow_up")
+                
+                # If type is "none", return empty follow_up
+                if suggestion_type == "none":
+                    return ("follow_up", {"target_text": "", "native_translation": ""})
+                
+                # Normalize and return
+                suggestion = self._normalize_suggestion(result)
+                return (suggestion_type, suggestion)
+            except Exception as e:
+                LOGGER.error(f"Unified suggestion failed: {e}", exc_info=True)
+        
+        # Fallback: use separate methods
+        last_text = ""
+        if tail:
+            last = tail[-1] if isinstance(tail[-1], dict) else {}
+            last_text = (last.get("text") if isinstance(last, dict) else "") or ""
+        
+        kind = "answer" if ("?" in last_text) else "follow_up"
+        
+        if kind == "answer":
+            suggestion = await self.generate_answer(tail, lang)
+            return ("answer", suggestion)
+        else:
+            suggestion = await self.generate_follow_up(tail, lang)
+            return ("follow_up", suggestion)
+
+    async def translate_input(self, text: str, tail: list[dict]) -> dict:
+        """Translate user input (keywords or sentence) to target language with pronunciation.
+        
+        Args:
+            text: User input (keywords like "coffee tomorrow" or full sentence)
+            tail: Conversation context for better translation
+        
+        Returns:
+            dict with target_text, native_translation, pronunciation
+        """
+        target_lang_name = self._lang_code_to_name(self.learning_lang)
+        native_lang_name = self._lang_code_to_name(self.native_lang)
+        require_pronunciation = self.proficiency == 'cant_read'
+        pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
+        
+        if hasattr(self.llm, 'translate_structured'):
+            result = await self.llm.translate_structured(
+                text,
+                source_lang=native_lang_name,
+                target_lang=target_lang_name,
+                pronunciation_mode=pronunciation_mode,
+                context=list(tail) if tail else None,
+            )
+            return self._normalize_suggestion(result)
+        
+        # Fallback to simple translation
+        if hasattr(self.llm, 'translate'):
+            simple = await self.llm.translate(text, native_lang_name, target_lang_name)
+            return {"target_text": simple, "native_translation": ""}
+        
+        return {"target_text": text, "native_translation": ""}
 
     async def generate_initial_greeting(
         self, 

@@ -65,12 +65,10 @@ async def audio_stream(
     events_adapter = WebSocketEventsAdapter(websocket) if events else None
     pipeline = await app_state.session_manager.get_or_create(sid, events_port=events_adapter)
     audio_iter = iter_websocket_audio(websocket)
-    # Enforce per-client time budget using deadline-based approach (async init)
+    # Enforce per-client time budget
     if app_state.settings.free_minutes_per_user is not None:
         asyncio.create_task(_init_budget_and_schedule_close(websocket, app_state, client_id))
     try:
-        # Enforce session TTL
-        asyncio.create_task(_close_after_ttl(websocket, settings.ws_max_session_seconds))
         stream_label = track or source
         await pipeline.process_audio_stream(
             audio_iter,
@@ -135,8 +133,6 @@ async def audio_stream_multiplexed(
     )
     
     try:
-        # Enforce session TTL
-        asyncio.create_task(_close_after_ttl(websocket, settings.ws_max_session_seconds))
         await iter_multiplexed_audio(websocket, source_queues, pipeline)
         await asyncio.gather(mic_task, system_task)
     except WebSocketDisconnect:
@@ -176,13 +172,6 @@ async def session_events(websocket: WebSocket, sid: str) -> None:
         return
 
 
-async def _close_after_ttl(websocket: WebSocket, ttl_seconds: int) -> None:
-    try:
-        await asyncio.sleep(max(1, ttl_seconds))
-        # Close with normal closure if still open; suppress if already closed
-        await websocket.close()
-    except Exception:
-        pass
 
 
 async def _enforce_time_budget(websocket: WebSocket, app_state, client_id: str) -> None:
@@ -232,48 +221,88 @@ async def _close_when_deadline(websocket: WebSocket, remaining_sec: int, total_s
 
 async def _init_budget_and_schedule_close(websocket: WebSocket, app_state, client_id: str) -> None:
     """Initialize daily cumulative quota and start usage metering loop."""
+    settings = get_settings()
+    total_sec = int(settings.free_minutes_per_user or 0) * 60
+    
     try:
-        settings = get_settings()
-        total_sec = int(settings.free_minutes_per_user or 0) * 60
-        remaining_sec = await app_state.get_remaining_seconds_quota(client_id)
-        if remaining_sec <= 0:
-            try:
-                await websocket.send_json({"t": "limit_reached", "reason": "time", "max": total_sec})
-            except Exception:
-                pass
-            try:
-                await websocket.close(code=1013)
-            except Exception:
-                pass
-            return
+        # Fetch remaining quota from Redis with timeout handling
+        remaining_sec = await asyncio.wait_for(
+            app_state.get_remaining_seconds_quota(client_id),
+            timeout=10.0  # Don't block connection start too long
+        )
+        LOGGER.info(f"[Budget] Client {client_id}: {remaining_sec}s remaining of {total_sec}s")
+    except asyncio.TimeoutError:
+        LOGGER.warning(f"[Budget] Redis timeout on init for {client_id}, allowing connection")
+        remaining_sec = total_sec  # Fail open: allow connection if Redis is down
+    except Exception as e:
+        LOGGER.exception(f"[Budget] Failed to check quota for {client_id}: {e}")
+        remaining_sec = total_sec  # Fail open
+    
+    # Block if quota exhausted
+    if remaining_sec <= 0:
         try:
-            await websocket.send_json({"t": "time_remaining", "seconds": int(remaining_sec), "total": total_sec})
+            await websocket.send_json({"t": "limit_reached", "reason": "time", "max": total_sec})
         except Exception:
             pass
-        # Start per-connection metering loop (increments 1s every second)
-        asyncio.create_task(_usage_meter_loop(websocket, app_state, client_id, total_sec))
+        try:
+            await websocket.close(code=1013)
+        except Exception:
+            pass
+        return
+    
+    # Send time info to client
+    try:
+        await websocket.send_json({"t": "time_remaining", "seconds": int(remaining_sec), "total": total_sec})
+        LOGGER.info(f"[Budget] Sent time_remaining to client {client_id}: {remaining_sec}s")
     except Exception as e:
-        LOGGER.exception("[Budget]/ws/init(daily) failed: %s", e)
+        LOGGER.warning(f"[Budget] Failed to send time_remaining: {e}")
+    
+    # Start usage tracking
+    asyncio.create_task(_usage_meter_loop(websocket, app_state, client_id, total_sec))
 
 async def _usage_meter_loop(websocket: WebSocket, app_state, client_id: str, total_sec: int) -> None:
-    """Increment daily usage each second while connection is alive; close at limit."""
+    """Track usage locally; sync + check quota every 5 minutes for robustness.
+    
+    Balance between efficiency and robustness:
+    - Periodic sync handles multi-connection abuse and server crashes
+    - 5-minute interval keeps Redis load low while preventing quota bypass
+    """
+    sync_interval = 300  # 5 minutes - good balance
+    start_time = asyncio.get_event_loop().time()
+    last_sync = 0
+    
     try:
         while True:
-            await asyncio.sleep(1)
-            used = await app_state.incr_used_seconds(client_id, 1)
-            remaining = max(0, int(total_sec - used))
-            if remaining <= 0:
-                try:
-                    await websocket.send_json({"t": "limit_reached", "reason": "time", "max": total_sec})
-                except Exception:
-                    pass
-                try:
-                    await websocket.close(code=1000)
-                except Exception:
-                    pass
-                return
-    except Exception:
-        # Suppress exceptions (websocket may be closed)
-        return
+            await asyncio.sleep(sync_interval)
+            elapsed = int(asyncio.get_event_loop().time() - start_time)
+            seconds_to_sync = elapsed - last_sync
+            
+            # Sync accumulated time to Redis
+            if seconds_to_sync > 0:
+                total_used = await app_state.incr_used_seconds(client_id, seconds_to_sync)
+                last_sync = elapsed
+                LOGGER.debug(f"[Budget] Synced {seconds_to_sync}s for client {client_id} (total today: {total_used}s)")
+                
+                # Check if quota exceeded (handles multi-connection case)
+                if total_used >= total_sec:
+                    try:
+                        await websocket.send_json({"t": "limit_reached", "reason": "time", "max": total_sec})
+                    except Exception:
+                        pass
+                    try:
+                        await websocket.close(code=1000)
+                    except Exception:
+                        pass
+                    return
+    finally:
+        # Sync any remaining time on disconnect (handles clean shutdown or crash recovery)
+        elapsed = int(asyncio.get_event_loop().time() - start_time)
+        remaining = elapsed - last_sync
+        if remaining > 0:
+            try:
+                await app_state.incr_used_seconds(client_id, remaining)
+                LOGGER.info(f"[Budget] Final sync: {remaining}s for client {client_id} on disconnect")
+            except Exception as e:
+                LOGGER.warning(f"[Budget] Failed to sync on disconnect: {e}")
 
  

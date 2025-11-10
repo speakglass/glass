@@ -122,8 +122,8 @@ interface GlassContextValue {
   disconnect: () => Promise<void>;
   mute: () => void;
   unmute: () => void;
-  requestAnswer: () => Promise<StructuredSuggestion>;
-  requestFollowUp: () => Promise<StructuredSuggestion>;
+  requestSuggestion: () => Promise<{ type: 'answer' | 'follow_up'; suggestion: StructuredSuggestion }>;
+  requestTranslate: (text: string) => Promise<StructuredSuggestion>;
   setOnAISuggestion: (callback: (type: 'answer' | 'follow_up' | 'feedback', payload: any) => void) => void;
   addSuggestion: (type: AISuggestionType, payload: any) => void;
   removeSuggestion: (id: string) => void;
@@ -1189,8 +1189,11 @@ export function GlassProvider({
     isMutedRef.current = false;
   }, []);
 
-  // Request answer via WebSocket
-  const requestAnswer = useCallback((): Promise<StructuredSuggestion> => {
+  // Request unified suggestion via WebSocket (automatically decides answer or follow-up)
+  const requestSuggestion = useCallback((): Promise<{
+    type: 'answer' | 'follow_up';
+    suggestion: StructuredSuggestion;
+  }> => {
     return new Promise((resolve, reject) => {
       const ws = wsRef.current;
       if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -1198,35 +1201,39 @@ export function GlassProvider({
         return;
       }
 
-      // Set up one-time listener for answer event
-      const handleAnswer = (event: MessageEvent) => {
+      // Set up one-time listener for either answer or follow_up event
+      const handleSuggestion = (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data);
           if (data.t === 'answer') {
-            ws.removeEventListener('message', handleAnswer);
+            ws.removeEventListener('message', handleSuggestion);
             const payload = data.suggestion || (data.text ? { target_text: data.text } : { target_text: '' });
-            resolve(payload);
+            resolve({ type: 'answer', suggestion: payload });
+          } else if (data.t === 'follow_up') {
+            ws.removeEventListener('message', handleSuggestion);
+            const payload = data.suggestion || (data.text ? { target_text: data.text } : { target_text: '' });
+            resolve({ type: 'follow_up', suggestion: payload });
           }
         } catch (e) {
           // Ignore parsing errors, keep listening
         }
       };
 
-      ws.addEventListener('message', handleAnswer);
+      ws.addEventListener('message', handleSuggestion);
 
       // Send request
-      ws.send(JSON.stringify({ type: 'request_answer' }));
+      ws.send(JSON.stringify({ type: 'request_suggestion' }));
 
       // Timeout after 15 seconds
       setTimeout(() => {
-        ws.removeEventListener('message', handleAnswer);
-        reject(new Error('Answer request timeout'));
+        ws.removeEventListener('message', handleSuggestion);
+        reject(new Error('Suggestion request timeout'));
       }, 15000);
     });
   }, []);
 
-  // Request follow-up via WebSocket
-  const requestFollowUp = useCallback((): Promise<StructuredSuggestion> => {
+  // Request translation via WebSocket
+  const requestTranslate = useCallback((text: string): Promise<StructuredSuggestion> => {
     return new Promise((resolve, reject) => {
       const ws = wsRef.current;
       if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -1234,12 +1241,14 @@ export function GlassProvider({
         return;
       }
 
-      // Set up one-time listener for follow_up event
-      const handleFollowUp = (event: MessageEvent) => {
+      const requestId = `translate_${Date.now()}`;
+
+      // Set up one-time listener for answer event with matching request_id
+      const handleTranslation = (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.t === 'follow_up') {
-            ws.removeEventListener('message', handleFollowUp);
+          if (data.t === 'answer' && data.is_translation && data.request_id === requestId) {
+            ws.removeEventListener('message', handleTranslation);
             const payload = data.suggestion || (data.text ? { target_text: data.text } : { target_text: '' });
             resolve(payload);
           }
@@ -1248,15 +1257,15 @@ export function GlassProvider({
         }
       };
 
-      ws.addEventListener('message', handleFollowUp);
+      ws.addEventListener('message', handleTranslation);
 
       // Send request
-      ws.send(JSON.stringify({ type: 'request_follow_up' }));
+      ws.send(JSON.stringify({ type: 'request_translate', text, request_id: requestId }));
 
       // Timeout after 15 seconds
       setTimeout(() => {
-        ws.removeEventListener('message', handleFollowUp);
-        reject(new Error('Follow-up request timeout'));
+        ws.removeEventListener('message', handleTranslation);
+        reject(new Error('Translation request timeout'));
       }, 15000);
     });
   }, []);
@@ -1459,8 +1468,8 @@ export function GlassProvider({
     disconnect,
     mute,
     unmute,
-    requestAnswer,
-    requestFollowUp,
+    requestSuggestion,
+    requestTranslate,
     setOnAISuggestion,
     addSuggestion,
     removeSuggestion,
