@@ -204,7 +204,8 @@ async def _handle_tts_request(websocket, text: str, voice_id: str | None = None,
                 "stability": 0.5,
                 "similarity_boost": 0.75,
                 "style": 0.0,
-                "use_speaker_boost": True
+                "use_speaker_boost": True,
+                "speed": 0.80  # 0.25-2.0, default 1.0 (0.80 = 20% slower)
             }
         }
         

@@ -67,25 +67,32 @@ export type StructuredSuggestion = {
   native_lang?: string;
 };
 
-export type AISuggestionType = 'answer' | 'follow_up' | 'feedback';
-export type AISuggestion =
-  | {
-      id: string;
-      type: 'feedback';
-      text?: string;
-      target_text?: string;
-      pronunciation?: string;
-      reason_native?: string;
-      timestamp: number;
-    }
-  | {
-      id: string;
-      type: 'answer' | 'follow_up';
-      target_text: string;
-      native_translation?: string;
-      pronunciation?: string;
-      timestamp: number;
-    };
+export type AISuggestionType = 'answer' | 'follow_up';
+export type AISuggestion = {
+  id: string;
+  type: 'answer' | 'follow_up';
+  target_text: string;
+  native_translation?: string;
+  pronunciation?: string;
+  timestamp: number;
+};
+
+export type AIFeedback = {
+  id: string;
+  text?: string;
+  target_text?: string;
+  pronunciation?: string;
+  reason_native?: string;
+  timestamp: number;
+};
+
+export type AITranslation = {
+  id: string;
+  target_text: string;
+  native_translation?: string;
+  pronunciation?: string;
+  timestamp: number;
+};
 
 export interface ConversationScores {
   fluency: number;
@@ -115,6 +122,8 @@ interface GlassContextValue {
   micFft: number[];
   settings: VoiceSettings;
   suggestions: AISuggestion[];
+  feedbacks: AIFeedback[];
+  translations: AITranslation[];
   conversationAnalysis: ConversationAnalysis | null;
   showSummary: boolean;
   budgetStatus: 'unknown' | 'enabled' | 'disabled';
@@ -134,9 +143,19 @@ interface GlassContextValue {
   setOnAISuggestion: (callback: (type: 'answer' | 'follow_up' | 'feedback', payload: any) => void) => void;
   addSuggestion: (type: AISuggestionType, payload: any) => void;
   removeSuggestion: (id: string) => void;
+  addFeedback: (payload: any) => void;
+  removeFeedback: (id: string) => void;
+  addTranslation: (payload: any) => void;
+  removeTranslation: (id: string) => void;
   getSuggestionRemainingMs: (id: string) => number;
+  getFeedbackRemainingMs: (id: string) => number;
+  getTranslationRemainingMs: (id: string) => number;
   pauseSuggestionTimer: (id: string) => void;
   resumeSuggestionTimer: (id: string) => void;
+  pauseFeedbackTimer: (id: string) => void;
+  resumeFeedbackTimer: (id: string) => void;
+  pauseTranslationTimer: (id: string) => void;
+  resumeTranslationTimer: (id: string) => void;
   speakText: (text: string) => Promise<void>;
   isSpeaking: boolean;
   stopSpeaking: () => void;
@@ -185,7 +204,7 @@ export function GlassProvider({
         countryCode: undefined,
         proficiency: undefined,
         pronunciationMode: 'native',
-        suggestionDurationSec: 10,
+        suggestionDurationSec: 20,
         glassMode: false,
         showManualSuggestButtons: false,
       };
@@ -201,7 +220,7 @@ export function GlassProvider({
           countryCode: parsed.countryCode,
           proficiency: parsed.proficiency,
           pronunciationMode: parsed.pronunciationMode || 'native',
-          suggestionDurationSec: parsed.suggestionDurationSec || 10,
+          suggestionDurationSec: parsed.suggestionDurationSec || 20,
           glassMode: parsed.glassMode ?? false,
           showManualSuggestButtons: parsed.showManualSuggestButtons ?? false,
         };
@@ -215,14 +234,22 @@ export function GlassProvider({
       countryCode: undefined,
       proficiency: undefined,
       pronunciationMode: 'native',
-      suggestionDurationSec: 10,
+      suggestionDurationSec: 20,
       glassMode: false,
       showManualSuggestButtons: false,
     };
   });
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
+  const [feedbacks, setFeedbacks] = useState<AIFeedback[]>([]);
+  const [translations, setTranslations] = useState<AITranslation[]>([]);
   const pausedMapRef = useRef<Map<string, { paused: boolean; pausedAt: number; accumulated: number }>>(new Map());
+  const feedbackPausedMapRef = useRef<Map<string, { paused: boolean; pausedAt: number; accumulated: number }>>(
+    new Map()
+  );
+  const translationPausedMapRef = useRef<Map<string, { paused: boolean; pausedAt: number; accumulated: number }>>(
+    new Map()
+  );
   const onAISuggestionCallbackRef = useRef<
     ((type: 'answer' | 'follow_up' | 'feedback', payload: any) => void) | undefined
   >();
@@ -237,47 +264,70 @@ export function GlassProvider({
     []
   );
 
-  const addSuggestion = useCallback(
-    (type: AISuggestionType, payload: any) => {
-      const id = Math.random().toString(36).substr(2, 9);
-      const timestamp = Date.now();
-      const suggestion: AISuggestion =
-        type === 'feedback'
-          ? typeof payload === 'object' && payload !== null
-            ? {
-                id,
-                type: 'feedback',
-                text: typeof payload.text === 'string' ? payload.text : undefined,
-                target_text: typeof payload.target_text === 'string' ? payload.target_text : undefined,
-                pronunciation: typeof payload.pronunciation === 'string' ? payload.pronunciation : undefined,
-                reason_native: typeof payload.reason_native === 'string' ? payload.reason_native : undefined,
-                timestamp,
-              }
-            : { id, type: 'feedback', text: String(payload || ''), timestamp }
-          : {
-              id,
-              type,
-              target_text: String(payload?.target_text || ''),
-              native_translation: payload?.native_translation ? String(payload.native_translation) : undefined,
-              pronunciation: payload?.pronunciation ? String(payload.pronunciation) : undefined,
-              timestamp,
-            };
-      setSuggestions((prev) => [...prev, suggestion]);
-    },
-    [settings.suggestionDurationSec]
-  );
+  const addSuggestion = useCallback((type: AISuggestionType, payload: any) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const timestamp = Date.now();
+    const suggestion: AISuggestion = {
+      id,
+      type,
+      target_text: String(payload?.target_text || ''),
+      native_translation: payload?.native_translation ? String(payload.native_translation) : undefined,
+      pronunciation: payload?.pronunciation ? String(payload.pronunciation) : undefined,
+      timestamp,
+    };
+    setSuggestions((prev) => [...prev, suggestion]);
+  }, []);
+
+  const addFeedback = useCallback((payload: any) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const timestamp = Date.now();
+    const feedback: AIFeedback =
+      typeof payload === 'object' && payload !== null
+        ? {
+            id,
+            text: typeof payload.text === 'string' ? payload.text : undefined,
+            target_text: typeof payload.target_text === 'string' ? payload.target_text : undefined,
+            pronunciation: typeof payload.pronunciation === 'string' ? payload.pronunciation : undefined,
+            reason_native: typeof payload.reason_native === 'string' ? payload.reason_native : undefined,
+            timestamp,
+          }
+        : { id, text: String(payload || ''), timestamp };
+    setFeedbacks((prev) => [...prev, feedback]);
+  }, []);
+
+  const addTranslation = useCallback((payload: any) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const timestamp = Date.now();
+    const translation: AITranslation = {
+      id,
+      target_text: String(payload?.target_text || ''),
+      native_translation: payload?.native_translation ? String(payload.native_translation) : undefined,
+      pronunciation: payload?.pronunciation ? String(payload.pronunciation) : undefined,
+      timestamp,
+    };
+    setTranslations((prev) => [...prev, translation]);
+  }, []);
 
   const removeSuggestion = useCallback((id: string) => {
     setSuggestions((prev) => prev.filter((s) => s.id !== id));
-    // Clean up any paused state for this suggestion
     pausedMapRef.current.delete(id);
+  }, []);
+
+  const removeFeedback = useCallback((id: string) => {
+    setFeedbacks((prev) => prev.filter((f) => f.id !== id));
+    feedbackPausedMapRef.current.delete(id);
+  }, []);
+
+  const removeTranslation = useCallback((id: string) => {
+    setTranslations((prev) => prev.filter((t) => t.id !== id));
+    translationPausedMapRef.current.delete(id);
   }, []);
 
   const getSuggestionRemainingMs = useCallback(
     (id: string): number => {
       const s = suggestions.find((x) => x.id === id);
       if (!s) return 0;
-      const total = Math.max(1, settings.suggestionDurationSec ?? 10) * 1000;
+      const total = Math.max(1, settings.suggestionDurationSec ?? 20) * 1000;
       const pausedInfo = pausedMapRef.current.get(id);
       const now = Date.now();
       const pausedDelta = pausedInfo
@@ -307,10 +357,78 @@ export function GlassProvider({
     pausedMapRef.current.set(id, info);
   }, []);
 
+  const getFeedbackRemainingMs = useCallback(
+    (id: string): number => {
+      const f = feedbacks.find((x) => x.id === id);
+      if (!f) return 0;
+      const total = Math.max(1, settings.suggestionDurationSec ?? 20) * 1000;
+      const pausedInfo = feedbackPausedMapRef.current.get(id);
+      const now = Date.now();
+      const pausedDelta = pausedInfo
+        ? pausedInfo.accumulated + (pausedInfo.paused ? Math.max(0, now - pausedInfo.pausedAt) : 0)
+        : 0;
+      const elapsed = now - (f.timestamp || 0) - pausedDelta;
+      return Math.max(0, total - elapsed);
+    },
+    [feedbacks, settings.suggestionDurationSec]
+  );
+
+  const pauseFeedbackTimer = useCallback((id: string) => {
+    const info = feedbackPausedMapRef.current.get(id) || { paused: false, pausedAt: 0, accumulated: 0 };
+    if (info.paused) return;
+    info.paused = true;
+    info.pausedAt = Date.now();
+    feedbackPausedMapRef.current.set(id, info);
+  }, []);
+
+  const resumeFeedbackTimer = useCallback((id: string) => {
+    const info = feedbackPausedMapRef.current.get(id) || { paused: false, pausedAt: 0, accumulated: 0 };
+    if (!info.paused) return;
+    const now = Date.now();
+    info.accumulated += Math.max(0, now - info.pausedAt);
+    info.paused = false;
+    info.pausedAt = 0;
+    feedbackPausedMapRef.current.set(id, info);
+  }, []);
+
+  const getTranslationRemainingMs = useCallback(
+    (id: string): number => {
+      const t = translations.find((x) => x.id === id);
+      if (!t) return 0;
+      const total = Math.max(1, settings.suggestionDurationSec ?? 20) * 1000;
+      const pausedInfo = translationPausedMapRef.current.get(id);
+      const now = Date.now();
+      const pausedDelta = pausedInfo
+        ? pausedInfo.accumulated + (pausedInfo.paused ? Math.max(0, now - pausedInfo.pausedAt) : 0)
+        : 0;
+      const elapsed = now - (t.timestamp || 0) - pausedDelta;
+      return Math.max(0, total - elapsed);
+    },
+    [translations, settings.suggestionDurationSec]
+  );
+
+  const pauseTranslationTimer = useCallback((id: string) => {
+    const info = translationPausedMapRef.current.get(id) || { paused: false, pausedAt: 0, accumulated: 0 };
+    if (info.paused) return;
+    info.paused = true;
+    info.pausedAt = Date.now();
+    translationPausedMapRef.current.set(id, info);
+  }, []);
+
+  const resumeTranslationTimer = useCallback((id: string) => {
+    const info = translationPausedMapRef.current.get(id) || { paused: false, pausedAt: 0, accumulated: 0 };
+    if (!info.paused) return;
+    const now = Date.now();
+    info.accumulated += Math.max(0, now - info.pausedAt);
+    info.paused = false;
+    info.pausedAt = 0;
+    translationPausedMapRef.current.set(id, info);
+  }, []);
+
   // Auto-remove expired suggestions in a loop that respects pause/resume
   useEffect(() => {
     const intervalId = setInterval(() => {
-      const total = Math.max(1, settings.suggestionDurationSec ?? 10) * 1000;
+      const total = Math.max(1, settings.suggestionDurationSec ?? 20) * 1000;
       const now = Date.now();
       setSuggestions((prev) => {
         let changed = false;
@@ -323,6 +441,60 @@ export function GlassProvider({
           const remaining = total - elapsed;
           if (remaining <= 0) {
             pausedMapRef.current.delete(s.id);
+            changed = true;
+            return false;
+          }
+          return true;
+        });
+        return changed ? next : prev;
+      });
+    }, 100);
+    return () => clearInterval(intervalId);
+  }, [settings.suggestionDurationSec]);
+
+  // Auto-remove expired feedbacks
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const total = Math.max(1, settings.suggestionDurationSec ?? 20) * 1000;
+      const now = Date.now();
+      setFeedbacks((prev) => {
+        let changed = false;
+        const next = prev.filter((f) => {
+          const pausedInfo = feedbackPausedMapRef.current.get(f.id);
+          const pausedDelta = pausedInfo
+            ? pausedInfo.accumulated + (pausedInfo.paused ? Math.max(0, now - pausedInfo.pausedAt) : 0)
+            : 0;
+          const elapsed = now - (f.timestamp || 0) - pausedDelta;
+          const remaining = total - elapsed;
+          if (remaining <= 0) {
+            feedbackPausedMapRef.current.delete(f.id);
+            changed = true;
+            return false;
+          }
+          return true;
+        });
+        return changed ? next : prev;
+      });
+    }, 100);
+    return () => clearInterval(intervalId);
+  }, [settings.suggestionDurationSec]);
+
+  // Auto-remove expired translations
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const total = Math.max(1, settings.suggestionDurationSec ?? 20) * 1000;
+      const now = Date.now();
+      setTranslations((prev) => {
+        let changed = false;
+        const next = prev.filter((t) => {
+          const pausedInfo = translationPausedMapRef.current.get(t.id);
+          const pausedDelta = pausedInfo
+            ? pausedInfo.accumulated + (pausedInfo.paused ? Math.max(0, now - pausedInfo.pausedAt) : 0)
+            : 0;
+          const elapsed = now - (t.timestamp || 0) - pausedDelta;
+          const remaining = total - elapsed;
+          if (remaining <= 0) {
+            translationPausedMapRef.current.delete(t.id);
             changed = true;
             return false;
           }
@@ -958,7 +1130,17 @@ export function GlassProvider({
           | { reason_native?: string; target_text?: string; pronunciation?: string }
           | undefined;
         const text = typeof data.text === 'string' ? data.text : undefined;
+        const isAuto = data.auto === true;
 
+        // If auto feedback, show as feedback bubble
+        if (isAuto && suggestion) {
+          addFeedback(suggestion);
+          if (onAISuggestionCallbackRef.current) {
+            onAISuggestionCallbackRef.current('feedback', suggestion);
+          }
+        }
+
+        // Also attach to message for transcript history
         if (utteranceId) {
           setMessages((prev) => {
             const next = [...prev];
@@ -967,12 +1149,9 @@ export function GlassProvider({
               const existing = next[idx];
               const feedback = suggestion
                 ? {
-                    reason_native:
-                      typeof suggestion.reason_native === 'string' ? suggestion.reason_native : undefined,
-                    target_text:
-                      typeof suggestion.target_text === 'string' ? suggestion.target_text : undefined,
-                    pronunciation:
-                      typeof suggestion.pronunciation === 'string' ? suggestion.pronunciation : undefined,
+                    reason_native: typeof suggestion.reason_native === 'string' ? suggestion.reason_native : undefined,
+                    target_text: typeof suggestion.target_text === 'string' ? suggestion.target_text : undefined,
+                    pronunciation: typeof suggestion.pronunciation === 'string' ? suggestion.pronunciation : undefined,
                   }
                 : { text };
               next[idx] = {
@@ -983,9 +1162,6 @@ export function GlassProvider({
             }
             return next;
           });
-        } else {
-          // No utterance to attach to; optionally surface as a minimal toast in future
-          // For now, ignore unattached feedback
         }
         return;
       }
@@ -1511,6 +1687,8 @@ export function GlassProvider({
     micFft,
     settings,
     suggestions,
+    feedbacks,
+    translations,
     conversationAnalysis,
     showSummary,
     budgetStatus,
@@ -1526,9 +1704,19 @@ export function GlassProvider({
     setOnAISuggestion,
     addSuggestion,
     removeSuggestion,
+    addFeedback,
+    removeFeedback,
+    addTranslation,
+    removeTranslation,
     getSuggestionRemainingMs,
+    getFeedbackRemainingMs,
+    getTranslationRemainingMs,
     pauseSuggestionTimer,
     resumeSuggestionTimer,
+    pauseFeedbackTimer,
+    resumeFeedbackTimer,
+    pauseTranslationTimer,
+    resumeTranslationTimer,
     speakText,
     isSpeaking,
     stopSpeaking,
