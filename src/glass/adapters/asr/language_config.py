@@ -37,7 +37,7 @@ LANGUAGE_CONFIG: dict[str, DeepgramLanguageConfig] = {
         model="nova-3"
     ),
     "zh": DeepgramLanguageConfig(
-        deepgram_code="zh",
+        deepgram_code="zh-CN",
         model="nova-2"
     ),
 }

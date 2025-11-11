@@ -42,6 +42,8 @@ class ASRProcessor:
         self._last_final_payload: dict[str, dict] = {}
         # Accumulate final segments per active utterance (by source)
         self._utterance_segments: dict[str, list[dict]] = {}
+        # Track latest partial per source to include on utterance_end
+        self._last_partial: dict[str, dict] = {}
 
     async def consume_asr(
         self, 
@@ -90,10 +92,10 @@ class ASRProcessor:
                 if utterance_id:
                     payload["utterance_id"] = utterance_id
                 await self._emit(event_type_utterance_end, payload, source=chunk_source)
-                # If we have accumulated segments for this utterance, trigger aggregated transcript handling
+                # If we have accumulated segments (and optionally a trailing partial), trigger aggregated transcript handling
                 try:
                     segments = self._utterance_segments.get(chunk_source) or []
-                    if utterance_id and segments:
+                    if utterance_id and (segments or self._last_partial.get(chunk_source)):
                         full_text = " ".join([(s.get("text") or "").strip() for s in segments if (s.get("text") or "").strip()])
                         # Compute timing if available
                         starts = [s.get("start") for s in segments if isinstance(s.get("start"), (int, float))]
@@ -112,6 +114,53 @@ class ASRProcessor:
                             if s.get("lang"):
                                 lang = s.get("lang")
                                 break
+                        # Append trailing partial if it belongs to this utterance and is not duplicate
+                        trailing = self._last_partial.get(chunk_source)
+                        if trailing and trailing.get("utterance_id") == utterance_id:
+                            t_text = (trailing.get("text") or "").strip()
+                            if t_text:
+                                # Guard against duplication by time and text
+                                p_start = trailing.get("start")
+                                p_dur = trailing.get("duration")
+                                should_append = True
+                                # 1) If we have timing, only append if the partial extends beyond current agg_end
+                                if isinstance(p_start, (int, float)) and isinstance(p_dur, (int, float)) and isinstance(agg_start, (int, float)) and isinstance(agg_duration, (int, float)):
+                                    cur_end = agg_start + agg_duration
+                                    end_candidate = p_start + p_dur
+                                    # Allow tiny epsilon for float math
+                                    if end_candidate <= (cur_end + 0.01):
+                                        should_append = False
+                                # 2) Also avoid appending if text already ends with the partial
+                                if should_append and full_text and full_text.endswith(t_text):
+                                    should_append = False
+                                if should_append:
+                                    full_text = f"{full_text} {t_text}" if full_text else t_text
+                                    if isinstance(p_start, (int, float)) and isinstance(p_dur, (int, float)):
+                                        if agg_start is None:
+                                            agg_start = p_start
+                                            agg_duration = p_dur
+                                        else:
+                                            end_candidate = p_start + p_dur
+                                            if isinstance(agg_duration, (int, float)):
+                                                cur_end = agg_start + agg_duration
+                                                if end_candidate > cur_end:
+                                                    agg_duration = end_candidate - agg_start
+                                            else:
+                                                agg_duration = end_candidate - agg_start
+                        # Emit aggregated final transcript to clients so UI receives the complete utterance
+                        aggregated_payload = {
+                            "text": full_text,
+                            "utterance_id": utterance_id,
+                            "speech_final": True,
+                            "is_final": True,
+                        }
+                        if agg_start is not None:
+                            aggregated_payload["start"] = agg_start
+                        if agg_duration is not None:
+                            aggregated_payload["duration"] = agg_duration
+                        if lang:
+                            aggregated_payload["lang"] = lang
+                        await self._emit(event_type_transcript, aggregated_payload, source=chunk_source)
                         await self._handle_transcript(
                             text=full_text,
                             lang=lang or "en",
@@ -128,6 +177,7 @@ class ASRProcessor:
                     # Clear cache for this source after utterance completion
                     self._last_final_payload.pop(chunk_source, None)
                     self._utterance_segments.pop(chunk_source, None)
+                    self._last_partial.pop(chunk_source, None)
                 self._utterance_completed[chunk_source] = True
                 self._active_utterance_id.pop(chunk_source, None)
                 continue
@@ -147,6 +197,13 @@ class ASRProcessor:
                     if chunk.get("duration") is not None:
                         partial_payload["duration"] = chunk.get("duration")
                     await self._emit(event_type_partial, partial_payload, source=chunk_source)
+                    # Track latest partial for this source to include at utterance_end
+                    self._last_partial[chunk_source] = {
+                        "text": text,
+                        "utterance_id": utterance_id,
+                        "start": partial_payload.get("start"),
+                        "duration": partial_payload.get("duration"),
+                    }
                 continue
 
             # Final transcript
@@ -213,8 +270,6 @@ class ASRProcessor:
                             duration=agg_duration,
                             speech_final=True,
                         )
-                        # Clear segments after completion
-                        self._utterance_segments.pop(chunk_source, None)
                     else:
                         # Update transcript store without triggering LLM processing
                         await self._handle_transcript(

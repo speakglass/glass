@@ -79,8 +79,8 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
   }, [scrollToBottom]);
 
   return (
-    <motion.div layoutScroll className={'grow overflow-auto p-4'} ref={scrollContainerRef}>
-      <motion.div id="glass-messages-scroll-area" className={'max-w-2xl mx-auto w-full flex flex-col gap-4 pb-24'}>
+    <motion.div id="glass-messages" layoutScroll className={'grow overflow-auto p-4'} ref={scrollContainerRef}>
+      <motion.div id="glass-messages-content" className={'max-w-2xl mx-auto w-full flex flex-col gap-4 pb-24'}>
         {/* Messages */}
         <AnimatePresence mode={'popLayout'}>
           {isMockMode

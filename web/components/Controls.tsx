@@ -36,18 +36,14 @@ export default function Controls() {
   };
 
   const lowTime = useMemo(() => {
-    return (
-      typeof remainingSeconds === 'number' &&
-      typeof elapsedSeconds === 'number' &&
-      remainingSeconds <= 300
-    );
+    return typeof remainingSeconds === 'number' && typeof elapsedSeconds === 'number' && remainingSeconds <= 300;
   }, [remainingSeconds, elapsedSeconds]);
 
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 w-full p-3 pb-4 sm:p-4 sm:pb-6 flex items-center justify-center',
-        'bg-gradient-to-t from-card via-card/90 to-card/0'
+        'fixed bottom-0 left-0 w-full p-3 pb-4 sm:p-4 sm:pb-6 flex items-center justify-center z-50',
+        'bg-gradient-to-t from-card via-card/90 to-card/0 pointer-events-none'
       )}
     >
       <AnimatePresence>
@@ -65,7 +61,9 @@ export default function Controls() {
               y: '100%',
               opacity: 0,
             }}
-            className={'p-2.5 sm:p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-full flex items-center gap-2 sm:gap-4'}
+            className={
+              'p-2.5 sm:p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-full flex items-center gap-2 sm:gap-4 pointer-events-auto'
+            }
           >
             <Toggle
               className={'rounded-full'}

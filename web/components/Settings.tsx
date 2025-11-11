@@ -145,20 +145,28 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* Suggestion duration */}
+            {/* AI message duration */}
             <div className={'flex flex-col gap-2'}>
-              <label className={'text-xs font-medium text-muted-foreground'}>Suggestion duration</label>
+              <label className={'text-xs font-medium text-muted-foreground'}>AI message duration</label>
               <div className={'flex items-center gap-2'}>
                 <select
                   className={
                     'flex-1 bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-all'
                   }
-                  value={String(settings.suggestionDurationSec ?? 20)}
-                  onChange={(e) => updateSettings({ suggestionDurationSec: parseInt(e.target.value || '20', 10) })}
+                  value={
+                    settings.aiMessageDurationSec === null ? 'none' : String(settings.aiMessageDurationSec ?? 'none')
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    updateSettings({
+                      aiMessageDurationSec: val === 'none' ? null : parseInt(val, 10),
+                    });
+                  }}
                 >
+                  <option value="none">No time limit (default)</option>
                   <option value="5">5 seconds</option>
                   <option value="10">10 seconds</option>
-                  <option value="20">20 seconds (default)</option>
+                  <option value="20">20 seconds</option>
                   <option value="30">30 seconds</option>
                 </select>
               </div>
