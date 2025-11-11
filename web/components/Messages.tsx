@@ -3,6 +3,7 @@ import { cn } from '@/utils';
 import { useGlass, Message } from '@/contexts/GlassContext';
 import { AnimatePresence, motion } from 'motion/react';
 import { ComponentRef, forwardRef, useState, useEffect, useCallback, useRef } from 'react';
+import { Trans } from '@lingui/react/macro';
 
 type MockMessage = {
   role: 'you' | 'other';
@@ -99,7 +100,7 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
                 >
                   <div className={'flex items-center justify-between pt-4 px-3'}>
                     <div className={'text-xs capitalize font-medium leading-none opacity-50 tracking-tight'}>
-                      {msg.role === 'you' ? 'You' : 'Partner'}
+                      {msg.role === 'you' ? <Trans>You</Trans> : <Trans>Partner</Trans>}
                     </div>
                   </div>
                   <div className={'pb-3 px-3 space-y-2'}>
@@ -146,7 +147,7 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
                       >
                         <div className={'flex items-center justify-between pt-4 px-3'}>
                           <div className={cn('text-xs capitalize font-medium leading-none opacity-50 tracking-tight')}>
-                            {msg.message.role}
+                            {msg.message.role === 'user' ? <Trans>You</Trans> : <Trans>Partner</Trans>}
                           </div>
                           <div className={cn('text-xs capitalize font-medium leading-none opacity-50 tracking-tight')}>
                             {msg.receivedAt.toLocaleTimeString(undefined, {
