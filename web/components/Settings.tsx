@@ -215,11 +215,11 @@ export default function Settings() {
                   className={
                     'flex-1 bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-all'
                   }
-                  value={String(settings.suggestionDurationSec ?? 10)}
+                  value={String(settings.suggestionDurationSec ?? 20)}
                   onChange={(e) =>
                     updateSettings({
                       suggestionDurationSec: parseInt(
-                        e.target.value || '10',
+                        e.target.value || '20',
                         10
                       ),
                     })

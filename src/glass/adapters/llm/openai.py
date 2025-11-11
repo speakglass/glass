@@ -174,18 +174,10 @@ class OpenAILLMAdapter:
             context_text = f"\nConversation context:\n{context_lines}\n"
 
         if pronunciation_mode == 'romaji':
-            pronunciation_rule = (
-                "Include a single field 'pronunciation' which is ONE LINE of Hepburn romaji. "
-                "ASCII only (no macrons). NEVER use kana/kanji or any non-ASCII."
-            )
+            example = self._get_romanization_example(target_lang)
+            pronunciation_rule = f"Include 'pronunciation' field with ONE line of romanization. Example: {example}"
         elif pronunciation_mode == 'native':
-            example_hint = self._build_pronunciation_example(source_lang, target_lang)
-            pronunciation_rule = (
-                f"Include a single field 'pronunciation' which is ONE LINE showing how to pronounce target_text using {source_lang} script. "
-                f"This is a PHONETIC TRANSCRIPTION (not a translation). "
-                f"You MUST write the sounds using {source_lang} alphabet/characters, NEVER {target_lang} script. "
-                f"{example_hint}"
-            )
+            pronunciation_rule = self._build_pronunciation_rule(source_lang, target_lang)
         else:
             pronunciation_rule = "Do not include a pronunciation field."
 
@@ -349,18 +341,10 @@ Suggest a follow-up:"""
         transcript_lines = self._format_transcript(transcript_tail)
 
         if pronunciation_mode == 'romaji':
-            pronunciation_rule = (
-                "Include a single field 'pronunciation' which is ONE LINE of Hepburn romaji. "
-                "ASCII only (no macrons). NEVER use kana/kanji or any non-ASCII."
-            )
+            example = self._get_romanization_example(target_lang)
+            pronunciation_rule = f"Include 'pronunciation' with ONE line of romanization. Example: {example}"
         elif pronunciation_mode == 'native':
-            example_hint = self._build_pronunciation_example(native_lang, target_lang)
-            pronunciation_rule = (
-                f"Include a single field 'pronunciation' which is ONE LINE showing how to pronounce target_text using {native_lang} script. "
-                f"This is a PHONETIC TRANSCRIPTION (not a translation). "
-                f"You MUST write the sounds using {native_lang} alphabet/characters, NEVER {target_lang} script. "
-                f"{example_hint}"
-            )
+            pronunciation_rule = self._build_pronunciation_rule(native_lang, target_lang)
         else:
             pronunciation_rule = "Do not include a pronunciation field."
 
@@ -441,18 +425,10 @@ JSON:
         transcript_lines = self._format_transcript(transcript_tail)
 
         if pronunciation_mode == 'romaji':
-            pronunciation_rule = (
-                "Include a single field 'pronunciation' which is ONE LINE of Hepburn romaji. "
-                "ASCII only (no macrons). NEVER use kana/kanji or any non-ASCII."
-            )
+            example = self._get_romanization_example(target_lang)
+            pronunciation_rule = f"Include 'pronunciation' with ONE line of romanization. Example: {example}"
         elif pronunciation_mode == 'native':
-            example_hint = self._build_pronunciation_example(native_lang, target_lang)
-            pronunciation_rule = (
-                f"Include a single field 'pronunciation' which is ONE LINE showing how to pronounce target_text using {native_lang} script. "
-                f"This is a PHONETIC TRANSCRIPTION (not a translation). "
-                f"You MUST write the sounds using {native_lang} alphabet/characters, NEVER {target_lang} script. "
-                f"{example_hint}"
-            )
+            pronunciation_rule = self._build_pronunciation_rule(native_lang, target_lang)
         else:
             pronunciation_rule = "Do not include a pronunciation field."
 
@@ -541,18 +517,10 @@ JSON:
         transcript_lines = self._format_transcript(transcript_tail)
 
         if pronunciation_mode == 'romaji':
-            pronunciation_rule = (
-                "Include a single field 'pronunciation' which is ONE LINE of Hepburn romaji. "
-                "ASCII only (no macrons). NEVER use kana/kanji or any non-ASCII."
-            )
+            example = self._get_romanization_example(target_lang)
+            pronunciation_rule = f"Include 'pronunciation' with ONE line of romanization. Example: {example}"
         elif pronunciation_mode == 'native':
-            example_hint = self._build_pronunciation_example(native_lang, target_lang)
-            pronunciation_rule = (
-                f"Include a single field 'pronunciation' which is ONE LINE showing how to pronounce target_text using {native_lang} script. "
-                f"This is a PHONETIC TRANSCRIPTION (not a translation). "
-                f"You MUST write the sounds using {native_lang} alphabet/characters, NEVER {target_lang} script. "
-                f"{example_hint}"
-            )
+            pronunciation_rule = self._build_pronunciation_rule(native_lang, target_lang)
         else:
             pronunciation_rule = "Do not include a pronunciation field."
 
@@ -653,48 +621,77 @@ JSON:
         plain = await self.follow_up(transcript_tail, lang=target_lang)
         return {"type": "follow_up", "target_text": plain}
 
-    def _build_pronunciation_example(self, native_lang: str, target_lang: str) -> str:
-        """Return a concise, native-language-specific example hint for pronunciation.
-
-        The hint illustrates how to render SOUNDS using the learner's native script.
-        Keep it short and language-appropriate.
-        """
-        try:
-            lang = (native_lang or "").strip().lower()
-            # Default generic example (safe fallback in ASCII)
-            generic = (
-                "Example: Write the sounds in your native script, e.g., split syllables naturally (no translation)."
-            )
-
-            if lang == "korean":
-                return (
-                    "Example: If target is Japanese '行きましょう', write '이키마쇼' (Hangul for sounds)."
-                )
-            if lang == "english":
-                return (
-                    "Example: If target is Japanese '行きましょう', write 'ee-kee-mah-shoh' (plain Latin letters)."
-                )
-            if lang == "japanese":
-                return (
-                    "Example: If target is English 'thank you', write 'サンキュー' (katakana for sounds)."
-                )
-            if lang == "chinese":
-                return (
-                    "Example: Use Hanyu Pinyin for sounds, e.g., English 'hello' → 'ha lou' (ASCII)."
-                )
-            if lang == "spanish":
-                return (
-                    "Example: Use plain Latin letters for sounds, e.g., 'ee-kee-mah-shoh'."
-                )
-            if lang == "french":
-                return (
-                    "Example: Use plain Latin letters for sounds, e.g., 'i-ki-ma-sho'."
-                )
-            return generic
-        except Exception:
-            return (
-                "Example: Write sounds using your native script (phonetic, not translation)."
-            )
+    def _get_pronunciation_example(self, native_lang: str, target_lang: str) -> str:
+        """Get concrete pronunciation example for language pair."""
+        native = (native_lang or "").strip().lower()
+        target = (target_lang or "").strip().lower()
+        
+        # Complete language pair examples
+        examples = {
+            # Chinese learners (5 targets)
+            ("chinese", "korean"): "Korean '안녕하세요' → 'ān níng hā sāi yō'",
+            ("chinese", "japanese"): "Japanese 'ありがとう' → 'ā lǐ gā duō'",
+            ("chinese", "english"): "English 'hello' → 'hā lóu'",
+            ("chinese", "spanish"): "Spanish 'hola' → 'āo lā'",
+            ("chinese", "french"): "French 'bonjour' → 'bāng zhū'",
+            
+            # Korean learners (5 targets)
+            ("korean", "chinese"): "Chinese '你好' → '니하오'",
+            ("korean", "japanese"): "Japanese 'ありがとう' → '아리가또'",
+            ("korean", "english"): "English 'hello' → '헬로우'",
+            ("korean", "spanish"): "Spanish 'gracias' → '그라씨아스'",
+            ("korean", "french"): "French 'merci' → '메르씨'",
+            
+            # Japanese learners (5 targets)
+            ("japanese", "chinese"): "Chinese '你好' → 'ニーハオ'",
+            ("japanese", "korean"): "Korean '안녕하세요' → 'アンニョンハセヨ'",
+            ("japanese", "english"): "English 'thank you' → 'サンキュー'",
+            ("japanese", "spanish"): "Spanish 'hola' → 'オラ'",
+            ("japanese", "french"): "French 'bonjour' → 'ボンジュール'",
+            
+            # English learners (5 targets)
+            ("english", "chinese"): "Chinese '谢谢' → 'xie-xie'",
+            ("english", "korean"): "Korean '감사합니다' → 'gam-sa-ham-ni-da'",
+            ("english", "japanese"): "Japanese 'ありがとう' → 'a-ri-ga-to'",
+            ("english", "spanish"): "Spanish 'gracias' → 'gra-see-as'",
+            ("english", "french"): "French 'merci' → 'mer-see'",
+            
+            # Spanish learners (5 targets)
+            ("spanish", "chinese"): "Chinese '你好' → 'ni jao'",
+            ("spanish", "korean"): "Korean '안녕하세요' → 'an-niong-ja-se-io'",
+            ("spanish", "japanese"): "Japanese 'ありがとう' → 'a-ri-ga-to'",
+            ("spanish", "english"): "English 'hello' → 'je-lou'",
+            ("spanish", "french"): "French 'bonjour' → 'bon-yur'",
+            
+            # French learners (5 targets)
+            ("french", "chinese"): "Chinese '你好' → 'ni hao'",
+            ("french", "korean"): "Korean '안녕하세요' → 'an-nioung-ha-sé-yo'",
+            ("french", "japanese"): "Japanese 'ありがとう' → 'a-ri-ga-to'",
+            ("french", "english"): "English 'hello' → 'hé-lo'",
+            ("french", "spanish"): "Spanish 'hola' → 'o-la'",
+        }
+        
+        return examples.get((native, target), f"Write sounds in your native script, like '{target}' → (phonetic)")
+    
+    def _get_romanization_example(self, target_lang: str) -> str:
+        """Get romanization example for target language."""
+        target = (target_lang or "").strip().lower()
+        
+        examples = {
+            "japanese": "'ありがとう' → 'arigatou'",
+            "korean": "'안녕하세요' → 'annyeonghaseyo'",
+            "chinese": "'你好' → 'ni hao'",
+            "english": "'hello' → 'hello'",
+            "spanish": "'gracias' → 'gracias'",
+            "french": "'merci' → 'merci'",
+        }
+        
+        return examples.get(target, f"Romanize {target} text")
+    
+    def _build_pronunciation_rule(self, native_lang: str, target_lang: str) -> str:
+        """Build clear, concise pronunciation instruction with example."""
+        example = self._get_pronunciation_example(native_lang, target_lang)
+        return f"Provide pronunciation in ONE line. Example: {example}"
 
     async def feedback(
         self,
@@ -726,18 +723,10 @@ JSON:
         pronounce_rule = "Do NOT include a 'pronunciation' field."
         if include_pronunciation:
             if (pronunciation_mode or "").strip().lower() == "romaji":
-                pronounce_rule = (
-                    "Include a single field 'pronunciation' with ONE LINE of Hepburn romaji. "
-                    "ASCII only (no macrons). NEVER use kana/kanji or any non-ASCII."
-                )
+                example = self._get_romanization_example(target_lang)
+                pronounce_rule = f"Include 'pronunciation' with ONE line of romanization. Example: {example}"
             else:
-                example_hint = self._build_pronunciation_example(native_lang, target_lang)
-                pronounce_rule = (
-                    "Include a single field 'pronunciation' with ONE LINE showing how to pronounce suggestion_target using "
-                    f"{native_lang} script. This is a PHONETIC TRANSCRIPTION (not a translation). "
-                    f"Write sounds using {native_lang} alphabet/characters ONLY. "
-                    f"{example_hint}"
-                )
+                pronounce_rule = self._build_pronunciation_rule(native_lang, target_lang)
 
         # Optional short transcript context (last few turns)
         transcript_context = ""
@@ -755,12 +744,12 @@ JSON:
             "IMPORTANT: Input is from speech-to-text (STT). IGNORE punctuation/capitalization/minor formatting issues.\n"
             "Only give feedback for: clear grammar/conjugation errors, unnatural phrasing that hinders communication, or significantly wrong word choice.\n\n"
             "WHEN feedback IS needed, output STRICT JSON ONLY with keys:\n"
-            "  - \\\"reason_native\\\": short conversational feedback in the learner's native language\n"
+            "  - \\\"reason_native\\\": detailed explanation in the learner's native language explaining what is wrong and why\n"
             f'  - \"suggestion_target\": corrected/natural phrasing in {target_lang}\n'
             f"  - \"pronunciation\": OPTIONAL one-line phonetic reading (only if requested)\n\n"
             "Rules:\n"
             "- JSON only. No backticks, no extra prose.\n"
-            "- Keep reason_native warm and conversational (≤ 25 chars if possible).\n"
+            "- Make reason_native clear and educational: explain what's wrong, why it's wrong, and when to use correct form (2-3 sentences, up to 150 chars).\n"
             "- Keep suggestion_target concise (≤ 15 words).\n"
             f"- {pronounce_rule}\n"
         )
@@ -782,7 +771,7 @@ JSON:
                 {"role": "user", "content": user_prompt},
             ],
             "temperature": 0.2,
-            "max_tokens": 300,
+            "max_tokens": 500,
         }
         headers = {
             "Authorization": f"Bearer {self.api_key}",
