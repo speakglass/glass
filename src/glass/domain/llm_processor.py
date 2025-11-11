@@ -674,7 +674,10 @@ class LLMProcessor:
             target_lang = self._lang_code_to_name(self.learning_lang)
             initial_prompt = self._get_initial_prompt()
             
-            ai_greeting = await self.llm.generate_ai_response(initial_prompt, self.scenario, [], target_lang)
+            # Use deterministic, scenario+language-specific greeting first if available
+            ai_greeting = self._deterministic_initial_greeting(self.scenario, self.learning_lang)
+            if not ai_greeting:
+                ai_greeting = await self.llm.generate_ai_response(initial_prompt, self.scenario, [], target_lang)
             
             if not ai_greeting or not ai_greeting.strip():
                 return None
@@ -1106,4 +1109,65 @@ Remember: ALL text content (label, value, feedback) must be in {native_lang_name
             'fr': "Super ! C’est naturel comme ça.",
         }
         return messages.get(lang_code, "Great! That sounded natural as is.")
+
+    @staticmethod
+    def _deterministic_initial_greeting(scenario: str | None, lang_code: str) -> str | None:
+        """Return a deterministic first-turn greeting matching scenario+language, or None if unknown."""
+        scen = (scenario or "casual").strip().lower()
+        code = (lang_code or "en").strip().lower()
+        greetings: dict[str, dict[str, str]] = {
+            "restaurant": {
+                "ja": "いらっしゃいませ。ご注文はお決まりですか？",
+                "ko": "어서 오세요. 주문 도와드릴까요?",
+                "en": "Welcome! What would you like to order?",
+                "es": "Hola, bienvenido/a. ¿Qué le gustaría pedir?",
+                "fr": "Bonjour, bienvenue. Qu’est-ce que vous souhaitez commander ?",
+                "zh": "您好，想点些什么？",
+            },
+            "airport": {
+                "ja": "こんにちは。チェックインの手続きでよろしいですか？",
+                "ko": "안녕하세요. 체크인 도와드릴까요?",
+                "en": "Hello! Are you here to check in today?",
+                "es": "Hola, ¿viene a hacer el check‑in? ¿En qué puedo ayudarle?",
+                "fr": "Bonjour, c’est pour l’enregistrement ? Je peux vous aider ?",
+                "zh": "您好，需要办理登机手续吗？",
+            },
+            "interview": {
+                "ja": "本日はお越しいただきありがとうございます。まずは自己紹介をお願いします。",
+                "ko": "안녕하세요. 와 주셔서 감사합니다. 먼저 간단히 자기소개 부탁드립니다.",
+                "en": "Hello, thanks for coming in. Could you briefly introduce yourself?",
+                "es": "Hola, gracias por venir. ¿Podría presentarse brevemente?",
+                "fr": "Bonjour, merci d’être venu. Pourriez-vous vous présenter brièvement ?",
+                "zh": "您好，感谢您来参加面试。可以先做个简单的自我介绍吗？",
+            },
+            "shopping": {
+                "ja": "いらっしゃいませ。何かお探しですか？",
+                "ko": "안녕하세요. 어떤 상품을 찾고 계세요?",
+                "en": "Hi! Are you looking for something in particular?",
+                "es": "Hola. ¿Busca algo en particular?",
+                "fr": "Bonjour. Cherchez-vous quelque chose en particulier ?",
+                "zh": "您好，请问在找什么吗？",
+            },
+            "phone": {
+                "ja": "お電話ありがとうございます。どういったご用件でしょうか？",
+                "ko": "전화 주셔서 감사합니다. 무엇을 도와드릴까요?",
+                "en": "Thanks for calling. How can I help you today?",
+                "es": "Gracias por llamar. ¿En qué puedo ayudarle?",
+                "fr": "Merci d’avoir appelé. Comment puis-je vous aider ?",
+                "zh": "您好，来电感谢。请问需要什么帮助？",
+            },
+            "casual": {
+                "ja": "こんにちは。今日はどう始めましょうか？",
+                "ko": "안녕하세요. 오늘 어떻게 시작해볼까요?",
+                "en": "Hi! What should we start with today?",
+                "es": "Hola. ¿Por dónde empezamos hoy?",
+                "fr": "Bonjour. On commence par quoi aujourd’hui ?",
+                "zh": "您好，我们今天从哪里开始好呢？",
+            },
+        }
+        # If language code not in set, fall back to English within that scenario
+        scen_map = greetings.get(scen)
+        if not scen_map:
+            return None
+        return scen_map.get(code) or scen_map.get("en")
 

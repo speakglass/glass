@@ -1003,11 +1003,19 @@ Return YES or NO only.
         
         if is_initial:
             # Generate initial greeting
+            style = self._greeting_style(target_lang, scenario_context)
             prompt = f"""You are an AI language partner helping someone practice {target_lang}.
 
 Scenario: {scenario_context}
 
-This is the start of the conversation. Greet the user naturally in {target_lang} as if you are in this scenario. Keep it brief and welcoming (1-2 sentences).
+This is the start of the conversation. Greet the user naturally in {target_lang} for this scenario. Keep it brief (1–2 sentences) and include a simple question to engage.
+
+Style:
+{style}
+
+Rules:
+- Stay within the scenario context. If the other person says something off-topic or breaks the scenario, gently clarify and steer the conversation back to the scenario in one sentence, then continue with a short, relevant question.
+- Keep the tone friendly and natural; avoid sounding robotic or generic.
 
 AI:"""
         else:
@@ -1030,6 +1038,10 @@ Conversation so far:
 User: {user_text}
 
 Respond naturally in {target_lang} as if you are in this scenario. Keep your response conversational and brief (1-2 sentences).
+
+Rules:
+- Maintain scenario continuity. If the user's message is off-topic or conflicts with the scenario, politely correct the context in one short sentence and guide the conversation back to the scenario with a brief, relevant question.
+- Stay friendly and human; avoid stock phrases.
 
 AI:"""
 
@@ -1069,6 +1081,35 @@ AI:"""
             "phone": "You are having a phone conversation.",
         }
         return scenario_map.get(scenario, "Casual conversation")
+
+    def _greeting_style(self, target_lang: str, scenario_context: str) -> str:
+        """Return small, language-specific style hints for natural first turn."""
+        lang = (target_lang or "").strip().lower()
+        ctx = (scenario_context or "").lower()
+        is_formal = any(k in ctx for k in ["interview", "airport", "office", "check-in", "bank", "agent", "server"])
+        is_staff = any(k in ctx for k in ["server", "sales", "associate", "barista", "agent", "check-in"])
+        # Korean
+        if "korean" in lang or lang == "ko" or "한국어" in lang:
+            tone = "자연스럽고 따뜻한 존댓말(요/습니다체)"
+            if is_formal or is_staff:
+                tone = "정중하고 간결한 존댓말(습니다체)"
+            return f"- {tone}로 한두 문장.\n- 상황에 맞춰 가볍게 먼저 묻기(예: 무엇을 도와드릴까요?).\n- 상투적 문구는 피하고 자연스러운 말투."
+        # Japanese
+        if "japanese" in lang or lang == "ja" or "日本語" in lang:
+            return "- です/ます調で丁寧かつ自然に、一〜二文。\n- 場面に合わせて軽い問いかけで始める（例：ご用件は？）。\n- 定型句の連発を避け、会話らしい流れに。"
+        # Spanish
+        if "spanish" in lang or lang == "es" or "español" in lang:
+            you = "usted" if (is_formal or is_staff) else "tú"
+            return f"- Registra {you} según el contexto.\n- Saludo breve y una pregunta sencilla para avanzar.\n- Sonido natural, evita plantillas genéricas."
+        # French
+        if "french" in lang or lang == "fr" or "français" in lang:
+            you = "vous" if (is_formal or is_staff) else "tu"
+            return f"- Utilise {you} selon le contexte.\n- Une ou deux phrases naturelles, avec une question simple.\n- Évite les tournures trop figées."
+        # Chinese (generic)
+        if "chinese" in lang or lang in {"zh", "中文", "汉语", "mandarin"}:
+            return "- 自然礼貌，一两句即可。\n- 结合场景问一句简短问题带动交流。\n- 避免机械套话。"
+        # Default
+        return "- Keep it warm and human, 1–2 sentences.\n- Match the scenario, ask one light question.\n- Avoid stock phrases; sound conversational."
 
     @staticmethod
     def _extract_text(data: dict[str, Any]) -> str:
