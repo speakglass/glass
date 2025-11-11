@@ -44,7 +44,7 @@ export default function Chat() {
   }, [status.value, showSummary]);
 
   return (
-    <div className={'relative grow flex flex-col mx-auto w-full overflow-hidden h-0 pt-14 pb-28 sm:pb-0'}>
+    <div className={'relative grow flex flex-col mx-auto w-full overflow-hidden h-0 pt-14'}>
       <Messages ref={ref} />
 
       {/* BottomPanel: persistent suggestions + controls */}
