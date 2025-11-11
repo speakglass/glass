@@ -674,10 +674,8 @@ export default function StartCall() {
               <div className={'grid grid-cols-2 gap-3.5 sm:gap-4 w-full'}>
                 {[
                   { id: 'casual', emoji: '💬', title: 'Casual Chat', desc: 'Everyday conversation' },
-                  { id: 'airport', emoji: '✈️', title: 'Airport Check-in', desc: 'Travel & Immigration' },
                   { id: 'restaurant', emoji: '🍽️', title: 'Restaurant', desc: 'Ordering food & drinks' },
                   { id: 'interview', emoji: '💼', title: 'Job Interview', desc: 'Professional conversation' },
-                  { id: 'shopping', emoji: '🛍️', title: 'Shopping', desc: 'Retail & bargaining' },
                   { id: 'phone', emoji: '📞', title: 'Phone Call', desc: 'Telephone etiquette' },
                 ].map((scenario) => (
                   <button

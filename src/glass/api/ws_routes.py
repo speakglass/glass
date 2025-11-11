@@ -89,6 +89,7 @@ async def audio_stream_multiplexed(
     learning_lang: str = Query(default="en"),
     native_lang: str = Query(default="ko"),
     mode: str = Query(default="real"),
+    scenario: str | None = Query(default=None),
 ) -> None:
     """Multiplexed audio: 0x01=mic, 0x02=system."""
     settings = get_settings()
@@ -106,10 +107,10 @@ async def audio_stream_multiplexed(
     events_adapter = WebSocketEventsAdapter(websocket) if events else None
     pipeline = await app_state.session_manager.get_or_create(sid, events_port=events_adapter)
     
-    # Set initial language configuration before starting ASR streams
-    # Ensure ASR picks up correct Deepgram language/model from the outset
+    # Set initial configuration (languages, mode, and scenario) before starting ASR streams
+    # Ensures first greeting uses the selected scenario immediately at connect
     try:
-        pipeline.set_session_config(learning_lang, native_lang, mode, None)
+        pipeline.set_session_config(learning_lang, native_lang, mode, scenario)
         # Trigger initial greeting once at connect (practice mode)
         if mode == "practice":
             asyncio.create_task(pipeline._generate_initial_greeting())
@@ -118,7 +119,11 @@ async def audio_stream_multiplexed(
         pipeline.learning_lang = learning_lang
         pipeline.native_lang = native_lang
         pipeline.mode = mode
-    LOGGER.info(f"WebSocket connected with learning_lang={learning_lang}, native_lang={native_lang}, mode={mode}")
+        try:
+            pipeline.scenario = scenario  # type: ignore[attr-defined]
+        except Exception:
+            pass
+    LOGGER.info(f"WebSocket connected with learning_lang={learning_lang}, native_lang={native_lang}, mode={mode}, scenario={scenario}")
     
     mic_queue = asyncio.Queue(maxsize=8)
     system_queue = asyncio.Queue(maxsize=8)

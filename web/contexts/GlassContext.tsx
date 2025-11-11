@@ -733,6 +733,10 @@ export function GlassProvider({
           native_lang: languages.nativeLang,
           mode: mode,
         });
+        // Pass scenario at connect time so backend greets with the correct context
+        if (scenario) {
+          params.set('scenario', scenario);
+        }
         const ws = new WebSocket(`${wsUrl}/ws/audio-multi?${params.toString()}`);
         wsRef.current = ws;
 
