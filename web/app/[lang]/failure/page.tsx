@@ -1,6 +1,23 @@
+import { Trans } from '@lingui/react/macro';
 import { WifiOff } from 'lucide-react';
+import { initLingui } from '@/initLingui';
+import {
+  DEFAULT_LANGUAGE,
+  LOCALIZED_LANGUAGE_CODES,
+} from '@/lib/supported-languages';
 
-export default function ConnectFailurePage() {
+export default async function ConnectFailurePage({
+  params,
+}: {
+  params: { lang: string };
+}) {
+  const rawLang = params.lang;
+  const lang = (LOCALIZED_LANGUAGE_CODES as readonly string[]).includes(
+    rawLang as any
+  )
+    ? rawLang
+    : DEFAULT_LANGUAGE;
+  initLingui(lang);
   return (
     <main className={'min-h-screen flex items-center justify-center p-6'}>
       <div className={'max-w-md w-full text-center'}>
@@ -11,9 +28,14 @@ export default function ConnectFailurePage() {
         >
           <WifiOff className={'h-7 w-7 text-red-500'} />
         </div>
-        <h1 className={'text-2xl font-semibold mb-2'}>Couldn’t connect</h1>
+        <h1 className={'text-2xl font-semibold mb-2'}>
+          <Trans>Couldn’t connect</Trans>
+        </h1>
         <p className={'text-sm text-muted-foreground mb-6'}>
-          We had trouble starting your session. Please check your internet and try again.
+          <Trans>
+            We had trouble starting your session. Please check your internet and
+            try again.
+          </Trans>
         </p>
         <a
           href="/"
@@ -21,7 +43,7 @@ export default function ConnectFailurePage() {
             'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90'
           }
         >
-          Try Again
+          <Trans>Try again</Trans>
         </a>
       </div>
     </main>

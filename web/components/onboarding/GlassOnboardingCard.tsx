@@ -3,6 +3,7 @@
 import type { CardComponentProps } from 'nextstepjs';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/utils';
+import { Trans } from '@lingui/react/macro';
 
 export const GlassOnboardingCard = ({
   step,
@@ -25,7 +26,11 @@ export const GlassOnboardingCard = ({
     >
       {/* Glass AI Avatar */}
       <div className={'mb-4 flex items-center gap-3'}>
-        <div className={'flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-2xl'}>
+        <div
+          className={
+            'flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-2xl'
+          }
+        >
           {step.icon || '✨'}
         </div>
         <div className={'flex-1'}>
@@ -34,7 +39,9 @@ export const GlassOnboardingCard = ({
       </div>
 
       {/* Content */}
-      <div className={'mb-6 text-sm leading-relaxed text-foreground'}>{step.content}</div>
+      <div className={'mb-6 text-sm leading-relaxed text-foreground'}>
+        {step.content}
+      </div>
 
       {/* Step Indicators */}
       <div className={'mb-4 flex items-center justify-center gap-1.5'}>
@@ -56,20 +63,30 @@ export const GlassOnboardingCard = ({
       {/* Controls */}
       <div className={'flex items-center justify-between gap-2'}>
         {!isLastStep && (
-          <Button variant="ghost" size="sm" onClick={skipTour} className={'text-xs text-muted-foreground'}>
-            Skip tour
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={skipTour}
+            className={'text-xs text-muted-foreground'}
+          >
+            <Trans>Skip tour</Trans>
           </Button>
         )}
         {isLastStep && <div />}
 
         <div className={'flex gap-2'}>
           {!isFirstStep && (
-            <Button variant="outline" size="sm" onClick={prevStep} className={'text-xs'}>
-              Back
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={prevStep}
+              className={'text-xs'}
+            >
+              <Trans>Back</Trans>
             </Button>
           )}
           <Button size="sm" onClick={nextStep} className={'text-xs'}>
-            {isLastStep ? "Let's Go! 🎉" : 'Next →'}
+            {isLastStep ? <Trans>Let's Go! 🎉</Trans> : <Trans>Next →</Trans>}
           </Button>
         </div>
       </div>

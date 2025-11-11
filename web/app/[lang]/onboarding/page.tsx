@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useNextStep, NextStep } from 'nextstepjs';
-import { glassTours } from '@/lib/onboarding-tours';
+import { getGlassTours } from '@/lib/onboarding-tours';
 import { GlassOnboardingCard } from '@/components/onboarding/GlassOnboardingCard';
 import Messages from '@/components/Messages';
 import BottomPanel from '@/components/BottomPanel';
@@ -23,13 +23,21 @@ export default function OnboardingPage() {
   // Mock conversation messages
   const onboardingMessages = useMemo(
     () => [
-      { role: 'other' as const, text: '今日はどうでしたか？', translation: 'How was your day?' },
+      {
+        role: 'other' as const,
+        text: '今日はどうでしたか？',
+        translation: 'How was your day?',
+      },
       {
         role: 'you' as const,
         text: '今日は忙しかったけど、楽しかったです。',
         translation: 'I was busy today, but it was fun.',
       },
-      { role: 'other' as const, text: '何をしましたか？', translation: 'What did you do?' },
+      {
+        role: 'other' as const,
+        text: '何をしましたか？',
+        translation: 'What did you do?',
+      },
     ],
     []
   );
@@ -234,7 +242,7 @@ export default function OnboardingPage() {
 
   return (
     <NextStep
-      steps={glassTours}
+      steps={useMemo(() => getGlassTours(), [])}
       cardComponent={GlassOnboardingCard}
       shadowRgb="0,0,0"
       shadowOpacity="0.5"

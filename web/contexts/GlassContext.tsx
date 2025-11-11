@@ -2,7 +2,9 @@
 
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+10;
 import { toast } from 'sonner';
+import { t } from '@lingui/core/macro';
 
 export interface Message {
   type: 'user_message' | 'partner_message';
@@ -111,7 +113,13 @@ export interface ConversationAnalysis {
   scores: ConversationScores;
   extractedInfo: ExtractedInfo[];
   feedback: string;
-  messages: Array<{ speaker: string; source: string; text: string; utterance_id?: string; translation?: string }>;
+  messages: Array<{
+    speaker: string;
+    source: string;
+    text: string;
+    utterance_id?: string;
+    translation?: string;
+  }>;
   feedbackItems: Array<{ utterance_id: string; text: string }>;
 }
 
@@ -138,7 +146,10 @@ interface GlassContextValue {
   disconnect: () => Promise<void>;
   mute: () => void;
   unmute: () => void;
-  requestSuggestion: () => Promise<{ type: 'answer' | 'follow_up'; suggestion: StructuredSuggestion }>;
+  requestSuggestion: () => Promise<{
+    type: 'answer' | 'follow_up';
+    suggestion: StructuredSuggestion;
+  }>;
   requestTranslate: (text: string) => Promise<StructuredSuggestion>;
   setOnAISuggestion: (callback: (type: 'answer' | 'follow_up' | 'feedback', payload: any) => void) => void;
   addSuggestion: (type: AISuggestionType, payload: any) => void;
@@ -162,7 +173,13 @@ interface GlassContextValue {
   closeSummary: () => void;
   startNewCallWithContext: (contextInfo: ExtractedInfo[]) => void;
   // Onboarding helpers
-  loadDemoConversation: (msgs: Array<{ role: 'user' | 'partner'; content: string; translation?: string }>) => void;
+  loadDemoConversation: (
+    msgs: Array<{
+      role: 'user' | 'partner';
+      content: string;
+      translation?: string;
+    }>
+  ) => void;
 }
 
 const GlassContext = createContext<GlassContextValue | null>(null);
@@ -215,7 +232,10 @@ export function GlassProvider({
         return {
           micDeviceId: parsed.micDeviceId || null,
           feedbackMode: parsed.feedbackMode || 'auto',
-          languages: parsed.languages || { learningLang: 'en', nativeLang: 'ko' },
+          languages: parsed.languages || {
+            learningLang: 'en',
+            nativeLang: 'ko',
+          },
           suggestMode: parsed.suggestMode || 'auto',
           countryCode: parsed.countryCode,
           proficiency: parsed.proficiency,
@@ -342,7 +362,11 @@ export function GlassProvider({
   );
 
   const pauseSuggestionTimer = useCallback((id: string) => {
-    const info = pausedMapRef.current.get(id) || { paused: false, pausedAt: 0, accumulated: 0 };
+    const info = pausedMapRef.current.get(id) || {
+      paused: false,
+      pausedAt: 0,
+      accumulated: 0,
+    };
     if (info.paused) return;
     info.paused = true;
     info.pausedAt = Date.now();
@@ -350,7 +374,11 @@ export function GlassProvider({
   }, []);
 
   const resumeSuggestionTimer = useCallback((id: string) => {
-    const info = pausedMapRef.current.get(id) || { paused: false, pausedAt: 0, accumulated: 0 };
+    const info = pausedMapRef.current.get(id) || {
+      paused: false,
+      pausedAt: 0,
+      accumulated: 0,
+    };
     if (!info.paused) return;
     const now = Date.now();
     info.accumulated += Math.max(0, now - info.pausedAt);
@@ -376,7 +404,11 @@ export function GlassProvider({
   );
 
   const pauseFeedbackTimer = useCallback((id: string) => {
-    const info = feedbackPausedMapRef.current.get(id) || { paused: false, pausedAt: 0, accumulated: 0 };
+    const info = feedbackPausedMapRef.current.get(id) || {
+      paused: false,
+      pausedAt: 0,
+      accumulated: 0,
+    };
     if (info.paused) return;
     info.paused = true;
     info.pausedAt = Date.now();
@@ -384,7 +416,11 @@ export function GlassProvider({
   }, []);
 
   const resumeFeedbackTimer = useCallback((id: string) => {
-    const info = feedbackPausedMapRef.current.get(id) || { paused: false, pausedAt: 0, accumulated: 0 };
+    const info = feedbackPausedMapRef.current.get(id) || {
+      paused: false,
+      pausedAt: 0,
+      accumulated: 0,
+    };
     if (!info.paused) return;
     const now = Date.now();
     info.accumulated += Math.max(0, now - info.pausedAt);
@@ -410,7 +446,11 @@ export function GlassProvider({
   );
 
   const pauseTranslationTimer = useCallback((id: string) => {
-    const info = translationPausedMapRef.current.get(id) || { paused: false, pausedAt: 0, accumulated: 0 };
+    const info = translationPausedMapRef.current.get(id) || {
+      paused: false,
+      pausedAt: 0,
+      accumulated: 0,
+    };
     if (info.paused) return;
     info.paused = true;
     info.pausedAt = Date.now();
@@ -418,7 +458,11 @@ export function GlassProvider({
   }, []);
 
   const resumeTranslationTimer = useCallback((id: string) => {
-    const info = translationPausedMapRef.current.get(id) || { paused: false, pausedAt: 0, accumulated: 0 };
+    const info = translationPausedMapRef.current.get(id) || {
+      paused: false,
+      pausedAt: 0,
+      accumulated: 0,
+    };
     if (!info.paused) return;
     const now = Date.now();
     info.accumulated += Math.max(0, now - info.pausedAt);
@@ -636,9 +680,13 @@ export function GlassProvider({
           autoGainControl: true,
         };
         if (currentSettings.micDeviceId) {
-          micConstraints.deviceId = { exact: currentSettings.micDeviceId } as unknown as ConstrainDOMString;
+          micConstraints.deviceId = {
+            exact: currentSettings.micDeviceId,
+          } as unknown as ConstrainDOMString;
         }
-        const micStream = await navigator.mediaDevices.getUserMedia({ audio: micConstraints });
+        const micStream = await navigator.mediaDevices.getUserMedia({
+          audio: micConstraints,
+        });
         micStreamRef.current = micStream;
 
         // Request screen share with audio (only for Real Talk mode)
@@ -697,9 +745,8 @@ export function GlassProvider({
 
             // Show clear instruction message
             setTimeout(() => {
-              toast.error('Screen audio sharing required', {
-                description:
-                  'Please share your screen with audio from your meeting platform (Zoom, Google Meet, Teams).',
+              toast.error(t`Screen audio sharing required`, {
+                description: t`Please share your screen with audio from your meeting platform (Zoom, Google Meet, Teams).`,
                 duration: 8000,
               });
             }, 100);
@@ -820,7 +867,7 @@ export function GlassProvider({
                   setBudgetStatus('enabled');
                   if (receivedAnyTime) {
                     try {
-                      toast.info('Trial session ended due to time limit.');
+                      toast.info(t`Trial session ended due to time limit.`);
                     } catch {}
                     // Run End Call flow (analyze and show summary)
                     disconnect().catch(() => {});
@@ -828,8 +875,8 @@ export function GlassProvider({
                     // No time available at session start → waitlist path
                     setStatus({ value: 'idle' });
                     try {
-                      toast.info("You've used your free time", {
-                        description: 'Join the waitlist to get more access.',
+                      toast.info(t`You've used your free time`, {
+                        description: t`Join the waitlist to get more access.`,
                       });
                     } catch {}
                     try {
@@ -1060,7 +1107,6 @@ export function GlassProvider({
             const prevText = (existing.message.content || '').trim();
             const newText = (text || '').trim();
 
-            // Only merge if speech is not final (continuing utterance)
             // If speech_final, replace to handle utterance boundary changes from ASR
             let finalContent: string;
             if (!isSpeechFinal && prevText) {
@@ -1171,7 +1217,11 @@ export function GlassProvider({
       if (data.t === 'feedback') {
         const utteranceId = data.utterance_id as string | undefined;
         const suggestion = data.suggestion as
-          | { reason_native?: string; target_text?: string; pronunciation?: string }
+          | {
+              reason_native?: string;
+              target_text?: string;
+              pronunciation?: string;
+            }
           | undefined;
         const text = typeof data.text === 'string' ? data.text : undefined;
         const isAuto = data.auto === true;
@@ -1298,7 +1348,13 @@ export function GlassProvider({
 
   // ---------------- Onboarding helpers ----------------
   const loadDemoConversation = useCallback(
-    (msgs: Array<{ role: 'user' | 'partner'; content: string; translation?: string }>) => {
+    (
+      msgs: Array<{
+        role: 'user' | 'partner';
+        content: string;
+        translation?: string;
+      }>
+    ) => {
       const now = Date.now();
       const mapped: Message[] = msgs.map((m, i) => ({
         type: m.role === 'user' ? 'user_message' : 'partner_message',
@@ -1533,7 +1589,13 @@ export function GlassProvider({
       ws.addEventListener('message', handleTranslation);
 
       // Send request
-      ws.send(JSON.stringify({ type: 'request_translate', text, request_id: requestId }));
+      ws.send(
+        JSON.stringify({
+          type: 'request_translate',
+          text,
+          request_id: requestId,
+        })
+      );
 
       // Timeout after 15 seconds
       setTimeout(() => {

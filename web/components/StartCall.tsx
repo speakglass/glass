@@ -8,6 +8,8 @@ import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { cn } from '@/utils';
+import { Trans } from '@lingui/react/macro';
+import { t } from '@lingui/core/macro';
 
 type SetupStep = 'start' | 'languages' | 'level' | 'mode' | 'scenario' | 'instructions' | 'connecting';
 
@@ -44,7 +46,11 @@ const LANGUAGES: LanguageOption[] = [
 // Example phrases for each language with translations
 const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = {
   en: {
-    ko: { target: 'Thank you very much', pronunciation: '땡큐 베리 머치', translation: '정말 감사합니다' },
+    ko: {
+      target: 'Thank you very much',
+      pronunciation: '땡큐 베리 머치',
+      translation: '정말 감사합니다',
+    },
     ja: {
       target: 'Thank you very much',
       pronunciation: 'サンキュー ベリー マッチ',
@@ -77,11 +83,31 @@ const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = {
     fr: { target: 'ありがとうございます', pronunciation: 'a-ri-ga-tou go-zaï-ma-su', translation: 'Merci beaucoup' },
   },
   zh: {
-    en: { target: '非常感谢', pronunciation: 'fei-chang gan-xie', translation: 'Thank you very much' },
-    ko: { target: '非常感谢', pronunciation: '페이창 간시에', translation: '정말 감사합니다' },
-    ja: { target: '非常感谢', pronunciation: 'フェイチャン ガンシエ', translation: '本当にありがとうございます' },
-    es: { target: '非常感谢', pronunciation: 'fei-chang gan-xie', translation: 'Muchas gracias' },
-    fr: { target: '非常感谢', pronunciation: 'fei-chang gan-xie', translation: 'Merci beaucoup' },
+    en: {
+      target: '非常感谢',
+      pronunciation: 'fei-chang gan-xie',
+      translation: 'Thank you very much',
+    },
+    ko: {
+      target: '非常感谢',
+      pronunciation: '페이창 간시에',
+      translation: '정말 감사합니다',
+    },
+    ja: {
+      target: '非常感谢',
+      pronunciation: 'フェイチャン ガンシエ',
+      translation: '本当にありがとうございます',
+    },
+    es: {
+      target: '非常感谢',
+      pronunciation: 'fei-chang gan-xie',
+      translation: 'Muchas gracias',
+    },
+    fr: {
+      target: '非常感谢',
+      pronunciation: 'fei-chang gan-xie',
+      translation: 'Merci beaucoup',
+    },
   },
   es: {
     en: { target: 'Muchas gracias', pronunciation: 'moo-chahs grah-see-ahs', translation: 'Thank you very much' },
@@ -262,7 +288,7 @@ export default function StartCall() {
     try {
       await connect(config);
     } catch {
-      toast.error('Unable to start call');
+      toast.error(t`Unable to start call`);
       setStep('instructions');
     }
   };
@@ -313,7 +339,9 @@ export default function StartCall() {
                   >
                     <div className={'flex items-center gap-2 min-w-[140px] justify-center'}>
                       <Phone className={'size-4 text-green-400'} />
-                      <span className="text-white font-medium whitespace-nowrap">Start Call</span>
+                      <span className="text-white font-medium whitespace-nowrap">
+                        <Trans>Start Call</Trans>
+                      </span>
                     </div>
                   </LiquidGlass>
                 ) : (
@@ -331,7 +359,9 @@ export default function StartCall() {
                       <span>
                         <Phone className={'size-4 opacity-50 fill-current'} strokeWidth={0} />
                       </span>
-                      <span>Start Call</span>
+                      <span>
+                        <Trans>Start Call</Trans>
+                      </span>
                     </Button>
                   </motion.div>
                 )}
@@ -353,10 +383,10 @@ export default function StartCall() {
                 >
                   <div className={'text-center'}>
                     <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
-                      Do you want pronunciation help?
+                      <Trans>Do you want pronunciation help?</Trans>
                     </h2>
                     <p className={`${getTextClass('body')} text-sm`}>
-                      We'll show how to read suggestions in your alphabet when helpful
+                      <Trans>We'll show how to read suggestions in your alphabet when helpful</Trans>
                     </p>
                   </div>
                   <div className={'flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start'}>
@@ -376,9 +406,11 @@ export default function StartCall() {
                       <div className={'flex flex-col gap-3'}>
                         <div className={'text-center'}>
                           <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
-                            Yes, show pronunciation
+                            <Trans>Yes, show pronunciation</Trans>
                           </div>
-                          <div className={`${getTextClass('body')} text-xs`}>Make suggestions readable for me</div>
+                          <div className={`${getTextClass('body')} text-xs`}>
+                            <Trans>Make suggestions readable for me</Trans>
+                          </div>
                         </div>
                         <div className={'mt-auto'}>
                           <div
@@ -416,8 +448,12 @@ export default function StartCall() {
                     >
                       <div className={'flex flex-col gap-3'}>
                         <div className={'text-center'}>
-                          <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>No, I'm fine</div>
-                          <div className={`${getTextClass('body')} text-xs`}>Show suggestions only</div>
+                          <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
+                            <Trans>No, I'm fine</Trans>
+                          </div>
+                          <div className={`${getTextClass('body')} text-xs`}>
+                            <Trans>Show suggestions only</Trans>
+                          </div>
                         </div>
                         <div className={'mt-auto'}>
                           <div
@@ -440,7 +476,7 @@ export default function StartCall() {
 
                   <div className={'flex justify-between items-center w-full'}>
                     <button onClick={() => setStep('languages')} className={getBackButtonClass()}>
-                      ← Back
+                      <Trans>← Back</Trans>
                     </button>
                     <Button
                       onClick={() => setStep('mode')}
@@ -449,7 +485,7 @@ export default function StartCall() {
                       size="sm"
                       className={cn('text-sm', !proficiency && 'opacity-50 cursor-not-allowed')}
                     >
-                      Next →
+                      <Trans>Next →</Trans>
                     </Button>
                   </div>
                 </motion.div>
@@ -463,14 +499,20 @@ export default function StartCall() {
               className={'flex flex-col items-center gap-6 sm:gap-8 max-w-2xl mx-auto px-1.5'}
             >
               <div className={'text-center'}>
-                <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>Choose Your Languages</h2>
-                <p className={`${getTextClass('body')} text-sm`}>Select the language you want to practice</p>
+                <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
+                  <Trans>Choose Your Languages</Trans>
+                </h2>
+                <p className={`${getTextClass('body')} text-sm`}>
+                  <Trans>Select the language you want to practice</Trans>
+                </p>
               </div>
 
               <div className={'flex flex-col gap-5 sm:gap-6 w-full'}>
                 {/* Learning Language */}
                 <div className={'flex flex-col gap-3'}>
-                  <p className={`${getTextClass('subtitle')} text-sm font-medium text-center`}>I want to learn</p>
+                  <p className={`${getTextClass('subtitle')} text-sm font-medium text-center`}>
+                    <Trans>I want to learn</Trans>
+                  </p>
                   <div className={'flex gap-1.5 sm:gap-2 flex-wrap justify-center'}>
                     {LANGUAGES.map((lang) => (
                       <Button
@@ -497,7 +539,9 @@ export default function StartCall() {
 
                 {/* Native Language */}
                 <div className={'flex flex-col gap-3'}>
-                  <p className={`${getTextClass('subtitle')} text-sm font-medium text-center`}>I speak</p>
+                  <p className={`${getTextClass('subtitle')} text-sm font-medium text-center`}>
+                    <Trans>I speak</Trans>
+                  </p>
                   <div className={'flex gap-1.5 sm:gap-2 flex-wrap justify-center'}>
                     {LANGUAGES.map((lang) => {
                       const isDisabled = languages.learningLang === lang.code;
@@ -531,7 +575,7 @@ export default function StartCall() {
 
               <div className={'flex justify-between items-center w-full'}>
                 <button onClick={() => setStep('start')} className={getBackButtonClass()}>
-                  ← Back
+                  <Trans>← Back</Trans>
                 </button>
                 <Button
                   onClick={() => setStep('level')}
@@ -543,7 +587,7 @@ export default function StartCall() {
                     (!languages.learningLang || !languages.nativeLang) && 'opacity-50 cursor-not-allowed'
                   )}
                 >
-                  Next →
+                  <Trans>Next →</Trans>
                 </Button>
               </div>
             </motion.div>
@@ -559,9 +603,11 @@ export default function StartCall() {
             >
               <div className={'text-center'}>
                 <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
-                  How would you like to use Glass?
+                  <Trans>How would you like to use Glass?</Trans>
                 </h2>
-                <p className={`${getTextClass('body')} text-sm`}>Choose your preferred mode</p>
+                <p className={`${getTextClass('body')} text-sm`}>
+                  <Trans>Choose your preferred mode</Trans>
+                </p>
               </div>
 
               <div className={'flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start'}>
@@ -580,8 +626,12 @@ export default function StartCall() {
                       className={'h-[24px] w-[24px] sm:h-[28px] sm:w-[28px] object-cover rounded-full'}
                     />
                     <div className={'text-center'}>
-                      <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>Practice</div>
-                      <div className={`${getTextClass('body')} text-xs`}>Tutorial with AI</div>
+                      <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
+                        <Trans>Practice</Trans>
+                      </div>
+                      <div className={`${getTextClass('body')} text-xs`}>
+                        <Trans>Tutorial with AI</Trans>
+                      </div>
                     </div>
                   </div>
                 </button>
@@ -602,7 +652,7 @@ export default function StartCall() {
                       'absolute -top-2 -right-2 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white text-[10px] font-bold shadow-lg'
                     }
                   >
-                    RECOMMENDED
+                    <Trans>RECOMMENDED</Trans>
                   </div>
 
                   <div className={'flex flex-col items-center gap-3'}>
@@ -625,8 +675,12 @@ export default function StartCall() {
                       />
                     </div>
                     <div className={'text-center'}>
-                      <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>Real Talk</div>
-                      <div className={`${getTextClass('body')} text-xs`}>Language Exchange • Meetings</div>
+                      <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
+                        <Trans>Real Talk</Trans>
+                      </div>
+                      <div className={`${getTextClass('body')} text-xs`}>
+                        <Trans>Language Exchange • Meetings</Trans>
+                      </div>
                       {/* Mobile unavailability notice */}
                       <div
                         className={
@@ -634,7 +688,9 @@ export default function StartCall() {
                           (glassMode ? 'border-white/30 text-white/70' : 'border-border text-muted-foreground')
                         }
                       >
-                        <span className={'leading-none text-xs'}>Unavailable on mobile</span>
+                        <span className={'leading-none text-xs'}>
+                          <Trans>Unavailable on mobile</Trans>
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -643,7 +699,7 @@ export default function StartCall() {
 
               <div className={'flex justify-between items-center w-full'}>
                 <button onClick={() => setStep('level')} className={getBackButtonClass()}>
-                  ← Back
+                  <Trans>← Back</Trans>
                 </button>
                 <Button
                   onClick={() => setStep(selectedMode === 'practice' ? 'scenario' : 'instructions')}
@@ -652,7 +708,7 @@ export default function StartCall() {
                   size="sm"
                   className={cn('text-sm', !selectedMode && 'opacity-50 cursor-not-allowed')}
                 >
-                  Next →
+                  <Trans>Next →</Trans>
                 </Button>
               </div>
             </motion.div>
@@ -667,8 +723,12 @@ export default function StartCall() {
               className={'flex flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5'}
             >
               <div className={'text-center'}>
-                <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>Choose a scenario</h2>
-                <p className={`${getTextClass('body')} text-sm`}>What would you like to practice?</p>
+                <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
+                  <Trans>Choose a scenario</Trans>
+                </h2>
+                <p className={`${getTextClass('body')} text-sm`}>
+                  <Trans>What would you like to practice?</Trans>
+                </p>
               </div>
 
               <div className={'grid grid-cols-2 gap-3.5 sm:gap-4 w-full'}>
@@ -718,9 +778,11 @@ export default function StartCall() {
                     <span className={'text-lg sm:text-2xl'}>✨</span>
                     <div className={'text-left'}>
                       <div className={`${getTextClass('title')} font-medium mb-0.5 text-sm sm:text-base`}>
-                        Custom Scenario
+                        <Trans>Custom Scenario</Trans>
                       </div>
-                      <div className={`${getTextClass('muted')} text-xs`}>Describe your own situation</div>
+                      <div className={`${getTextClass('muted')} text-xs`}>
+                        <Trans>Describe your own situation</Trans>
+                      </div>
                     </div>
                   </div>
                 </button>
@@ -734,7 +796,7 @@ export default function StartCall() {
                     <textarea
                       value={customScenario}
                       onChange={(e) => setCustomScenario(e.target.value)}
-                      placeholder="Describe the scenario you want to practice..."
+                      placeholder={t`Describe the scenario you want to practice...`}
                       className={cn(
                         'w-full px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-lg resize-none focus:outline-none text-sm',
                         glassMode
@@ -749,7 +811,7 @@ export default function StartCall() {
 
               <div className={'flex justify-between items-center w-full'}>
                 <button onClick={() => setStep('mode')} className={getBackButtonClass()}>
-                  ← Back
+                  <Trans>← Back</Trans>
                 </button>
                 <Button
                   onClick={handleStartCall}
@@ -761,7 +823,7 @@ export default function StartCall() {
                       'opacity-50 cursor-not-allowed'
                   )}
                 >
-                  Start
+                  <Trans>Start</Trans>
                 </Button>
               </div>
             </motion.div>
@@ -777,7 +839,7 @@ export default function StartCall() {
             >
               <div className={'text-center'}>
                 <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
-                  {selectedMode === 'practice' ? 'Practice Mode' : 'Real Talk Mode'}
+                  {selectedMode === 'practice' ? <Trans>Practice Mode</Trans> : <Trans>Real Talk Mode</Trans>}
                 </h2>
               </div>
 
@@ -791,12 +853,16 @@ export default function StartCall() {
                   <div className={getTextClass('title')}>
                     {selectedScenario === 'custom' && customScenario ? (
                       <div>
-                        <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>Scenario:</p>
+                        <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>
+                          <Trans>Scenario:</Trans>
+                        </p>
                         <p className={'text-sm'}>{customScenario}</p>
                       </div>
                     ) : selectedScenario ? (
                       <div>
-                        <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>Scenario:</p>
+                        <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>
+                          <Trans>Scenario:</Trans>
+                        </p>
                         <p className={'text-base font-medium'}>
                           {selectedScenario === 'airport' && '✈️ Airport Check-in'}
                           {selectedScenario === 'restaurant' && '🍽️ Restaurant'}
@@ -810,12 +876,25 @@ export default function StartCall() {
                   </div>
                 ) : (
                   <div className={cn(getTextClass('title'), 'space-y-3')}>
-                    <p className={'text-base leading-relaxed font-medium mb-2.5 sm:mb-3'}>Follow these steps:</p>
+                    <p className={'text-base leading-relaxed font-medium mb-2.5 sm:mb-3'}>
+                      <Trans>Follow these steps:</Trans>
+                    </p>
                     <div className={cn('text-sm space-y-2', getTextClass('subtitle'))}>
-                      <p>1. Open your meeting (Zoom, Google Meet, or Teams)</p>
-                      <p>2. Click "Start" below</p>
-                      <p>3. Share your meeting tab</p>
-                      <p className={'text-yellow-500 font-medium'}>⚠️ Make sure to enable "Share audio"</p>
+                      <p>
+                        <Trans>1. Open your meeting (Zoom, Google Meet, or Teams)</Trans>
+                      </p>
+                      <p>
+                        <Trans>2. Click "Start" below</Trans>
+                      </p>
+                      <p>
+                        <Trans>3. Share your meeting tab</Trans>
+                      </p>
+                      <p>
+                        <Trans>4. Make sure to enable "Share audio"</Trans>
+                      </p>
+                      <p className={'text-yellow-500 font-medium'}>
+                        <Trans>⚠️ Make sure to enable "Share audio"</Trans>
+                      </p>
                     </div>
                   </div>
                 )}
@@ -823,14 +902,14 @@ export default function StartCall() {
 
               <div className={'flex justify-between items-center w-full'}>
                 <button onClick={() => setStep('mode')} className={getBackButtonClass()}>
-                  ← Back
+                  <Trans>← Back</Trans>
                 </button>
                 <Button
                   variant={glassMode ? 'translucent' : 'default'}
                   onClick={handleStartCall}
                   className={'rounded-full px-6 py-2 sm:px-8 sm:py-2.5'}
                 >
-                  Start
+                  <Trans>Start</Trans>
                 </Button>
               </div>
             </motion.div>
@@ -853,7 +932,9 @@ export default function StartCall() {
                 >
                   <div className={'flex items-center gap-2 min-w-[140px] justify-center'}>
                     <Loader2 className={'size-4 opacity-50 animate-spin'} />
-                    <span className="text-white font-medium whitespace-nowrap">Connecting...</span>
+                    <span className="text-white font-medium whitespace-nowrap">
+                      <Trans>Connecting...</Trans>
+                    </span>
                   </div>
                 </LiquidGlass>
               ) : (
@@ -866,7 +947,9 @@ export default function StartCall() {
                 >
                   <Button className={'z-50 flex items-center gap-1.5 rounded-full'} disabled>
                     <Loader2 className={'size-4 opacity-50 animate-spin'} />
-                    <span>Connecting...</span>
+                    <span>
+                      <Trans>Connecting...</Trans>
+                    </span>
                   </Button>
                 </motion.div>
               )}

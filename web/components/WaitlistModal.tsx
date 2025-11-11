@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { X, Sparkles, Zap, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { track, setUserId, setUserProperties } from '@/utils/analytics';
+import { Trans } from '@lingui/react/macro';
+import { t } from '@lingui/core/macro';
 
 interface ExtractedInfo {
   label: string;
@@ -28,7 +30,14 @@ interface WaitlistModalProps {
   extractedInfo: ExtractedInfo[];
 }
 
-const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extractedInfo }: WaitlistModalProps) => {
+const WaitlistModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  sessionId,
+  scores,
+  extractedInfo,
+}: WaitlistModalProps) => {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -41,7 +50,7 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
     e.preventDefault();
 
     if (!email.trim() || !email.includes('@')) {
-      setError('Please enter a valid email address');
+      setError(t`Please enter a valid email address`);
       return;
     }
 
@@ -49,7 +58,7 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
     setError('');
 
     const emailDomain = email.split('@')[1]?.toLowerCase() ?? '';
-    track('Waitlist Submit Attempted', {
+    track(t`Waitlist Submit Attempted`, {
       sessionId,
       emailDomain,
       extractedFieldCount: extractedInfo?.length ?? 0,
@@ -74,16 +83,24 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
         try {
           onSuccess();
         } catch {}
-        track('Waitlist Submit Succeeded', { sessionId, emailDomain });
+        track(t`Waitlist Submit Succeeded`, { sessionId, emailDomain });
         router.push('/waitlist/success');
       } else {
-        setError('We had trouble adding you. Please try again later.');
-        track('Waitlist Submit Failed', { sessionId, emailDomain, status: response.status });
+        setError(t`We had trouble adding you. Please try again later.`);
+        track(t`Waitlist Submit Failed`, {
+          sessionId,
+          emailDomain,
+          status: response.status,
+        });
       }
     } catch (error) {
       console.error('Error joining waitlist:', error);
-      setError('Network error. Please check your connection and try again.');
-      track('Waitlist Submit Failed', { sessionId, emailDomain, error: 'network' });
+      setError(t`Network error. Please check your connection and try again.`);
+      track(t`Waitlist Submit Failed`, {
+        sessionId,
+        emailDomain,
+        error: 'network',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -96,7 +113,9 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={'fixed inset-0 z-[60] flex items-center justify-center p-4'}
+          className={
+            'fixed inset-0 z-[60] flex items-center justify-center p-4'
+          }
           style={{
             backgroundColor: 'rgba(0, 0, 0, 0.7)',
             backdropFilter: 'blur(12px)',
@@ -117,7 +136,8 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
             <div
               className={'absolute inset-0 opacity-30'}
               style={{
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
+                background:
+                  'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
               }}
             />
 
@@ -141,8 +161,16 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
                 transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
                 className={'flex justify-center mb-6'}
               >
-                <div className={'size-20 rounded-full overflow-hidden bg-card/80 border border-border/50 shadow-lg'}>
-                  <img src="/glass-ai.png" alt="Glass AI" className={'w-full h-full object-cover'} />
+                <div
+                  className={
+                    'size-20 rounded-full overflow-hidden bg-card/80 border border-border/50 shadow-lg'
+                  }
+                >
+                  <img
+                    src="/glass-ai.png"
+                    alt="Glass AI"
+                    className={'w-full h-full object-cover'}
+                  />
                 </div>
               </motion.div>
 
@@ -153,9 +181,16 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
                 transition={{ delay: 0.2 }}
                 className={'text-center mb-4'}
               >
-                <h3 className={'text-2xl font-bold mb-2'}>Glass AI helps you speak any language in the real world</h3>
+                <h3 className={'text-2xl font-bold mb-2'}>
+                  <Trans>
+                    Glass AI helps you speak any language in the real world
+                  </Trans>
+                </h3>
                 <p className={'text-muted-foreground text-sm leading-relaxed'}>
-                  Practice speaking. Get help in real meetings. Remembers everything.
+                  <Trans>
+                    Practice speaking. Get help in real meetings. Remembers
+                    everything.
+                  </Trans>
                 </p>
               </motion.div>
 
@@ -177,8 +212,12 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
                     </div>
                   </div>
                   <div>
-                    <p className={'text-sm font-medium'}>Gets smarter every time you speak</p>
-                    <p className={'text-xs text-muted-foreground'}>Remembers who you are, what you care about</p>
+                    <p className={'text-sm font-medium'}>
+                      <Trans>Gets smarter every time you speak</Trans>
+                    </p>
+                    <p className={'text-xs text-muted-foreground'}>
+                      <Trans>Remembers who you are, what you care about</Trans>
+                    </p>
                   </div>
                 </div>
 
@@ -193,8 +232,12 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
                     </div>
                   </div>
                   <div>
-                    <p className={'text-sm font-medium'}>Works in real meetings</p>
-                    <p className={'text-xs text-muted-foreground'}>Practice mode or live on Zoom calls</p>
+                    <p className={'text-sm font-medium'}>
+                      <Trans>Works in real meetings</Trans>
+                    </p>
+                    <p className={'text-xs text-muted-foreground'}>
+                      <Trans>Practice mode or live on Zoom calls</Trans>
+                    </p>
                   </div>
                 </div>
               </motion.div>
@@ -208,8 +251,11 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
                 className={'space-y-4'}
               >
                 <div>
-                  <label htmlFor="waitlist-email" className={'text-sm font-medium block mb-2'}>
-                    Enter your email
+                  <label
+                    htmlFor="waitlist-email"
+                    className={'text-sm font-medium block mb-2'}
+                  >
+                    <Trans>Enter your email</Trans>
                   </label>
                   <input
                     id="waitlist-email"
@@ -219,11 +265,14 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
                       setEmail(e.target.value);
                       setError('');
                       const value = e.target.value.trim();
-                      if (isLikelyValidEmail(value) && value !== lastMappedEmailRef.current) {
+                      if (
+                        isLikelyValidEmail(value) &&
+                        value !== lastMappedEmailRef.current
+                      ) {
                         lastMappedEmailRef.current = value;
                         setUserId(value);
                         setUserProperties({ email: value });
-                        track('Waitlist Email Captured', {
+                        track(t`Waitlist Email Captured`, {
                           sessionId,
                           emailDomain: value.split('@')[1]?.toLowerCase() ?? '',
                         });
@@ -261,21 +310,29 @@ const WaitlistModal = ({ isOpen, onClose, onSuccess, sessionId, scores, extracte
                     <span className={'flex items-center justify-center gap-2'}>
                       <motion.div
                         animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                        className={'size-4 border-2 border-white/30 border-t-white rounded-full'}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: 'linear',
+                        }}
+                        className={
+                          'size-4 border-2 border-white/30 border-t-white rounded-full'
+                        }
                       />
-                      Joining...
+                      <Trans>Joining...</Trans>
                     </span>
                   ) : (
                     <span className={'flex items-center justify-center gap-2'}>
-                      Join Early Access
+                      <Trans>Join Early Access</Trans>
                       <ArrowRight className={'size-4'} />
                     </span>
                   )}
                 </Button>
 
                 <p className={'text-xs text-center text-muted-foreground'}>
-                  We&apos;ll notify you when early access is ready. No spam, ever.
+                  <Trans>
+                    We'll notify you when early access is ready. No spam, ever.
+                  </Trans>
                 </p>
               </motion.form>
             </div>

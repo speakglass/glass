@@ -5,6 +5,8 @@ import { Loader2, Sparkles, MessageCircleMore, Volume2, X, SlidersHorizontal, La
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/utils';
+import { t } from '@lingui/core/macro';
+import { Trans } from '@lingui/react/macro';
 import { useGlass, AISuggestion, AIFeedback, AITranslation, FeedbackMode, SuggestMode } from '@/contexts/GlassContext';
 
 type SuggestionBubbleProps = {
@@ -442,24 +444,24 @@ export default function BottomPanel({
   const getTranslatePlaceholder = (short: boolean = false) => {
     const learningLang = settings.languages.learningLang.toLowerCase();
     const langNames: Record<string, string> = {
-      ja: 'Japanese',
-      ko: 'Korean',
-      zh: 'Chinese',
-      es: 'Spanish',
-      fr: 'French',
-      de: 'German',
-      it: 'Italian',
-      pt: 'Portuguese',
-      en: 'English',
+      ja: t`Japanese`,
+      ko: t`Korean`,
+      zh: t`Chinese`,
+      es: t`Spanish`,
+      fr: t`French`,
+      de: t`German`,
+      it: t`Italian`,
+      pt: t`Portuguese`,
+      en: t`English`,
     };
     const langName = langNames[learningLang] || 'target language';
-    return short ? `To ${langName}...` : `Translate to ${langName}...`;
+    return short ? t`To ${langName}...` : t`Translate to ${langName}...`;
   };
 
   const feedbackModeLabels = {
-    always: 'Always',
-    auto: 'Auto',
-    off: 'Off',
+    always: t`Always`,
+    auto: t`Auto`,
+    off: t`Off`,
   };
 
   const handleSuggestion = async () => {
@@ -606,7 +608,9 @@ export default function BottomPanel({
                     ) : (
                       <Sparkles className={'size-3.5'} />
                     )}
-                    <span>Suggest</span>
+                    <span>
+                      <Trans>Suggest</Trans>
+                    </span>
                   </Button>
                 </motion.div>
               )}
@@ -640,7 +644,9 @@ export default function BottomPanel({
                       <div className={'space-y-3'}>
                         {/* Suggest Mode */}
                         <div>
-                          <div className={'text-[11px] font-medium text-muted-foreground mb-2'}>Suggest</div>
+                          <div className={'text-[11px] font-medium text-muted-foreground mb-2'}>
+                            <Trans>Suggest</Trans>
+                          </div>
                           <div
                             className={
                               'inline-flex items-center gap-0.5 rounded-md border border-input bg-background p-0.5 w-full'
@@ -666,7 +672,9 @@ export default function BottomPanel({
 
                         {/* Feedback Mode */}
                         <div>
-                          <div className={'text-[11px] font-medium text-muted-foreground mb-2'}>Feedback</div>
+                          <div className={'text-[11px] font-medium text-muted-foreground mb-2'}>
+                            <Trans>Feedback</Trans>
+                          </div>
                           <div
                             className={
                               'inline-flex items-center gap-0.5 rounded-md border border-input bg-background p-0.5 w-full'
@@ -738,10 +746,10 @@ export default function BottomPanel({
                               )}
                               <span className={'text-xs font-medium text-muted-foreground'}>
                                 {mockSuggestion.type === 'feedback'
-                                  ? 'Feedback'
+                                  ? t`Feedback`
                                   : mockSuggestion.type === 'translate'
-                                  ? 'Translation'
-                                  : 'Suggested Answer'}
+                                  ? t`Translation`
+                                  : t`Suggested Answer`}
                               </span>
                             </div>
                             <div className={'flex items-center gap-1'}>
@@ -832,7 +840,7 @@ export default function BottomPanel({
                               <span className={'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400'} />
                             </span>
                             <span className={'text-sm text-muted-foreground'}>
-                              Listening. Say anything when you're ready.
+                              <Trans>Listening. Say anything when you're ready.</Trans>
                             </span>
                           </div>
                         </div>
@@ -956,7 +964,7 @@ export default function BottomPanel({
                             <span className={'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400'} />
                           </span>
                           <span className={'text-sm text-muted-foreground'}>
-                            Listening… say anything when you're ready.
+                            <Trans>Listening… say anything when you're ready.</Trans>
                           </span>
                         </div>
                       </div>

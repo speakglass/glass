@@ -8,6 +8,7 @@ import { Toggle } from './ui/toggle';
 import MicFFT from './MicFFT';
 import { cn } from '@/utils';
 import { useMemo } from 'react';
+import { Trans } from '@lingui/react/macro';
 
 export default function Controls() {
   const {
@@ -116,7 +117,9 @@ export default function Controls() {
                         <Info className={'size-3 text-rose-600 dark:text-rose-400'} />
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Ending soon: under 5 minutes left</TooltipContent>
+                    <TooltipContent side="top">
+                      <Trans>Ending soon: under 5 minutes left</Trans>
+                    </TooltipContent>
                   </Tooltip>
                 ) : null}
               </div>
@@ -133,7 +136,9 @@ export default function Controls() {
               <span>
                 <Phone className={'size-4 opacity-50 fill-current'} strokeWidth={0} />
               </span>
-              <span className={'hidden sm:inline'}>End Call</span>
+              <span className={'hidden sm:inline'}>
+                <Trans>End Call</Trans>
+              </span>
             </Button>
           </motion.div>
         ) : null}
