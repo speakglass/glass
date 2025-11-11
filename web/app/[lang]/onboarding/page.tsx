@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useNextStep, NextStep } from 'nextstepjs';
-import { glassTours } from '@/lib/onboarding-tours';
+import { getGlassTours } from '@/lib/onboarding-tours';
 import { GlassOnboardingCard } from '@/components/onboarding/GlassOnboardingCard';
 import Messages from '@/components/Messages';
 import BottomPanel from '@/components/BottomPanel';
@@ -233,7 +233,7 @@ export default function OnboardingPage() {
 
   return (
     <NextStep
-      steps={glassTours}
+      steps={useMemo(() => getGlassTours(), [])}
       cardComponent={GlassOnboardingCard}
       shadowRgb="0,0,0"
       shadowOpacity="0.5"

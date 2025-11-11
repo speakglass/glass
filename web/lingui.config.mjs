@@ -13,7 +13,11 @@ export default {
   catalogs: [
     {
       path: 'locales/{locale}',
-      include: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}', 'lib/**/*.ts'],
+      include: [
+        'app/**/*.{ts,tsx}',
+        'components/**/*.{ts,tsx}',
+        'lib/**/*.{ts,tsx}'
+      ],
       exclude: ['**/node_modules/**'],
     },
   ],

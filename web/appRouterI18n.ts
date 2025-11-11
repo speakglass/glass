@@ -76,3 +76,19 @@ export const getI18nInstance = (locale: SupportedLocales): I18n => {
   }
   return i18n;
 };
+
+// Create a request-scoped i18n instance to avoid races in concurrent SSR
+export const createI18nForLocale = (locale: SupportedLocales): I18n => {
+  const validLocale = locales.includes(locale ?? '') ? locale : defaultLocale;
+  const effectiveLocale = validLocale || defaultLocale;
+  const messages =
+    allMessages[effectiveLocale] || allMessages[defaultLocale] || {};
+  const scoped = new I18n({});
+  if (Object.keys(messages).length > 0) {
+    scoped.load(effectiveLocale, messages);
+    scoped.activate(effectiveLocale);
+  } else {
+    console.warn(`[Lingui] No messages found for locale: ${effectiveLocale}`);
+  }
+  return scoped;
+};

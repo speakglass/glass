@@ -1,7 +1,23 @@
 import { Trans } from '@lingui/react/macro';
 import { WifiOff } from 'lucide-react';
+import { initLingui } from '@/initLingui';
+import {
+  DEFAULT_LANGUAGE,
+  LOCALIZED_LANGUAGE_CODES,
+} from '@/lib/supported-languages';
 
-export default function ConnectFailurePage() {
+export default async function ConnectFailurePage({
+  params,
+}: {
+  params: { lang: string };
+}) {
+  const rawLang = params.lang;
+  const lang = (LOCALIZED_LANGUAGE_CODES as readonly string[]).includes(
+    rawLang as any
+  )
+    ? rawLang
+    : DEFAULT_LANGUAGE;
+  initLingui(lang);
   return (
     <main className={'min-h-screen flex items-center justify-center p-6'}>
       <div className={'max-w-md w-full text-center'}>
