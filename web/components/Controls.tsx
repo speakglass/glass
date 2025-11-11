@@ -8,6 +8,7 @@ import { Toggle } from './ui/toggle';
 import MicFFT from './MicFFT';
 import { cn } from '@/utils';
 import { useMemo } from 'react';
+import { Trans } from '@lingui/react/macro';
 
 export default function Controls() {
   const {
@@ -65,7 +66,9 @@ export default function Controls() {
               y: '100%',
               opacity: 0,
             }}
-            className={'p-2.5 sm:p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-full flex items-center gap-2 sm:gap-4'}
+            className={
+              'p-2.5 sm:p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-full flex items-center gap-2 sm:gap-4'
+            }
           >
             <Toggle
               className={'rounded-full'}
@@ -78,7 +81,11 @@ export default function Controls() {
                 }
               }}
             >
-              {isMuted ? <MicOff className={'size-4'} /> : <Mic className={'size-4'} />}
+              {isMuted ? (
+                <MicOff className={'size-4'} />
+              ) : (
+                <Mic className={'size-4'} />
+              )}
             </Toggle>
 
             <div className={'relative grid h-8 w-24 sm:w-48 shrink grow-0'}>
@@ -94,15 +101,30 @@ export default function Controls() {
                     : typeof totalSeconds === 'number'
                     ? (totalSeconds as number)
                     : undefined;
-                  const elapsed = typeof elapsedSeconds === 'number' ? elapsedSeconds : 0;
+                  const elapsed =
+                    typeof elapsedSeconds === 'number' ? elapsedSeconds : 0;
                   return (
                     <span className={'text-xs sm:text-sm tabular-nums'}>
-                      <span className={lowTime ? 'text-rose-600 dark:text-rose-400' : undefined}>{fmt(elapsed)}</span>
+                      <span
+                        className={
+                          lowTime
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : undefined
+                        }
+                      >
+                        {fmt(elapsed)}
+                      </span>
                       <span className={'text-muted-foreground'}>{' / '}</span>
                       {baseKnown ? (
-                        <span className={'text-muted-foreground'}>{fmt(base)}</span>
+                        <span className={'text-muted-foreground'}>
+                          {fmt(base)}
+                        </span>
                       ) : (
-                        <span className={'inline-block align-middle w-10 h-4 rounded bg-muted/60 animate-pulse'} />
+                        <span
+                          className={
+                            'inline-block align-middle w-10 h-4 rounded bg-muted/60 animate-pulse'
+                          }
+                        />
                       )}
                     </span>
                   );
@@ -112,13 +134,19 @@ export default function Controls() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span
-                        className={'inline-flex items-center justify-center w-4 h-4 rounded-full'}
+                        className={
+                          'inline-flex items-center justify-center w-4 h-4 rounded-full'
+                        }
                         aria-label="Remaining time info"
                       >
-                        <Info className={'size-3 text-rose-600 dark:text-rose-400'} />
+                        <Info
+                          className={'size-3 text-rose-600 dark:text-rose-400'}
+                        />
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent side="top">Ending soon: under 5 minutes left</TooltipContent>
+                    <TooltipContent side="top">
+                      <Trans>Ending soon: under 5 minutes left</Trans>
+                    </TooltipContent>
                   </Tooltip>
                 ) : null}
               </div>
@@ -133,9 +161,14 @@ export default function Controls() {
               variant={'destructive'}
             >
               <span>
-                <Phone className={'size-4 opacity-50 fill-current'} strokeWidth={0} />
+                <Phone
+                  className={'size-4 opacity-50 fill-current'}
+                  strokeWidth={0}
+                />
               </span>
-              <span className={'hidden sm:inline'}>End Call</span>
+              <span className={'hidden sm:inline'}>
+                <Trans>End Call</Trans>
+              </span>
             </Button>
           </motion.div>
         ) : null}

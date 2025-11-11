@@ -1,8 +1,16 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { t } from '@lingui/core/macro';
 
 export interface Message {
   type: 'user_message' | 'partner_message';
@@ -104,7 +112,13 @@ export interface ConversationAnalysis {
   scores: ConversationScores;
   extractedInfo: ExtractedInfo[];
   feedback: string;
-  messages: Array<{ speaker: string; source: string; text: string; utterance_id?: string; translation?: string }>;
+  messages: Array<{
+    speaker: string;
+    source: string;
+    text: string;
+    utterance_id?: string;
+    translation?: string;
+  }>;
   feedbackItems: Array<{ utterance_id: string; text: string }>;
 }
 
@@ -129,9 +143,14 @@ interface GlassContextValue {
   disconnect: () => Promise<void>;
   mute: () => void;
   unmute: () => void;
-  requestSuggestion: () => Promise<{ type: 'answer' | 'follow_up'; suggestion: StructuredSuggestion }>;
+  requestSuggestion: () => Promise<{
+    type: 'answer' | 'follow_up';
+    suggestion: StructuredSuggestion;
+  }>;
   requestTranslate: (text: string) => Promise<StructuredSuggestion>;
-  setOnAISuggestion: (callback: (type: 'answer' | 'follow_up' | 'feedback', payload: any) => void) => void;
+  setOnAISuggestion: (
+    callback: (type: 'answer' | 'follow_up' | 'feedback', payload: any) => void
+  ) => void;
   addSuggestion: (type: AISuggestionType, payload: any) => void;
   removeSuggestion: (id: string) => void;
   getSuggestionRemainingMs: (id: string) => number;
@@ -143,7 +162,13 @@ interface GlassContextValue {
   closeSummary: () => void;
   startNewCallWithContext: (contextInfo: ExtractedInfo[]) => void;
   // Onboarding helpers
-  loadDemoConversation: (msgs: Array<{ role: 'user' | 'partner'; content: string; translation?: string }>) => void;
+  loadDemoConversation: (
+    msgs: Array<{
+      role: 'user' | 'partner';
+      content: string;
+      translation?: string;
+    }>
+  ) => void;
 }
 
 const GlassContext = createContext<GlassContextValue | null>(null);
@@ -162,19 +187,32 @@ export function GlassProvider({
   const [messages, setMessages] = useState<Message[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const [micFft, setMicFft] = useState<number[]>(new Array(24).fill(0));
-  const [conversationAnalysis, setConversationAnalysis] = useState<ConversationAnalysis | null>(null);
+  const [conversationAnalysis, setConversationAnalysis] =
+    useState<ConversationAnalysis | null>(null);
   const [showSummary, setShowSummary] = useState(false);
-  const [remainingSeconds, setRemainingSeconds] = useState<number | undefined>(undefined);
-  const [totalSeconds, setTotalSeconds] = useState<number | undefined>(undefined);
-  const [startRemainingSeconds, setStartRemainingSeconds] = useState<number | undefined>(undefined);
-  const [elapsedSeconds, setElapsedSeconds] = useState<number | undefined>(undefined);
-  const [budgetStatus, setBudgetStatus] = useState<'unknown' | 'enabled' | 'disabled'>('disabled');
+  const [remainingSeconds, setRemainingSeconds] = useState<number | undefined>(
+    undefined
+  );
+  const [totalSeconds, setTotalSeconds] = useState<number | undefined>(
+    undefined
+  );
+  const [startRemainingSeconds, setStartRemainingSeconds] = useState<
+    number | undefined
+  >(undefined);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number | undefined>(
+    undefined
+  );
+  const [budgetStatus, setBudgetStatus] = useState<
+    'unknown' | 'enabled' | 'disabled'
+  >('disabled');
   const serverRemainingRef = useRef<number | undefined>(undefined);
   const lastSyncTsRef = useRef<number | undefined>(undefined);
   const localTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRemainingRef = useRef<number | undefined>(undefined);
-  const budgetProbeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const budgetProbeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const [settings, setSettings] = useState<VoiceSettings>(() => {
     if (typeof window === 'undefined')
       return {
@@ -196,7 +234,10 @@ export function GlassProvider({
         return {
           micDeviceId: parsed.micDeviceId || null,
           feedbackMode: parsed.feedbackMode || 'auto',
-          languages: parsed.languages || { learningLang: 'en', nativeLang: 'ko' },
+          languages: parsed.languages || {
+            learningLang: 'en',
+            nativeLang: 'ko',
+          },
           suggestMode: parsed.suggestMode || 'auto',
           countryCode: parsed.countryCode,
           proficiency: parsed.proficiency,
@@ -222,16 +263,24 @@ export function GlassProvider({
   });
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
-  const pausedMapRef = useRef<Map<string, { paused: boolean; pausedAt: number; accumulated: number }>>(new Map());
+  const pausedMapRef = useRef<
+    Map<string, { paused: boolean; pausedAt: number; accumulated: number }>
+  >(new Map());
   const onAISuggestionCallbackRef = useRef<
-    ((type: 'answer' | 'follow_up' | 'feedback', payload: any) => void) | undefined
+    | ((type: 'answer' | 'follow_up' | 'feedback', payload: any) => void)
+    | undefined
   >();
   const ttsAudioContextRef = useRef<AudioContext | null>(null);
   const ttsAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const ttsAudioChunksRef = useRef<Uint8Array[]>([]);
 
   const setOnAISuggestion = useCallback(
-    (callback: (type: 'answer' | 'follow_up' | 'feedback', payload: any) => void) => {
+    (
+      callback: (
+        type: 'answer' | 'follow_up' | 'feedback',
+        payload: any
+      ) => void
+    ) => {
       onAISuggestionCallbackRef.current = callback;
     },
     []
@@ -247,10 +296,20 @@ export function GlassProvider({
             ? {
                 id,
                 type: 'feedback',
-                text: typeof payload.text === 'string' ? payload.text : undefined,
-                target_text: typeof payload.target_text === 'string' ? payload.target_text : undefined,
-                pronunciation: typeof payload.pronunciation === 'string' ? payload.pronunciation : undefined,
-                reason_native: typeof payload.reason_native === 'string' ? payload.reason_native : undefined,
+                text:
+                  typeof payload.text === 'string' ? payload.text : undefined,
+                target_text:
+                  typeof payload.target_text === 'string'
+                    ? payload.target_text
+                    : undefined,
+                pronunciation:
+                  typeof payload.pronunciation === 'string'
+                    ? payload.pronunciation
+                    : undefined,
+                reason_native:
+                  typeof payload.reason_native === 'string'
+                    ? payload.reason_native
+                    : undefined,
                 timestamp,
               }
             : { id, type: 'feedback', text: String(payload || ''), timestamp }
@@ -258,8 +317,12 @@ export function GlassProvider({
               id,
               type,
               target_text: String(payload?.target_text || ''),
-              native_translation: payload?.native_translation ? String(payload.native_translation) : undefined,
-              pronunciation: payload?.pronunciation ? String(payload.pronunciation) : undefined,
+              native_translation: payload?.native_translation
+                ? String(payload.native_translation)
+                : undefined,
+              pronunciation: payload?.pronunciation
+                ? String(payload.pronunciation)
+                : undefined,
               timestamp,
             };
       setSuggestions((prev) => [...prev, suggestion]);
@@ -281,7 +344,8 @@ export function GlassProvider({
       const pausedInfo = pausedMapRef.current.get(id);
       const now = Date.now();
       const pausedDelta = pausedInfo
-        ? pausedInfo.accumulated + (pausedInfo.paused ? Math.max(0, now - pausedInfo.pausedAt) : 0)
+        ? pausedInfo.accumulated +
+          (pausedInfo.paused ? Math.max(0, now - pausedInfo.pausedAt) : 0)
         : 0;
       const elapsed = now - (s.timestamp || 0) - pausedDelta;
       return Math.max(0, total - elapsed);
@@ -290,7 +354,11 @@ export function GlassProvider({
   );
 
   const pauseSuggestionTimer = useCallback((id: string) => {
-    const info = pausedMapRef.current.get(id) || { paused: false, pausedAt: 0, accumulated: 0 };
+    const info = pausedMapRef.current.get(id) || {
+      paused: false,
+      pausedAt: 0,
+      accumulated: 0,
+    };
     if (info.paused) return;
     info.paused = true;
     info.pausedAt = Date.now();
@@ -298,7 +366,11 @@ export function GlassProvider({
   }, []);
 
   const resumeSuggestionTimer = useCallback((id: string) => {
-    const info = pausedMapRef.current.get(id) || { paused: false, pausedAt: 0, accumulated: 0 };
+    const info = pausedMapRef.current.get(id) || {
+      paused: false,
+      pausedAt: 0,
+      accumulated: 0,
+    };
     if (!info.paused) return;
     const now = Date.now();
     info.accumulated += Math.max(0, now - info.pausedAt);
@@ -317,7 +389,8 @@ export function GlassProvider({
         const next = prev.filter((s) => {
           const pausedInfo = pausedMapRef.current.get(s.id);
           const pausedDelta = pausedInfo
-            ? pausedInfo.accumulated + (pausedInfo.paused ? Math.max(0, now - pausedInfo.pausedAt) : 0)
+            ? pausedInfo.accumulated +
+              (pausedInfo.paused ? Math.max(0, now - pausedInfo.pausedAt) : 0)
             : 0;
           const elapsed = now - (s.timestamp || 0) - pausedDelta;
           const remaining = total - elapsed;
@@ -344,7 +417,9 @@ export function GlassProvider({
   const sessionIdRef = useRef<string>('');
   const processorNodesRef = useRef<ScriptProcessorNode[]>([]);
   const isMutedRef = useRef<boolean>(false);
-  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
   const isIntentionalDisconnectRef = useRef<boolean>(false);
 
   const updateSettings = useCallback((partial: Partial<VoiceSettings>) => {
@@ -458,9 +533,13 @@ export function GlassProvider({
           autoGainControl: true,
         };
         if (currentSettings.micDeviceId) {
-          micConstraints.deviceId = { exact: currentSettings.micDeviceId } as unknown as ConstrainDOMString;
+          micConstraints.deviceId = {
+            exact: currentSettings.micDeviceId,
+          } as unknown as ConstrainDOMString;
         }
-        const micStream = await navigator.mediaDevices.getUserMedia({ audio: micConstraints });
+        const micStream = await navigator.mediaDevices.getUserMedia({
+          audio: micConstraints,
+        });
         micStreamRef.current = micStream;
 
         // Request screen share with audio (only for Real Talk mode)
@@ -519,9 +598,8 @@ export function GlassProvider({
 
             // Show clear instruction message
             setTimeout(() => {
-              toast.error('Screen audio sharing required', {
-                description:
-                  'Please share your screen with audio from your meeting platform (Zoom, Google Meet, Teams).',
+              toast.error(t`Screen audio sharing required`, {
+                description: t`Please share your screen with audio from your meeting platform (Zoom, Google Meet, Teams).`,
                 duration: 8000,
               });
             }, 100);
@@ -547,7 +625,8 @@ export function GlassProvider({
         updateFFT();
 
         // Connect WebSocket to Glass API with language parameters
-        const wsUrl = process.env.NEXT_PUBLIC_GLASS_WS_URL || 'ws://localhost:8000';
+        const wsUrl =
+          process.env.NEXT_PUBLIC_GLASS_WS_URL || 'ws://localhost:8000';
         const params = new URLSearchParams({
           sid: sessionIdRef.current,
           events: 'true',
@@ -555,7 +634,9 @@ export function GlassProvider({
           native_lang: languages.nativeLang,
           mode: mode,
         });
-        const ws = new WebSocket(`${wsUrl}/ws/audio-multi?${params.toString()}`);
+        const ws = new WebSocket(
+          `${wsUrl}/ws/audio-multi?${params.toString()}`
+        );
         wsRef.current = ws;
 
         ws.binaryType = 'arraybuffer';
@@ -565,7 +646,8 @@ export function GlassProvider({
           setStatus({ value: 'connected' });
           // Assume budget unknown at connect; show skeleton for a short probe window
           setBudgetStatus('unknown');
-          if (budgetProbeTimerRef.current) clearTimeout(budgetProbeTimerRef.current);
+          if (budgetProbeTimerRef.current)
+            clearTimeout(budgetProbeTimerRef.current);
           budgetProbeTimerRef.current = setTimeout(() => {
             // If no time event arrived during probe, hide timer UI (no limit)
             setBudgetStatus((prev) => (prev === 'unknown' ? 'disabled' : prev));
@@ -579,7 +661,9 @@ export function GlassProvider({
             setElapsedSeconds(0);
             if (elapsedTickRef.current) clearInterval(elapsedTickRef.current);
             elapsedTickRef.current = setInterval(() => {
-              setElapsedSeconds((prev) => (typeof prev === 'number' ? prev + 1 : 1));
+              setElapsedSeconds((prev) =>
+                typeof prev === 'number' ? prev + 1 : 1
+              );
             }, 1000);
           } catch {}
 
@@ -638,7 +722,7 @@ export function GlassProvider({
                   setBudgetStatus('enabled');
                   if (receivedAnyTime) {
                     try {
-                      toast.info('Trial session ended due to time limit.');
+                      toast.info(t`Trial session ended due to time limit.`);
                     } catch {}
                     // Run End Call flow (analyze and show summary)
                     disconnect().catch(() => {});
@@ -646,8 +730,8 @@ export function GlassProvider({
                     // No time available at session start → waitlist path
                     setStatus({ value: 'idle' });
                     try {
-                      toast.info("You've used your free time", {
-                        description: 'Join the waitlist to get more access.',
+                      toast.info(t`You've used your free time`, {
+                        description: t`Join the waitlist to get more access.`,
                       });
                     } catch {}
                     try {
@@ -668,7 +752,10 @@ export function GlassProvider({
             } catch (err) {
               // Ignore non-JSON messages (could be ping/pong)
             }
-          } else if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
+          } else if (
+            event.data instanceof ArrayBuffer ||
+            event.data instanceof Blob
+          ) {
             // Handle TTS audio chunks
             handleTTSAudioChunk(event.data);
           }
@@ -718,7 +805,8 @@ export function GlassProvider({
   // Handle TTS audio chunks
   const handleTTSAudioChunk = useCallback(async (data: ArrayBuffer | Blob) => {
     try {
-      const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
+      const arrayBuffer =
+        data instanceof Blob ? await data.arrayBuffer() : data;
       const uint8Array = new Uint8Array(arrayBuffer);
       ttsAudioChunksRef.current.push(uint8Array);
     } catch (error) {
@@ -755,11 +843,15 @@ export function GlassProvider({
 
       // Time remaining events
       if (data.t === 'time_remaining') {
-        const secs = typeof data.seconds === 'number' ? data.seconds : undefined;
+        const secs =
+          typeof data.seconds === 'number' ? data.seconds : undefined;
         const total = typeof data.total === 'number' ? data.total : undefined;
         setBudgetStatus('enabled');
         // On first receipt during a session, capture the starting remaining seconds (guarded by ref)
-        if (typeof secs === 'number' && startRemainingRef.current === undefined) {
+        if (
+          typeof secs === 'number' &&
+          startRemainingRef.current === undefined
+        ) {
           startRemainingRef.current = secs;
           setStartRemainingSeconds(secs);
         }
@@ -786,7 +878,8 @@ export function GlassProvider({
           role = data.role === 'user' ? 'user' : 'partner';
         } else if (data.source) {
           role =
-            data.source === 'mic' || (typeof data.source === 'string' && data.source.startsWith('mic_'))
+            data.source === 'mic' ||
+            (typeof data.source === 'string' && data.source.startsWith('mic_'))
               ? 'user'
               : 'partner';
         } else if (data.speaker) {
@@ -798,20 +891,28 @@ export function GlassProvider({
         setMessages((prev) => {
           const next = [...prev];
           if (isSpeechFinal) {
-            const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.partial);
+            const idx = next.findIndex(
+              (m) => m.utteranceId === utteranceId && m.partial
+            );
             if (idx >= 0) next.splice(idx, 1);
             return next;
           }
 
-          const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.message.role === role);
+          const idx = next.findIndex(
+            (m) => m.utteranceId === utteranceId && m.message.role === role
+          );
           if (idx >= 0) {
             const existing = next[idx];
             next[idx] = {
               ...existing,
               partial: text,
               receivedAt: new Date(),
-              start: typeof data.start === 'number' ? data.start : existing.start,
-              duration: typeof data.duration === 'number' ? data.duration : existing.duration,
+              start:
+                typeof data.start === 'number' ? data.start : existing.start,
+              duration:
+                typeof data.duration === 'number'
+                  ? data.duration
+                  : existing.duration,
             };
             return next;
           }
@@ -823,7 +924,8 @@ export function GlassProvider({
             utteranceId,
             partial: text,
             start: typeof data.start === 'number' ? data.start : undefined,
-            duration: typeof data.duration === 'number' ? data.duration : undefined,
+            duration:
+              typeof data.duration === 'number' ? data.duration : undefined,
           });
           return next;
         });
@@ -850,7 +952,8 @@ export function GlassProvider({
           role = data.role === 'user' ? 'user' : 'partner';
         } else if (data.source) {
           role =
-            data.source === 'mic' || (typeof data.source === 'string' && data.source.startsWith('mic_'))
+            data.source === 'mic' ||
+            (typeof data.source === 'string' && data.source.startsWith('mic_'))
               ? 'user'
               : 'partner';
         } else if (data.speaker) {
@@ -859,15 +962,23 @@ export function GlassProvider({
 
         setMessages((prev) => {
           const next = [...prev];
-          const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.message.role === role);
-          const translation = typeof data.translation === 'string' ? data.translation : undefined;
+          const idx = next.findIndex(
+            (m) => m.utteranceId === utteranceId && m.message.role === role
+          );
+          const translation =
+            typeof data.translation === 'string' ? data.translation : undefined;
 
           if (idx >= 0) {
             const existing = next[idx];
             const prevText = (existing.message.content || '').trim();
             const newText = (text || '').trim();
-            const needsSpace = Boolean(prevText) && !/[\.!?\u3002\uFF01\uFF1F]$/.test(prevText);
-            const merged = prevText ? (needsSpace ? `${prevText} ${newText}` : `${prevText} ${newText}`) : newText;
+            const needsSpace =
+              Boolean(prevText) && !/[\.!?\u3002\uFF01\uFF1F]$/.test(prevText);
+            const merged = prevText
+              ? needsSpace
+                ? `${prevText} ${newText}`
+                : `${prevText} ${newText}`
+              : newText;
             next[idx] = {
               ...existing,
               message: { ...existing.message, content: merged },
@@ -898,7 +1009,8 @@ export function GlassProvider({
             receivedAt: new Date(),
             utteranceId,
             start: typeof data.start === 'number' ? data.start : undefined,
-            duration: typeof data.duration === 'number' ? data.duration : undefined,
+            duration:
+              typeof data.duration === 'number' ? data.duration : undefined,
           });
           return next;
         });
@@ -918,7 +1030,9 @@ export function GlassProvider({
         setMessages((prev) => {
           const next = [...prev];
           // Find message with this utterance_id
-          const existingIndex = next.findIndex((msg) => msg.utteranceId === utteranceId);
+          const existingIndex = next.findIndex(
+            (msg) => msg.utteranceId === utteranceId
+          );
 
           if (existingIndex >= 0) {
             // Update message with translation
@@ -942,7 +1056,9 @@ export function GlassProvider({
         if (!utteranceId) return;
         setMessages((prev) => {
           const next = [...prev];
-          const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.partial);
+          const idx = next.findIndex(
+            (m) => m.utteranceId === utteranceId && m.partial
+          );
           if (idx >= 0) {
             next.splice(idx, 1);
           }
@@ -955,7 +1071,11 @@ export function GlassProvider({
       if (data.t === 'feedback') {
         const utteranceId = data.utterance_id as string | undefined;
         const suggestion = data.suggestion as
-          | { reason_native?: string; target_text?: string; pronunciation?: string }
+          | {
+              reason_native?: string;
+              target_text?: string;
+              pronunciation?: string;
+            }
           | undefined;
         const text = typeof data.text === 'string' ? data.text : undefined;
 
@@ -968,11 +1088,17 @@ export function GlassProvider({
               const feedback = suggestion
                 ? {
                     reason_native:
-                      typeof suggestion.reason_native === 'string' ? suggestion.reason_native : undefined,
+                      typeof suggestion.reason_native === 'string'
+                        ? suggestion.reason_native
+                        : undefined,
                     target_text:
-                      typeof suggestion.target_text === 'string' ? suggestion.target_text : undefined,
+                      typeof suggestion.target_text === 'string'
+                        ? suggestion.target_text
+                        : undefined,
                     pronunciation:
-                      typeof suggestion.pronunciation === 'string' ? suggestion.pronunciation : undefined,
+                      typeof suggestion.pronunciation === 'string'
+                        ? suggestion.pronunciation
+                        : undefined,
                   }
                 : { text };
               next[idx] = {
@@ -992,15 +1118,19 @@ export function GlassProvider({
 
       // Auto suggestions from backend (structured payload supported)
       if (data.t === 'answer' && data.auto) {
-        const payload = data.suggestion || (data.text ? { target_text: data.text } : null);
+        const payload =
+          data.suggestion || (data.text ? { target_text: data.text } : null);
         if (payload) addSuggestion('answer', payload);
-        if (payload && onAISuggestionCallbackRef.current) onAISuggestionCallbackRef.current('answer', payload);
+        if (payload && onAISuggestionCallbackRef.current)
+          onAISuggestionCallbackRef.current('answer', payload);
         return;
       }
       if (data.t === 'follow_up' && data.auto) {
-        const payload = data.suggestion || (data.text ? { target_text: data.text } : null);
+        const payload =
+          data.suggestion || (data.text ? { target_text: data.text } : null);
         if (payload) addSuggestion('follow_up', payload);
-        if (payload && onAISuggestionCallbackRef.current) onAISuggestionCallbackRef.current('follow_up', payload);
+        if (payload && onAISuggestionCallbackRef.current)
+          onAISuggestionCallbackRef.current('follow_up', payload);
         return;
       }
 
@@ -1023,48 +1153,55 @@ export function GlassProvider({
   );
 
   // Stream audio to WebSocket
-  const startAudioStreaming = useCallback((ws: WebSocket, micStream: MediaStream, systemStream: MediaStream | null) => {
-    const audioContext = new AudioContext({ sampleRate: 16000 });
-    streamingContextRef.current = audioContext;
-    const micSource = audioContext.createMediaStreamSource(micStream);
-    const micProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+  const startAudioStreaming = useCallback(
+    (
+      ws: WebSocket,
+      micStream: MediaStream,
+      systemStream: MediaStream | null
+    ) => {
+      const audioContext = new AudioContext({ sampleRate: 16000 });
+      streamingContextRef.current = audioContext;
+      const micSource = audioContext.createMediaStreamSource(micStream);
+      const micProcessor = audioContext.createScriptProcessor(4096, 1, 1);
 
-    micProcessor.onaudioprocess = (e) => {
-      if (ws.readyState === WebSocket.OPEN && !isMutedRef.current) {
-        const inputData = e.inputBuffer.getChannelData(0);
-        const pcm16 = convertFloat32ToPCM16(inputData);
-        const payload = new Uint8Array(pcm16.length + 1);
-        payload[0] = 0x01; // mic channel
-        payload.set(pcm16, 1);
-        ws.send(payload.buffer);
-      }
-    };
-
-    micSource.connect(micProcessor);
-    micProcessor.connect(audioContext.destination);
-    processorNodesRef.current.push(micProcessor);
-
-    // Stream system audio if available
-    if (systemStream) {
-      const systemSource = audioContext.createMediaStreamSource(systemStream);
-      const systemProcessor = audioContext.createScriptProcessor(4096, 1, 1);
-
-      systemProcessor.onaudioprocess = (e) => {
-        if (ws.readyState === WebSocket.OPEN) {
+      micProcessor.onaudioprocess = (e) => {
+        if (ws.readyState === WebSocket.OPEN && !isMutedRef.current) {
           const inputData = e.inputBuffer.getChannelData(0);
           const pcm16 = convertFloat32ToPCM16(inputData);
           const payload = new Uint8Array(pcm16.length + 1);
-          payload[0] = 0x02; // system channel
+          payload[0] = 0x01; // mic channel
           payload.set(pcm16, 1);
           ws.send(payload.buffer);
         }
       };
 
-      systemSource.connect(systemProcessor);
-      systemProcessor.connect(audioContext.destination);
-      processorNodesRef.current.push(systemProcessor);
-    }
-  }, []);
+      micSource.connect(micProcessor);
+      micProcessor.connect(audioContext.destination);
+      processorNodesRef.current.push(micProcessor);
+
+      // Stream system audio if available
+      if (systemStream) {
+        const systemSource = audioContext.createMediaStreamSource(systemStream);
+        const systemProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+
+        systemProcessor.onaudioprocess = (e) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            const inputData = e.inputBuffer.getChannelData(0);
+            const pcm16 = convertFloat32ToPCM16(inputData);
+            const payload = new Uint8Array(pcm16.length + 1);
+            payload[0] = 0x02; // system channel
+            payload.set(pcm16, 1);
+            ws.send(payload.buffer);
+          }
+        };
+
+        systemSource.connect(systemProcessor);
+        systemProcessor.connect(audioContext.destination);
+        processorNodesRef.current.push(systemProcessor);
+      }
+    },
+    []
+  );
 
   // Convert Float32 to PCM16
   const convertFloat32ToPCM16 = (float32Array: Float32Array): Uint8Array => {
@@ -1078,7 +1215,13 @@ export function GlassProvider({
 
   // ---------------- Onboarding helpers ----------------
   const loadDemoConversation = useCallback(
-    (msgs: Array<{ role: 'user' | 'partner'; content: string; translation?: string }>) => {
+    (
+      msgs: Array<{
+        role: 'user' | 'partner';
+        content: string;
+        translation?: string;
+      }>
+    ) => {
       const now = Date.now();
       const mapped: Message[] = msgs.map((m, i) => ({
         type: m.role === 'user' ? 'user_message' : 'partner_message',
@@ -1161,9 +1304,13 @@ export function GlassProvider({
     // Request conversation analysis if we have a session
     const currentSessionId = sessionIdRef.current;
     if (currentSessionId) {
-      console.log('[GlassContext] Requesting conversation analysis for session:', currentSessionId);
+      console.log(
+        '[GlassContext] Requesting conversation analysis for session:',
+        currentSessionId
+      );
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
+        const apiUrl =
+          process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
         const response = await fetch(`${apiUrl}/analyze-conversation`, {
           method: 'POST',
           headers: {
@@ -1187,15 +1334,17 @@ export function GlassProvider({
           });
 
           // Use backend translations if available, otherwise use frontend translations
-          const messagesWithTranslations = (rawData.messages || []).map((msg: any) => {
-            if (msg.translation) {
-              // Backend already provided translation
-              return msg;
+          const messagesWithTranslations = (rawData.messages || []).map(
+            (msg: any) => {
+              if (msg.translation) {
+                // Backend already provided translation
+                return msg;
+              }
+              // Fallback to frontend translation if available
+              const translation = translationMap.get(msg.text);
+              return translation ? { ...msg, translation } : msg;
             }
-            // Fallback to frontend translation if available
-            const translation = translationMap.get(msg.text);
-            return translation ? { ...msg, translation } : msg;
-          });
+          );
 
           // Convert snake_case API response to camelCase
           const analysisData: ConversationAnalysis = {
@@ -1216,7 +1365,10 @@ export function GlassProvider({
           // Don't reset flag or change status - let user close the summary
           return;
         } else {
-          console.error('[GlassContext] Failed to analyze conversation:', response.statusText);
+          console.error(
+            '[GlassContext] Failed to analyze conversation:',
+            response.statusText
+          );
         }
       } catch (error) {
         console.error('[GlassContext] Error analyzing conversation:', error);
@@ -1260,11 +1412,15 @@ export function GlassProvider({
           const data = JSON.parse(event.data);
           if (data.t === 'answer') {
             ws.removeEventListener('message', handleSuggestion);
-            const payload = data.suggestion || (data.text ? { target_text: data.text } : { target_text: '' });
+            const payload =
+              data.suggestion ||
+              (data.text ? { target_text: data.text } : { target_text: '' });
             resolve({ type: 'answer', suggestion: payload });
           } else if (data.t === 'follow_up') {
             ws.removeEventListener('message', handleSuggestion);
-            const payload = data.suggestion || (data.text ? { target_text: data.text } : { target_text: '' });
+            const payload =
+              data.suggestion ||
+              (data.text ? { target_text: data.text } : { target_text: '' });
             resolve({ type: 'follow_up', suggestion: payload });
           }
         } catch (e) {
@@ -1286,42 +1442,57 @@ export function GlassProvider({
   }, []);
 
   // Request translation via WebSocket
-  const requestTranslate = useCallback((text: string): Promise<StructuredSuggestion> => {
-    return new Promise((resolve, reject) => {
-      const ws = wsRef.current;
-      if (!ws || ws.readyState !== WebSocket.OPEN) {
-        reject(new Error('WebSocket not connected'));
-        return;
-      }
-
-      const requestId = `translate_${Date.now()}`;
-
-      // Set up one-time listener for answer event with matching request_id
-      const handleTranslation = (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.t === 'answer' && data.is_translation && data.request_id === requestId) {
-            ws.removeEventListener('message', handleTranslation);
-            const payload = data.suggestion || (data.text ? { target_text: data.text } : { target_text: '' });
-            resolve(payload);
-          }
-        } catch (e) {
-          // Ignore parsing errors, keep listening
+  const requestTranslate = useCallback(
+    (text: string): Promise<StructuredSuggestion> => {
+      return new Promise((resolve, reject) => {
+        const ws = wsRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          reject(new Error('WebSocket not connected'));
+          return;
         }
-      };
 
-      ws.addEventListener('message', handleTranslation);
+        const requestId = `translate_${Date.now()}`;
 
-      // Send request
-      ws.send(JSON.stringify({ type: 'request_translate', text, request_id: requestId }));
+        // Set up one-time listener for answer event with matching request_id
+        const handleTranslation = (event: MessageEvent) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (
+              data.t === 'answer' &&
+              data.is_translation &&
+              data.request_id === requestId
+            ) {
+              ws.removeEventListener('message', handleTranslation);
+              const payload =
+                data.suggestion ||
+                (data.text ? { target_text: data.text } : { target_text: '' });
+              resolve(payload);
+            }
+          } catch (e) {
+            // Ignore parsing errors, keep listening
+          }
+        };
 
-      // Timeout after 15 seconds
-      setTimeout(() => {
-        ws.removeEventListener('message', handleTranslation);
-        reject(new Error('Translation request timeout'));
-      }, 15000);
-    });
-  }, []);
+        ws.addEventListener('message', handleTranslation);
+
+        // Send request
+        ws.send(
+          JSON.stringify({
+            type: 'request_translate',
+            text,
+            request_id: requestId,
+          })
+        );
+
+        // Timeout after 15 seconds
+        setTimeout(() => {
+          ws.removeEventListener('message', handleTranslation);
+          reject(new Error('Translation request timeout'));
+        }, 15000);
+      });
+    },
+    []
+  );
 
   // Play accumulated TTS audio
   const playTTSAudio = useCallback(async () => {
@@ -1332,7 +1503,10 @@ export function GlassProvider({
       }
 
       // Concatenate all chunks
-      const totalLength = ttsAudioChunksRef.current.reduce((sum, chunk) => sum + chunk.length, 0);
+      const totalLength = ttsAudioChunksRef.current.reduce(
+        (sum, chunk) => sum + chunk.length,
+        0
+      );
       const concatenated = new Uint8Array(totalLength);
       let offset = 0;
       for (const chunk of ttsAudioChunksRef.current) {
@@ -1344,7 +1518,11 @@ export function GlassProvider({
       if (!ttsAudioContextRef.current) {
         // Handle prefixed webkitAudioContext without using 'any'
         const Ctor: typeof AudioContext = (() => {
-          if (typeof window !== 'undefined' && 'AudioContext' in window && window.AudioContext) {
+          if (
+            typeof window !== 'undefined' &&
+            'AudioContext' in window &&
+            window.AudioContext
+          ) {
             return window.AudioContext;
           }
           // @ts-expect-error - webkitAudioContext is not in TS lib typings
@@ -1360,7 +1538,9 @@ export function GlassProvider({
       const audioContext = ttsAudioContextRef.current;
 
       // Decode audio data (ElevenLabs returns MP3)
-      const audioBuffer = await audioContext.decodeAudioData(concatenated.buffer);
+      const audioBuffer = await audioContext.decodeAudioData(
+        concatenated.buffer
+      );
 
       // Stop previous audio if playing
       if (ttsAudioSourceRef.current) {
@@ -1410,7 +1590,10 @@ export function GlassProvider({
   // Smooth local countdown between server updates
   useEffect(() => {
     // Start ticking when connected and we have a server baseline
-    if (status.value === 'connected' && serverRemainingRef.current !== undefined) {
+    if (
+      status.value === 'connected' &&
+      serverRemainingRef.current !== undefined
+    ) {
       if (localTickRef.current) clearInterval(localTickRef.current);
       localTickRef.current = setInterval(() => {
         const base = serverRemainingRef.current ?? 0;
@@ -1484,16 +1667,19 @@ export function GlassProvider({
   }, []);
 
   // Start new call after saving to waitlist
-  const startNewCallWithContext = useCallback((contextInfo: ExtractedInfo[]) => {
-    // Close summary and return to start screen
-    // (Context is not actually saved, just sent to waitlist API for Discord notification)
-    setShowSummary(false);
-    setConversationAnalysis(null);
-    // Return to idle status to show start screen
-    setStatus({ value: 'idle' });
-    // Reset the flag
-    isIntentionalDisconnectRef.current = false;
-  }, []);
+  const startNewCallWithContext = useCallback(
+    (contextInfo: ExtractedInfo[]) => {
+      // Close summary and return to start screen
+      // (Context is not actually saved, just sent to waitlist API for Discord notification)
+      setShowSummary(false);
+      setConversationAnalysis(null);
+      // Return to idle status to show start screen
+      setStatus({ value: 'idle' });
+      // Reset the flag
+      isIntentionalDisconnectRef.current = false;
+    },
+    []
+  );
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1541,7 +1727,9 @@ export function GlassProvider({
     loadDemoConversation,
   };
 
-  return <GlassContext.Provider value={value}>{children}</GlassContext.Provider>;
+  return (
+    <GlassContext.Provider value={value}>{children}</GlassContext.Provider>
+  );
 }
 
 export function useGlass() {

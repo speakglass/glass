@@ -2,9 +2,20 @@
 import { cn } from '@/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useMemo } from 'react';
-import { X, Edit2, Check, Trash2, Save, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
+import {
+  X,
+  Edit2,
+  Check,
+  Trash2,
+  Save,
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import WaitlistModal from '@/components/WaitlistModal';
+import { t } from '@lingui/core/macro';
+import { Trans } from '@lingui/react/macro';
 
 interface ConversationScores {
   fluency: number;
@@ -52,7 +63,9 @@ const CallSummary = ({
   onClose,
   onStartNewCall,
 }: CallSummaryProps) => {
-  const [extractedInfo, setExtractedInfo] = useState<ExtractedInfo[]>(initialInfo || []);
+  const [extractedInfo, setExtractedInfo] = useState<ExtractedInfo[]>(
+    initialInfo || []
+  );
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
   const [showConversation, setShowConversation] = useState(false);
@@ -99,14 +112,17 @@ const CallSummary = ({
     }, 2000);
   };
 
-  const averageScore = Math.round((scores.fluency + scores.accuracy + scores.comprehensibility) / 3);
+  const averageScore = Math.round(
+    (scores.fluency + scores.accuracy + scores.comprehensibility) / 3
+  );
 
   const getScoreLabel = (score: number): { text: string; color: string } => {
-    if (score >= 80) return { text: 'Excellent', color: 'text-emerald-500' };
-    if (score >= 60) return { text: 'Good', color: 'text-teal-500' };
-    if (score >= 40) return { text: 'Average', color: 'text-amber-500' };
-    if (score >= 20) return { text: 'Below Average', color: 'text-orange-500' };
-    return { text: 'Low', color: 'text-red-500' };
+    if (score >= 80) return { text: t`Excellent`, color: 'text-emerald-500' };
+    if (score >= 60) return { text: t`Good`, color: 'text-teal-500' };
+    if (score >= 40) return { text: t`Average`, color: 'text-amber-500' };
+    if (score >= 20)
+      return { text: t`Below Average`, color: 'text-orange-500' };
+    return { text: t`Low`, color: 'text-red-500' };
   };
 
   // Calculate indicator position based on flex ratios
@@ -136,7 +152,9 @@ const CallSummary = ({
     }
 
     // Calculate the start position of this segment
-    const flexBeforeSegment = flexRatios.slice(0, segmentIndex).reduce((sum, flex) => sum + flex, 0);
+    const flexBeforeSegment = flexRatios
+      .slice(0, segmentIndex)
+      .reduce((sum, flex) => sum + flex, 0);
     const segmentStartPercent = (flexBeforeSegment / totalFlex) * 100;
 
     // Calculate position within the segment
@@ -180,9 +198,15 @@ const CallSummary = ({
         }
       >
         {/* Header */}
-        <div className={'sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border/30 px-6 py-4'}>
+        <div
+          className={
+            'sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border/30 px-6 py-4'
+          }
+        >
           <div className={'flex items-center justify-between'}>
-            <h2 className={'text-xl font-bold'}>Call Summary</h2>
+            <h2 className={'text-xl font-bold'}>
+              <Trans>Call Summary</Trans>
+            </h2>
             <button
               onClick={onClose}
               className={
@@ -201,7 +225,13 @@ const CallSummary = ({
           <section>
             <div className={'flex items-center justify-between mb-6'}>
               <div>
-                <span className={'text-sm font-medium text-muted-foreground block mb-1'}>Overall Score</span>
+                <span
+                  className={
+                    'text-sm font-medium text-muted-foreground block mb-1'
+                  }
+                >
+                  <Trans>Overall Score</Trans>
+                </span>
                 <span className={'text-4xl font-bold'}>{averageScore}</span>
               </div>
 
@@ -229,11 +259,17 @@ const CallSummary = ({
                       className={'w-2 rounded-full'}
                       style={{
                         height: `${height}%`,
-                        backgroundColor: isActive ? color : 'rgba(100, 116, 139, 0.2)',
+                        backgroundColor: isActive
+                          ? color
+                          : 'rgba(100, 116, 139, 0.2)',
                       }}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: `${height}%`, opacity: 1 }}
-                      transition={{ duration: 0.4, delay: i * 0.04, ease: 'easeOut' }}
+                      transition={{
+                        duration: 0.4,
+                        delay: i * 0.04,
+                        ease: 'easeOut',
+                      }}
                     />
                   );
                 })}
@@ -245,8 +281,15 @@ const CallSummary = ({
               {/* Fluency */}
               <div>
                 <div className={'flex items-center justify-between mb-1.5'}>
-                  <span className={'text-xs text-muted-foreground'}>Fluency</span>
-                  <span className={cn('text-sm font-medium', getScoreLabel(scores.fluency).color)}>
+                  <span className={'text-xs text-muted-foreground'}>
+                    <Trans>Fluency</Trans>
+                  </span>
+                  <span
+                    className={cn(
+                      'text-sm font-medium',
+                      getScoreLabel(scores.fluency).color
+                    )}
+                  >
                     {getScoreLabel(scores.fluency).text}
                   </span>
                 </div>
@@ -256,7 +299,9 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.fluency > 0 && scores.fluency <= 20 ? 'bg-red-500' : 'bg-red-500/30'
+                        scores.fluency > 0 && scores.fluency <= 20
+                          ? 'bg-red-500'
+                          : 'bg-red-500/30'
                       )}
                       style={{ flex: 0.5 }}
                       initial={{ opacity: 0 }}
@@ -267,7 +312,9 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.fluency > 20 && scores.fluency <= 40 ? 'bg-orange-500' : 'bg-orange-500/30'
+                        scores.fluency > 20 && scores.fluency <= 40
+                          ? 'bg-orange-500'
+                          : 'bg-orange-500/30'
                       )}
                       style={{ flex: 1 }}
                       initial={{ opacity: 0 }}
@@ -278,7 +325,9 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.fluency > 40 && scores.fluency <= 60 ? 'bg-amber-500' : 'bg-amber-500/30'
+                        scores.fluency > 40 && scores.fluency <= 60
+                          ? 'bg-amber-500'
+                          : 'bg-amber-500/30'
                       )}
                       style={{ flex: 2 }}
                       initial={{ opacity: 0 }}
@@ -289,7 +338,9 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.fluency > 60 && scores.fluency <= 80 ? 'bg-teal-500' : 'bg-teal-500/30'
+                        scores.fluency > 60 && scores.fluency <= 80
+                          ? 'bg-teal-500'
+                          : 'bg-teal-500/30'
                       )}
                       style={{ flex: 1 }}
                       initial={{ opacity: 0 }}
@@ -300,7 +351,9 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.fluency > 80 ? 'bg-emerald-500' : 'bg-emerald-500/30'
+                        scores.fluency > 80
+                          ? 'bg-emerald-500'
+                          : 'bg-emerald-500/30'
                       )}
                       style={{ flex: 0.5 }}
                       initial={{ opacity: 0 }}
@@ -310,8 +363,13 @@ const CallSummary = ({
                   </div>
                   {/* Current position indicator */}
                   <motion.div
-                    className={'absolute top-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'}
-                    style={{ left: `${getIndicatorPosition(scores.fluency)}%`, transform: 'translate(-50%, -50%)' }}
+                    className={
+                      'absolute top-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'
+                    }
+                    style={{
+                      left: `${getIndicatorPosition(scores.fluency)}%`,
+                      transform: 'translate(-50%, -50%)',
+                    }}
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: 0.5 }}
@@ -322,8 +380,15 @@ const CallSummary = ({
               {/* Accuracy */}
               <div>
                 <div className={'flex items-center justify-between mb-1.5'}>
-                  <span className={'text-xs text-muted-foreground'}>Accuracy</span>
-                  <span className={cn('text-sm font-medium', getScoreLabel(scores.accuracy).color)}>
+                  <span className={'text-xs text-muted-foreground'}>
+                    <Trans>Accuracy</Trans>
+                  </span>
+                  <span
+                    className={cn(
+                      'text-sm font-medium',
+                      getScoreLabel(scores.accuracy).color
+                    )}
+                  >
                     {getScoreLabel(scores.accuracy).text}
                   </span>
                 </div>
@@ -332,7 +397,9 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.accuracy > 0 && scores.accuracy <= 20 ? 'bg-red-500' : 'bg-red-500/30'
+                        scores.accuracy > 0 && scores.accuracy <= 20
+                          ? 'bg-red-500'
+                          : 'bg-red-500/30'
                       )}
                       style={{ flex: 0.5 }}
                       initial={{ opacity: 0 }}
@@ -342,7 +409,9 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.accuracy > 20 && scores.accuracy <= 40 ? 'bg-orange-500' : 'bg-orange-500/30'
+                        scores.accuracy > 20 && scores.accuracy <= 40
+                          ? 'bg-orange-500'
+                          : 'bg-orange-500/30'
                       )}
                       style={{ flex: 1 }}
                       initial={{ opacity: 0 }}
@@ -352,7 +421,9 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.accuracy > 40 && scores.accuracy <= 60 ? 'bg-amber-500' : 'bg-amber-500/30'
+                        scores.accuracy > 40 && scores.accuracy <= 60
+                          ? 'bg-amber-500'
+                          : 'bg-amber-500/30'
                       )}
                       style={{ flex: 2 }}
                       initial={{ opacity: 0 }}
@@ -362,7 +433,9 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.accuracy > 60 && scores.accuracy <= 80 ? 'bg-teal-500' : 'bg-teal-500/30'
+                        scores.accuracy > 60 && scores.accuracy <= 80
+                          ? 'bg-teal-500'
+                          : 'bg-teal-500/30'
                       )}
                       style={{ flex: 1 }}
                       initial={{ opacity: 0 }}
@@ -372,7 +445,9 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.accuracy > 80 ? 'bg-emerald-500' : 'bg-emerald-500/30'
+                        scores.accuracy > 80
+                          ? 'bg-emerald-500'
+                          : 'bg-emerald-500/30'
                       )}
                       style={{ flex: 0.5 }}
                       initial={{ opacity: 0 }}
@@ -382,8 +457,13 @@ const CallSummary = ({
                   </div>
                   {/* Current position indicator */}
                   <motion.div
-                    className={'absolute top-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'}
-                    style={{ left: `${getIndicatorPosition(scores.accuracy)}%`, transform: 'translate(-50%, -50%)' }}
+                    className={
+                      'absolute top-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'
+                    }
+                    style={{
+                      left: `${getIndicatorPosition(scores.accuracy)}%`,
+                      transform: 'translate(-50%, -50%)',
+                    }}
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: 0.6 }}
@@ -394,8 +474,15 @@ const CallSummary = ({
               {/* Comprehensibility */}
               <div>
                 <div className={'flex items-center justify-between mb-1.5'}>
-                  <span className={'text-xs text-muted-foreground'}>Comprehensibility</span>
-                  <span className={cn('text-sm font-medium', getScoreLabel(scores.comprehensibility).color)}>
+                  <span className={'text-xs text-muted-foreground'}>
+                    <Trans>Comprehensibility</Trans>
+                  </span>
+                  <span
+                    className={cn(
+                      'text-sm font-medium',
+                      getScoreLabel(scores.comprehensibility).color
+                    )}
+                  >
                     {getScoreLabel(scores.comprehensibility).text}
                   </span>
                 </div>
@@ -404,7 +491,10 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.comprehensibility > 0 && scores.comprehensibility <= 20 ? 'bg-red-500' : 'bg-red-500/30'
+                        scores.comprehensibility > 0 &&
+                          scores.comprehensibility <= 20
+                          ? 'bg-red-500'
+                          : 'bg-red-500/30'
                       )}
                       style={{ flex: 0.5 }}
                       initial={{ opacity: 0 }}
@@ -414,7 +504,8 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.comprehensibility > 20 && scores.comprehensibility <= 40
+                        scores.comprehensibility > 20 &&
+                          scores.comprehensibility <= 40
                           ? 'bg-orange-500'
                           : 'bg-orange-500/30'
                       )}
@@ -426,7 +517,8 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.comprehensibility > 40 && scores.comprehensibility <= 60
+                        scores.comprehensibility > 40 &&
+                          scores.comprehensibility <= 60
                           ? 'bg-amber-500'
                           : 'bg-amber-500/30'
                       )}
@@ -438,7 +530,8 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.comprehensibility > 60 && scores.comprehensibility <= 80
+                        scores.comprehensibility > 60 &&
+                          scores.comprehensibility <= 80
                           ? 'bg-teal-500'
                           : 'bg-teal-500/30'
                       )}
@@ -450,7 +543,9 @@ const CallSummary = ({
                     <motion.div
                       className={cn(
                         'rounded-full transition-opacity duration-300',
-                        scores.comprehensibility > 80 ? 'bg-emerald-500' : 'bg-emerald-500/30'
+                        scores.comprehensibility > 80
+                          ? 'bg-emerald-500'
+                          : 'bg-emerald-500/30'
                       )}
                       style={{ flex: 0.5 }}
                       initial={{ opacity: 0 }}
@@ -460,9 +555,13 @@ const CallSummary = ({
                   </div>
                   {/* Current position indicator */}
                   <motion.div
-                    className={'absolute top-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'}
+                    className={
+                      'absolute top-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'
+                    }
                     style={{
-                      left: `${getIndicatorPosition(scores.comprehensibility)}%`,
+                      left: `${getIndicatorPosition(
+                        scores.comprehensibility
+                      )}%`,
                       transform: 'translate(-50%, -50%)',
                     }}
                     initial={{ opacity: 0, scale: 0 }}
@@ -480,14 +579,32 @@ const CallSummary = ({
               <div className={'flex items-start gap-3'}>
                 {/* Glass AI Avatar */}
                 <div className={'shrink-0'}>
-                  <div className={'size-10 rounded-full overflow-hidden bg-card/80 border border-border/50'}>
-                    <img src="/glass-ai.png" alt="Glass AI" className={'w-full h-full object-cover'} />
+                  <div
+                    className={
+                      'size-10 rounded-full overflow-hidden bg-card/80 border border-border/50'
+                    }
+                  >
+                    <img
+                      src="/glass-ai.png"
+                      alt="Glass AI"
+                      className={'w-full h-full object-cover'}
+                    />
                   </div>
                 </div>
 
                 {/* Feedback Bubble */}
-                <div className={'flex-1 bg-background/50 border border-border/30 rounded-xl p-4'}>
-                  <p className={'text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed'}>{feedback}</p>
+                <div
+                  className={
+                    'flex-1 bg-background/50 border border-border/30 rounded-xl p-4'
+                  }
+                >
+                  <p
+                    className={
+                      'text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed'
+                    }
+                  >
+                    {feedback}
+                  </p>
                 </div>
               </div>
             </section>
@@ -503,10 +620,18 @@ const CallSummary = ({
             >
               <div className={'flex items-center gap-2'}>
                 <Save className={'size-4'} />
-                <span className={'text-sm font-semibold'}>Memory</span>
-                <span className={'text-xs text-muted-foreground'}>({extractedInfo.length})</span>
+                <span className={'text-sm font-semibold'}>
+                  <Trans>Memory</Trans>
+                </span>
+                <span className={'text-xs text-muted-foreground'}>
+                  ({extractedInfo.length})
+                </span>
               </div>
-              {showMemory ? <ChevronUp className={'size-4'} /> : <ChevronDown className={'size-4'} />}
+              {showMemory ? (
+                <ChevronUp className={'size-4'} />
+              ) : (
+                <ChevronDown className={'size-4'} />
+              )}
             </button>
 
             <AnimatePresence>
@@ -538,7 +663,8 @@ const CallSummary = ({
                             <span
                               className={cn(
                                 'px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0',
-                                entityColors[info.label] || 'bg-slate-500/10 text-slate-500 border-slate-500/30'
+                                entityColors[info.label] ||
+                                  'bg-slate-500/10 text-slate-500 border-slate-500/30'
                               )}
                             >
                               {info.label}
@@ -556,12 +682,16 @@ const CallSummary = ({
                                   autoFocus
                                 />
                               ) : (
-                                <div className={'text-sm break-words'}>{info.value}</div>
+                                <div className={'text-sm break-words'}>
+                                  {info.value}
+                                </div>
                               )}
                             </div>
 
                             {info.editable && (
-                              <div className={'flex items-center gap-0.5 shrink-0'}>
+                              <div
+                                className={'flex items-center gap-0.5 shrink-0'}
+                              >
                                 {editingId === index ? (
                                   <button
                                     onClick={() => handleSave(index)}
@@ -598,7 +728,13 @@ const CallSummary = ({
                         ))}
                       </AnimatePresence>
                     ) : (
-                      <div className={'text-center py-6 text-xs text-muted-foreground'}>No information saved yet</div>
+                      <div
+                        className={
+                          'text-center py-6 text-xs text-muted-foreground'
+                        }
+                      >
+                        <Trans>No information saved yet</Trans>
+                      </div>
                     )}
                   </div>
                 </motion.div>
@@ -616,10 +752,18 @@ const CallSummary = ({
             >
               <div className={'flex items-center gap-2'}>
                 <MessageSquare className={'size-4'} />
-                <span className={'text-sm font-semibold'}>Conversation History</span>
-                <span className={'text-xs text-muted-foreground'}>({messages.length})</span>
+                <span className={'text-sm font-semibold'}>
+                  <Trans>Conversation History</Trans>
+                </span>
+                <span className={'text-xs text-muted-foreground'}>
+                  ({messages.length})
+                </span>
               </div>
-              {showConversation ? <ChevronUp className={'size-4'} /> : <ChevronDown className={'size-4'} />}
+              {showConversation ? (
+                <ChevronUp className={'size-4'} />
+              ) : (
+                <ChevronDown className={'size-4'} />
+              )}
             </button>
             <AnimatePresence>
               {showConversation && (
@@ -636,33 +780,65 @@ const CallSummary = ({
                   >
                     {messages.length > 0 ? (
                       messages.map((msg, index) => {
-                        const messageFeedback = msg.utterance_id ? feedbackMap.get(msg.utterance_id) : null;
-                        const isUser = msg.speaker === 'user' || msg.speaker === 'mic';
+                        const messageFeedback = msg.utterance_id
+                          ? feedbackMap.get(msg.utterance_id)
+                          : null;
+                        const isUser =
+                          msg.speaker === 'user' || msg.speaker === 'mic';
                         const displayName = isUser ? 'You' : 'Partner';
 
                         return (
                           <div key={index} className={'space-y-1.5'}>
                             {/* Message */}
-                            <div className={cn('pb-2', isUser && 'flex flex-col items-end')}>
-                              <div className={'text-xs text-muted-foreground mb-0.5'}>{displayName}</div>
+                            <div
+                              className={cn(
+                                'pb-2',
+                                isUser && 'flex flex-col items-end'
+                              )}
+                            >
+                              <div
+                                className={
+                                  'text-xs text-muted-foreground mb-0.5'
+                                }
+                              >
+                                {displayName}
+                              </div>
                               <div
                                 className={cn(
                                   'text-sm',
-                                  isUser ? 'bg-primary/10 rounded-lg px-3 py-2 max-w-[80%]' : ''
+                                  isUser
+                                    ? 'bg-primary/10 rounded-lg px-3 py-2 max-w-[80%]'
+                                    : ''
                                 )}
                               >
                                 {msg.text}
                                 {msg.translation && (
-                                  <div className={'text-xs text-muted-foreground mt-1 italic'}>{msg.translation}</div>
+                                  <div
+                                    className={
+                                      'text-xs text-muted-foreground mt-1 italic'
+                                    }
+                                  >
+                                    {msg.translation}
+                                  </div>
                                 )}
                               </div>
                             </div>
 
                             {/* Feedback for this message */}
                             {messageFeedback && messageFeedback.length > 0 && (
-                              <div className={cn('ml-4 space-y-1', isUser && 'ml-0 flex flex-col items-end')}>
+                              <div
+                                className={cn(
+                                  'ml-4 space-y-1',
+                                  isUser && 'ml-0 flex flex-col items-end'
+                                )}
+                              >
                                 {messageFeedback.map((fb, fbIndex) => (
-                                  <div key={fbIndex} className={'text-xs text-sky-600 leading-relaxed'}>
+                                  <div
+                                    key={fbIndex}
+                                    className={
+                                      'text-xs text-sky-600 leading-relaxed'
+                                    }
+                                  >
                                     {fb}
                                   </div>
                                 ))}
@@ -672,7 +848,13 @@ const CallSummary = ({
                         );
                       })
                     ) : (
-                      <div className={'text-center py-4 text-sm text-muted-foreground'}>No messages</div>
+                      <div
+                        className={
+                          'text-center py-4 text-sm text-muted-foreground'
+                        }
+                      >
+                        <Trans>No messages</Trans>
+                      </div>
                     )}
                   </div>
                 </motion.div>
@@ -682,15 +864,26 @@ const CallSummary = ({
         </div>
 
         {/* Footer Actions */}
-        <div className={'sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border/30 px-6 py-4'}>
+        <div
+          className={
+            'sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border/30 px-6 py-4'
+          }
+        >
           {waitlistSuccess ? (
             <div className={'text-center py-2'}>
-              <p className={'text-sm text-emerald-500 font-medium'}>✓ Successfully saved! Redirecting...</p>
+              <p className={'text-sm text-emerald-500 font-medium'}>
+                <Trans>✓ Successfully saved! Redirecting...</Trans>
+              </p>
             </div>
           ) : (
             <div className={'flex items-center justify-between gap-3'}>
-              <Button variant="outline" onClick={onClose} size="sm" className={'flex-1'}>
-                Close
+              <Button
+                variant="outline"
+                onClick={onClose}
+                size="sm"
+                className={'flex-1'}
+              >
+                <Trans>Close</Trans>
               </Button>
               <Button
                 onClick={() => setShowWaitlistModal(true)}
@@ -698,7 +891,7 @@ const CallSummary = ({
                 className={'flex-1 bg-primary hover:bg-primary/90'}
               >
                 <Save className={'size-4 mr-2'} />
-                Save Call
+                <Trans>Save Call</Trans>
               </Button>
             </div>
           )}

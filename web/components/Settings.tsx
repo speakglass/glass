@@ -1,11 +1,26 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Settings as SettingsIcon, RefreshCw, Mic, Sun, Moon, Sparkles } from 'lucide-react';
+import {
+  Settings as SettingsIcon,
+  RefreshCw,
+  Mic,
+  Sun,
+  Moon,
+  Sparkles,
+  Globe,
+} from 'lucide-react';
 import { Button } from './ui/button';
 import { useTheme } from 'next-themes';
 import { useGlass } from '@/contexts/GlassContext';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { Trans } from '@lingui/react/macro';
+import { usePathname } from 'next/navigation';
+import {
+  SUPPORTED_LANGUAGES,
+  LOCALIZED_LANGUAGE_CODES,
+} from '@/lib/supported-languages';
+import { changeLanguage } from '@/utils/language';
 
 interface AudioDevice {
   deviceId: string;
@@ -19,13 +34,29 @@ export default function Settings() {
   const { settings, updateSettings } = voice;
   const [open, setOpen] = useState(false);
   const [devices, setDevices] = useState<AudioDevice[]>([]);
+  const [currentLocale, setCurrentLocale] = useState('en');
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const pathname = usePathname();
 
   const localMicDeviceId = settings.micDeviceId || '';
 
-  const audioInputs = useMemo(() => devices.filter((d) => d.kind === 'audioinput'), [devices]);
+  const audioInputs = useMemo(
+    () => devices.filter((d) => d.kind === 'audioinput'),
+    [devices]
+  );
   const appearance: 'light' | 'dark' | 'glass' =
-    settings.glassMode ?? false ? 'glass' : (theme as 'light' | 'dark') || 'light';
+    settings.glassMode ?? false
+      ? 'glass'
+      : (theme as 'light' | 'dark') || 'light';
+
+  useEffect(() => {
+    // Extract locale from pathname
+    const pathSegments = pathname.split('/').filter(Boolean);
+    const locale = pathSegments[0];
+    if (LOCALIZED_LANGUAGE_CODES.includes(locale as any)) {
+      setCurrentLocale(locale);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -56,7 +87,8 @@ export default function Settings() {
     enumerate();
   }, [open]);
 
-  const setMic = (micDeviceId: string | null) => updateSettings({ micDeviceId });
+  const setMic = (micDeviceId: string | null) =>
+    updateSettings({ micDeviceId });
 
   const selectAppearance = (mode: 'light' | 'dark' | 'glass') => {
     if (mode === 'glass') {
@@ -69,17 +101,26 @@ export default function Settings() {
     setTheme(mode);
   };
 
+  const handleLanguageChange = (locale: string) => {
+    const newPath = changeLanguage(locale, pathname, LOCALIZED_LANGUAGE_CODES);
+    window.location.href = newPath;
+  };
+
   return (
     <div className={'relative'} ref={panelRef}>
       <Button
         variant={'outline'}
         size={'icon'}
         aria-label="Open settings"
-        className={'ml-auto flex items-center gap-1.5 rounded-full w-9 sm:w-auto sm:px-3'}
+        className={
+          'ml-auto flex items-center gap-1.5 rounded-full w-9 sm:w-auto sm:px-3'
+        }
         onClick={() => setOpen((v) => !v)}
       >
         <SettingsIcon className={'size-4'} />
-        <span className={'hidden sm:inline'}>Settings</span>
+        <span className={'hidden sm:inline'}>
+          <Trans>Settings</Trans>
+        </span>
       </Button>
       {open && (
         <div
@@ -88,8 +129,14 @@ export default function Settings() {
           }
         >
           {/* Header */}
-          <div className={'flex items-center justify-between px-4 py-3 border-b border-border'}>
-            <div className={'text-sm font-medium'}>Settings</div>
+          <div
+            className={
+              'flex items-center justify-between px-4 py-3 border-b border-border'
+            }
+          >
+            <div className={'text-sm font-medium'}>
+              <Trans>Settings</Trans>
+            </div>
             <button
               onClick={enumerate}
               className={
@@ -98,7 +145,7 @@ export default function Settings() {
               title="Refresh devices"
             >
               <RefreshCw className={'size-3'} />
-              Refresh
+              <Trans>Refresh</Trans>
             </button>
           </div>
 
@@ -106,7 +153,9 @@ export default function Settings() {
           <div className={'p-4 flex flex-col gap-4'}>
             {/* Microphone Section */}
             <div className={'flex flex-col gap-2'}>
-              <label className={'text-xs font-medium text-muted-foreground'}>Microphone</label>
+              <label className={'text-xs font-medium text-muted-foreground'}>
+                <Trans>Microphone</Trans>
+              </label>
               <div className={'flex items-center gap-2 min-w-0'}>
                 <Mic className={'size-4 text-muted-foreground shrink-0'} />
                 <select
@@ -116,10 +165,12 @@ export default function Settings() {
                   value={localMicDeviceId}
                   onChange={(e) => setMic(e.target.value || null)}
                 >
-                  <option value="">System default</option>
+                  <option value="">
+                    <Trans>System default</Trans>
+                  </option>
                   {audioInputs.map((d, idx) => (
                     <option key={d.deviceId || idx} value={d.deviceId}>
-                      {d.label || `Microphone ${idx + 1}`}
+                      {d.label || <Trans>Microphone {idx + 1}</Trans>}
                     </option>
                   ))}
                 </select>
@@ -128,7 +179,9 @@ export default function Settings() {
 
             {/* Pronunciation mode */}
             <div className={'flex flex-col gap-2'}>
-              <label className={'text-xs font-medium text-muted-foreground'}>Pronunciation format</label>
+              <label className={'text-xs font-medium text-muted-foreground'}>
+                <Trans>Pronunciation format</Trans>
+              </label>
               <div className={'flex items-center gap-2'}>
                 <select
                   className={
@@ -136,32 +189,99 @@ export default function Settings() {
                   }
                   value={settings.pronunciationMode || 'native'}
                   onChange={(e) =>
-                    updateSettings({ pronunciationMode: (e.target.value as 'native' | 'romaji') || 'native' })
+                    updateSettings({
+                      pronunciationMode:
+                        (e.target.value as 'native' | 'romaji') || 'native',
+                    })
                   }
                 >
-                  <option value="native">Native script</option>
-                  <option value="romaji">Romaji (Latin)</option>
+                  <option value="native">
+                    <Trans>Native script</Trans>
+                  </option>
+                  <option value="romaji">
+                    <Trans>Romaji (Latin)</Trans>
+                  </option>
                 </select>
               </div>
             </div>
 
             {/* Suggestion duration */}
             <div className={'flex flex-col gap-2'}>
-              <label className={'text-xs font-medium text-muted-foreground'}>Suggestion duration</label>
+              <label className={'text-xs font-medium text-muted-foreground'}>
+                <Trans>Suggestion duration</Trans>
+              </label>
               <div className={'flex items-center gap-2'}>
                 <select
                   className={
                     'flex-1 bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-all'
                   }
                   value={String(settings.suggestionDurationSec ?? 10)}
-                  onChange={(e) => updateSettings({ suggestionDurationSec: parseInt(e.target.value || '10', 10) })}
+                  onChange={(e) =>
+                    updateSettings({
+                      suggestionDurationSec: parseInt(
+                        e.target.value || '10',
+                        10
+                      ),
+                    })
+                  }
                 >
-                  <option value="5">5 seconds</option>
-                  <option value="10">10 seconds (default)</option>
-                  <option value="15">15 seconds</option>
-                  <option value="30">30 seconds</option>
+                  <option value="5">
+                    <Trans>5 seconds</Trans>
+                  </option>
+                  <option value="10">
+                    <Trans>10 seconds (default)</Trans>
+                  </option>
+                  <option value="15">
+                    <Trans>15 seconds</Trans>
+                  </option>
+                  <option value="30">
+                    <Trans>30 seconds</Trans>
+                  </option>
                 </select>
               </div>
+            </div>
+
+            {/* Language Selection */}
+            <div className={'flex flex-col gap-2'}>
+              <div className={'flex items-center justify-between'}>
+                <label className={'text-xs font-medium text-muted-foreground'}>
+                  <Trans>Language</Trans>
+                </label>
+                <span className={'text-[10px] text-muted-foreground/70'}>
+                  {SUPPORTED_LANGUAGES[
+                    currentLocale as keyof typeof SUPPORTED_LANGUAGES
+                  ]?.native_name || currentLocale}
+                </span>
+              </div>
+              <div className={'flex items-center gap-2 min-w-0'}>
+                <Globe className={'size-4 text-muted-foreground shrink-0'} />
+                <select
+                  className={
+                    'flex-1 min-w-0 bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-all'
+                  }
+                  value={currentLocale}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
+                >
+                  {LOCALIZED_LANGUAGE_CODES.map((locale) => {
+                    const language = SUPPORTED_LANGUAGES[locale];
+                    return (
+                      <option key={locale} value={locale}>
+                        {language.native_name} ({language.name})
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              <p
+                className={
+                  'text-[10px] text-muted-foreground/60 leading-relaxed'
+                }
+              >
+                <Trans>
+                  Auto-detected from browser. Your selection will be saved and
+                  remembered.
+                </Trans>
+              </p>
             </div>
 
             {/* Divider */}
@@ -169,9 +289,13 @@ export default function Settings() {
 
             {/* Theme (Light / Dark / Glass) */}
             <div className={'flex items-center justify-between'}>
-              <div className={'text-sm font-medium'}>Theme</div>
+              <div className={'text-sm font-medium'}>
+                <Trans>Theme</Trans>
+              </div>
               <div
-                className={'inline-flex items-center gap-0.5 rounded-md border border-input bg-background p-0.5 w-auto'}
+                className={
+                  'inline-flex items-center gap-0.5 rounded-md border border-input bg-background p-0.5 w-auto'
+                }
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -189,7 +313,9 @@ export default function Settings() {
                       <Sun className={'size-4 shrink-0'} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>Light</TooltipContent>
+                  <TooltipContent>
+                    <Trans>Light</Trans>
+                  </TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -207,7 +333,9 @@ export default function Settings() {
                       <Moon className={'size-4 shrink-0'} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>Dark</TooltipContent>
+                  <TooltipContent>
+                    <Trans>Dark</Trans>
+                  </TooltipContent>
                 </Tooltip>
                 <div className={'w-px h-5 bg-border/80 mx-0'} />
                 <Tooltip>
@@ -226,7 +354,9 @@ export default function Settings() {
                       <Sparkles className={'size-4 shrink-0'} />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>Glass</TooltipContent>
+                  <TooltipContent>
+                    <Trans>Glass</Trans>
+                  </TooltipContent>
                 </Tooltip>
               </div>
             </div>
