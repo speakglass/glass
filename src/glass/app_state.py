@@ -80,6 +80,15 @@ class AppState:
         self._redis = None
         
         if settings.redis_url:
+            # Log Redis connection info (mask password for security)
+            try:
+                from urllib.parse import urlparse
+                parsed = urlparse(settings.redis_url)
+                masked_url = f"{parsed.scheme}://***@{parsed.hostname}:{parsed.port}{parsed.path}"
+                LOGGER.info(f"🔧 Redis URL configured: {masked_url}")
+            except Exception:
+                LOGGER.info("🔧 Redis URL configured (parsing failed)")
+            
             try:
                 from redis.asyncio import Redis
                 import redis
@@ -104,10 +113,19 @@ class AppState:
                     socket_timeout=10.0,
                 )
             except Exception as e:
-                LOGGER.error(f"❌ Redis connection failed: {e}")
+                # Log detailed error info
+                try:
+                    from urllib.parse import urlparse
+                    parsed = urlparse(settings.redis_url)
+                    error_detail = f"host={parsed.hostname}, port={parsed.port}, scheme={parsed.scheme}"
+                except Exception:
+                    error_detail = "URL parsing failed"
+                
+                LOGGER.error(f"❌ Redis connection failed ({error_detail}): {e}")
                 if settings.free_minutes_per_user is not None:
                     raise RuntimeError(
                         f"Redis required for time budget but connection failed: {e}\n"
+                        f"Connection details: {error_detail}\n"
                         f"Check: Redis URL, firewall, and port (Azure Managed Redis uses 10000)"
                     )
         asr_adapter = build_asr_adapter(settings)
@@ -133,8 +151,20 @@ class AppState:
         # In-memory fallback for daily usage (used if Redis temporarily fails)
         # key: client_id, value: (date_str_utc, used_seconds)
         self._fallback_daily_usage: dict[str, tuple[str, int]] = {}
+        # Error logging throttle (avoid spamming logs on Redis failures)
+        self._last_redis_error_log: dict[str, float] = {}  # method_name -> last_log_time
+        self._redis_error_log_interval = 60.0  # Log once per minute
 
     # Removed per-day session cap logic
+
+    def _should_log_redis_error(self, method_name: str) -> bool:
+        """Check if we should log Redis error (throttle to avoid spam)."""
+        now = time.time()
+        last_log = self._last_redis_error_log.get(method_name, 0)
+        if now - last_log >= self._redis_error_log_interval:
+            self._last_redis_error_log[method_name] = now
+            return True
+        return False
 
     # --------- Time budget (shared across sessions) ----------
     def has_budget_store(self) -> bool:
@@ -170,7 +200,8 @@ class AppState:
             self._fallback_end_at[client_id] = end_at
             return end_at
         except Exception as e:
-            LOGGER.warning("[Budget] get_or_init_end_at Redis error: %s; using fallback", e)
+            if self._should_log_redis_error("get_or_init_end_at"):
+                LOGGER.warning("[Budget] get_or_init_end_at Redis error: %s; using fallback (logging throttled to 1/min)", e)
             end_at = self._fallback_end_at.get(client_id)
             if end_at is None:
                 end_at = now + default_seconds
@@ -203,7 +234,8 @@ class AppState:
             self._fallback_remaining[client_id] = remaining
             return remaining
         except Exception as e:
-            LOGGER.warning("[Budget] get_remaining_seconds Redis error: %s; using fallback", e)
+            if self._should_log_redis_error("get_remaining_seconds"):
+                LOGGER.warning("[Budget] get_remaining_seconds Redis error: %s; using fallback (logging throttled to 1/min)", e)
             return int(self._fallback_remaining.get(client_id, default_seconds))
 
     async def decrement_seconds(self, client_id: str, seconds: int = 1) -> int:
@@ -233,7 +265,8 @@ class AppState:
             self._fallback_remaining[client_id] = remaining_val
             return remaining_val
         except Exception as e:
-            LOGGER.warning("[Budget] decrement_seconds Redis error: %s; using fallback", e)
+            if self._should_log_redis_error("decrement_seconds"):
+                LOGGER.warning("[Budget] decrement_seconds Redis error: %s; using fallback (logging throttled to 1/min)", e)
             current = int(self._fallback_remaining.get(client_id, default_seconds))
             current = max(0, current - seconds)
             self._fallback_remaining[client_id] = current
@@ -274,7 +307,8 @@ class AppState:
             self._fallback_daily_usage[client_id] = (date_str, used)
             return used
         except Exception as e:
-            LOGGER.warning("[Budget] get_used_seconds_today Redis error: %s; using fallback", e)
+            if self._should_log_redis_error("get_used_seconds_today"):
+                LOGGER.warning("[Budget] get_used_seconds_today Redis error: %s; using fallback (logging throttled to 1/min)", e)
             cached = self._fallback_daily_usage.get(client_id)
             if cached is None or cached[0] != date_str:
                 # New day or no cache → reset fallback
@@ -303,7 +337,8 @@ class AppState:
             self._fallback_daily_usage[client_id] = (date_str, int(used))
             return int(used)
         except Exception as e:
-            LOGGER.warning("[Budget] incr_used_seconds Redis error: %s; using fallback", e)
+            if self._should_log_redis_error("incr_used_seconds"):
+                LOGGER.warning("[Budget] incr_used_seconds Redis error: %s; using fallback (logging throttled to 1/min)", e)
             cached = self._fallback_daily_usage.get(client_id)
             if cached is None or cached[0] != date_str:
                 new_used = seconds

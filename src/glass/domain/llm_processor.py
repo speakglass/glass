@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import random
 import uuid
 from typing import TYPE_CHECKING
 from ..config import get_settings
@@ -174,16 +175,17 @@ class LLMProcessor:
             if not hasattr(self.llm, 'feedback'):
                 return
             
-            # Decide whether to request pronunciation from the model (cant_read only)
-            want_pron = self.proficiency == 'cant_read'
+            # Request pronunciation same as suggest logic
+            require_pronunciation = self.proficiency == 'cant_read'
+            pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
             feedback_text = await self.llm.feedback(
                 text,
                 self.learning_lang,
                 target_lang=self._lang_code_to_name(self.learning_lang),
                 native_lang=self._lang_code_to_name(self.native_lang),
                 mode=self.mode,
-                include_pronunciation=bool(want_pron),
-                pronunciation_mode=self.pronunciation_mode if want_pron else None,
+                include_pronunciation=require_pronunciation,
+                pronunciation_mode=pronunciation_mode,
                 transcript_tail=(list(tail)[-4:] if tail else None),
             )
             
@@ -205,9 +207,6 @@ class LLMProcessor:
                     reason = str(parsed.get('reason_native') or '').strip()
                     suggestion = str(parsed.get('suggestion_target') or '').strip()
                     pron = str(parsed.get('pronunciation') or '').strip()
-                    # Gate pronunciation by proficiency
-                    if self.proficiency != 'cant_read':
-                        pron = ''
                     # Build user-visible line
                     if suggestion:
                         display_text = f"{reason} → {suggestion}" if reason else suggestion
@@ -273,6 +272,9 @@ class LLMProcessor:
             
             if not ai_response or not ai_response.strip():
                 return
+            
+            # Add natural delay
+            await asyncio.sleep(1.0)
             
             ai_utterance_id = str(uuid.uuid4())
             

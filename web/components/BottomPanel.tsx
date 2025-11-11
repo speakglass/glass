@@ -13,14 +13,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/utils';
+import { t } from '@lingui/core/macro';
+import { Trans } from '@lingui/react/macro';
 import {
   useGlass,
   AISuggestion,
+  AIFeedback,
+  AITranslation,
   FeedbackMode,
   SuggestMode,
 } from '@/contexts/GlassContext';
-import { t } from '@lingui/core/macro';
-import { Trans } from '@lingui/react/macro';
 
 type SuggestionBubbleProps = {
   suggestion: AISuggestion;
@@ -47,7 +49,6 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
     const typeLabels = {
       answer: 'Suggested Answer',
       follow_up: 'Follow-up Suggestion',
-      feedback: 'Feedback',
     } as const;
 
     const handleSpeak = async () => {
@@ -56,10 +57,7 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
         setIsPlayingThis(false);
         return;
       }
-      const textToSpeak =
-        suggestion.type === 'feedback'
-          ? suggestion.text
-          : suggestion.target_text;
+      const textToSpeak = suggestion.target_text;
       if (textToSpeak) {
         try {
           setIsPlayingThis(true);
@@ -131,7 +129,6 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
     };
 
     useEffect(() => {
-      if (suggestion.type === 'feedback') return;
       const text = suggestion.target_text || '';
       if (!text) return;
       const sugTokens = tokenizeWithIndex(text);
@@ -206,33 +203,24 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
           >
             <div className={'flex items-start justify-between gap-2 mb-2'}>
               <div className={'flex items-center gap-2'}>
-                {suggestion.type === 'feedback' ? (
-                  <MessageCircleMore className={'size-4 text-primary'} />
-                ) : (
-                  <Sparkles className={'size-4 text-primary'} />
-                )}
+                <Sparkles className={'size-4 text-primary'} />
                 <span className={'text-xs font-medium text-muted-foreground'}>
                   {typeLabels[suggestion.type]}
                 </span>
               </div>
               <div className={'flex items-center gap-1'}>
-                {suggestion.type !== 'feedback' && (
-                  <button
-                    onClick={handleSpeak}
-                    className={cn(
-                      'text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-accent/50',
-                      isPlayingThis && 'text-primary'
-                    )}
-                    aria-label="Speak"
-                  >
-                    <Volume2
-                      className={cn(
-                        'size-3.5',
-                        isPlayingThis && 'animate-pulse'
-                      )}
-                    />
-                  </button>
-                )}
+                <button
+                  onClick={handleSpeak}
+                  className={cn(
+                    'text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-accent/50',
+                    isPlayingThis && 'text-primary'
+                  )}
+                  aria-label="Speak"
+                >
+                  <Volume2
+                    className={cn('size-3.5', isPlayingThis && 'animate-pulse')}
+                  />
+                </button>
                 <button
                   onClick={onClose}
                   className={
@@ -244,52 +232,26 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
                 </button>
               </div>
             </div>
-            {suggestion.type === 'feedback' ? (
-              // Render feedback: feedback text first (black), then target text (gray), then pronunciation (teal)
-              suggestion.target_text || suggestion.pronunciation ? (
-                <div className={'space-y-1.5'}>
-                  {suggestion.reason_native && (
-                    <div className={'text-sm text-foreground'}>
-                      {suggestion.reason_native}
-                    </div>
-                  )}
-                  {suggestion.target_text && (
-                    <div className={'text-sm text-muted-foreground'}>
-                      <span>{suggestion.target_text}</span>
-                    </div>
-                  )}
-                  {suggestion.pronunciation && (
-                    <div className={'text-sm text-emerald-400 opacity-90'}>
-                      {suggestion.pronunciation}
-                    </div>
-                  )}
+            <div className={'space-y-1.5'}>
+              {suggestion.target_text && (
+                <div className={'text-sm text-foreground'}>
+                  <span className={'text-primary'}>
+                    {suggestion.target_text.slice(0, matchedChars)}
+                  </span>
+                  <span>{suggestion.target_text.slice(matchedChars)}</span>
                 </div>
-              ) : (
-                <p className={'text-sm'}>{suggestion.text}</p>
-              )
-            ) : (
-              <div className={'space-y-1.5'}>
-                {'target_text' in suggestion && suggestion.target_text && (
-                  <div className={'text-sm text-foreground'}>
-                    <span className={'text-primary'}>
-                      {suggestion.target_text.slice(0, matchedChars)}
-                    </span>
-                    <span>{suggestion.target_text.slice(matchedChars)}</span>
-                  </div>
-                )}
-                {'pronunciation' in suggestion && suggestion.pronunciation && (
-                  <div className={'text-sm text-emerald-400 opacity-90'}>
-                    {suggestion.pronunciation}
-                  </div>
-                )}
-                {'native_translation' in suggestion &&
-                  suggestion.native_translation && (
-                    <div className={'text-xs text-muted-foreground'}>
-                      {suggestion.native_translation}
-                    </div>
-                  )}
-              </div>
-            )}
+              )}
+              {suggestion.pronunciation && (
+                <div className={'text-sm text-emerald-400 opacity-90'}>
+                  {suggestion.pronunciation}
+                </div>
+              )}
+              {suggestion.native_translation && (
+                <div className={'text-xs text-muted-foreground'}>
+                  {suggestion.native_translation}
+                </div>
+              )}
+            </div>
             <div
               className={
                 'absolute bottom-0 left-0 right-0 h-[2px] bg-border/30'
@@ -309,6 +271,246 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
 );
 
 SuggestionBubble.displayName = 'SuggestionBubble';
+
+type FeedbackBubbleProps = {
+  feedback: AIFeedback;
+  onClose: () => void;
+  durationSec: number;
+};
+
+const FeedbackBubble = forwardRef<HTMLDivElement, FeedbackBubbleProps>(
+  ({ feedback, onClose, durationSec }, ref) => {
+    const { pauseFeedbackTimer, resumeFeedbackTimer, getFeedbackRemainingMs } =
+      useGlass();
+    const progressRef = useRef<HTMLDivElement | null>(null);
+
+    // Smooth visual countdown
+    useEffect(() => {
+      let rafId: number;
+      const tick = () => {
+        const ms = getFeedbackRemainingMs(feedback.id);
+        const ratio = Math.max(0, Math.min(1, ms / (durationSec * 1000)));
+        if (progressRef.current) {
+          progressRef.current.style.width = `${ratio * 100}%`;
+        }
+        rafId = requestAnimationFrame(tick);
+      };
+      rafId = requestAnimationFrame(tick);
+      return () => cancelAnimationFrame(rafId);
+    }, [getFeedbackRemainingMs, feedback.id, durationSec]);
+
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        onPointerEnter={() => pauseFeedbackTimer(feedback.id)}
+        onPointerLeave={() => resumeFeedbackTimer(feedback.id)}
+        onPointerCancel={() => resumeFeedbackTimer(feedback.id)}
+      >
+        <div className={'relative'}>
+          <div
+            className={
+              'p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-xl overflow-hidden'
+            }
+          >
+            <div className={'flex items-start justify-between gap-2 mb-2'}>
+              <div className={'flex items-center gap-2'}>
+                <MessageCircleMore className={'size-4 text-primary'} />
+                <span className={'text-xs font-medium text-muted-foreground'}>
+                  Feedback
+                </span>
+              </div>
+              <button
+                onClick={onClose}
+                className={
+                  'text-muted-foreground hover:text-foreground transition-colors p-1'
+                }
+                aria-label="Close"
+              >
+                <X className={'size-3.5'} />
+              </button>
+            </div>
+            <div className={'space-y-1.5'}>
+              {feedback.reason_native && (
+                <div className={'text-sm text-foreground'}>
+                  {feedback.reason_native}
+                </div>
+              )}
+              {feedback.target_text && (
+                <div className={'text-sm text-muted-foreground'}>
+                  {feedback.target_text}
+                </div>
+              )}
+              {feedback.pronunciation && (
+                <div className={'text-sm text-emerald-400 opacity-90'}>
+                  {feedback.pronunciation}
+                </div>
+              )}
+              {!feedback.target_text &&
+                !feedback.pronunciation &&
+                feedback.text && <p className={'text-sm'}>{feedback.text}</p>}
+            </div>
+            <div
+              className={
+                'absolute bottom-0 left-0 right-0 h-[2px] bg-border/30'
+              }
+            >
+              <div
+                ref={progressRef}
+                className={'h-full bg-primary/40'}
+                style={{ width: '100%' }}
+              />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+);
+
+FeedbackBubble.displayName = 'FeedbackBubble';
+
+type TranslationBubbleProps = {
+  translation: AITranslation;
+  onClose: () => void;
+  durationSec: number;
+};
+
+const TranslationBubble = forwardRef<HTMLDivElement, TranslationBubbleProps>(
+  ({ translation, onClose, durationSec }, ref) => {
+    const {
+      speakText,
+      isSpeaking,
+      stopSpeaking,
+      pauseTranslationTimer,
+      resumeTranslationTimer,
+      getTranslationRemainingMs,
+    } = useGlass();
+    const [isPlayingThis, setIsPlayingThis] = useState(false);
+    const progressRef = useRef<HTMLDivElement | null>(null);
+
+    const handleSpeak = async () => {
+      if (isPlayingThis) {
+        stopSpeaking();
+        setIsPlayingThis(false);
+        return;
+      }
+      if (translation.target_text) {
+        try {
+          setIsPlayingThis(true);
+          await speakText(translation.target_text);
+          const interval = setInterval(() => {
+            if (!isSpeaking) {
+              setIsPlayingThis(false);
+              clearInterval(interval);
+            }
+          }, 100);
+        } catch {
+          setIsPlayingThis(false);
+        }
+      }
+    };
+
+    // Smooth visual countdown
+    useEffect(() => {
+      let rafId: number;
+      const tick = () => {
+        const ms = getTranslationRemainingMs(translation.id);
+        const ratio = Math.max(0, Math.min(1, ms / (durationSec * 1000)));
+        if (progressRef.current) {
+          progressRef.current.style.width = `${ratio * 100}%`;
+        }
+        rafId = requestAnimationFrame(tick);
+      };
+      rafId = requestAnimationFrame(tick);
+      return () => cancelAnimationFrame(rafId);
+    }, [getTranslationRemainingMs, translation.id, durationSec]);
+
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        onPointerEnter={() => pauseTranslationTimer(translation.id)}
+        onPointerLeave={() => resumeTranslationTimer(translation.id)}
+        onPointerCancel={() => resumeTranslationTimer(translation.id)}
+      >
+        <div className={'relative'}>
+          <div
+            className={
+              'p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-xl overflow-hidden'
+            }
+          >
+            <div className={'flex items-start justify-between gap-2 mb-2'}>
+              <div className={'flex items-center gap-2'}>
+                <Languages className={'size-4 text-primary'} />
+                <span className={'text-xs font-medium text-muted-foreground'}>
+                  Translation
+                </span>
+              </div>
+              <div className={'flex items-center gap-1'}>
+                <button
+                  onClick={handleSpeak}
+                  className={cn(
+                    'text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-accent/50',
+                    isPlayingThis && 'text-primary'
+                  )}
+                  aria-label="Speak"
+                >
+                  <Volume2
+                    className={cn('size-3.5', isPlayingThis && 'animate-pulse')}
+                  />
+                </button>
+                <button
+                  onClick={onClose}
+                  className={
+                    'text-muted-foreground hover:text-foreground transition-colors p-1'
+                  }
+                  aria-label="Close"
+                >
+                  <X className={'size-3.5'} />
+                </button>
+              </div>
+            </div>
+            <div className={'space-y-1.5'}>
+              {translation.target_text && (
+                <div className={'text-sm text-foreground'}>
+                  {translation.target_text}
+                </div>
+              )}
+              {translation.pronunciation && (
+                <div className={'text-sm text-emerald-400 opacity-90'}>
+                  {translation.pronunciation}
+                </div>
+              )}
+              {translation.native_translation && (
+                <div className={'text-xs text-muted-foreground'}>
+                  {translation.native_translation}
+                </div>
+              )}
+            </div>
+            <div
+              className={
+                'absolute bottom-0 left-0 right-0 h-[2px] bg-border/30'
+              }
+            >
+              <div
+                ref={progressRef}
+                className={'h-full bg-primary/40'}
+                style={{ width: '100%' }}
+              />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+);
+
+TranslationBubble.displayName = 'TranslationBubble';
 
 type MockSuggestion = {
   type: 'answer' | 'feedback' | 'translate';
@@ -344,8 +546,13 @@ export default function BottomPanel({
     updateSuggestMode,
     settings,
     suggestions,
+    feedbacks,
+    translations,
     addSuggestion,
     removeSuggestion,
+    addTranslation,
+    removeFeedback,
+    removeTranslation,
     isSpeaking,
   } = useGlass();
 
@@ -412,8 +619,8 @@ export default function BottomPanel({
 
     setLoadingTranslate(true);
     try {
-      const suggestion = await requestTranslate(translateInput.trim());
-      addSuggestion('answer', suggestion);
+      const result = await requestTranslate(translateInput.trim());
+      addTranslation(result);
       setTranslateInput('');
     } catch (e) {
       // no-op
@@ -429,7 +636,7 @@ export default function BottomPanel({
     }
   };
 
-  // Auto-show manual buttons when idle (no suggestions) for 2s; hide on activity
+  // Auto-show manual buttons when idle (no suggestions/feedbacks/translations) for 2s; hide on activity
   useEffect(() => {
     if (isMockMode) {
       setShowManualButtons(!mockSuggestion);
@@ -437,7 +644,11 @@ export default function BottomPanel({
     }
 
     const isIdle =
-      suggestions.length === 0 && !isSpeaking && !loadingSuggestion;
+      suggestions.length === 0 &&
+      feedbacks.length === 0 &&
+      translations.length === 0 &&
+      !isSpeaking &&
+      !loadingSuggestion;
     if (isIdle) {
       if (manualButtonsTimerRef.current)
         clearTimeout(manualButtonsTimerRef.current);
@@ -462,6 +673,8 @@ export default function BottomPanel({
     isMockMode,
     mockSuggestion,
     suggestions.length,
+    feedbacks.length,
+    translations.length,
     isSpeaking,
     loadingSuggestion,
   ]);
@@ -859,15 +1072,35 @@ export default function BottomPanel({
                       </div>
                     </motion.div>
                   )
-                ) : suggestions.length > 0 ? (
-                  suggestions.map((s) => (
-                    <SuggestionBubble
-                      key={s.id}
-                      suggestion={s}
-                      onClose={() => removeSuggestion(s.id)}
-                      durationSec={settings.suggestionDurationSec ?? 10}
-                    />
-                  ))
+                ) : suggestions.length > 0 ||
+                  feedbacks.length > 0 ||
+                  translations.length > 0 ? (
+                  <>
+                    {suggestions.map((s) => (
+                      <SuggestionBubble
+                        key={s.id}
+                        suggestion={s}
+                        onClose={() => removeSuggestion(s.id)}
+                        durationSec={settings.suggestionDurationSec ?? 20}
+                      />
+                    ))}
+                    {feedbacks.map((f) => (
+                      <FeedbackBubble
+                        key={f.id}
+                        feedback={f}
+                        onClose={() => removeFeedback(f.id)}
+                        durationSec={settings.suggestionDurationSec ?? 20}
+                      />
+                    ))}
+                    {translations.map((t) => (
+                      <TranslationBubble
+                        key={t.id}
+                        translation={t}
+                        onClose={() => removeTranslation(t.id)}
+                        durationSec={settings.suggestionDurationSec ?? 20}
+                      />
+                    ))}
+                  </>
                 ) : (
                   <motion.div
                     key={'listening-fallback'}
