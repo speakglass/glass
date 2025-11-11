@@ -7,6 +7,7 @@ import { X, Sparkles, Zap, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { track, setUserId, setUserProperties } from '@/utils/analytics';
 import { Trans } from '@lingui/react/macro';
+import { t } from '@lingui/core/macro';
 
 interface ExtractedInfo {
   label: string;
