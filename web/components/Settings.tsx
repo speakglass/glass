@@ -226,9 +226,6 @@ export default function Settings() {
                 <label className={'text-xs font-medium text-muted-foreground'}>
                   <Trans>Language</Trans>
                 </label>
-                <span className={'text-[10px] text-muted-foreground/70'}>
-                  {SUPPORTED_LANGUAGES[currentLocale as keyof typeof SUPPORTED_LANGUAGES]?.native_name || currentLocale}
-                </span>
               </div>
               <div className={'flex items-center gap-2 min-w-0'}>
                 <Globe className={'size-4 text-muted-foreground shrink-0'} />

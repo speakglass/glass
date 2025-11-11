@@ -31,8 +31,8 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
     const [showPronLoading, setShowPronLoading] = useState(false);
 
     const typeLabels = {
-      answer: 'Suggested Answer',
-      follow_up: 'Follow-up Suggestion',
+      answer: t`Suggested Answer`,
+      follow_up: t`Follow-up Suggestion`,
     } as const;
 
     const handleSpeak = async () => {
@@ -204,7 +204,9 @@ const FeedbackBubble = forwardRef<HTMLDivElement, FeedbackBubbleProps>(
               <div className={'flex items-start justify-between gap-2 mb-2'}>
                 <div className={'flex items-center gap-2'}>
                   <MessageCircleMore className={'size-4 text-primary'} />
-                  <span className={'text-xs font-medium text-muted-foreground'}>Feedback</span>
+                  <span className={'text-xs font-medium text-muted-foreground'}>
+                    <Trans>Feedback</Trans>
+                  </span>
                 </div>
                 <button
                   onClick={onClose}
@@ -329,7 +331,9 @@ const TranslationBubble = forwardRef<HTMLDivElement, TranslationBubbleProps>(
               <div className={'flex items-start justify-between gap-2 mb-2'}>
                 <div className={'flex items-center gap-2'}>
                   <Languages className={'size-4 text-primary'} />
-                  <span className={'text-xs font-medium text-muted-foreground'}>Translation</span>
+                  <span className={'text-xs font-medium text-muted-foreground'}>
+                    <Trans>Translation</Trans>
+                  </span>
                 </div>
                 <div className={'flex items-center gap-1'}>
                   <button

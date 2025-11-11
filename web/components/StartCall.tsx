@@ -733,10 +733,10 @@ export default function StartCall() {
 
               <div className={'grid grid-cols-2 gap-3.5 sm:gap-4 w-full'}>
                 {[
-                  { id: 'casual', emoji: '💬', title: 'Casual Chat', desc: 'Everyday conversation' },
-                  { id: 'restaurant', emoji: '🍽️', title: 'Restaurant', desc: 'Ordering food & drinks' },
-                  { id: 'interview', emoji: '💼', title: 'Job Interview', desc: 'Professional conversation' },
-                  { id: 'phone', emoji: '📞', title: 'Phone Call', desc: 'Telephone etiquette' },
+                  { id: 'casual', emoji: '💬' },
+                  { id: 'restaurant', emoji: '🍽️' },
+                  { id: 'interview', emoji: '💼' },
+                  { id: 'phone', emoji: '📞' },
                 ].map((scenario) => (
                   <button
                     key={scenario.id}
@@ -753,9 +753,17 @@ export default function StartCall() {
                       <span className={'text-lg sm:text-2xl'}>{scenario.emoji}</span>
                       <div>
                         <div className={`${getTextClass('title')} font-medium mb-0.5 text-sm sm:text-base`}>
-                          {scenario.title}
+                          {scenario.id === 'casual' && <Trans>Casual Chat</Trans>}
+                          {scenario.id === 'restaurant' && <Trans>Restaurant</Trans>}
+                          {scenario.id === 'interview' && <Trans>Job Interview</Trans>}
+                          {scenario.id === 'phone' && <Trans>Phone Call</Trans>}
                         </div>
-                        <div className={`${getTextClass('muted')} text-xs`}>{scenario.desc}</div>
+                        <div className={`${getTextClass('muted')} text-xs`}>
+                          {scenario.id === 'casual' && <Trans>Everyday conversation</Trans>}
+                          {scenario.id === 'restaurant' && <Trans>Ordering food & drinks</Trans>}
+                          {scenario.id === 'interview' && <Trans>Professional conversation</Trans>}
+                          {scenario.id === 'phone' && <Trans>Telephone etiquette</Trans>}
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -864,12 +872,36 @@ export default function StartCall() {
                           <Trans>Scenario:</Trans>
                         </p>
                         <p className={'text-base font-medium'}>
-                          {selectedScenario === 'airport' && '✈️ Airport Check-in'}
-                          {selectedScenario === 'restaurant' && '🍽️ Restaurant'}
-                          {selectedScenario === 'interview' && '💼 Job Interview'}
-                          {selectedScenario === 'shopping' && '🛍️ Shopping'}
-                          {selectedScenario === 'casual' && '💬 Casual Chat'}
-                          {selectedScenario === 'phone' && '📞 Phone Call'}
+                          {selectedScenario === 'airport' && (
+                            <>
+                              ✈️ <Trans>Airport Check-in</Trans>
+                            </>
+                          )}
+                          {selectedScenario === 'restaurant' && (
+                            <>
+                              🍽️ <Trans>Restaurant</Trans>
+                            </>
+                          )}
+                          {selectedScenario === 'interview' && (
+                            <>
+                              💼 <Trans>Job Interview</Trans>
+                            </>
+                          )}
+                          {selectedScenario === 'shopping' && (
+                            <>
+                              🛍️ <Trans>Shopping</Trans>
+                            </>
+                          )}
+                          {selectedScenario === 'casual' && (
+                            <>
+                              💬 <Trans>Casual Chat</Trans>
+                            </>
+                          )}
+                          {selectedScenario === 'phone' && (
+                            <>
+                              📞 <Trans>Phone Call</Trans>
+                            </>
+                          )}
                         </p>
                       </div>
                     ) : null}
@@ -938,14 +970,11 @@ export default function StartCall() {
                   </div>
                 </LiquidGlass>
               ) : (
-                <motion.div
-                  variants={{
-                    initial: { scale: 0.5 },
-                    enter: { scale: 1 },
-                    exit: { scale: 0.5 },
-                  }}
-                >
-                  <Button className={'z-50 flex items-center gap-1.5 rounded-full'} disabled>
+                <motion.div initial={false} animate={{ scale: 1 }} exit={{ scale: 1 }}>
+                  <Button
+                    className={'z-50 flex items-center gap-1.5 rounded-full px-6 py-2 sm:px-8 sm:py-2.5 min-w-[140px]'}
+                    disabled
+                  >
                     <Loader2 className={'size-4 opacity-50 animate-spin'} />
                     <span>
                       <Trans>Connecting...</Trans>
