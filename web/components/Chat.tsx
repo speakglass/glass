@@ -9,6 +9,7 @@ import { useGlass } from '@/contexts/GlassContext';
 import { AnimatePresence, motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import Progress from '@/components/ui/progress';
+import { Trans } from '@lingui/react/macro';
 
 export default function Chat() {
   const ref = useRef<ComponentRef<typeof Messages> | null>(null);
@@ -68,8 +69,12 @@ export default function Chat() {
                 <Loader2 className={'size-16 text-primary animate-spin relative'} />
               </div>
               <div className={'text-center space-y-2'}>
-                <h3 className={'text-2xl font-semibold'}>Analyzing Conversation</h3>
-                <p className={'text-sm text-muted-foreground'}>Generating insights and feedback...</p>
+                <h3 className={'text-2xl font-semibold'}>
+                  <Trans>Analyzing Conversation</Trans>
+                </h3>
+                <p className={'text-sm text-muted-foreground'}>
+                  <Trans>Generating insights and feedback...</Trans>
+                </p>
               </div>
               <div className={'w-[70%] max-w-md'}>
                 <Progress value={analysisProgress} />

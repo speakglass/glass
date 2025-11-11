@@ -1,0 +1,695 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-11-10 14:35+0900\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: ko\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: app/[lang]/layout.tsx:35
+#: app/[lang]/layout.tsx:51
+#: app/[lang]/layout.tsx:72
+#. js-lingui-explicit-id
+msgid "Glass: AI that helps you speak any language"
+msgstr "Glass - 모든 언어로 말할 수 있도록 도와주는 AI"
+
+#: app/[lang]/layout.tsx:36
+#: app/[lang]/layout.tsx:52
+#: app/[lang]/layout.tsx:73
+#. js-lingui-explicit-id
+msgid ""
+"Glass is an AI that helps you speak any language. It uses the latest in AI "
+"to help you learn and speak any language."
+msgstr "Glass는 여러분이 어떤 언어든 말할 수 있도록 돕는 AI입니다. 최신 AI 기술을 활용하여 언어를 학습하고 말하는 데 도움을 줍니다."
+
+#: components/StartCall.tsx:656
+#: components/StartCall.tsx:788
+#: components/StartCall.tsx:936
+#: components/StartCall.tsx:1112
+#: components/StartCall.tsx:1244
+msgid "← Back"
+msgstr "← 뒤로"
+
+#: components/StartCall.tsx:1232
+msgid "⚠️ Make sure to enable \"Share audio\""
+msgstr "⚠️ \"음성 공유\"가 켜져 있는지 확인하세요."
+
+#: components/CallSummary.tsx:875
+msgid "✓ Successfully saved! Redirecting..."
+msgstr "✓ 저장되었습니다! 곧 이동합니다..."
+
+#: components/StartCall.tsx:1218
+msgid "1. Open your meeting (Zoom, Google Meet, or Teams)"
+msgstr "1. 회의를 엽니다 (Zoom, Google Meet, 또는 Teams 사용)"
+
+#: components/Settings.tsx:232
+msgid "10 seconds (default)"
+msgstr "기본 설정: 10초"
+
+#: components/Settings.tsx:235
+msgid "15 seconds"
+msgstr "15초"
+
+#: components/StartCall.tsx:1223
+msgid "2. Click \"Start\" below"
+msgstr "2. 아래 \"시작\"을 클릭하세요."
+
+#: components/StartCall.tsx:1226
+msgid "3. Share your meeting tab"
+msgstr "3. 회의 탭을 공유하세요."
+
+#: components/Settings.tsx:238
+msgid "30 seconds"
+msgstr "30초"
+
+#: components/StartCall.tsx:1229
+msgid "4. Make sure to enable \"Share audio\""
+msgstr "4. \"오디오 공유\"가 켜져 있는지 확인하세요."
+
+#: components/Settings.tsx:229
+msgid "5 seconds"
+msgstr "5초"
+
+#: components/CallSummary.tsx:384
+msgid "Accuracy"
+msgstr "정확도"
+
+#: components/StartCall.tsx:992
+msgid "Airport Check-in"
+msgstr "공항 체크인"
+
+#: components/BottomPanel.tsx:598
+msgid "Always"
+msgstr "항상"
+
+#: app/[lang]/error.tsx:19
+msgid "An error occurred"
+msgstr "오류가 발생했습니다"
+
+#: components/Chat.tsx:91
+msgid "Analyzing Conversation"
+msgstr "대화 분석 중"
+
+#: lib/onboarding-tours.tsx:63
+msgid ""
+"As I listen to the conversation, everything I do to help you will appear "
+"right here."
+msgstr "대화를 들으면서 제안이나 피드백을 여기에 보여드릴게요."
+
+#: components/BottomPanel.tsx:599
+msgid "Auto"
+msgstr "자동"
+
+#: components/Settings.tsx:280
+msgid "Auto-detected from browser. Your selection will be saved and remembered."
+msgstr "브라우저에서 자동 감지되었습니다. 선택한 내용은 저장되어 기억됩니다."
+
+#: components/CallSummary.tsx:122
+msgid "Average"
+msgstr "평균"
+
+#: components/onboarding/GlassOnboardingCard.tsx:85
+msgid "Back"
+msgstr "뒤로"
+
+#: app/[lang]/waitlist/success/page.tsx:77
+msgid "Back to Home"
+msgstr "홈으로 돌아가기"
+
+#: components/CallSummary.tsx:124
+msgid "Below Average"
+msgstr "평균 이하"
+
+#: components/CallSummary.tsx:208
+msgid "Call Summary"
+msgstr "대화 요약"
+
+#: components/StartCall.tsx:986
+msgid "Casual Chat"
+msgstr "편안한 채팅"
+
+#: components/BottomPanel.tsx:585
+msgid "Chinese"
+msgstr "중국어"
+
+#: components/StartCall.tsx:974
+msgid "Choose a scenario"
+msgstr "시나리오 선택"
+
+#: components/StartCall.tsx:689
+msgid "Choose Your Languages"
+msgstr "언어 선택"
+
+#: components/StartCall.tsx:824
+msgid "Choose your preferred mode"
+msgstr "선호하는 모드를 선택하세요"
+
+#: components/CallSummary.tsx:886
+msgid "Close"
+msgstr "닫기"
+
+#: components/CallSummary.tsx:478
+msgid "Comprehensibility"
+msgstr "이해도"
+
+#: lib/onboarding-tours.tsx:161
+msgid "Congrats! You're all set."
+msgstr "축하합니다! 준비가 완료되었습니다."
+
+#: components/StartCall.tsx:1279
+#: components/StartCall.tsx:1297
+msgid "Connecting..."
+msgstr "연결 중..."
+
+#: components/CallSummary.tsx:756
+msgid "Conversation History"
+msgstr "대화 기록"
+
+#: app/[lang]/failure/page.tsx:32
+msgid "Couldn’t connect"
+msgstr "연결할 수 없습니다."
+
+#: components/StartCall.tsx:1076
+msgid "Custom Scenario"
+msgstr "나만의 상황 설정"
+
+#: components/Settings.tsx:337
+msgid "Dark"
+msgstr "어두운"
+
+#: components/StartCall.tsx:1094
+msgid "Describe the scenario you want to practice..."
+msgstr "연습하고자 하는 상황을 설명해 주세요..."
+
+#: components/StartCall.tsx:1079
+msgid "Describe your own situation"
+msgstr "직접 상황을 입력해 주세요"
+
+#: components/StartCall.tsx:515
+msgid "Do you want pronunciation help?"
+msgstr "발음 지원을 원하시나요?"
+
+#: components/Controls.tsx:170
+msgid "End Call"
+msgstr "통화 종료"
+
+#: components/Controls.tsx:148
+msgid "Ending soon: under 5 minutes left"
+msgstr "곧 종료됩니다: 5분 이내 남았습니다"
+
+#: components/BottomPanel.tsx:591
+msgid "English"
+msgstr "영어"
+
+#: components/WaitlistModal.tsx:258
+msgid "Enter your email"
+msgstr "이메일 주소를 입력하세요"
+
+#: components/StartCall.tsx:987
+msgid "Everyday conversation"
+msgstr "일상 대화"
+
+#: components/CallSummary.tsx:120
+msgid "Excellent"
+msgstr "훌륭함"
+
+#: components/BottomPanel.tsx:841
+#: components/BottomPanel.tsx:933
+msgid "Feedback"
+msgstr "피드백"
+
+#: components/CallSummary.tsx:285
+msgid "Fluency"
+msgstr "유창함"
+
+#: components/StartCall.tsx:1209
+msgid "Follow these steps:"
+msgstr "아래 단계를 따라 진행해 주세요"
+
+#: components/BottomPanel.tsx:587
+msgid "French"
+msgstr "프랑스어"
+
+#: components/Chat.tsx:94
+msgid "Generating insights and feedback..."
+msgstr "인사이트 및 피드백 생성 중..."
+
+#: components/BottomPanel.tsx:588
+msgid "German"
+msgstr "독일어"
+
+#: components/WaitlistModal.tsx:216
+msgid "Gets smarter every time you speak"
+msgstr "말할 때마다 더 똑똑해집니다"
+
+#: components/Settings.tsx:358
+msgid "Glass"
+msgstr "Glass"
+
+#: components/WaitlistModal.tsx:185
+msgid "Glass AI helps you speak any language in the real world"
+msgstr "Glass AI는 현실 세계에서 다양한 언어를 구사할 수 있도록 도와줍니다."
+
+#: components/CallSummary.tsx:121
+msgid "Good"
+msgstr "좋음"
+
+#: lib/onboarding-tours.tsx:19
+msgid "Hey! I'm Glass."
+msgstr "안녕하세요! 저는 Glass예요."
+
+#: components/StartCall.tsx:821
+msgid "How would you like to use Glass?"
+msgstr "Glass를 어떻게 사용하시겠습니까?"
+
+#: lib/onboarding-tours.tsx:40
+msgid "I listen to your conversation"
+msgstr "대화를 듣고 있어요."
+
+#: components/StartCall.tsx:743
+msgid "I speak"
+msgstr "사용하는 언어"
+
+#: components/StartCall.tsx:704
+msgid "I want to learn"
+msgstr "배우고 싶은 언어"
+
+#: lib/onboarding-tours.tsx:100
+msgid "I'll give you feedback"
+msgstr "피드백을 드려요."
+
+#: lib/onboarding-tours.tsx:43
+msgid ""
+"I'll listen to you and your partner, and translate what they say so you can "
+"understand each other."
+msgstr "두 분의 대화를 듣고, 서로 이해할 수 있게 번역해드릴게요."
+
+#: lib/onboarding-tours.tsx:80
+msgid "I'll suggest what to say next"
+msgstr "다음에 할 말을 제안해 드릴게요."
+
+#: lib/onboarding-tours.tsx:83
+msgid ""
+"I'll suggest what you could say next, so just read it out loud. The more I "
+"learn about you, the better my suggestions will get."
+msgstr ""
+"다음에 뭐라고 말하면 좋을지 제가 제안해드릴게요. 그냥 소리 내서 따라 말해보세요. 대화를 나누면서 점점 더 잘 맞는 제안을 드릴 수 "
+"있을 거예요."
+
+#: lib/onboarding-tours.tsx:23
+msgid ""
+"I'm here to help you communicate and learn a new language through real "
+"conversations and practice."
+msgstr "제가 실제 대화를 통해 자연스럽게 새로운 언어를 배우고 소통할 수 있도록 도와드릴게요."
+
+#: lib/onboarding-tours.tsx:103
+msgid ""
+"If you say something that sounds a bit off, I'll let you know and help you "
+"fix it."
+msgstr "조금 어색하게 들리는 표현이 있으면 알려드리고, 더 자연스럽게 말할 수 있게 도와드릴게요."
+
+#: components/BottomPanel.tsx:589
+msgid "Italian"
+msgstr "이탈리아어"
+
+#: components/BottomPanel.tsx:583
+msgid "Japanese"
+msgstr "일본어"
+
+#: components/StartCall.tsx:1004
+msgid "Job Interview"
+msgstr "면접"
+
+#: components/WaitlistModal.tsx:326
+msgid "Join Early Access"
+msgstr "얼리 액세스 참가하기"
+
+#: components/WaitlistModal.tsx:322
+msgid "Joining..."
+msgstr "참여 중..."
+
+#: components/BottomPanel.tsx:584
+msgid "Korean"
+msgstr "한국어"
+
+#: components/Settings.tsx:248
+msgid "Language"
+msgstr "언어"
+
+#: components/StartCall.tsx:911
+msgid "Language Exchange • Meetings"
+msgstr "언어 교환 • 모임"
+
+#: lib/onboarding-tours.tsx:29
+msgid "Let me show you how I'll help you."
+msgstr "지금부터 제가 어떻게 도와드릴지 보여드릴게요"
+
+#: components/onboarding/GlassOnboardingCard.tsx:89
+msgid "Let's Go! 🎉"
+msgstr "시작해볼까요! 🎉"
+
+#: components/Settings.tsx:317
+msgid "Light"
+msgstr "라이트"
+
+#: components/BottomPanel.tsx:1066
+msgid "Listening. Say anything when you're ready."
+msgstr "지금 듣고 있어요. 준비되면 편하게 말해보세요."
+
+#: components/BottomPanel.tsx:1130
+msgid "Listening… say anything when you're ready."
+msgstr "지금 듣고 있어요. 준비되면 편하게 말해보세요."
+
+#: components/CallSummary.tsx:125
+msgid "Low"
+msgstr "낮음"
+
+#: components/StartCall.tsx:552
+msgid "Make suggestions readable for me"
+msgstr "제안을 읽기 쉽게 보여주세요"
+
+#: components/CallSummary.tsx:624
+msgid "Memory"
+msgstr "메모리"
+
+#: components/Settings.tsx:157
+msgid "Microphone"
+msgstr "마이크"
+
+#: components/Settings.tsx:173
+#. placeholder {0}: idx + 1
+msgid "Microphone {0}"
+msgstr "마이크 {0}"
+
+#: components/Settings.tsx:199
+msgid "Native script"
+msgstr "원어 표기"
+
+#: components/WaitlistModal.tsx:98
+msgid "Network error. Please check your connection and try again."
+msgstr "네트워크 오류입니다. 연결 상태를 확인하고 다시 시도해 주세요."
+
+#: components/onboarding/GlassOnboardingCard.tsx:89
+#: components/StartCall.tsx:668
+#: components/StartCall.tsx:801
+#: components/StartCall.tsx:952
+msgid "Next →"
+msgstr "다음 →"
+
+#: components/CallSummary.tsx:736
+msgid "No information saved yet"
+msgstr "아직 저장된 정보가 없습니다"
+
+#: components/CallSummary.tsx:856
+msgid "No messages"
+msgstr "메시지 없음"
+
+#: components/StartCall.tsx:614
+msgid "No, I'm fine"
+msgstr "아니요, 괜찮아요."
+
+#: lib/onboarding-tours.tsx:168
+msgid "Now let's start your first real conversation!"
+msgstr "그럼, 진짜 대화를 한 번 시작해봐요!"
+
+#: components/BottomPanel.tsx:600
+msgid "Off"
+msgstr "끄기"
+
+#: components/StartCall.tsx:999
+msgid "Ordering food & drinks"
+msgstr "음식 및 음료 주문하기"
+
+#: components/CallSummary.tsx:233
+msgid "Overall Score"
+msgstr "전체 점수"
+
+#: components/StartCall.tsx:1016
+msgid "Phone Call"
+msgstr "전화 통화"
+
+#: components/WaitlistModal.tsx:53
+msgid "Please enter a valid email address"
+msgstr "유효한 이메일 주소를 입력하세요"
+
+#: components/BottomPanel.tsx:590
+msgid "Portuguese"
+msgstr "포르투갈어"
+
+#: components/StartCall.tsx:855
+msgid "Practice"
+msgstr "연습"
+
+#: components/StartCall.tsx:1152
+msgid "Practice Mode"
+msgstr "연습 모드"
+
+#: components/WaitlistModal.tsx:239
+msgid "Practice mode or live on Zoom calls"
+msgstr "연습 모드 또는 Zoom 통화 라이브"
+
+#: components/WaitlistModal.tsx:190
+msgid "Practice speaking. Get help in real meetings. Remembers everything."
+msgstr "말하기 연습하세요. 실제 회의에서 도움을 받으세요. 모든 것을 기억합니다."
+
+#: components/StartCall.tsx:1005
+msgid "Professional conversation"
+msgstr "전문적인 대화"
+
+#: components/Settings.tsx:183
+msgid "Pronunciation format"
+msgstr "발음 형식"
+
+#: lib/onboarding-tours.tsx:140
+msgid "Quick translation"
+msgstr "빠른 번역"
+
+#: components/StartCall.tsx:908
+msgid "Real Talk"
+msgstr "실전 대화"
+
+#: components/StartCall.tsx:1154
+msgid "Real Talk Mode"
+msgstr "실전 대화 모드"
+
+#: components/StartCall.tsx:880
+msgid "RECOMMENDED"
+msgstr "추천됨"
+
+#: components/Settings.tsx:148
+msgid "Refresh"
+msgstr "새로고침"
+
+#: components/WaitlistModal.tsx:219
+msgid "Remembers who you are, what you care about"
+msgstr "당신의 정체성과 관심사를 기억합니다."
+
+#: components/StartCall.tsx:998
+msgid "Restaurant"
+msgstr "레스토랑"
+
+#: components/StartCall.tsx:1011
+msgid "Retail & bargaining"
+msgstr "소매 및 흥정"
+
+#: components/Settings.tsx:202
+msgid "Romaji (Latin)"
+msgstr "로마자 (라틴어)"
+
+#: components/CallSummary.tsx:894
+msgid "Save Call"
+msgstr "통화 저장"
+
+#: components/StartCall.tsx:1176
+#: components/StartCall.tsx:1187
+msgid "Scenario:"
+msgstr "시나리오:"
+
+#: components/StartCall.tsx:692
+msgid "Select the language you want to practice"
+msgstr "연습할 언어를 선택하세요"
+
+#: components/Settings.tsx:122
+#: components/Settings.tsx:138
+msgid "Settings"
+msgstr "설정"
+
+#: components/StartCall.tsx:1010
+msgid "Shopping"
+msgstr "쇼핑"
+
+#: components/StartCall.tsx:617
+msgid "Show suggestions only"
+msgstr "추천만 표시"
+
+#: components/onboarding/GlassOnboardingCard.tsx:72
+msgid "Skip tour"
+msgstr "둘러보기 건너뛰기"
+
+#: components/BottomPanel.tsx:586
+msgid "Spanish"
+msgstr "스페인어"
+
+#: components/Nav.tsx:60
+msgid "Star on GitHub"
+msgstr "GitHub에 Star 추가"
+
+#: components/StartCall.tsx:1129
+#: components/StartCall.tsx:1251
+msgid "Start"
+msgstr "시작"
+
+#: components/StartCall.tsx:462
+#: components/StartCall.tsx:485
+msgid "Start Call"
+msgstr "통화 시작"
+
+#: components/BottomPanel.tsx:767
+#: components/BottomPanel.tsx:807
+msgid "Suggest"
+msgstr "제안하기"
+
+#: components/BottomPanel.tsx:936
+msgid "Suggested Answer"
+msgstr "추천 답변"
+
+#: components/Settings.tsx:211
+msgid "Suggestion duration"
+msgstr "제안 기간"
+
+#: components/Settings.tsx:169
+msgid "System default"
+msgstr "시스템 기본 설정"
+
+#: components/StartCall.tsx:1017
+msgid "Telephone etiquette"
+msgstr "전화 예절"
+
+#: app/[lang]/waitlist/success/page.tsx:66
+msgid ""
+"Thanks for joining. We’ll email you when more access is available. Sit "
+"tight — it won’t be long."
+msgstr "가입해 주셔서 감사합니다. 접근 권한이 더 열릴 때 이메일을 보내드리겠습니다. 조금만 기다려 주세요. 오래 걸리지 않을 겁니다."
+
+#: components/Settings.tsx:293
+msgid "Theme"
+msgstr "테마"
+
+#: lib/onboarding-tours.tsx:60
+msgid "This is where I help you"
+msgstr "여기에서 도와드릴게요."
+
+#: components/BottomPanel.tsx:594
+msgid "To {langName}..."
+msgstr "{langName}로..."
+
+#: components/BottomPanel.tsx:594
+msgid "Translate to {langName}..."
+msgstr "{langName}로 번역하기..."
+
+#: components/BottomPanel.tsx:935
+msgid "Translation"
+msgstr "번역"
+
+#: components/StartCall.tsx:993
+msgid "Travel & Immigration"
+msgstr "여행 및 이민"
+
+#: app/[lang]/error.tsx:34
+#: app/[lang]/failure/page.tsx:46
+msgid "Try again"
+msgstr "다시 시도하세요"
+
+#: components/StartCall.tsx:858
+msgid "Tutorial with AI"
+msgstr "AI를 활용한 튜토리얼"
+
+#: lib/onboarding-tours.tsx:143
+msgid ""
+"Type what you want to say in your language, or even just a few keywords. "
+"I'll listen to the conversation and suggest the right sentence for you."
+msgstr "자신의 언어로 하고 싶은 말을 입력해 보세요. 키워드 몇 개만 써도 괜찮아요. 대화를 들으면서 가장 자연스러운 문장을 제안해 드릴게요."
+
+#: components/StartCall.tsx:402
+msgid "Unable to start call"
+msgstr "통화를 시작할 수 없습니다."
+
+#: components/StartCall.tsx:923
+msgid "Unavailable on mobile"
+msgstr "모바일에서는 사용할 수 없습니다"
+
+#: app/[lang]/error.tsx:30
+msgid "View Documentation"
+msgstr "문서 보기"
+
+#: components/WaitlistModal.tsx:275
+msgid "Waitlist Email Captured"
+msgstr "대기자 명단 이메일 수신 완료"
+
+#: components/WaitlistModal.tsx:61
+msgid "Waitlist Submit Attempted"
+msgstr "대기자 명단 제출 시도됨"
+
+#: components/WaitlistModal.tsx:90
+#: components/WaitlistModal.tsx:99
+msgid "Waitlist Submit Failed"
+msgstr "대기자 명단 제출 실패"
+
+#: components/WaitlistModal.tsx:86
+msgid "Waitlist Submit Succeeded"
+msgstr "대기자 명단 제출 완료"
+
+#: components/WaitlistModal.tsx:89
+msgid "We had trouble adding you. Please try again later."
+msgstr "추가하는 데 문제가 발생했습니다. 나중에 다시 시도해 주세요."
+
+#: app/[lang]/failure/page.tsx:35
+msgid ""
+"We had trouble starting your session. Please check your internet and try "
+"again."
+msgstr "세션을 시작하는 데 문제가 발생했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요."
+
+#: components/WaitlistModal.tsx:333
+msgid "We'll notify you when early access is ready. No spam, ever."
+msgstr "얼리 액세스를 사용할 준비가 되면 알려드리겠습니다. 스팸은 절대 없습니다."
+
+#: components/StartCall.tsx:518
+msgid "We'll show how to read suggestions in your alphabet when helpful"
+msgstr "필요할 때, 익숙한 문자로 제안을 표시해드릴게요."
+
+#: components/StartCall.tsx:977
+msgid "What would you like to practice?"
+msgstr "어떤 걸 연습해보고 싶으신가요?"
+
+#: components/WaitlistModal.tsx:236
+msgid "Works in real meetings"
+msgstr "실제 회의에서 작동합니다"
+
+#: components/StartCall.tsx:549
+msgid "Yes, show pronunciation"
+msgstr "네, 발음도 보여주세요"
+
+#: lib/onboarding-tours.tsx:120
+msgid "You can control how much I help"
+msgstr "제가 얼마나 도울지 직접 조절할 수 있어요."
+
+#: lib/onboarding-tours.tsx:123
+msgid ""
+"You can turn my suggestions and feedback on, off, or keep it on auto. By "
+"default, it's set to auto."
+msgstr "제안이나 피드백을 켜거나 끌 수 있고, 자동으로 설정해둘 수도 있어요. 기본 설정은 자동이에요."
+
+#: app/[lang]/waitlist/success/page.tsx:63
+msgid "You’re on the list 🎉"
+msgstr "목록에 등록되었습니다 🎉"
+
+#: lib/onboarding-tours.tsx:165
+msgid "You've completed the tour and learned how I work."
+msgstr "가이드를 마치고 제가 어떻게 작동하는지 배웠습니다."
