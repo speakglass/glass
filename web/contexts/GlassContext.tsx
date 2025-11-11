@@ -10,7 +10,6 @@ import React, {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { t } from '@lingui/core/macro';
 
 export interface Message {
   type: 'user_message' | 'partner_message';
@@ -282,7 +281,15 @@ export function GlassProvider({
   });
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
+  const [feedbacks, setFeedbacks] = useState<AIFeedback[]>([]);
+  const [translations, setTranslations] = useState<AITranslation[]>([]);
   const pausedMapRef = useRef<
+    Map<string, { paused: boolean; pausedAt: number; accumulated: number }>
+  >(new Map());
+  const feedbackPausedMapRef = useRef<
+    Map<string, { paused: boolean; pausedAt: number; accumulated: number }>
+  >(new Map());
+  const translationPausedMapRef = useRef<
     Map<string, { paused: boolean; pausedAt: number; accumulated: number }>
   >(new Map());
   const onAISuggestionCallbackRef = useRef<
@@ -305,49 +312,66 @@ export function GlassProvider({
     []
   );
 
-  const addSuggestion = useCallback(
-    (type: AISuggestionType, payload: any) => {
-      const id = Math.random().toString(36).substr(2, 9);
-      const timestamp = Date.now();
-      const suggestion: AISuggestion =
-        type === 'feedback'
-          ? typeof payload === 'object' && payload !== null
-            ? {
-                id,
-                type: 'feedback',
-                text:
-                  typeof payload.text === 'string' ? payload.text : undefined,
-                target_text:
-                  typeof payload.target_text === 'string'
-                    ? payload.target_text
-                    : undefined,
-                pronunciation:
-                  typeof payload.pronunciation === 'string'
-                    ? payload.pronunciation
-                    : undefined,
-                reason_native:
-                  typeof payload.reason_native === 'string'
-                    ? payload.reason_native
-                    : undefined,
-                timestamp,
-              }
-            : { id, type: 'feedback', text: String(payload || ''), timestamp }
-          : {
-              id,
-              type,
-              target_text: String(payload?.target_text || ''),
-              native_translation: payload?.native_translation
-                ? String(payload.native_translation)
+  const addSuggestion = useCallback((type: AISuggestionType, payload: any) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const timestamp = Date.now();
+    const suggestion: AISuggestion = {
+      id,
+      type,
+      target_text: String(payload?.target_text || ''),
+      native_translation: payload?.native_translation
+        ? String(payload.native_translation)
+        : undefined,
+      pronunciation: payload?.pronunciation
+        ? String(payload.pronunciation)
+        : undefined,
+      timestamp,
+    };
+    setSuggestions((prev) => [...prev, suggestion]);
+  }, []);
+
+  const addFeedback = useCallback((payload: any) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const timestamp = Date.now();
+    const feedback: AIFeedback =
+      typeof payload === 'object' && payload !== null
+        ? {
+            id,
+            text: typeof payload.text === 'string' ? payload.text : undefined,
+            target_text:
+              typeof payload.target_text === 'string'
+                ? payload.target_text
                 : undefined,
-              pronunciation: payload?.pronunciation
-                ? String(payload.pronunciation)
+            pronunciation:
+              typeof payload.pronunciation === 'string'
+                ? payload.pronunciation
                 : undefined,
-              timestamp,
-            };
-      setSuggestions((prev) => [...prev, suggestion]);
-    },
-    [settings.suggestionDurationSec]
-  );
+            reason_native:
+              typeof payload.reason_native === 'string'
+                ? payload.reason_native
+                : undefined,
+            timestamp,
+          }
+        : { id, text: String(payload || ''), timestamp };
+    setFeedbacks((prev) => [...prev, feedback]);
+  }, []);
+
+  const addTranslation = useCallback((payload: any) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const timestamp = Date.now();
+    const translation: AITranslation = {
+      id,
+      target_text: String(payload?.target_text || ''),
+      native_translation: payload?.native_translation
+        ? String(payload.native_translation)
+        : undefined,
+      pronunciation: payload?.pronunciation
+        ? String(payload.pronunciation)
+        : undefined,
+      timestamp,
+    };
+    setTranslations((prev) => [...prev, translation]);
+  }, []);
 
   const removeSuggestion = useCallback((id: string) => {
     setSuggestions((prev) => prev.filter((s) => s.id !== id));
@@ -768,8 +792,9 @@ export function GlassProvider({
 
             // Show clear instruction message
             setTimeout(() => {
-              toast.error(t`Screen audio sharing required`, {
-                description: t`Please share your screen with audio from your meeting platform (Zoom, Google Meet, Teams).`,
+              toast.error('Screen audio sharing required', {
+                description:
+                  'Please share your screen with audio from your meeting platform (Zoom, Google Meet, Teams).',
                 duration: 8000,
               });
             }, 100);
@@ -892,7 +917,7 @@ export function GlassProvider({
                   setBudgetStatus('enabled');
                   if (receivedAnyTime) {
                     try {
-                      toast.info(t`Trial session ended due to time limit.`);
+                      toast.info('Trial session ended due to time limit.');
                     } catch {}
                     // Run End Call flow (analyze and show summary)
                     disconnect().catch(() => {});
@@ -900,8 +925,8 @@ export function GlassProvider({
                     // No time available at session start → waitlist path
                     setStatus({ value: 'idle' });
                     try {
-                      toast.info(t`You've used your free time`, {
-                        description: t`Join the waitlist to get more access.`,
+                      toast.info("You've used your free time", {
+                        description: 'Join the waitlist to get more access.',
                       });
                     } catch {}
                     try {
