@@ -14,22 +14,34 @@ export default function OnboardingPage() {
   const { currentStep, currentTour, startNextStep } = useNextStep();
   const [onboardingTranslateValue, setOnboardingTranslateValue] = useState('');
   const [onboardingTranslating, setOnboardingTranslating] = useState(false);
-  const [onboardingShowTranslateResult, setOnboardingShowTranslateResult] = useState(false);
-  const [onboardingSuggestionProgress, setOnboardingSuggestionProgress] = useState(100);
-  const [onboardingFeedbackProgress, setOnboardingFeedbackProgress] = useState(100);
-  const [onboardingTranslationProgress, setOnboardingTranslationProgress] = useState(100);
+  const [onboardingShowTranslateResult, setOnboardingShowTranslateResult] =
+    useState(false);
+  const [onboardingSuggestionProgress, setOnboardingSuggestionProgress] =
+    useState(100);
+  const [onboardingFeedbackProgress, setOnboardingFeedbackProgress] =
+    useState(100);
+  const [onboardingTranslationProgress, setOnboardingTranslationProgress] =
+    useState(100);
   const [isMobile, setIsMobile] = useState(false);
 
   // Mock conversation messages
   const onboardingMessages = useMemo(
     () => [
-      { role: 'other' as const, text: '今日はどうでしたか？', translation: 'How was your day?' },
+      {
+        role: 'other' as const,
+        text: '今日はどうでしたか？',
+        translation: 'How was your day?',
+      },
       {
         role: 'you' as const,
         text: '今日は忙しかったけど、楽しかったです。',
         translation: 'I was busy today, but it was fun.',
       },
-      { role: 'other' as const, text: '何をしましたか？', translation: 'What did you do?' },
+      {
+        role: 'other' as const,
+        text: '何をしましたか？',
+        translation: 'What did you do?',
+      },
     ],
     []
   );
@@ -169,7 +181,8 @@ export default function OnboardingPage() {
         type: 'feedback' as const,
         targetText: '私は学校に行きます。',
         pronunciation: 'Watashi wa gakkou ni ikimasu.',
-        translation: 'Try "I go to" instead of "I am go to" for more natural phrasing.',
+        translation:
+          'Try "I go to" instead of "I am go to" for more natural phrasing.',
         progress: onboardingFeedbackProgress,
       };
     }
@@ -189,7 +202,9 @@ export default function OnboardingPage() {
     localStorage.setItem('glass_onboarding_completed', 'true');
 
     // Check if there's a pending session config
-    const pendingConfigStr = localStorage.getItem('glass_pending_session_config');
+    const pendingConfigStr = localStorage.getItem(
+      'glass_pending_session_config'
+    );
     if (pendingConfigStr) {
       try {
         const config: SessionConfig = JSON.parse(pendingConfigStr);
@@ -226,8 +241,16 @@ export default function OnboardingPage() {
       onComplete={handleComplete}
       onSkip={handleSkip}
     >
-      <div className={'fixed inset-0 bg-background flex items-center justify-center'}>
-        <div className={'relative flex h-full w-full max-w-6xl flex-col overflow-hidden pt-16 pb-32 px-4 sm:px-8'}>
+      <div
+        className={
+          'fixed inset-0 bg-background flex items-center justify-center'
+        }
+      >
+        <div
+          className={
+            'relative flex h-full w-full max-w-6xl flex-col overflow-hidden pt-16 pb-32 px-4 sm:px-8'
+          }
+        >
           {/* Messages */}
           <Messages mockMessages={onboardingMessages} />
 
