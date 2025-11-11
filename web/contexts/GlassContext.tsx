@@ -9,7 +9,9 @@ import React, {
   useEffect,
 } from 'react';
 import { useRouter } from 'next/navigation';
+10;
 import { toast } from 'sonner';
+import { t } from '@lingui/core/macro';
 
 export interface Message {
   type: 'user_message' | 'partner_message';
@@ -792,9 +794,8 @@ export function GlassProvider({
 
             // Show clear instruction message
             setTimeout(() => {
-              toast.error('Screen audio sharing required', {
-                description:
-                  'Please share your screen with audio from your meeting platform (Zoom, Google Meet, Teams).',
+              toast.error(t`Screen audio sharing required`, {
+                description: t`Please share your screen with audio from your meeting platform (Zoom, Google Meet, Teams).`,
                 duration: 8000,
               });
             }, 100);
@@ -917,7 +918,7 @@ export function GlassProvider({
                   setBudgetStatus('enabled');
                   if (receivedAnyTime) {
                     try {
-                      toast.info('Trial session ended due to time limit.');
+                      toast.info(t`Trial session ended due to time limit.`);
                     } catch {}
                     // Run End Call flow (analyze and show summary)
                     disconnect().catch(() => {});
@@ -925,8 +926,8 @@ export function GlassProvider({
                     // No time available at session start → waitlist path
                     setStatus({ value: 'idle' });
                     try {
-                      toast.info("You've used your free time", {
-                        description: 'Join the waitlist to get more access.',
+                      toast.info(t`You've used your free time`, {
+                        description: t`Join the waitlist to get more access.`,
                       });
                     } catch {}
                     try {

@@ -13,18 +13,20 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: app/[lang]/layout.tsx:35
+#: app/[lang]/layout.tsx:51
+#: app/[lang]/layout.tsx:72
 #. js-lingui-explicit-id
-#: app/[lang]/layout.tsx:27
-#: app/[lang]/layout.tsx:40
-#: app/[lang]/layout.tsx:61
 msgid "Glass: AI that helps you speak any language"
 msgstr "Glass：帮助你开口说任何语言的 AI 助手"
 
+#: app/[lang]/layout.tsx:36
+#: app/[lang]/layout.tsx:52
+#: app/[lang]/layout.tsx:73
 #. js-lingui-explicit-id
-#: app/[lang]/layout.tsx:28
-#: app/[lang]/layout.tsx:41
-#: app/[lang]/layout.tsx:62
-msgid "Glass is an AI that helps you speak any language. It uses the latest in AI to help you learn and speak any language."
+msgid ""
+"Glass is an AI that helps you speak any language. It uses the latest in AI "
+"to help you learn and speak any language."
 msgstr "Glass 是一款帮助你开口说任何语言的 AI。它利用最新技术，让你更自然地学习和使用多种语言交流。"
 
 #: components/StartCall.tsx:656
@@ -83,7 +85,7 @@ msgstr "准确性"
 msgid "Airport Check-in"
 msgstr "机场值机"
 
-#: components/BottomPanel.tsx:391
+#: components/BottomPanel.tsx:598
 msgid "Always"
 msgstr "始终"
 
@@ -95,7 +97,13 @@ msgstr "发生错误"
 msgid "Analyzing Conversation"
 msgstr "正在分析对话..."
 
-#: components/BottomPanel.tsx:392
+#: lib/onboarding-tours.tsx:63
+msgid ""
+"As I listen to the conversation, everything I do to help you will appear "
+"right here."
+msgstr "在我聆听对话的同时，我给你的所有帮助都会显示在这里。"
+
+#: components/BottomPanel.tsx:599
 msgid "Auto"
 msgstr "自动"
 
@@ -111,6 +119,10 @@ msgstr "一般"
 msgid "Back"
 msgstr "返回"
 
+#: app/[lang]/waitlist/success/page.tsx:77
+msgid "Back to Home"
+msgstr "返回主页"
+
 #: components/CallSummary.tsx:124
 msgid "Below Average"
 msgstr "低于平均"
@@ -123,7 +135,7 @@ msgstr "通话总结"
 msgid "Casual Chat"
 msgstr "轻松聊天"
 
-#: components/BottomPanel.tsx:378
+#: components/BottomPanel.tsx:585
 msgid "Chinese"
 msgstr "中文"
 
@@ -147,6 +159,10 @@ msgstr "关闭"
 msgid "Comprehensibility"
 msgstr "易懂程度"
 
+#: lib/onboarding-tours.tsx:161
+msgid "Congrats! You're all set."
+msgstr "恭喜，一切都准备好了！"
+
 #: components/StartCall.tsx:1279
 #: components/StartCall.tsx:1297
 msgid "Connecting..."
@@ -156,7 +172,7 @@ msgstr "正在连接..."
 msgid "Conversation History"
 msgstr "对话记录"
 
-#: app/[lang]/failure/page.tsx:16
+#: app/[lang]/failure/page.tsx:32
 msgid "Couldn’t connect"
 msgstr "无法连接"
 
@@ -188,11 +204,11 @@ msgstr "结束通话"
 msgid "Ending soon: under 5 minutes left"
 msgstr "即将结束：剩余不足 5 分钟"
 
-#: components/BottomPanel.tsx:384
+#: components/BottomPanel.tsx:591
 msgid "English"
 msgstr "英文"
 
-#: components/WaitlistModal.tsx:257
+#: components/WaitlistModal.tsx:258
 msgid "Enter your email"
 msgstr "请输入你的邮箱"
 
@@ -204,8 +220,8 @@ msgstr "日常对话"
 msgid "Excellent"
 msgstr "非常好"
 
-#: components/BottomPanel.tsx:628
-#: components/BottomPanel.tsx:720
+#: components/BottomPanel.tsx:841
+#: components/BottomPanel.tsx:933
 msgid "Feedback"
 msgstr "反馈"
 
@@ -217,7 +233,7 @@ msgstr "流利度"
 msgid "Follow these steps:"
 msgstr "请按照以下步骤操作："
 
-#: components/BottomPanel.tsx:380
+#: components/BottomPanel.tsx:587
 msgid "French"
 msgstr "法语"
 
@@ -225,11 +241,11 @@ msgstr "法语"
 msgid "Generating insights and feedback..."
 msgstr "正在生成分析和反馈..."
 
-#: components/BottomPanel.tsx:381
+#: components/BottomPanel.tsx:588
 msgid "German"
 msgstr "德语"
 
-#: components/WaitlistModal.tsx:215
+#: components/WaitlistModal.tsx:216
 msgid "Gets smarter every time you speak"
 msgstr "每次对话都让它更了解你"
 
@@ -237,7 +253,7 @@ msgstr "每次对话都让它更了解你"
 msgid "Glass"
 msgstr "Glass"
 
-#: components/WaitlistModal.tsx:184
+#: components/WaitlistModal.tsx:185
 msgid "Glass AI helps you speak any language in the real world"
 msgstr "Glass AI 帮助你在真实场景中自如使用多种语言"
 
@@ -245,9 +261,17 @@ msgstr "Glass AI 帮助你在真实场景中自如使用多种语言"
 msgid "Good"
 msgstr "好"
 
+#: lib/onboarding-tours.tsx:19
+msgid "Hey! I'm Glass."
+msgstr "嘿！我是 Glass。"
+
 #: components/StartCall.tsx:821
 msgid "How would you like to use Glass?"
 msgstr "你希望怎样使用 Glass？"
+
+#: lib/onboarding-tours.tsx:40
+msgid "I listen to your conversation"
+msgstr "我会听你的对话。"
 
 #: components/StartCall.tsx:743
 msgid "I speak"
@@ -257,11 +281,43 @@ msgstr "我会说的语言"
 msgid "I want to learn"
 msgstr "我想学习的语言"
 
-#: components/BottomPanel.tsx:382
+#: lib/onboarding-tours.tsx:100
+msgid "I'll give you feedback"
+msgstr "我也会给你一些反馈。"
+
+#: lib/onboarding-tours.tsx:43
+msgid ""
+"I'll listen to you and your partner, and translate what they say so you can "
+"understand each other."
+msgstr "我会听你和对方的对话，并把内容翻译给你们，让彼此更好理解对方。"
+
+#: lib/onboarding-tours.tsx:80
+msgid "I'll suggest what to say next"
+msgstr "我会给你推荐接下来可以说的话。"
+
+#: lib/onboarding-tours.tsx:83
+msgid ""
+"I'll suggest what you could say next, so just read it out loud. The more I "
+"learn about you, the better my suggestions will get."
+msgstr "我会提示你接下来可以怎么说，你照着念就好。我越了解你，给出的建议就会越自然、越贴切。"
+
+#: lib/onboarding-tours.tsx:23
+msgid ""
+"I'm here to help you communicate and learn a new language through real "
+"conversations and practice."
+msgstr "我会通过真实对话和练习，帮你更自如地使用一门新的语言。"
+
+#: lib/onboarding-tours.tsx:103
+msgid ""
+"If you say something that sounds a bit off, I'll let you know and help you "
+"fix it."
+msgstr "如果有哪句听起来不太自然，我会提醒你，并帮你换成更自然的说法。"
+
+#: components/BottomPanel.tsx:589
 msgid "Italian"
 msgstr "意大利语"
 
-#: components/BottomPanel.tsx:376
+#: components/BottomPanel.tsx:583
 msgid "Japanese"
 msgstr "日语"
 
@@ -269,15 +325,15 @@ msgstr "日语"
 msgid "Job Interview"
 msgstr "求职面试"
 
-#: components/WaitlistModal.tsx:325
+#: components/WaitlistModal.tsx:326
 msgid "Join Early Access"
 msgstr "加入抢先体验"
 
-#: components/WaitlistModal.tsx:321
+#: components/WaitlistModal.tsx:322
 msgid "Joining..."
 msgstr "正在加入..."
 
-#: components/BottomPanel.tsx:377
+#: components/BottomPanel.tsx:584
 msgid "Korean"
 msgstr "韩语"
 
@@ -289,6 +345,10 @@ msgstr "语言"
 msgid "Language Exchange • Meetings"
 msgstr "语言交换 • 会议"
 
+#: lib/onboarding-tours.tsx:29
+msgid "Let me show you how I'll help you."
+msgstr "让我来演示一下，我会怎么帮你。"
+
 #: components/onboarding/GlassOnboardingCard.tsx:89
 msgid "Let's Go! 🎉"
 msgstr "开始吧！🎉"
@@ -297,11 +357,11 @@ msgstr "开始吧！🎉"
 msgid "Light"
 msgstr "浅色"
 
-#: components/BottomPanel.tsx:853
+#: components/BottomPanel.tsx:1066
 msgid "Listening. Say anything when you're ready."
 msgstr "正在聆听，你准备好就可以开始说话。"
 
-#: components/BottomPanel.tsx:897
+#: components/BottomPanel.tsx:1130
 msgid "Listening… say anything when you're ready."
 msgstr "正在聆听，准备好就随时开口。"
 
@@ -321,14 +381,18 @@ msgstr "记忆"
 msgid "Microphone"
 msgstr "麦克风"
 
-#. placeholder {0}: idx + 1
 #: components/Settings.tsx:173
+#. placeholder {0}: idx + 1
 msgid "Microphone {0}"
 msgstr "麦克风 {0}"
 
 #: components/Settings.tsx:199
 msgid "Native script"
 msgstr "原文字"
+
+#: components/WaitlistModal.tsx:98
+msgid "Network error. Please check your connection and try again."
+msgstr "网络错误。请检查您的连接后重试。"
 
 #: components/onboarding/GlassOnboardingCard.tsx:89
 #: components/StartCall.tsx:668
@@ -349,7 +413,11 @@ msgstr "暂无消息"
 msgid "No, I'm fine"
 msgstr "不用，谢谢"
 
-#: components/BottomPanel.tsx:393
+#: lib/onboarding-tours.tsx:168
+msgid "Now let's start your first real conversation!"
+msgstr "现在，开始你的第一次真实对话吧！"
+
+#: components/BottomPanel.tsx:600
 msgid "Off"
 msgstr "关闭"
 
@@ -365,7 +433,11 @@ msgstr "总评分"
 msgid "Phone Call"
 msgstr "电话沟通"
 
-#: components/BottomPanel.tsx:383
+#: components/WaitlistModal.tsx:53
+msgid "Please enter a valid email address"
+msgstr "请输入有效的电子邮件地址"
+
+#: components/BottomPanel.tsx:590
 msgid "Portuguese"
 msgstr "葡萄牙语"
 
@@ -377,11 +449,11 @@ msgstr "练习"
 msgid "Practice Mode"
 msgstr "练习模式"
 
-#: components/WaitlistModal.tsx:238
+#: components/WaitlistModal.tsx:239
 msgid "Practice mode or live on Zoom calls"
 msgstr "可在练习模式或 Zoom 实时会议中使用"
 
-#: components/WaitlistModal.tsx:189
+#: components/WaitlistModal.tsx:190
 msgid "Practice speaking. Get help in real meetings. Remembers everything."
 msgstr "先在这里练习开口，在真实会议中获得实时帮助，并保留完整对话记录。"
 
@@ -392,6 +464,10 @@ msgstr "职场对话"
 #: components/Settings.tsx:183
 msgid "Pronunciation format"
 msgstr "发音显示格式"
+
+#: lib/onboarding-tours.tsx:140
+msgid "Quick translation"
+msgstr "快速翻译"
 
 #: components/StartCall.tsx:908
 msgid "Real Talk"
@@ -409,7 +485,7 @@ msgstr "推荐"
 msgid "Refresh"
 msgstr "刷新"
 
-#: components/WaitlistModal.tsx:218
+#: components/WaitlistModal.tsx:219
 msgid "Remembers who you are, what you care about"
 msgstr "记住你的偏好和关注点"
 
@@ -455,7 +531,7 @@ msgstr "仅显示建议"
 msgid "Skip tour"
 msgstr "跳过引导"
 
-#: components/BottomPanel.tsx:379
+#: components/BottomPanel.tsx:586
 msgid "Spanish"
 msgstr "西班牙语"
 
@@ -473,12 +549,12 @@ msgstr "开始"
 msgid "Start Call"
 msgstr "开始通话"
 
-#: components/BottomPanel.tsx:554
-#: components/BottomPanel.tsx:594
+#: components/BottomPanel.tsx:767
+#: components/BottomPanel.tsx:807
 msgid "Suggest"
 msgstr "建议"
 
-#: components/BottomPanel.tsx:723
+#: components/BottomPanel.tsx:936
 msgid "Suggested Answer"
 msgstr "推荐回答"
 
@@ -494,19 +570,29 @@ msgstr "系统默认"
 msgid "Telephone etiquette"
 msgstr "电话礼仪"
 
+#: app/[lang]/waitlist/success/page.tsx:66
+msgid ""
+"Thanks for joining. We’ll email you when more access is available. Sit "
+"tight — it won’t be long."
+msgstr "感谢加入。我们会在更多权限开放时通过电子邮件通知您。请稍安勿躁——很快就会有消息的。"
+
 #: components/Settings.tsx:293
 msgid "Theme"
 msgstr "主题"
 
-#: components/BottomPanel.tsx:387
+#: lib/onboarding-tours.tsx:60
+msgid "This is where I help you"
+msgstr "我会在这里帮你。"
+
+#: components/BottomPanel.tsx:594
 msgid "To {langName}..."
 msgstr "切换为 {langName}…"
 
-#: components/BottomPanel.tsx:387
+#: components/BottomPanel.tsx:594
 msgid "Translate to {langName}..."
 msgstr "翻译成{langName}..."
 
-#: components/BottomPanel.tsx:722
+#: components/BottomPanel.tsx:935
 msgid "Translation"
 msgstr "翻译"
 
@@ -515,13 +601,19 @@ msgid "Travel & Immigration"
 msgstr "旅行与出入境"
 
 #: app/[lang]/error.tsx:34
-#: app/[lang]/failure/page.tsx:30
+#: app/[lang]/failure/page.tsx:46
 msgid "Try again"
 msgstr "请重试"
 
 #: components/StartCall.tsx:858
 msgid "Tutorial with AI"
 msgstr "AI 引导教程"
+
+#: lib/onboarding-tours.tsx:143
+msgid ""
+"Type what you want to say in your language, or even just a few keywords. "
+"I'll listen to the conversation and suggest the right sentence for you."
+msgstr "你可以用自己的语言输入想说的话，哪怕只打几个关键词。我会根据对话内容帮你生成合适的句子。"
 
 #: components/StartCall.tsx:402
 msgid "Unable to start call"
@@ -535,11 +627,34 @@ msgstr "移动端暂不支持"
 msgid "View Documentation"
 msgstr "查看文档"
 
-#: app/[lang]/failure/page.tsx:19
-msgid "We had trouble starting your session. Please check your internet and try again."
+#: components/WaitlistModal.tsx:275
+msgid "Waitlist Email Captured"
+msgstr "已成功登记至候补名单邮箱"
+
+#: components/WaitlistModal.tsx:61
+msgid "Waitlist Submit Attempted"
+msgstr "候补提交已尝试"
+
+#: components/WaitlistModal.tsx:90
+#: components/WaitlistModal.tsx:99
+msgid "Waitlist Submit Failed"
+msgstr "等待名单提交失败"
+
+#: components/WaitlistModal.tsx:86
+msgid "Waitlist Submit Succeeded"
+msgstr "加入候补名单成功提交"
+
+#: components/WaitlistModal.tsx:89
+msgid "We had trouble adding you. Please try again later."
+msgstr "我们无法添加您。请稍后重试。"
+
+#: app/[lang]/failure/page.tsx:35
+msgid ""
+"We had trouble starting your session. Please check your internet and try "
+"again."
 msgstr "启动会话时出现问题，请检查网络连接后重试。"
 
-#: components/WaitlistModal.tsx:332
+#: components/WaitlistModal.tsx:333
 msgid "We'll notify you when early access is ready. No spam, ever."
 msgstr "抢先体验版本准备好后我们会通知你，绝不发送垃圾邮件。"
 
@@ -551,10 +666,28 @@ msgstr "在需要时，我们会用你熟悉的文字显示建议的读法。"
 msgid "What would you like to practice?"
 msgstr "你想练习哪一类场景？"
 
-#: components/WaitlistModal.tsx:235
+#: components/WaitlistModal.tsx:236
 msgid "Works in real meetings"
 msgstr "在真实会议中同样好用"
 
 #: components/StartCall.tsx:549
 msgid "Yes, show pronunciation"
 msgstr "是的，显示发音"
+
+#: lib/onboarding-tours.tsx:120
+msgid "You can control how much I help"
+msgstr "你可以自己决定我帮到什么程度。"
+
+#: lib/onboarding-tours.tsx:123
+msgid ""
+"You can turn my suggestions and feedback on, off, or keep it on auto. By "
+"default, it's set to auto."
+msgstr "你可以把我的建议和反馈设为开启、关闭或自动模式。默认是自动。"
+
+#: app/[lang]/waitlist/success/page.tsx:63
+msgid "You’re on the list 🎉"
+msgstr "您已在名单上 🎉"
+
+#: lib/onboarding-tours.tsx:165
+msgid "You've completed the tour and learned how I work."
+msgstr "你已经完成了引导，知道我怎么帮你了。"

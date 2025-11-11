@@ -7,9 +7,12 @@ import { cn } from '@/utils';
 import { Toaster } from '@/components/ui/sonner';
 import { AppProviders } from '@/components/AppProviders';
 import { LinguiClientProvider } from '@/components/providers/LinguiProviders';
-import { allMessages, getI18nInstance } from '@/appRouterI18n';
+import { allMessages, createI18nForLocale } from '@/appRouterI18n';
 import { initLingui, PageLangParam } from '@/initLingui';
-import { LOCALIZED_LANGUAGE_CODES } from '@/lib/supported-languages';
+import {
+  LOCALIZED_LANGUAGE_CODES,
+  DEFAULT_LANGUAGE,
+} from '@/lib/supported-languages';
 
 export function generateStaticParams() {
   return LOCALIZED_LANGUAGE_CODES.map((lang) => ({
@@ -18,8 +21,13 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata(props: PageLangParam) {
-  const i18n = getI18nInstance((await props.params).lang);
-  const lang = (await props.params).lang;
+  const rawLang = (await props.params).lang;
+  const lang = (LOCALIZED_LANGUAGE_CODES as readonly string[]).includes(
+    rawLang as any
+  )
+    ? rawLang
+    : DEFAULT_LANGUAGE;
+  const i18n = createI18nForLocale(lang);
   const baseUrl = process.env.SITE_URL || 'https://app.speakglass.com/';
   const canonicalUrl = lang === 'en' ? baseUrl : `${baseUrl}/${lang}`;
 
@@ -34,6 +42,9 @@ export async function generateMetadata(props: PageLangParam) {
         'en-US': baseUrl,
         'ko-KR': `${baseUrl}/ko`,
         'ja-JP': `${baseUrl}/ja`,
+        'es-ES': `${baseUrl}/es`,
+        'fr-FR': `${baseUrl}/fr`,
+        'zh-CN': `${baseUrl}/zh`,
       },
     },
     openGraph: {
@@ -73,7 +84,12 @@ export default async function RootLayout({
   children: React.ReactNode;
   params: Promise<{ lang: string }>;
 }>) {
-  const lang = (await params).lang;
+  const rawLang = (await params).lang;
+  const lang = (LOCALIZED_LANGUAGE_CODES as readonly string[]).includes(
+    rawLang as any
+  )
+    ? rawLang
+    : DEFAULT_LANGUAGE;
   initLingui(lang);
 
   return (
