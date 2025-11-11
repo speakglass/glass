@@ -541,7 +541,7 @@ export default function BottomPanel({
   const currentLoadingTranslate = isMockMode ? mockTranslating : loadingTranslate;
 
   return (
-    <div className={'mx-auto w-full min-h-[40vh]'}>
+    <div className={'mx-auto w-full min-h-[50vh]'}>
       <div className={'max-w-2xl mx-auto w-full px-4 h-full flex flex-col'}>
         <div id="glass-translate-section" className={'border-t border-border/30 pt-3 pb-3 shrink-0'}>
           <div className={'flex items-center gap-2 md:gap-3 mb-3'}>
