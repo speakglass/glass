@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     deepgram_encoding: str = "linear16"
     deepgram_sample_rate: int = 16000
     deepgram_interim_results: bool = True
-    deepgram_utterance_end_ms: int | None = 1500
-    deepgram_endpointing_ms: int | None = 1200
+    deepgram_utterance_end_ms: int | None = 3500
+    deepgram_endpointing_ms: int | None = 2500
     graphiti_key: str | None = None
     graphiti_base_url: str = "https://api.graphiti.ai/v1"
     graphiti_upsert_path: str = "/graph/upsert"

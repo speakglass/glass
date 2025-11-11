@@ -50,27 +50,31 @@ const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = {
       pronunciation: 'サンキュー ベリー マッチ',
       translation: '本当にありがとうございます',
     },
-    zh: { target: 'Thank you very much', pronunciation: 'seng-kyou be-li ma-chi', translation: '非常感谢' },
+    zh: { target: 'Thank you very much', pronunciation: 'sang-kyu bay-ree ma-chee', translation: '非常感谢' },
     es: { target: 'Thank you very much', pronunciation: 'zenk yu beri mach', translation: 'Muchas gracias' },
     fr: { target: 'Thank you very much', pronunciation: 'sank iou vèri meutch', translation: 'Merci beaucoup' },
   },
   ko: {
-    en: { target: '정말 감사합니다', pronunciation: 'jeongmal gamsahamnida', translation: 'Thank you very much' },
+    en: { target: '정말 감사합니다', pronunciation: 'jeong-mal gam-sa-ham-ni-da', translation: 'Thank you very much' },
     ja: {
       target: '정말 감사합니다',
       pronunciation: 'チョンマル カムサハムニダ',
       translation: '本当にありがとうございます',
     },
-    zh: { target: '정말 감사합니다', pronunciation: 'jeong-ma-er kam-sa-ha-mu-ni-da', translation: '非常感谢' },
-    es: { target: '정말 감사합니다', pronunciation: 'jeongmal gamsahamnida', translation: 'Muchas gracias' },
-    fr: { target: '정말 감사합니다', pronunciation: 'jeongmal gamsahamnida', translation: 'Merci beaucoup' },
+    zh: { target: '정말 감사합니다', pronunciation: 'jung-mal gam-sa-ham-nee-da', translation: '非常感谢' },
+    es: { target: '정말 감사합니다', pronunciation: 'jeong-mal gam-sa-jam-ni-da', translation: 'Muchas gracias' },
+    fr: { target: '정말 감사합니다', pronunciation: 'djeong-mal gam-sa-ham-ni-da', translation: 'Merci beaucoup' },
   },
   ja: {
-    en: { target: 'ありがとうございます', pronunciation: 'arigatou gozaimasu', translation: 'Thank you very much' },
+    en: {
+      target: 'ありがとうございます',
+      pronunciation: 'a-ri-ga-tou go-za-i-ma-su',
+      translation: 'Thank you very much',
+    },
     ko: { target: 'ありがとうございます', pronunciation: '아리가토 고자이마스', translation: '정말 감사합니다' },
-    zh: { target: 'ありがとうございます', pronunciation: 'a-li-ga-tou go-za-i-ma-su', translation: '非常感谢' },
-    es: { target: 'ありがとうございます', pronunciation: 'arigatou gozaimasu', translation: 'Muchas gracias' },
-    fr: { target: 'ありがとうございます', pronunciation: 'arigatou gozaimasu', translation: 'Merci beaucoup' },
+    zh: { target: 'ありがとうございます', pronunciation: 'a-ri-ga-toh go-zai-ma-su', translation: '非常感谢' },
+    es: { target: 'ありがとうございます', pronunciation: 'a-ri-ga-tou go-sai-ma-su', translation: 'Muchas gracias' },
+    fr: { target: 'ありがとうございます', pronunciation: 'a-ri-ga-tou go-zaï-ma-su', translation: 'Merci beaucoup' },
   },
   zh: {
     en: { target: '非常感谢', pronunciation: 'fei-chang gan-xie', translation: 'Thank you very much' },
@@ -83,15 +87,15 @@ const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = {
     en: { target: 'Muchas gracias', pronunciation: 'moo-chahs grah-see-ahs', translation: 'Thank you very much' },
     ko: { target: 'Muchas gracias', pronunciation: '무차스 그라시아스', translation: '정말 감사합니다' },
     ja: { target: 'Muchas gracias', pronunciation: 'ムーチャス グラシアス', translation: '本当にありがとうございます' },
-    zh: { target: 'Muchas gracias', pronunciation: 'mu-cha-si ge-la-xi-ya-si', translation: '非常感谢' },
-    fr: { target: 'Muchas gracias', translation: 'Merci beaucoup' },
+    zh: { target: 'Muchas gracias', pronunciation: 'moo-chas gra-see-as', translation: '非常感谢' },
+    fr: { target: 'Muchas gracias', pronunciation: 'moo-tchas gra-si-as', translation: 'Merci beaucoup' },
   },
   fr: {
     en: { target: 'Merci beaucoup', pronunciation: 'mehr-see boh-koo', translation: 'Thank you very much' },
     ko: { target: 'Merci beaucoup', pronunciation: '메르시 보쿠', translation: '정말 감사합니다' },
     ja: { target: 'Merci beaucoup', pronunciation: 'メルシー ボクー', translation: '本当にありがとうございます' },
-    zh: { target: 'Merci beaucoup', pronunciation: 'mei-er-xi bo-ku', translation: '非常感谢' },
-    es: { target: 'Merci beaucoup', translation: 'Muchas gracias' },
+    zh: { target: 'Merci beaucoup', pronunciation: 'mehr-see bo-koo', translation: '非常感谢' },
+    es: { target: 'Merci beaucoup', pronunciation: 'mersi boku', translation: 'Muchas gracias' },
   },
 };
 
@@ -387,7 +391,7 @@ export default function StartCall() {
                               {phrase?.target || 'Example phrase'}
                             </div>
                             {phrase?.pronunciation && (
-                              <div className={'text-emerald-400 opacity-80 text-sm mt-0.5'}>{phrase.pronunciation}</div>
+                              <div className={'text-sky-600 opacity-80 text-sm mt-0.5'}>{phrase.pronunciation}</div>
                             )}
                             {phrase?.translation && (
                               <div className={`${getTextClass('muted')} text-xs mt-1`}>{phrase.translation}</div>

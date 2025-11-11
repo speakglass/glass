@@ -49,9 +49,9 @@ export default function OnboardingPage() {
     }
   }, []);
 
-  // Step 6: simulate typing
+  // Step 4: simulate typing (Quick translation step)
   useEffect(() => {
-    if (currentStep !== 6) {
+    if (currentStep !== 4) {
       setOnboardingTranslateValue('');
       setOnboardingTranslating(false);
       setOnboardingShowTranslateResult(false);
@@ -87,10 +87,10 @@ export default function OnboardingPage() {
     };
   }, [currentStep]);
 
-  // Progress animations for Step 3, 4, 6
+  // Progress animations for Step 2, 3, 4
   useEffect(() => {
-    // Step 3: Suggestion progress
-    if (currentStep === 3) {
+    // Step 2: Suggestion progress (merged help + suggestion step)
+    if (currentStep === 2) {
       setOnboardingSuggestionProgress(100);
       const duration = 8000;
       const interval = 50;
@@ -110,8 +110,8 @@ export default function OnboardingPage() {
       return () => clearInterval(timer);
     }
 
-    // Step 4: Feedback progress
-    if (currentStep === 4) {
+    // Step 3: Feedback progress
+    if (currentStep === 3) {
       setOnboardingFeedbackProgress(100);
       const duration = 8000;
       const interval = 50;
@@ -131,8 +131,8 @@ export default function OnboardingPage() {
       return () => clearInterval(timer);
     }
 
-    // Step 6: Translation progress (starts when result shows)
-    if (currentStep === 6 && onboardingShowTranslateResult) {
+    // Step 4: Translation progress (starts when result shows)
+    if (currentStep === 4 && onboardingShowTranslateResult) {
       setOnboardingTranslationProgress(100);
       const duration = 8000;
       const interval = 50;
@@ -155,7 +155,7 @@ export default function OnboardingPage() {
 
   // Get suggestion data based on current step
   const getMockSuggestion = () => {
-    if (currentStep === 3) {
+    if (currentStep === 2) {
       return {
         type: 'answer' as const,
         targetText: '私はソフトウェアエンジニアです。',
@@ -164,7 +164,7 @@ export default function OnboardingPage() {
         progress: onboardingSuggestionProgress,
       };
     }
-    if (currentStep === 4) {
+    if (currentStep === 3) {
       return {
         type: 'feedback' as const,
         targetText: '私は学校に行きます。',
@@ -173,7 +173,7 @@ export default function OnboardingPage() {
         progress: onboardingFeedbackProgress,
       };
     }
-    if (currentStep === 6 && onboardingShowTranslateResult) {
+    if (currentStep === 4 && onboardingShowTranslateResult) {
       return {
         type: 'translate' as const,
         targetText: 'はじめまして。',
@@ -197,23 +197,39 @@ export default function OnboardingPage() {
         localStorage.removeItem('glass_pending_session_config');
         // Start the call with the saved config
         await connect(config);
-        // Go to home page to show the chat UI
-        router.push('/');
+        // Go to home page to show the chat UI (replace to avoid going back to onboarding)
+        router.replace('/');
       } catch (error) {
         console.error('Failed to start call after onboarding:', error);
-        router.push('/');
+        router.replace('/');
       }
     } else {
       // No pending config, go to home
-      router.push('/');
+      router.replace('/');
     }
   };
 
   const handleSkip = () => {
     localStorage.setItem('glass_onboarding_completed', 'true');
-    // Clear any pending config
-    localStorage.removeItem('glass_pending_session_config');
-    router.push('/');
+    // If there is a pending config, start that session instead of going home
+    const pendingConfigStr = localStorage.getItem('glass_pending_session_config');
+    if (pendingConfigStr) {
+      try {
+        const config: SessionConfig = JSON.parse(pendingConfigStr);
+        // Clear the pending config
+        localStorage.removeItem('glass_pending_session_config');
+        // Start the call with the saved config
+        // Note: not awaiting here to avoid blocking UI on skip
+        connect(config).finally(() => {
+          // Navigate to chat UI
+          router.replace('/');
+        });
+      } catch {
+        router.replace('/');
+      }
+    } else {
+      router.replace('/');
+    }
   };
 
   return (
@@ -226,8 +242,12 @@ export default function OnboardingPage() {
       onComplete={handleComplete}
       onSkip={handleSkip}
     >
-      <div className={'fixed inset-0 bg-background flex items-center justify-center'}>
-        <div className={'relative flex h-full w-full max-w-6xl flex-col overflow-hidden pt-16 pb-32 px-4 sm:px-8'}>
+      <div className={'fixed inset-0 bg-background flex'}>
+        <div
+          className={
+            'relative flex h-full w-full max-w-6xl mx-auto flex-col overflow-hidden pt-14 pb-28 sm:pb-0 px-4 sm:px-8'
+          }
+        >
           {/* Messages */}
           <Messages mockMessages={onboardingMessages} />
 

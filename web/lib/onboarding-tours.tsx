@@ -11,7 +11,7 @@ export const glassTours: Tour[] = [
         content: (
           <>
             <p className={'mb-3'}>
-              I'm here to help you communicate and learn a new language through real conversations and practice.
+              I'm here to help you communicate and learn a new language through real conversations.
             </p>
             <p>Let me show you how I'll help you.</p>
           </>
@@ -27,7 +27,7 @@ export const glassTours: Tour[] = [
         content: (
           <p>I'll listen to you and your partner, and translate what they say so you can understand each other.</p>
         ),
-        selector: '#glass-messages-scroll-area',
+        selector: '#glass-messages-content',
         side: 'bottom',
         showControls: false,
         showSkip: false,
@@ -38,24 +38,11 @@ export const glassTours: Tour[] = [
       // Step 2: I'm listening to help you in real-time
       {
         icon: '🎧',
-        title: 'This is where I help you',
-        content: <p>As I listen to the conversation, everything I do to help you will appear right here.</p>,
-        selector: '#glass-ai-panel',
-        side: 'bottom',
-        showControls: false,
-        showSkip: false,
-        pointerPadding: 10,
-        pointerRadius: 12,
-      },
-
-      // Step 3: Suggestions
-      {
-        icon: '✨',
-        title: "I'll suggest what to say next",
+        title: 'This is where I help and suggest what to say',
         content: (
           <p>
-            I'll suggest what you could say next, so just read it out loud. The more I learn about you, the better my
-            suggestions will get.
+            I&apos;ll listen and help here. I&apos;ll suggest what to say next, so just say it. I remember a bit from
+            our chats to get better over time.
           </p>
         ),
         selector: '#glass-ai-panel',
@@ -66,11 +53,16 @@ export const glassTours: Tour[] = [
         pointerRadius: 12,
       },
 
-      // Step 4: Feedback
+      // Step 3: Feedback
       {
         icon: '💭',
         title: "I'll give you feedback",
-        content: <p>If you say something that sounds a bit off, I'll let you know and help you fix it.</p>,
+        content: (
+          <p>
+            If your grammar, pronunciation, or word choice is off, I&apos;ll flag it and suggest a clearer, more natural
+            option.
+          </p>
+        ),
         selector: '#glass-ai-panel',
         side: 'bottom',
         showControls: false,
@@ -79,29 +71,14 @@ export const glassTours: Tour[] = [
         pointerRadius: 12,
       },
 
-      // Step 5: Settings
-      {
-        icon: '⚙️',
-        title: 'You can control how much I help',
-        content: (
-          <p>You can turn my suggestions and feedback on, off, or keep it on auto. By default, it's set to auto.</p>
-        ),
-        selector: '#glass-settings-button',
-        side: 'left',
-        showControls: false,
-        showSkip: false,
-        pointerPadding: 8,
-        pointerRadius: 8,
-      },
-
-      // Step 6: Quick Translation
+      // Step 4: Quick Translation
       {
         icon: '⚡',
         title: 'Quick translation',
         content: (
           <p>
-            Type what you want to say in your language, or even just a few keywords. I'll listen to the conversation and
-            suggest the right sentence for you.
+            Want to say something but don&apos;t know the sentence? Type in your language or a few keywords. I&apos;ll
+            show the translation.
           </p>
         ),
         selector: '#glass-translate-section',
@@ -112,7 +89,7 @@ export const glassTours: Tour[] = [
         pointerRadius: 12,
       },
 
-      // Step 7: Ready to start
+      // Step 5: Ready to start
       {
         icon: '🎉',
         title: "Congrats! You're all set.",

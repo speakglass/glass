@@ -693,6 +693,61 @@ JSON:
         example = self._get_pronunciation_example(native_lang, target_lang)
         return f"Provide pronunciation in ONE line. Example: {example}"
 
+    def _get_reason_example(self, native_lang: str) -> str:
+        """Return a very short, native-language-only feedback style example."""
+        lang = (native_lang or "").strip().lower()
+        examples = {
+            "korean": "조금 어색해요. 이렇게 말해보세요.",
+            "english": "A bit unnatural. Try this instead.",
+            "japanese": "少し不自然です。こう言いましょう。",
+            "chinese": "有点不自然。可以这样说。",
+            "spanish": "Suena un poco raro. Mejor así.",
+            "french": "Un peu artificiel. Dites plutôt ceci.",
+        }
+        return examples.get(lang, "Short tip in your native language.")
+    async def generate_pronunciation(
+        self,
+        target_text: str,
+        *,
+        native_lang: str,
+        target_lang: str,
+        mode: str | None = None,  # 'romaji' or 'native'
+    ) -> str:
+        """Generate a one-line pronunciation for target_text.
+
+        Returns a single line string. No translation, no extra prose.
+        """
+        text = (target_text or "").strip()
+        if not text:
+            return ""
+        native = (native_lang or "").strip()
+        target = (target_lang or "").strip()
+        system = "Output only a SINGLE LINE with the pronunciation. No translation. No quotes. No extra words."
+        if (mode or "").strip().lower() == "romaji":
+            example = self._get_romanization_example(target)
+            user = f"Romanize this {target} sentence. One line only.\nExample: {example}\n\n{text}"
+        else:
+            rule = self._build_pronunciation_rule(native, target)
+            user = f"{rule}\nWrite sounds using {native} script for this {target} sentence:\n\n{text}"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": "gpt-4.1-mini",
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "temperature": 0.1,
+            "max_tokens": 60,
+        }
+        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
+            response = await client.post("/chat/completions", json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+        return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+
     async def feedback(
         self,
         user_text: str,
@@ -718,15 +773,6 @@ JSON:
             target_lang = "English"
         if not native_lang:
             native_lang = "Korean"
-        
-        # Build pronunciation guidance consistent with other structured prompts
-        pronounce_rule = "Do NOT include a 'pronunciation' field."
-        if include_pronunciation:
-            if (pronunciation_mode or "").strip().lower() == "romaji":
-                example = self._get_romanization_example(target_lang)
-                pronounce_rule = f"Include 'pronunciation' with ONE line of romanization. Example: {example}"
-            else:
-                pronounce_rule = self._build_pronunciation_rule(native_lang, target_lang)
 
         # Optional short transcript context (last few turns)
         transcript_context = ""
@@ -737,31 +783,23 @@ JSON:
                     transcript_context = f"""Recent conversation (last {len(transcript_tail)} turns):\n{transcript_lines}\n\n"""
         except Exception:
             pass
-        # System rules: JSON schema and gating
+        # System rules: minimal, unambiguous JSON schema (gating handled elsewhere)
         system_rules = (
-            "You are a strict but supportive language coach.\n\n"
-            "DEFAULT: If feedback is not truly needed, return the single word: NONE\n"
-            "IMPORTANT: Input is from speech-to-text (STT). IGNORE punctuation/capitalization/minor formatting issues.\n"
-            "Only give feedback for: clear grammar/conjugation errors, unnatural phrasing that hinders communication, or significantly wrong word choice.\n\n"
-            "WHEN feedback IS needed, output STRICT JSON ONLY with keys:\n"
-            "  - \\\"reason_native\\\": detailed explanation in the learner's native language explaining what is wrong and why\n"
-            f'  - \"suggestion_target\": corrected/natural phrasing in {target_lang}\n'
-            f"  - \"pronunciation\": OPTIONAL one-line phonetic reading (only if requested)\n\n"
-            "Rules:\n"
-            "- JSON only. No backticks, no extra prose.\n"
-            "- Make reason_native clear and educational: explain what's wrong, why it's wrong, and when to use correct form (2-3 sentences, up to 150 chars).\n"
-            "- Keep suggestion_target concise (≤ 15 words).\n"
-            f"- {pronounce_rule}\n"
+            "You are a concise speaking coach (STT input). Ignore minor STT noise.\n"
+            f"Language policy: reason_native MUST be in {native_lang} only (no {target_lang}/English except quoted terms).\n"
+            "Output STRICT JSON with exactly these keys:\n"
+            f'- "reason_native": {native_lang}, ≤150 chars; you may quote ≤2 {target_lang} terms in single quotes.\n'
+            f'- "suggestion_target": {target_lang} only, ≤15 words.\n'
+            "No extra fields. No backticks. No prose outside JSON."
         )
 
-        # User prompt describing the specific task
+        # User prompt
         user_prompt = (
             f"Native language: {native_lang}\n"
             f"Target language: {target_lang}\n\n"
             f"{transcript_context}"
-            f"Utterance:\n\"{user_text}\"\n\n"
-            "If no feedback needed, return NONE.\n"
-            "If feedback is needed, respond with STRICT JSON only using the specified keys."
+            f'Utterance: "{user_text}"\n\n'
+            "Return STRICT JSON as specified."
         )
         
         payload = {
@@ -770,8 +808,9 @@ JSON:
                 {"role": "system", "content": system_rules},
                 {"role": "user", "content": user_prompt},
             ],
-            "temperature": 0.2,
+            "temperature": 0.1,
             "max_tokens": 500,
+            "response_format": {"type": "json_object"},
         }
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -851,6 +890,54 @@ Return YES or NO only.
             "messages": [
                 {"role": "user", "content": prompt}
             ],
+            "temperature": 0.1,
+            "max_tokens": 10,
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
+            response = await client.post("/chat/completions", json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+        decision = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip().upper()
+        return "YES" in decision
+
+    async def should_feedback(
+        self,
+        transcript_tail: Sequence[str | dict],
+        user_text: str,
+        mode: str = "real",
+    ) -> bool:
+        """Lightweight gate to decide if we should request feedback for user's utterance.
+
+        Returns True to request feedback, False to skip.
+        """
+        transcript_lines = self._format_transcript(transcript_tail)
+        prompt = f"""
+You are a concise speech coach. Decide if the user's last utterance needs feedback now.
+
+Give feedback only when:
+- Grammar/conjugation is clearly wrong, OR
+- Phrasing blocks understanding, OR
+- Pronunciation/clarity likely needs help (stress/linking/vowel/consonant/intonation).
+
+IGNORE: spacing, punctuation, casing, filler words, or tiny STT glitches.
+
+Conversation:
+{transcript_lines}
+
+User utterance:
+"{user_text}"
+
+Return YES or NO only.
+"""
+        if mode == "practice":
+            prompt = "[Practice Mode]\n" + prompt
+        payload = {
+            "model": "gpt-4.1-mini",
+            "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.1,
             "max_tokens": 10,
         }

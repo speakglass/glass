@@ -48,7 +48,7 @@ export interface VoiceSettings {
   countryCode?: string; // ISO country code
   proficiency?: 'cant_read' | 'can_read';
   pronunciationMode?: 'native' | 'romaji';
-  suggestionDurationSec?: number;
+  aiMessageDurationSec?: number | null; // null = no time limit
   glassMode?: boolean;
   showManualSuggestButtons?: boolean;
 }
@@ -204,7 +204,7 @@ export function GlassProvider({
         countryCode: undefined,
         proficiency: undefined,
         pronunciationMode: 'native',
-        suggestionDurationSec: 20,
+        aiMessageDurationSec: null,
         glassMode: false,
         showManualSuggestButtons: false,
       };
@@ -220,7 +220,7 @@ export function GlassProvider({
           countryCode: parsed.countryCode,
           proficiency: parsed.proficiency,
           pronunciationMode: parsed.pronunciationMode || 'native',
-          suggestionDurationSec: parsed.suggestionDurationSec || 20,
+          aiMessageDurationSec: parsed.aiMessageDurationSec ?? null,
           glassMode: parsed.glassMode ?? false,
           showManualSuggestButtons: parsed.showManualSuggestButtons ?? false,
         };
@@ -234,7 +234,7 @@ export function GlassProvider({
       countryCode: undefined,
       proficiency: undefined,
       pronunciationMode: 'native',
-      suggestionDurationSec: 20,
+      aiMessageDurationSec: null,
       glassMode: false,
       showManualSuggestButtons: false,
     };
@@ -306,6 +306,8 @@ export function GlassProvider({
       timestamp,
     };
     setTranslations((prev) => [...prev, translation]);
+    // Clear all suggestions when translation result is added
+    setSuggestions([]);
   }, []);
 
   const removeSuggestion = useCallback((id: string) => {
@@ -327,7 +329,7 @@ export function GlassProvider({
     (id: string): number => {
       const s = suggestions.find((x) => x.id === id);
       if (!s) return 0;
-      const total = Math.max(1, settings.suggestionDurationSec ?? 20) * 1000;
+      const total = settings.aiMessageDurationSec ? Math.max(1, settings.aiMessageDurationSec) * 1000 : Infinity;
       const pausedInfo = pausedMapRef.current.get(id);
       const now = Date.now();
       const pausedDelta = pausedInfo
@@ -336,7 +338,7 @@ export function GlassProvider({
       const elapsed = now - (s.timestamp || 0) - pausedDelta;
       return Math.max(0, total - elapsed);
     },
-    [suggestions, settings.suggestionDurationSec]
+    [suggestions, settings.aiMessageDurationSec]
   );
 
   const pauseSuggestionTimer = useCallback((id: string) => {
@@ -361,7 +363,7 @@ export function GlassProvider({
     (id: string): number => {
       const f = feedbacks.find((x) => x.id === id);
       if (!f) return 0;
-      const total = Math.max(1, settings.suggestionDurationSec ?? 20) * 1000;
+      const total = settings.aiMessageDurationSec ? Math.max(1, settings.aiMessageDurationSec) * 1000 : Infinity;
       const pausedInfo = feedbackPausedMapRef.current.get(id);
       const now = Date.now();
       const pausedDelta = pausedInfo
@@ -370,7 +372,7 @@ export function GlassProvider({
       const elapsed = now - (f.timestamp || 0) - pausedDelta;
       return Math.max(0, total - elapsed);
     },
-    [feedbacks, settings.suggestionDurationSec]
+    [feedbacks, settings.aiMessageDurationSec]
   );
 
   const pauseFeedbackTimer = useCallback((id: string) => {
@@ -395,7 +397,7 @@ export function GlassProvider({
     (id: string): number => {
       const t = translations.find((x) => x.id === id);
       if (!t) return 0;
-      const total = Math.max(1, settings.suggestionDurationSec ?? 20) * 1000;
+      const total = settings.aiMessageDurationSec ? Math.max(1, settings.aiMessageDurationSec) * 1000 : Infinity;
       const pausedInfo = translationPausedMapRef.current.get(id);
       const now = Date.now();
       const pausedDelta = pausedInfo
@@ -404,7 +406,7 @@ export function GlassProvider({
       const elapsed = now - (t.timestamp || 0) - pausedDelta;
       return Math.max(0, total - elapsed);
     },
-    [translations, settings.suggestionDurationSec]
+    [translations, settings.aiMessageDurationSec]
   );
 
   const pauseTranslationTimer = useCallback((id: string) => {
@@ -428,7 +430,7 @@ export function GlassProvider({
   // Auto-remove expired suggestions in a loop that respects pause/resume
   useEffect(() => {
     const intervalId = setInterval(() => {
-      const total = Math.max(1, settings.suggestionDurationSec ?? 20) * 1000;
+      const total = settings.aiMessageDurationSec ? Math.max(1, settings.aiMessageDurationSec) * 1000 : Infinity;
       const now = Date.now();
       setSuggestions((prev) => {
         let changed = false;
@@ -450,12 +452,12 @@ export function GlassProvider({
       });
     }, 100);
     return () => clearInterval(intervalId);
-  }, [settings.suggestionDurationSec]);
+  }, [settings.aiMessageDurationSec]);
 
   // Auto-remove expired feedbacks
   useEffect(() => {
     const intervalId = setInterval(() => {
-      const total = Math.max(1, settings.suggestionDurationSec ?? 20) * 1000;
+      const total = settings.aiMessageDurationSec ? Math.max(1, settings.aiMessageDurationSec) * 1000 : Infinity;
       const now = Date.now();
       setFeedbacks((prev) => {
         let changed = false;
@@ -477,12 +479,12 @@ export function GlassProvider({
       });
     }, 100);
     return () => clearInterval(intervalId);
-  }, [settings.suggestionDurationSec]);
+  }, [settings.aiMessageDurationSec]);
 
   // Auto-remove expired translations
   useEffect(() => {
     const intervalId = setInterval(() => {
-      const total = Math.max(1, settings.suggestionDurationSec ?? 20) * 1000;
+      const total = settings.aiMessageDurationSec ? Math.max(1, settings.aiMessageDurationSec) * 1000 : Infinity;
       const now = Date.now();
       setTranslations((prev) => {
         let changed = false;
@@ -504,7 +506,7 @@ export function GlassProvider({
       });
     }, 100);
     return () => clearInterval(intervalId);
-  }, [settings.suggestionDurationSec]);
+  }, [settings.aiMessageDurationSec]);
 
   const wsRef = useRef<WebSocket | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
@@ -608,6 +610,10 @@ export function GlassProvider({
         setStatus({ value: 'connecting' });
         // Reset conversation state for a fresh session
         setMessages([]);
+        // Clear any lingering AI overlays from previous sessions
+        setSuggestions([]);
+        setFeedbacks([]);
+        setTranslations([]);
 
         // Load latest settings from localStorage
         let currentSettings = settings;
@@ -972,6 +978,14 @@ export function GlassProvider({
           if (isSpeechFinal) {
             const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.partial);
             if (idx >= 0) next.splice(idx, 1);
+
+            // Clear all suggestions when user's speech is final
+            if (role === 'user') {
+              setTimeout(() => {
+                setSuggestions([]);
+              }, 1000);
+            }
+
             return next;
           }
 
@@ -1029,40 +1043,45 @@ export function GlassProvider({
           role = data.speaker === 'user' ? 'user' : 'partner';
         }
 
+        const isSpeechFinal = Boolean(data.speech_final);
+
         setMessages((prev) => {
           const next = [...prev];
           const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.message.role === role);
           const translation = typeof data.translation === 'string' ? data.translation : undefined;
 
           if (idx >= 0) {
+            // Update existing message
             const existing = next[idx];
             const prevText = (existing.message.content || '').trim();
             const newText = (text || '').trim();
-            const needsSpace = Boolean(prevText) && !/[\.!?\u3002\uFF01\uFF1F]$/.test(prevText);
-            const merged = prevText ? (needsSpace ? `${prevText} ${newText}` : `${prevText} ${newText}`) : newText;
+
+            // Only merge if speech is not final (continuing utterance)
+            // If speech_final, replace to handle utterance boundary changes from ASR
+            let finalContent: string;
+            if (!isSpeechFinal && prevText) {
+              // Continuing utterance - merge with appropriate spacing
+              const needsSpace = !/[\.!?\u3002\uFF01\uFF1F]$/.test(prevText);
+              finalContent = needsSpace ? `${prevText} ${newText}` : `${prevText} ${newText}`;
+            } else {
+              // Speech final or first segment - use new text as-is
+              finalContent = newText;
+            }
+
             next[idx] = {
               ...existing,
-              message: { ...existing.message, content: merged },
+              message: { ...existing.message, content: finalContent },
               translation: translation ?? existing.translation,
               partial: undefined,
               receivedAt: new Date(),
-              // Keep simple: preserve existing timing if present, else use provided
-              start:
-                typeof existing.start === 'number'
-                  ? existing.start
-                  : typeof data.start === 'number'
-                  ? data.start
-                  : existing.start,
-              duration:
-                typeof existing.duration === 'number'
-                  ? existing.duration
-                  : typeof data.duration === 'number'
-                  ? data.duration
-                  : existing.duration,
+              // Update timing information
+              start: typeof data.start === 'number' ? data.start : existing.start,
+              duration: typeof data.duration === 'number' ? data.duration : existing.duration,
             };
             return next;
           }
 
+          // Create new message for this utterance
           next.push({
             type: role === 'user' ? 'user_message' : 'partner_message',
             message: { role, content: text },
@@ -1074,6 +1093,14 @@ export function GlassProvider({
           });
           return next;
         });
+
+        // Clear all suggestions when user's speech is final
+        if (isSpeechFinal && role === 'user') {
+          setTimeout(() => {
+            setSuggestions([]);
+          }, 1000);
+        }
+
         onMessage?.();
         return;
       }
@@ -1112,6 +1139,11 @@ export function GlassProvider({
       if (data.t === 'utterance_end') {
         const utteranceId = data.utterance_id;
         if (!utteranceId) return;
+
+        // Check if this is a user utterance by looking at the source
+        const isUserUtterance =
+          data.source === 'mic' || (typeof data.source === 'string' && data.source.startsWith('mic_'));
+
         setMessages((prev) => {
           const next = [...prev];
           const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.partial);
@@ -1120,6 +1152,14 @@ export function GlassProvider({
           }
           return next;
         });
+
+        // Clear all suggestions when user's utterance ends
+        if (isUserUtterance) {
+          setTimeout(() => {
+            setSuggestions([]);
+          }, 1000);
+        }
+
         return;
       }
 
@@ -1655,6 +1695,10 @@ export function GlassProvider({
     setConversationAnalysis(null);
     // Return to idle status to show start screen
     setStatus({ value: 'idle' });
+    // Clear ephemeral AI overlays when returning to idle
+    setSuggestions([]);
+    setFeedbacks([]);
+    setTranslations([]);
     // Reset the flag
     isIntentionalDisconnectRef.current = false;
   }, []);

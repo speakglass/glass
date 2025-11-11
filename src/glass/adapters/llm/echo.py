@@ -52,6 +52,32 @@ class EchoLLMAdapter:
         last_text = self._get_last_text(transcript_tail)
         return f"[Echo Follow-up]: Continuing from '{last_text}', you could say..."
 
+    async def answer_structured(
+        self,
+        transcript_tail: Sequence[str | dict],
+        *,
+        target_lang: str,
+        native_lang: str,
+        pronunciation_mode: str | None = None,
+    ) -> dict:
+        """Structured echo for answer suggestions."""
+        target = f"(echo) Suggested answer in {target_lang}"
+        out: dict = {"target_text": target}
+        # Dev adapter: skip pronunciation by default
+        return out
+    
+    async def follow_up_structured(
+        self,
+        transcript_tail: Sequence[str | dict],
+        *,
+        target_lang: str,
+        native_lang: str,
+        pronunciation_mode: str | None = None,
+    ) -> dict:
+        """Structured echo for follow-up suggestions."""
+        target = f"(echo) Follow-up in {target_lang}"
+        return {"target_text": target}
+
     async def feedback(self, user_text: str, lang: str, target_lang: str | None = None, native_lang: str | None = None, mode: str = "real") -> str:
         """Echo feedback for development - sometimes returns NONE."""
         # Simulate conditional feedback: short statements don't need feedback
@@ -80,6 +106,19 @@ class EchoLLMAdapter:
         if '?' in last:
             return False  # User asked question, they're waiting for answer
         return len(last.split()) >= 3
+    
+    async def should_feedback(
+        self,
+        transcript_tail: Sequence[str | dict],
+        user_text: str,
+        mode: str = "real",
+    ) -> bool:
+        """Simple feedback gate for development."""
+        if not user_text or len(user_text.split()) < 4:
+            return False
+        if '?' in user_text:
+            return False
+        return True
     
     async def generate_ai_response(
         self,

@@ -65,9 +65,9 @@ class LLMProcessor:
             
             LOGGER.info(f"[Translation] Starting for utterance {utterance_id}")
             
-            if hasattr(self.llm, 'translate'):
+            try:
                 translation = await self.llm.translate(text, source_lang, target_lang)
-            else:
+            except Exception:
                 translation = f"[Translation: {text}]"
             
             if translation:
@@ -113,7 +113,7 @@ class LLMProcessor:
         # 2. Feedback (user only, if enabled)
         if is_user and self.feedback_mode != 'off':
             tasks.append(asyncio.create_task(
-                self.do_feedback(text, utterance_id, source, event_type_feedback, tail=list(tail))
+                self.emit_feedback(text, utterance_id, source, event_type_feedback, tail=list(tail))
             ))
         
         # 3. AI Response (practice mode, user only) - run BEFORE unified suggestion
@@ -124,7 +124,7 @@ class LLMProcessor:
             if start is not None and duration is not None:
                 user_message_end_time = start + duration
             # Run AI response now so follow-up can include it in context
-            ai_msg = await self.do_ai_response(
+            ai_msg = await self.emit_ai_response(
                 text,
                 utterance_id,
                 tail,
@@ -139,7 +139,7 @@ class LLMProcessor:
             # Partner/remote message in real mode → suggest once based on decision
             if not is_user and source != 'ai':
                 tasks.append(asyncio.create_task(
-                    self.do_unified_suggestion(
+                    self.emit_unified_suggestion(
                         text,
                         utterance_id,
                         list(tail),
@@ -153,7 +153,7 @@ class LLMProcessor:
                 augmented_tail.append(ai_msg)
                 ai_utt_id = ai_msg.get("utterance_id") or utterance_id
                 tasks.append(asyncio.create_task(
-                    self.do_unified_suggestion(
+                    self.emit_unified_suggestion(
                         ai_msg.get("text", ""),
                         ai_utt_id,
                         augmented_tail,
@@ -167,15 +167,24 @@ class LLMProcessor:
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def do_feedback(self, text: str, utterance_id: str, source: str, event_type_feedback, tail: list[dict] | None = None) -> None:
-        """Generate and emit feedback for user utterance."""
+    async def emit_feedback(self, text: str, utterance_id: str, source: str, event_type_feedback, tail: list[dict] | None = None) -> None:
+        """Emit feedback for a user utterance."""
         try:
             LOGGER.info(f"[Feedback] Starting for utterance {utterance_id}")
             
-            if not hasattr(self.llm, 'feedback'):
-                return
+            # Lightweight gating: skip expensive feedback call if not needed in auto mode
+            if self.feedback_mode == 'auto':
+                try:
+                    async with self._llm_gate:
+                        should_fb = bool(await self.llm.should_feedback(list(tail or []), text, mode=self.mode))  # type: ignore[attr-defined]
+                except Exception:
+                    # Fallback heuristic: only longer utterances likely need feedback
+                    should_fb = len((text or '').split()) >= 4
+                if not should_fb:
+                    LOGGER.info(f"[Feedback] Gated off by should_feedback for {utterance_id}")
+                    return
             
-            # Request pronunciation same as suggest logic
+            # Pronunciation is fetched separately when needed
             require_pronunciation = self.proficiency == 'cant_read'
             pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
             feedback_text = await self.llm.feedback(
@@ -184,8 +193,8 @@ class LLMProcessor:
                 target_lang=self._lang_code_to_name(self.learning_lang),
                 native_lang=self._lang_code_to_name(self.native_lang),
                 mode=self.mode,
-                include_pronunciation=require_pronunciation,
-                pronunciation_mode=pronunciation_mode,
+                include_pronunciation=False,
+                pronunciation_mode=None,
                 transcript_tail=(list(tail)[-4:] if tail else None),
             )
             
@@ -207,6 +216,21 @@ class LLMProcessor:
                     reason = str(parsed.get('reason_native') or '').strip()
                     suggestion = str(parsed.get('suggestion_target') or '').strip()
                     pron = str(parsed.get('pronunciation') or '').strip()
+                    # If pronunciation is required but not provided, fetch it now from LLM
+                    if (
+                        require_pronunciation
+                        and not pron
+                        and suggestion
+                    ):
+                        try:
+                            pron = await self.llm.generate_pronunciation(
+                                suggestion,
+                                native_lang=self._lang_code_to_name(self.native_lang),
+                                target_lang=self._lang_code_to_name(self.learning_lang),
+                                mode=pronunciation_mode or "native",
+                            )
+                        except Exception:
+                            pron = ""
                     # Build user-visible line
                     if suggestion:
                         display_text = f"{reason} → {suggestion}" if reason else suggestion
@@ -232,7 +256,8 @@ class LLMProcessor:
             if self.feedback_mode == 'always':
                 should_emit = bool(normalized)
             elif self.feedback_mode == 'auto':
-                should_emit = bool(normalized and normalized.upper() != "NONE")
+                # Gated earlier by should_feedback; just ensure we have non-empty payload
+                should_emit = bool(normalized)
             
             if should_emit:
                 feedback_data = {
@@ -250,7 +275,7 @@ class LLMProcessor:
         except Exception as e:
             LOGGER.error(f"[Feedback] Failed for {utterance_id}: {e}", exc_info=True)
 
-    async def do_ai_response(
+    async def emit_ai_response(
         self, 
         text: str, 
         utterance_id: str, 
@@ -260,12 +285,9 @@ class LLMProcessor:
         event_type_answer,
         user_message_end_time: float | None = None,
     ) -> None:
-        """Generate AI response in practice mode."""
+        """Emit AI response in practice mode."""
         try:
             LOGGER.info(f"[AI Response] Starting for utterance {utterance_id}")
-            
-            if not hasattr(self.llm, 'generate_ai_response'):
-                return
             
             target_lang = self._lang_code_to_name(self.learning_lang)
             ai_response = await self.llm.generate_ai_response(text, self.scenario, list(tail), target_lang)
@@ -303,7 +325,7 @@ class LLMProcessor:
             
             # Translate AI response
             native_lang_name = self._lang_code_to_name(self.native_lang)
-            if hasattr(self.llm, 'translate'):
+            try:
                 ai_translation = await self.llm.translate(ai_response, target_lang, native_lang_name)
                 if ai_translation:
                     self._translations[ai_utterance_id] = ai_translation
@@ -317,6 +339,8 @@ class LLMProcessor:
                         },
                         source="ai",
                     )
+            except Exception:
+                pass
             
             LOGGER.info(f"[AI Response] Completed for {utterance_id}")
             
@@ -326,14 +350,14 @@ class LLMProcessor:
             LOGGER.error(f"[AI Response] Failed for {utterance_id}: {e}", exc_info=True)
             return None
 
-    async def do_answer_suggestion(
+    async def emit_answer_suggestion(
         self, 
         text: str, 
         utterance_id: str | None, 
         tail: list[dict],
         event_type_answer,
     ) -> None:
-        """Generate answer suggestion for partner messages."""
+        """Emit answer suggestion for partner messages."""
         try:
             LOGGER.info(f"[Answer Suggestion] Starting for utterance {utterance_id or 'unknown'}")
             
@@ -341,11 +365,8 @@ class LLMProcessor:
             should = self.suggest_mode == 'always'
             if not should and self.suggest_mode == 'auto':
                 try:
-                    if hasattr(self.llm, 'should_suggest'):
                         async with self._llm_gate:
                             should = bool(await self.llm.should_suggest(list(tail), 'answer', mode=self.mode))
-                    else:
-                        should = '?' in (text or '')
                 except Exception:
                     should = '?' in (text or '')
             
@@ -358,21 +379,21 @@ class LLMProcessor:
             pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
             
             suggestion_obj: dict | None = None
-            if hasattr(self.llm, 'answer_structured'):
+            try:
+                suggestion_obj = await self.llm.answer_structured(
+                    list(tail),
+                    target_lang=target_lang_name,
+                    native_lang=native_lang_name,
+                    pronunciation_mode=pronunciation_mode,
+                )
+            except Exception as e:
+                LOGGER.error(f"Answer suggestion failed: {e}")
                 try:
-                    suggestion_obj = await self.llm.answer_structured(
-                        list(tail),
-                        target_lang=target_lang_name,
-                        native_lang=native_lang_name,
-                        pronunciation_mode=pronunciation_mode,
-                    )
-                except Exception as e:
-                    LOGGER.error(f"Answer suggestion failed: {e}")
-            
-            if suggestion_obj is None and hasattr(self.llm, 'answer'):
-                plain = await self.llm.answer(list(tail), self.learning_lang, mode=self.mode, target_lang=target_lang_name)
-                if plain:
-                    suggestion_obj = {"target_text": plain, "native_explanation": ""}
+                    plain = await self.llm.answer(list(tail), self.learning_lang, mode=self.mode, target_lang=target_lang_name)
+                    if plain:
+                        suggestion_obj = {"target_text": plain, "native_explanation": ""}
+                except Exception:
+                    pass
             
             if suggestion_obj and isinstance(suggestion_obj, dict):
                 suggestion_obj = self._normalize_suggestion(suggestion_obj)
@@ -384,7 +405,7 @@ class LLMProcessor:
         except Exception as e:
             LOGGER.error(f"[Answer Suggestion] Failed: {e}", exc_info=True)
 
-    async def do_unified_suggestion(
+    async def emit_unified_suggestion(
         self,
         text: str,
         anchor_utterance_id: str | None,
@@ -392,7 +413,7 @@ class LLMProcessor:
         event_type_answer,
         event_type_follow_up,
     ) -> None:
-        """Generate exactly one suggestion (answer or follow-up) in a single LLM call."""
+        """Emit exactly one suggestion (answer or follow-up) from a single LLM call."""
         try:
             LOGGER.info(f"[Unified Suggestion] Starting for anchor {anchor_utterance_id or 'unknown'}")
 
@@ -403,20 +424,19 @@ class LLMProcessor:
 
             # Use unified suggestion (one LLM call with type + content)
             result: dict | None = None
-            if hasattr(self.llm, 'suggest_unified'):
-                try:
-                    async with self._llm_gate:
-                        result = await self.llm.suggest_unified(
-                            list(tail),
-                            target_lang=target_lang_name,
-                            native_lang=native_lang_name,
-                            pronunciation_mode=pronunciation_mode,
-                            mode=self.mode,
-                            suggest_mode=self.suggest_mode,
-                        )
-                except Exception as e:
-                    LOGGER.error(f"Unified suggestion failed: {e}", exc_info=True)
-                    return
+            try:
+                async with self._llm_gate:
+                    result = await self.llm.suggest_unified(
+                        list(tail),
+                        target_lang=target_lang_name,
+                        native_lang=native_lang_name,
+                    pronunciation_mode=None,  # pronunciation is fetched separately
+                        mode=self.mode,
+                        suggest_mode=self.suggest_mode,
+                    )
+            except Exception as e:
+                LOGGER.error(f"Unified suggestion failed: {e}", exc_info=True)
+                return
 
             if not result:
                 LOGGER.info("[Unified Suggestion] No result from LLM")
@@ -437,8 +457,8 @@ class LLMProcessor:
                 LOGGER.info(f"[Unified Suggestion] Skipped duplicate for {anchor_utterance_id}:{kind}")
                 return
 
-            # Normalize and emit
-            suggestion_obj = self._normalize_suggestion(result)
+            # Normalize and attach pronunciation if needed
+            suggestion_obj = await self._ensure_pronunciation(self._normalize_suggestion(result))
             if suggestion_obj:
                 await self._emit_suggestion(kind, suggestion_obj, event_type_answer, event_type_follow_up)
         except Exception as e:
@@ -464,11 +484,8 @@ class LLMProcessor:
             should = self.suggest_mode == 'always'
             if not should and self.suggest_mode == 'auto':
                 try:
-                    if hasattr(self.llm, 'should_suggest'):
                         async with self._llm_gate:
                             should = bool(await self.llm.should_suggest(list(tail), 'follow_up', mode=self.mode))
-                    else:
-                        should = len((text or '').split()) >= 3 and '?' not in text
                 except Exception:
                     should = len((text or '').split()) >= 3 and '?' not in text
             
@@ -481,24 +498,26 @@ class LLMProcessor:
             pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
             
             suggestion_obj: dict | None = None
-            if hasattr(self.llm, 'follow_up_structured'):
-                try:
-                    suggestion_obj = await self.llm.follow_up_structured(
-                        list(tail),
-                        target_lang=target_lang_name,
-                        native_lang=native_lang_name,
-                        pronunciation_mode=pronunciation_mode,
-                    )
-                except Exception:
-                    pass
+            try:
+                suggestion_obj = await self.llm.follow_up_structured(
+                    list(tail),
+                    target_lang=target_lang_name,
+                    native_lang=native_lang_name,
+                pronunciation_mode=None,  # pronunciation fetched separately
+                )
+            except Exception:
+                suggestion_obj = None
             
-            if suggestion_obj is None and hasattr(self.llm, 'follow_up'):
-                plain = await self.llm.follow_up(list(tail), self.learning_lang)
-                if plain:
-                    suggestion_obj = {"target_text": plain, "native_explanation": ""}
+            if suggestion_obj is None:
+                try:
+                    plain = await self.llm.follow_up(list(tail), self.learning_lang)
+                    if plain:
+                        suggestion_obj = {"target_text": plain, "native_explanation": ""}
+                except Exception:
+                    suggestion_obj = None
             
             if suggestion_obj and isinstance(suggestion_obj, dict):
-                suggestion_obj = self._normalize_suggestion(suggestion_obj)
+                suggestion_obj = await self._ensure_pronunciation(self._normalize_suggestion(suggestion_obj))
                 await self._emit(
                     event_type_follow_up,
                     {"text": suggestion_obj.get("target_text", ""), "suggestion": suggestion_obj, "auto": True},
@@ -514,21 +533,25 @@ class LLMProcessor:
         require_pronunciation = self.proficiency == 'cant_read'
         pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
         
-        if hasattr(self.llm, 'answer_structured'):
+        try:
             result = await self.llm.answer_structured(
                 list(tail),
                 target_lang=target_lang_name,
                 native_lang=native_lang_name,
-                pronunciation_mode=pronunciation_mode,
+                pronunciation_mode=None,  # pronunciation fetched separately
             )
-            return self._normalize_suggestion(result)
-        if hasattr(self.llm, 'answer'):
+            out = await self._ensure_pronunciation(self._normalize_suggestion(result))
+            return out
+        except Exception:
+            pass
+        try:
             if self.mode == 'practice':
                 plain = await self.llm.answer(list(tail), lang, mode=self.mode, target_lang=target_lang_name)
             else:
                 plain = await self.llm.answer(list(tail), lang, mode=self.mode)
             return {"target_text": plain, "native_explanation": ""}
-        return {"target_text": "Answer generation not supported", "native_explanation": ""}
+        except Exception:
+            return {"target_text": "Answer generation not supported", "native_explanation": ""}
 
     async def generate_follow_up(self, tail: list[dict], lang: str) -> dict:
         """Generate follow-up suggestion on demand."""
@@ -537,18 +560,22 @@ class LLMProcessor:
         require_pronunciation = self.proficiency == 'cant_read'
         pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
         
-        if hasattr(self.llm, 'follow_up_structured'):
+        try:
             result = await self.llm.follow_up_structured(
                 list(tail),
                 target_lang=target_lang_name,
                 native_lang=native_lang_name,
-                pronunciation_mode=pronunciation_mode,
+                pronunciation_mode=None,  # pronunciation fetched separately
             )
-            return self._normalize_suggestion(result)
-        if hasattr(self.llm, 'follow_up'):
+            out = await self._ensure_pronunciation(self._normalize_suggestion(result))
+            return out
+        except Exception:
+            pass
+        try:
             plain = await self.llm.follow_up(list(tail), lang)
             return {"target_text": plain, "native_explanation": ""}
-        return {"target_text": "Follow-up generation not supported", "native_explanation": ""}
+        except Exception:
+            return {"target_text": "Follow-up generation not supported", "native_explanation": ""}
 
     async def generate_suggestion(self, tail: list[dict], lang: str) -> tuple[str, dict]:
         """Generate a unified suggestion (answer or follow-up) in one LLM call.
@@ -562,29 +589,28 @@ class LLMProcessor:
         pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
         
         # Use unified suggestion if available (one LLM call with type + content)
-        if hasattr(self.llm, 'suggest_unified'):
-            try:
-                result = await self.llm.suggest_unified(
-                    list(tail),
-                    target_lang=target_lang_name,
-                    native_lang=native_lang_name,
-                    pronunciation_mode=pronunciation_mode,
-                    mode=self.mode,
-                    suggest_mode=self.suggest_mode,
-                )
-                
-                suggestion_type = result.get("type", "follow_up")
-                
-                # If type is "none", return empty follow_up
-                if suggestion_type == "none":
-                    return ("follow_up", {"target_text": "", "native_translation": ""})
-                
-                # Normalize and return
-                suggestion = self._normalize_suggestion(result)
-                return (suggestion_type, suggestion)
-            except Exception as e:
-                LOGGER.error(f"Unified suggestion failed: {e}", exc_info=True)
-        
+        try:
+            result = await self.llm.suggest_unified(
+                list(tail),
+                target_lang=target_lang_name,
+                native_lang=native_lang_name,
+            pronunciation_mode=None,  # pronunciation fetched separately
+                mode=self.mode,
+                suggest_mode=self.suggest_mode,
+            )
+            
+            suggestion_type = result.get("type", "follow_up")
+            
+            # If type is "none", return empty follow_up
+            if suggestion_type == "none":
+                return ("follow_up", {"target_text": "", "native_translation": ""})
+            
+            # Normalize and return
+            suggestion = await self._ensure_pronunciation(self._normalize_suggestion(result))
+            return (suggestion_type, suggestion)
+        except Exception as e:
+            LOGGER.error(f"Unified suggestion failed: {e}", exc_info=True)
+    
         # Fallback: use separate methods
         last_text = ""
         if tail:
@@ -615,22 +641,24 @@ class LLMProcessor:
         require_pronunciation = self.proficiency == 'cant_read'
         pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
         
-        if hasattr(self.llm, 'translate_structured'):
+        try:
             result = await self.llm.translate_structured(
                 text,
                 source_lang=native_lang_name,
                 target_lang=target_lang_name,
-                pronunciation_mode=pronunciation_mode,
+                pronunciation_mode=None,  # pronunciation fetched separately
                 context=list(tail) if tail else None,
             )
-            return self._normalize_suggestion(result)
-        
+            out = await self._ensure_pronunciation(self._normalize_suggestion(result))
+            return out
+        except Exception:
+            pass
         # Fallback to simple translation
-        if hasattr(self.llm, 'translate'):
+        try:
             simple = await self.llm.translate(text, native_lang_name, target_lang_name)
             return {"target_text": simple, "native_translation": ""}
-        
-        return {"target_text": text, "native_translation": ""}
+        except Exception:
+            return {"target_text": text, "native_translation": ""}
 
     async def generate_initial_greeting(
         self, 
@@ -643,9 +671,6 @@ class LLMProcessor:
         """Generate initial AI greeting in practice mode."""
         try:
             LOGGER.info(f"Generating initial greeting for practice mode")
-            if not hasattr(self.llm, 'generate_ai_response'):
-                return None
-            
             target_lang = self._lang_code_to_name(self.learning_lang)
             initial_prompt = self._get_initial_prompt()
             
@@ -679,7 +704,7 @@ class LLMProcessor:
             
             # Translate greeting
             native_lang_name = self._lang_code_to_name(self.native_lang)
-            if hasattr(self.llm, 'translate'):
+            try:
                 greeting_translation = await self.llm.translate(ai_greeting, target_lang, native_lang_name)
                 if greeting_translation:
                     self._translations[ai_utterance_id] = greeting_translation
@@ -693,6 +718,8 @@ class LLMProcessor:
                         },
                         source="ai",
                     )
+            except Exception:
+                pass
             
             LOGGER.info(f"Emitted initial AI greeting: {ai_greeting}")
             
@@ -702,11 +729,8 @@ class LLMProcessor:
                     should_ans = self.suggest_mode == 'always'
                     if not should_ans and self.suggest_mode == 'auto':
                         try:
-                            if hasattr(self.llm, 'should_suggest'):
                                 async with self._llm_gate:
                                     should_ans = bool(await self.llm.should_suggest([{"speaker": "ai", "source": "ai", "text": ai_greeting}], 'answer', mode=self.mode))
-                            else:
-                                should_ans = '?' in (ai_greeting or '')
                         except Exception:
                             should_ans = '?' in (ai_greeting or '')
                     
@@ -717,22 +741,24 @@ class LLMProcessor:
                         pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
                         
                         suggestion_obj: dict | None = None
-                        if hasattr(self.llm, 'answer_structured'):
-                            try:
-                                suggestion_obj = await self.llm.answer_structured(
-                                    [{"speaker": "ai", "source": "ai", "text": ai_greeting}],
-                                    target_lang=target_lang_name,
-                                    native_lang=native_lang_name,
-                                    pronunciation_mode=pronunciation_mode,
-                                )
-                            except Exception as e:
-                                LOGGER.error(f"Answer suggestion (initial) failed: {e}")
-                                suggestion_obj = None
+                        try:
+                            suggestion_obj = await self.llm.answer_structured(
+                                [{"speaker": "ai", "source": "ai", "text": ai_greeting}],
+                                target_lang=target_lang_name,
+                                native_lang=native_lang_name,
+                                pronunciation_mode=pronunciation_mode,
+                            )
+                        except Exception as e:
+                            LOGGER.error(f"Answer suggestion (initial) failed: {e}")
+                            suggestion_obj = None
                         
-                        if suggestion_obj is None and hasattr(self.llm, 'answer'):
-                            plain = await self.llm.answer([{"speaker": "ai", "source": "ai", "text": ai_greeting}], target_lang.lower()[:2], mode=self.mode, target_lang=target_lang_name)
-                            if plain:
-                                suggestion_obj = {"target_text": plain, "native_explanation": ""}
+                        if suggestion_obj is None:
+                            try:
+                                plain = await self.llm.answer([{"speaker": "ai", "source": "ai", "text": ai_greeting}], target_lang.lower()[:2], mode=self.mode, target_lang=target_lang_name)
+                                if plain:
+                                    suggestion_obj = {"target_text": plain, "native_explanation": ""}
+                            except Exception:
+                                suggestion_obj = None
                         
                         if suggestion_obj and isinstance(suggestion_obj, dict):
                             suggestion_obj = self._normalize_suggestion(suggestion_obj)
@@ -852,45 +878,44 @@ Format your response as JSON:
 Remember: ALL text content (label, value, feedback) must be in {native_lang_name}!"""
 
         try:
-            if hasattr(self.llm, 'generate_text'):
-                # Use configurable analysis model from settings (defaults to gpt-5-mini)
-                settings = get_settings()
-                analysis_model = getattr(settings, "openai_analysis_model", None) or "gpt-5-mini"
-                response = await self.llm.generate_text(analysis_prompt, model=analysis_model)
-                import json
-                import re
-                json_match = re.search(r'\{[\s\S]*\}', response)
-                if json_match:
-                    result = json.loads(json_match.group())
-                    # Post-process to drop placeholder/empty extracted info and dedupe
-                    try:
-                        raw_items = result.get("extracted_info", []) or []
-                        seen: set[tuple[str, str]] = set()
-                        filtered: list[dict] = []
-                        for item in raw_items:
-                            if not isinstance(item, dict):
-                                continue
-                            label = str(item.get("label") or "").strip()
-                            value = str(item.get("value") or "").strip()
-                            if not label or not value:
-                                continue
-                            lower_value = value.lower()
-                            if lower_value in {"none", "n/a", "na", "unknown"}:
-                                continue
-                            key = (label, value)
-                            if key in seen:
-                                continue
-                            seen.add(key)
-                            filtered.append({
-                                "label": label,
-                                "value": value,
-                                "editable": bool(item.get("editable", True)),
-                            })
-                        result["extracted_info"] = filtered
-                    except Exception:
-                        # Non-fatal; keep original result if filtering fails
-                        pass
-                    return result
+            # Use configurable analysis model from settings (defaults to gpt-5-mini)
+            settings = get_settings()
+            analysis_model = getattr(settings, "openai_analysis_model", None) or "gpt-5-mini"
+            response = await self.llm.generate_text(analysis_prompt, model=analysis_model)
+            import json
+            import re
+            json_match = re.search(r'\{[\s\S]*\}', response)
+            if json_match:
+                result = json.loads(json_match.group())
+                # Post-process to drop placeholder/empty extracted info and dedupe
+                try:
+                    raw_items = result.get("extracted_info", []) or []
+                    seen: set[tuple[str, str]] = set()
+                    filtered: list[dict] = []
+                    for item in raw_items:
+                        if not isinstance(item, dict):
+                            continue
+                        label = str(item.get("label") or "").strip()
+                        value = str(item.get("value") or "").strip()
+                        if not label or not value:
+                            continue
+                        lower_value = value.lower()
+                        if lower_value in {"none", "n/a", "na", "unknown"}:
+                            continue
+                        key = (label, value)
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        filtered.append({
+                            "label": label,
+                            "value": value,
+                            "editable": bool(item.get("editable", True)),
+                        })
+                    result["extracted_info"] = filtered
+                except Exception:
+                    # Non-fatal; keep original result if filtering fails
+                    pass
+                return result
             
             # Fallback
             return {
@@ -953,47 +978,78 @@ Remember: ALL text content (label, value, feedback) must be in {native_lang_name
         self._suggested_for.add(key)
         return True
 
-    def _get_lang_params(self) -> tuple[str, str, str | None]:
+    def _get_language_params(self) -> tuple[str, str, str | None]:
         target_lang_name = self._lang_code_to_name(self.learning_lang)
         native_lang_name = self._lang_code_to_name(self.native_lang)
         require_pronunciation = self.proficiency == 'cant_read'
         pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
         return target_lang_name, native_lang_name, pronunciation_mode
 
-    async def _generate_suggestion_for_kind(self, kind: str, tail: list[dict]) -> dict | None:
-        target_lang_name, native_lang_name, pronunciation_mode = self._get_lang_params()
-        suggestion_obj: dict | None = None
-        if kind == "answer":
-            if hasattr(self.llm, 'answer_structured'):
-                try:
-                    suggestion_obj = await self.llm.answer_structured(
-                        list(tail),
-                        target_lang=target_lang_name,
-                        native_lang=native_lang_name,
-                        pronunciation_mode=pronunciation_mode,
+    async def _ensure_pronunciation(self, out: dict) -> dict:
+        """Ensure pronunciation is attached when required."""
+        try:
+            target_lang_name, native_lang_name, pronunciation_mode = self._get_language_params()
+            if (
+                pronunciation_mode
+                and isinstance(out, dict)
+                and out.get("target_text")
+            ):
+                # If pronunciation missing, fetch it
+                if not out.get("pronunciation"):
+                    try:
+                        pron = await self.llm.generate_pronunciation(
+                            out["target_text"],
+                            native_lang=native_lang_name,
+                            target_lang=target_lang_name,
+                            mode=pronunciation_mode or "native",
+                        )
+                        if pron:
+                            out["pronunciation"] = pron
+                    except Exception:
+                        pass
+                # Sanitize any pronunciation to avoid leaking target-script characters
+                if out.get("pronunciation"):
+                    out["pronunciation"] = self._sanitize_pronunciation(
+                        str(out.get("pronunciation") or ""),
+                        native_lang_name,
+                        target_lang_name,
                     )
-                except Exception as e:
-                    LOGGER.error(f"Unified answer suggestion failed: {e}")
-            if suggestion_obj is None and hasattr(self.llm, 'answer'):
-                plain = await self.llm.answer(list(tail), self.learning_lang, mode=self.mode, target_lang=target_lang_name)
-                if plain:
-                    suggestion_obj = {"target_text": plain, "native_explanation": ""}
-        elif kind == "follow_up":
-            if hasattr(self.llm, 'follow_up_structured'):
-                try:
-                    suggestion_obj = await self.llm.follow_up_structured(
-                        list(tail),
-                        target_lang=target_lang_name,
-                        native_lang=native_lang_name,
-                        pronunciation_mode=pronunciation_mode,
-                    )
-                except Exception:
-                    pass
-            if suggestion_obj is None and hasattr(self.llm, 'follow_up'):
-                plain = await self.llm.follow_up(list(tail), self.learning_lang)
-                if plain:
-                    suggestion_obj = {"target_text": plain, "native_explanation": ""}
-        return suggestion_obj
+        except Exception:
+            pass
+        return out
+
+    @staticmethod
+    def _sanitize_pronunciation(pron: str, native_lang_name: str, target_lang_name: str) -> str:
+        """Conservatively keep characters typical for native writing; drop target-script chars."""
+        try:
+            import re
+            native = (native_lang_name or "").lower()
+            # Allowed char sets per native language
+            if native == "korean":
+                # Hangul syllables + Jamo + basic spaces/punct
+                allowed = re.compile(r"[ \-\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3]+")
+                parts = allowed.findall(pron)
+                cleaned = "".join(parts).strip()
+                # Collapse multiple spaces/hyphens
+                cleaned = re.sub(r"[ ]{2,}", " ", cleaned)
+                return cleaned
+            if native == "japanese":
+                # Hiragana, Katakana, prolonged sound mark, spaces
+                allowed = re.compile(r"[ \u3040-\u309F\u30A0-\u30FF\u30FC]+")
+                return "".join(allowed.findall(pron)).strip()
+            if native in {"english", "spanish", "french"}:
+                # Basic Latin letters with accents, spaces, apostrophes, hyphens
+                allowed = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ' \-]+")
+                return "".join(allowed.findall(pron)).strip()
+            if native == "chinese":
+                # Pinyin style: letters with tone marks, spaces, hyphens
+                allowed = re.compile(r"[A-Za-zĀ-ǎÀ-ǜà-ǚ' \-]+")
+                return "".join(allowed.findall(pron)).strip()
+        except Exception:
+            pass
+        return pron
+
+    # (removed) _generate_suggestion_for_kind – previously unused helper
 
     async def _emit_suggestion(self, kind: str, suggestion_obj: dict, event_type_answer, event_type_follow_up) -> None:
         suggestion_obj = self._normalize_suggestion(suggestion_obj)

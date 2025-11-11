@@ -30,8 +30,8 @@ def build_asr_adapter(settings) -> ASRAdapter:
                 encoding=getattr(settings, "deepgram_encoding", "linear16"),
                 sample_rate=getattr(settings, "deepgram_sample_rate", 16000),
                 interim_results=getattr(settings, "deepgram_interim_results", True),
-                utterance_end_ms=getattr(settings, "deepgram_utterance_end_ms", 1500),
-                endpointing_ms=getattr(settings, "deepgram_endpointing_ms", 1200),
+                utterance_end_ms=getattr(settings, "deepgram_utterance_end_ms", 3500),
+                endpointing_ms=getattr(settings, "deepgram_endpointing_ms", 2500),
             )
         if provider in {"nvidia", "nvidia-nim"}:
             api_key = getattr(settings, "nvidia_api_key", None)
