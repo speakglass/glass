@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     tail_size: int = 20
     # Optional Redis (usage tracking)
     redis_url: str | None = None
-    # Redis Cluster mode; if None, auto-detect from URL/port
+    # If True, force cluster client; if False, force standalone; if None, auto-detect
     redis_cluster: bool | None = None
     # Free usage budget per client (in minutes) across sessions (None disables)
     free_minutes_per_user: int | None = 30
@@ -81,6 +81,18 @@ class Settings(BaseSettings):
             if s == "" or s in {"none", "null", "unset"}:
                 return None
             # Let pydantic handle proper int parsing afterwards if it's numeric
+        return value
+
+    # Allow 'auto' or empty to map to None for redis_cluster
+    @field_validator("redis_cluster", mode="before")
+    @classmethod
+    def _coerce_redis_cluster(cls, value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            s = value.strip().lower()
+            if s in {"", "auto", "none", "null", "unset"}:
+                return None
         return value
 
 

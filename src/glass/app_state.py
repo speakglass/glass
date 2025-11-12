@@ -90,53 +90,102 @@ class AppState:
                 LOGGER.info("🔧 Redis URL configured (parsing failed)")
             
             try:
-                from urllib.parse import urlparse
-                from redis.asyncio import Redis
                 import redis
-                parsed = urlparse(settings.redis_url)
-                # Decide cluster vs single-node:
-                # 1) Respect explicit flag
-                # 2) Auto-detect Azure OSSCluster by common ports (10000+)
-                auto_cluster = parsed.port in {10000, 10001, 10002}
-                use_cluster = settings.redis_cluster if settings.redis_cluster is not None else auto_cluster
-                client_kind = "cluster" if use_cluster else "single-node"
-                LOGGER.info(f"Connecting to Redis using {client_kind} client")
-                # Test connection on startup (fail-fast) using the appropriate client
-                LOGGER.info("Testing Redis connection...")
-                if use_cluster:
-                    from redis.cluster import RedisCluster as SyncRedisCluster
-                    test_client = SyncRedisCluster.from_url(
-                        settings.redis_url,
-                        decode_responses=True,
-                        socket_connect_timeout=10.0,
-                        socket_timeout=10.0,
-                    )
-                    test_client.ping()
-                    test_client.close()
-                    from redis.asyncio.cluster import RedisCluster as AsyncRedisCluster
-                    self._redis = AsyncRedisCluster.from_url(
-                        settings.redis_url,
-                        decode_responses=True,
-                        socket_connect_timeout=10.0,
-                        socket_timeout=10.0,
-                    )
+                from urllib.parse import urlparse, parse_qs, urlunparse
+
+                url_original = settings.redis_url
+                parsed = urlparse(url_original)
+                scheme_lower = (parsed.scheme or "").lower()
+                queries = parse_qs(parsed.query or "")
+
+                # Support redis+cluster / rediss+cluster scheme alias via normalization
+                is_scheme_cluster = "+cluster" in scheme_lower
+                if is_scheme_cluster:
+                    normalized_scheme = "rediss" if scheme_lower.startswith("rediss") else "redis"
+                    parsed = parsed._replace(scheme=normalized_scheme)
+                    url_for_client = urlunparse(parsed)
                 else:
-                    test_client = redis.Redis.from_url(
-                        settings.redis_url,
+                    url_for_client = url_original
+
+                # Allow explicit override via GLASS_REDIS_CLUSTER or ?cluster=true
+                is_query_cluster = (queries.get("cluster", [""])[0] or "").lower() in {"1", "true", "yes", "on"}
+                user_pref = settings.redis_cluster  # True | False | None (auto)
+
+                use_cluster: bool | None = None
+                if user_pref is True or is_scheme_cluster or is_query_cluster:
+                    use_cluster = True
+                elif user_pref is False:
+                    use_cluster = False
+
+                # If still undecided, auto-detect by probing CLUSTER INFO on a standalone client
+                cluster_detected = False
+                if use_cluster is None:
+                    try:
+                        probe = redis.Redis.from_url(
+                            url_for_client,
+                            socket_connect_timeout=5.0,
+                            socket_timeout=5.0,
+                            decode_responses=True,
+                        )
+                        # If cluster disabled, this will raise ResponseError
+                        info = probe.execute_command("CLUSTER", "INFO")
+                        if isinstance(info, (bytes, str)):
+                            text = info.decode("utf-8") if isinstance(info, (bytes,)) else info
+                            cluster_detected = "cluster_state:ok" in text
+                        else:
+                            cluster_detected = True  # Any non-error response implies cluster mode
+                    except Exception:
+                        cluster_detected = False
+                    finally:
+                        try:
+                            probe.close()  # type: ignore[attr-defined]
+                        except Exception:
+                            pass
+                    use_cluster = cluster_detected
+
+                # Build sync test client and async runtime client accordingly
+                if use_cluster:
+                    LOGGER.info("🔧 Redis mode: cluster")
+                    # Sync test client
+                    from redis.cluster import RedisCluster as SyncRedisCluster  # type: ignore[attr-defined]
+                    sync_client = SyncRedisCluster.from_url(
+                        url_for_client,
                         socket_connect_timeout=10.0,
                         socket_timeout=10.0,
+                        decode_responses=True,
                     )
-                    test_client.ping()
-                    test_client.close()
-                    # Create async client for runtime
-                    self._redis = Redis.from_url(
-                        settings.redis_url,
+                    sync_client.ping()
+                    sync_client.close()
+                    # Async runtime client
+                    from redis.asyncio.cluster import RedisCluster as AsyncRedisCluster  # type: ignore[attr-defined]
+                    self._redis = AsyncRedisCluster.from_url(
+                        url_for_client,
                         encoding="utf-8",
                         decode_responses=True,
                         socket_connect_timeout=10.0,
                         socket_timeout=10.0,
                     )
-                LOGGER.info("✅ Redis connected")
+                else:
+                    LOGGER.info("🔧 Redis mode: standalone")
+                    # Sync test client
+                    sync_client = redis.Redis.from_url(
+                        url_for_client,
+                        socket_connect_timeout=10.0,
+                        socket_timeout=10.0,
+                        decode_responses=True,
+                    )
+                    sync_client.ping()
+                    sync_client.close()
+                    LOGGER.info("✅ Redis connected")
+                    # Async runtime client
+                    from redis.asyncio import Redis
+                    self._redis = Redis.from_url(
+                        url_for_client,
+                        encoding="utf-8",
+                        decode_responses=True,
+                        socket_connect_timeout=10.0,
+                        socket_timeout=10.0,
+                    )
             except Exception as e:
                 # Log detailed error info
                 try:
