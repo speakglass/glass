@@ -874,17 +874,18 @@ export function GlassProvider({
               if (data.t === 'limit_reached') {
                 if (hasWsErrorRef.current) return;
                 const reason = data.reason as 'time' | undefined;
+                const receivedAnyTime = startRemainingRef.current !== undefined;
                 if (reason === 'time') {
-                  // Treat time limit as graceful session end (not a connection failure)
+                  // Treat time limit as graceful end ONLY if we actually received time_remaining before
                   setBudgetStatus('enabled');
-                  if (hasOpenedRef.current) {
-                    // Session was active → end and show summary
+                  if (receivedAnyTime) {
                     try {
                       toast.info(t`Trial session ended due to time limit.`);
                     } catch {}
+                    // Run End Call flow (analyze and show summary)
                     disconnect().catch(() => {});
                   } else {
-                    // Session never fully opened → show waitlist flow without redirecting to failure
+                    // No time was available from the start → show waitlist path, no analyze
                     setStatus({ value: 'idle' });
                     try {
                       toast.info(t`You've used your free time`, {
