@@ -90,28 +90,53 @@ class AppState:
                 LOGGER.info("🔧 Redis URL configured (parsing failed)")
             
             try:
+                from urllib.parse import urlparse
                 from redis.asyncio import Redis
                 import redis
-                
-                # Test connection on startup (fail-fast)
+                parsed = urlparse(settings.redis_url)
+                # Decide cluster vs single-node:
+                # 1) Respect explicit flag
+                # 2) Auto-detect Azure OSSCluster by common ports (10000+)
+                auto_cluster = parsed.port in {10000, 10001, 10002}
+                use_cluster = settings.redis_cluster if settings.redis_cluster is not None else auto_cluster
+                client_kind = "cluster" if use_cluster else "single-node"
+                LOGGER.info(f"Connecting to Redis using {client_kind} client")
+                # Test connection on startup (fail-fast) using the appropriate client
                 LOGGER.info("Testing Redis connection...")
-                test_client = redis.Redis.from_url(
-                    settings.redis_url,
-                    socket_connect_timeout=10.0,
-                    socket_timeout=10.0,
-                )
-                test_client.ping()
-                test_client.close()
+                if use_cluster:
+                    from redis.cluster import RedisCluster as SyncRedisCluster
+                    test_client = SyncRedisCluster.from_url(
+                        settings.redis_url,
+                        decode_responses=True,
+                        socket_connect_timeout=10.0,
+                        socket_timeout=10.0,
+                    )
+                    test_client.ping()
+                    test_client.close()
+                    from redis.asyncio.cluster import RedisCluster as AsyncRedisCluster
+                    self._redis = AsyncRedisCluster.from_url(
+                        settings.redis_url,
+                        decode_responses=True,
+                        socket_connect_timeout=10.0,
+                        socket_timeout=10.0,
+                    )
+                else:
+                    test_client = redis.Redis.from_url(
+                        settings.redis_url,
+                        socket_connect_timeout=10.0,
+                        socket_timeout=10.0,
+                    )
+                    test_client.ping()
+                    test_client.close()
+                    # Create async client for runtime
+                    self._redis = Redis.from_url(
+                        settings.redis_url,
+                        encoding="utf-8",
+                        decode_responses=True,
+                        socket_connect_timeout=10.0,
+                        socket_timeout=10.0,
+                    )
                 LOGGER.info("✅ Redis connected")
-                
-                # Create async client for runtime
-                self._redis = Redis.from_url(
-                    settings.redis_url,
-                    encoding="utf-8",
-                    decode_responses=True,
-                    socket_connect_timeout=10.0,
-                    socket_timeout=10.0,
-                )
             except Exception as e:
                 # Log detailed error info
                 try:

@@ -61,6 +61,8 @@ class Settings(BaseSettings):
     tail_size: int = 20
     # Optional Redis (usage tracking)
     redis_url: str | None = None
+    # Redis Cluster mode; if None, auto-detect from URL/port
+    redis_cluster: bool | None = None
     # Free usage budget per client (in minutes) across sessions (None disables)
     free_minutes_per_user: int | None = 30
     # Logging
