@@ -13,8 +13,15 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ASRAdapter(Protocol):
-    async def stream(self, session_id: str, audio_iter, *, source: str | None = None): ...
-
+    async def stream(
+        self,
+        session_id: str,
+        audio_iter,
+        *,
+        source: str | None = None,
+        language: str | None = None,
+        model: str | None = None,
+    ): ...
 
 def build_asr_adapter(settings) -> ASRAdapter:
     provider = (getattr(settings, "asr_provider", None) or "null").lower()
@@ -32,6 +39,27 @@ def build_asr_adapter(settings) -> ASRAdapter:
                 interim_results=getattr(settings, "deepgram_interim_results", True),
                 utterance_end_ms=getattr(settings, "deepgram_utterance_end_ms", 3500),
                 endpointing_ms=getattr(settings, "deepgram_endpointing_ms", 2500),
+            )
+        if provider in {"scribe", "scribe_v2", "elevenlabs"}:
+            api_key = getattr(settings, "elevenlabs_api_key", None)
+            if not api_key:
+                raise ValueError("ElevenLabs API key is required for Scribe ASR.")
+            return ElevenLabsScribeASRAdapter(
+                api_key=api_key,
+                model_id=getattr(settings, "scribe_model_id", "scribe_v2_realtime"),
+                language_code=getattr(settings, "scribe_language_code", None),
+                audio_format=getattr(settings, "scribe_audio_format", "pcm_16000"),
+                sample_rate=getattr(settings, "scribe_sample_rate", 16000),
+                commit_strategy=getattr(settings, "scribe_commit_strategy", "vad"),
+                vad_silence_threshold=getattr(settings, "scribe_vad_silence_threshold_secs", 1.5),
+                vad_threshold=getattr(settings, "scribe_vad_threshold", 0.4),
+                min_speech_ms=getattr(settings, "scribe_min_speech_duration_ms", 100),
+                min_silence_ms=getattr(settings, "scribe_min_silence_duration_ms", 100),
+                endpoint=getattr(
+                    settings,
+                    "scribe_endpoint",
+                    "wss://api.elevenlabs.io/v1/speech-to-text/realtime",
+                ),
             )
         if provider in {"nvidia", "nvidia-nim"}:
             api_key = getattr(settings, "nvidia_api_key", None)
@@ -57,4 +85,5 @@ __all__ = [
     "DeepgramASRAdapter",
     "NvidiaNIMASRAdapter",
     "NullASRAdapter",
+    "ElevenLabsScribeASRAdapter",
 ]

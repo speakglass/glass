@@ -612,6 +612,11 @@ export function GlassProvider({
     [updateSettings]
   );
 
+  // Guard: if a WS error occurs, ignore any subsequent budget/time events
+  const hasWsErrorRef = useRef(false);
+  // Mark when WS has fully opened (used to differentiate initial connect vs active session)
+  const hasOpenedRef = useRef(false);
+
   // Generate session ID
   const generateSessionId = useCallback(() => {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -649,6 +654,8 @@ export function GlassProvider({
 
       // Reset disconnect flag for new connection
       isIntentionalDisconnectRef.current = false;
+      hasWsErrorRef.current = false;
+      hasOpenedRef.current = false;
 
       try {
         setStatus({ value: 'connecting' });
@@ -791,6 +798,7 @@ export function GlassProvider({
 
         ws.onopen = () => {
           console.log('WebSocket connected to Glass API');
+          hasOpenedRef.current = true;
           setStatus({ value: 'connected' });
           // Assume budget unknown at connect; show skeleton for a short probe window
           setBudgetStatus('unknown');
@@ -855,11 +863,16 @@ export function GlassProvider({
         };
 
         ws.onmessage = (event) => {
+          // If we've already encountered a WS error, ignore any late events (e.g., budget/time)
+          if (hasWsErrorRef.current) {
+            return;
+          }
           if (typeof event.data === 'string') {
             try {
               const data = JSON.parse(event.data);
               // Limits (time-based only)
               if (data.t === 'limit_reached') {
+                if (hasWsErrorRef.current) return;
                 const reason = data.reason as 'time' | undefined;
                 const receivedAnyTime = startRemainingRef.current !== undefined;
                 if (reason === 'time') {
@@ -872,6 +885,18 @@ export function GlassProvider({
                     // Run End Call flow (analyze and show summary)
                     disconnect().catch(() => {});
                   } else {
+                    // No time events received during this session
+                    // If socket already opened, this is likely an error path → show failure instead of waitlist
+                    if (hasOpenedRef.current) {
+                      try {
+                        router.push('/failure');
+                      } catch {}
+                      try {
+                        ws.close();
+                      } catch {}
+                      setStatus({ value: 'disconnected' });
+                      return;
+                    }
                     // No time available at session start → waitlist path
                     setStatus({ value: 'idle' });
                     try {
@@ -905,14 +930,19 @@ export function GlassProvider({
 
         ws.onerror = (error) => {
           console.error('WebSocket error:', error);
+          hasWsErrorRef.current = true;
           onError?.(new Error('WebSocket connection error'));
           try {
-            router.push('/connect/failure');
+            router.push('/failure');
+          } catch {}
+          try {
+            ws.close();
           } catch {}
         };
 
         ws.onclose = () => {
           console.log('WebSocket closed');
+          hasOpenedRef.current = false;
           // Only set disconnected status if this wasn't an intentional disconnect
           if (!isIntentionalDisconnectRef.current) {
             setStatus({ value: 'disconnected' });
@@ -934,9 +964,13 @@ export function GlassProvider({
       } catch (error) {
         console.error('Failed to connect:', error);
         setStatus({ value: 'disconnected' });
+        hasWsErrorRef.current = true;
         onError?.(error as Error);
         try {
-          router.push('/connect/failure');
+          router.push('/failure');
+        } catch {}
+        try {
+          wsRef.current?.close();
         } catch {}
         throw error;
       }

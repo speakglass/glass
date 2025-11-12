@@ -45,6 +45,8 @@ class NvidiaNIMASRAdapter:
         audio_iter: AsyncIterable[bytes],
         *,
         source: str | None = None,
+        language: str | None = None,
+        model: str | None = None,
     ) -> AsyncIterator[dict]:
         params = {"model": self.model}
         uri = self._compose_uri(params)

@@ -1,22 +1,11 @@
 import { Trans } from '@lingui/react/macro';
 import { WifiOff } from 'lucide-react';
 import { initLingui } from '@/initLingui';
-import {
-  DEFAULT_LANGUAGE,
-  LOCALIZED_LANGUAGE_CODES,
-} from '@/lib/supported-languages';
+import { DEFAULT_LANGUAGE, LOCALIZED_LANGUAGE_CODES } from '@/lib/supported-languages';
 
-export default async function ConnectFailurePage({
-  params,
-}: {
-  params: { lang: string };
-}) {
-  const rawLang = params.lang;
-  const lang = (LOCALIZED_LANGUAGE_CODES as readonly string[]).includes(
-    rawLang as any
-  )
-    ? rawLang
-    : DEFAULT_LANGUAGE;
+export default async function ConnectFailurePage({ params }: { params: Promise<{ lang: string }> }) {
+  const rawLang = (await params).lang;
+  const lang = (LOCALIZED_LANGUAGE_CODES as readonly string[]).includes(rawLang as any) ? rawLang : DEFAULT_LANGUAGE;
   initLingui(lang);
   return (
     <main className={'min-h-screen flex items-center justify-center p-6'}>
@@ -32,10 +21,7 @@ export default async function ConnectFailurePage({
           <Trans>Couldn’t connect</Trans>
         </h1>
         <p className={'text-sm text-muted-foreground mb-6'}>
-          <Trans>
-            We had trouble starting your session. Please check your internet and
-            try again.
-          </Trans>
+          <Trans>We had trouble starting your session. Please check your internet and try again.</Trans>
         </p>
         <a
           href="/"

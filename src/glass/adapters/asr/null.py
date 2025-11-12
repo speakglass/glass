@@ -12,6 +12,8 @@ class NullASRAdapter:
         audio_iter: AsyncIterable[bytes],
         *,
         source: str | None = None,
+        language: str | None = None,
+        model: str | None = None,
     ) -> AsyncIterator[dict]:
         async for _chunk in audio_iter:
             continue

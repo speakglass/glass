@@ -57,7 +57,7 @@ export const getGlassTours = (): Tour[] => [
           </p>
         ),
         selector: '#glass-ai-panel',
-        side: 'bottom',
+        side: 'top',
         showControls: false,
         showSkip: false,
         pointerPadding: 10,
