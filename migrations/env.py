@@ -8,7 +8,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 
@@ -22,9 +22,9 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set the database URL from environment variable if available
-# Note: We don't use config.set_main_option() because URL-encoded passwords
-# with % characters cause ConfigParser interpolation errors
+# Get database URL from environment variable (required)
+# Note: We use the environment variable directly instead of alembic.ini
+# to avoid ConfigParser issues with URL-encoded passwords containing %
 db_url = os.getenv("GLASS_DATABASE_URL")
 
 # Add your model's MetaData object here for 'autogenerate' support
@@ -42,9 +42,11 @@ def run_migrations_offline() -> None:
     Calls to context.execute() here emit the given string to the
     script output.
     """
-    url = db_url or config.get_main_option("sqlalchemy.url")
+    if not db_url:
+        raise ValueError("GLASS_DATABASE_URL environment variable is required")
+    
     context.configure(
-        url=url,
+        url=db_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -71,16 +73,10 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode with async support."""
-    # Use environment variable URL if available, otherwise use config
-    if db_url:
-        from sqlalchemy.ext.asyncio import create_async_engine
-        connectable = create_async_engine(db_url, poolclass=pool.NullPool)
-    else:
-        connectable = async_engine_from_config(
-            config.get_section(config.config_ini_section, {}),
-            prefix="sqlalchemy.",
-            poolclass=pool.NullPool,
-        )
+    if not db_url:
+        raise ValueError("GLASS_DATABASE_URL environment variable is required")
+    
+    connectable = create_async_engine(db_url, poolclass=pool.NullPool)
 
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
