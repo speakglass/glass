@@ -6,7 +6,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { LogOut, History, Loader2, Clock, Settings as SettingsIcon, Brain } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
 import { useQuery } from '@tanstack/react-query';
-import Settings from './Settings';
+import Settings from './settings';
 
 import {
   DropdownMenu,
