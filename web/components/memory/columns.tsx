@@ -1,7 +1,7 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, MoreVertical, Copy, Edit, Trash2, Archive, ArchiveRestore } from 'lucide-react';
+import { ArrowUpDown, MoreVertical, Copy, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -20,8 +20,7 @@ export type Memory = MemoryType;
 
 export const createColumns = (
   onEdit: (memory: Memory) => void,
-  onDelete: (memory: Memory) => void,
-  onArchive: (memory: Memory) => void
+  onDelete: (memory: Memory) => void
 ): ColumnDef<Memory>[] => [
   {
     id: 'select',

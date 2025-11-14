@@ -109,15 +109,6 @@ export function MemoryTable() {
     }
   };
 
-  const handleArchive = (memory: Memory) => {
-    const newStatus = memory.status === 'archived' ? 'active' : 'archived';
-
-    updateMutation.mutate({
-      id: memory.id,
-      data: { status: newStatus },
-    });
-  };
-
   const handleBulkDelete = async (memories: Memory[]) => {
     if (!token) return;
     if (!confirm(`Are you sure you want to delete ${memories.length} memories?`)) return;
@@ -135,7 +126,7 @@ export function MemoryTable() {
     }
   };
 
-  const columns = createColumns(handleEdit, handleDelete, handleArchive);
+  const columns = createColumns(handleEdit, handleDelete);
 
   if (isLoading) {
     return <div className="flex items-center justify-center p-8">Loading memories...</div>;
