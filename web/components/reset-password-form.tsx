@@ -10,6 +10,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
+import { Trans } from '@lingui/react/macro';
 
 interface ResetPasswordFormProps extends React.ComponentProps<'div'> {
   token: string;
@@ -71,14 +72,20 @@ export function ResetPasswordForm({ token, className, ...props }: ResetPasswordF
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Reset your password</CardTitle>
-          <CardDescription>Enter your new password below</CardDescription>
+          <CardTitle className="text-xl">
+            <Trans>Reset your password</Trans>
+          </CardTitle>
+          <CardDescription>
+            <Trans>Enter your new password below</Trans>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="password">New Password</FieldLabel>
+                <FieldLabel htmlFor="password">
+                  <Trans>New Password</Trans>
+                </FieldLabel>
                 <div className="relative">
                   <Input
                     id="password"
@@ -97,10 +104,14 @@ export function ResetPasswordForm({ token, className, ...props }: ResetPasswordF
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
-                <FieldDescription>Must be at least 8 characters long.</FieldDescription>
+                <FieldDescription>
+                  <Trans>Must be at least 8 characters long.</Trans>
+                </FieldDescription>
               </Field>
               <Field>
-                <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
+                <FieldLabel htmlFor="confirm-password">
+                  <Trans>Confirm Password</Trans>
+                </FieldLabel>
                 <div className="relative">
                   <Input
                     id="confirm-password"
@@ -121,7 +132,7 @@ export function ResetPasswordForm({ token, className, ...props }: ResetPasswordF
               </Field>
               <Field>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? 'Resetting...' : 'Reset password'}
+                  {isSubmitting ? <Trans>Resetting...</Trans> : <Trans>Reset password</Trans>}
                 </Button>
               </Field>
             </FieldGroup>

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { signIn } from 'next-auth/react';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
+import { Trans } from '@lingui/react/macro';
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
   const lang = useLocale();
@@ -67,9 +68,15 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome back</CardTitle>
+          <CardTitle className="text-xl">
+            <Trans>Welcome back</Trans>
+          </CardTitle>
           <CardDescription>
-            {hasGoogleOAuth ? 'Login with your Google account or email' : 'Login with your email'}
+            {hasGoogleOAuth ? (
+              <Trans>Login with your Google account or email</Trans>
+            ) : (
+              <Trans>Login with your email</Trans>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -85,16 +92,18 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
                           fill="currentColor"
                         />
                       </svg>
-                      Login with Google
+                      <Trans>Login with Google</Trans>
                     </Button>
                   </Field>
                   <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-                    Or continue with
+                    <Trans>Or continue with</Trans>
                   </FieldSeparator>
                 </>
               )}
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <FieldLabel htmlFor="email">
+                  <Trans>Email</Trans>
+                </FieldLabel>
                 <Input
                   id="email"
                   type="email"
@@ -106,9 +115,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               </Field>
               <Field>
                 <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <FieldLabel htmlFor="password">
+                    <Trans>Password</Trans>
+                  </FieldLabel>
                   <a href={`/${lang}/forgot-password`} className="ml-auto text-sm underline-offset-4 hover:underline">
-                    Forgot your password?
+                    <Trans>Forgot your password?</Trans>
                   </a>
                 </div>
                 <div className="relative">
@@ -131,13 +142,15 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               </Field>
               <Field>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? 'Logging in...' : 'Login'}
+                  {isSubmitting ? <Trans>Logging in...</Trans> : <Trans>Login</Trans>}
                 </Button>
                 <FieldDescription className="text-center">
-                  Don&apos;t have an account?{' '}
-                  <a href={`/${lang}/signup`} className="underline hover:text-primary">
-                    Sign up
-                  </a>
+                  <Trans>
+                    Don&apos;t have an account?{' '}
+                    <a href={`/${lang}/signup`} className="underline hover:text-primary">
+                      Sign up
+                    </a>
+                  </Trans>
                 </FieldDescription>
               </Field>
             </FieldGroup>
@@ -145,15 +158,17 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center text-balance">
-        By clicking continue, you agree to our{' '}
-        <a href="#" className="underline hover:text-primary">
-          Terms of Service
-        </a>{' '}
-        and{' '}
-        <a href="#" className="underline hover:text-primary">
-          Privacy Policy
-        </a>
-        .
+        <Trans>
+          By clicking continue, you agree to our{' '}
+          <a href="#" className="underline hover:text-primary">
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href="#" className="underline hover:text-primary">
+            Privacy Policy
+          </a>
+          .
+        </Trans>
       </FieldDescription>
     </div>
   );

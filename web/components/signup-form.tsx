@@ -10,6 +10,9 @@ import { Input } from '@/components/ui/input';
 import { signIn } from 'next-auth/react';
 import { toast } from 'sonner';
 import { Eye, EyeOff, X, Check } from 'lucide-react';
+import { Trans } from '@lingui/react/macro';
+import { useLingui } from '@lingui/react';
+import { msg } from '@lingui/core/macro';
 
 interface PasswordRequirement {
   label: string;
@@ -18,6 +21,7 @@ interface PasswordRequirement {
 
 export function SignupForm({ className, ...props }: React.ComponentProps<'div'>) {
   const lang = useLocale();
+  const { _ } = useLingui();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,19 +40,19 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
   const passwordRequirements = useMemo<PasswordRequirement[]>(() => {
     return [
       {
-        label: 'Minimum 8 letters',
+        label: _(msg`Minimum 8 characters`),
         met: password.length >= 8,
       },
       {
-        label: 'At least one number',
+        label: _(msg`At least one number`),
         met: /\d/.test(password),
       },
       {
-        label: 'At least one special character',
+        label: _(msg`At least one special character`),
         met: /[!@#$%^&*(),.?":{}|<>]/.test(password),
       },
     ];
-  }, [password]);
+  }, [password, _]);
 
   const isPasswordValid = passwordRequirements.every((req) => req.met);
 
@@ -135,9 +139,15 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Create an account</CardTitle>
+          <CardTitle className="text-xl">
+            <Trans>Create an account</Trans>
+          </CardTitle>
           <CardDescription>
-            {hasGoogleOAuth ? 'Sign up with your Google account or email' : 'Sign up with your email'}
+            {hasGoogleOAuth ? (
+              <Trans>Sign up with your Google account or email</Trans>
+            ) : (
+              <Trans>Sign up with your email</Trans>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -153,16 +163,18 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
                           fill="currentColor"
                         />
                       </svg>
-                      Sign up with Google
+                      <Trans>Sign up with Google</Trans>
                     </Button>
                   </Field>
                   <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-                    Or continue with
+                    <Trans>Or continue with</Trans>
                   </FieldSeparator>
                 </>
               )}
               <Field>
-                <FieldLabel htmlFor="name">Full Name</FieldLabel>
+                <FieldLabel htmlFor="name">
+                  <Trans>Full Name</Trans>
+                </FieldLabel>
                 <Input
                   id="name"
                   type="text"
@@ -172,7 +184,9 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <FieldLabel htmlFor="email">
+                  <Trans>Email</Trans>
+                </FieldLabel>
                 <Input
                   id="email"
                   type="email"
@@ -183,7 +197,9 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="password">Password</FieldLabel>
+                <FieldLabel htmlFor="password">
+                  <Trans>Password</Trans>
+                </FieldLabel>
                 <div className="relative">
                   <Input
                     id="password"
@@ -211,9 +227,9 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
                     {passwordRequirements.map((requirement, index) => (
                       <div key={index} className="flex items-center gap-2 text-xs">
                         {requirement.met ? (
-                          <Check className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                          <Check className="h-3.5 w-3.5 text-green-500 shrink-0" />
                         ) : (
-                          <X className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          <X className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         )}
                         <span
                           className={cn(
@@ -230,13 +246,15 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
               </Field>
               <Field>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? 'Creating account...' : 'Create Account'}
+                  {isSubmitting ? <Trans>Creating account...</Trans> : <Trans>Create Account</Trans>}
                 </Button>
                 <FieldDescription className="text-center">
-                  Already have an account?{' '}
-                  <a href={`/${lang}/login`} className="underline hover:text-primary">
-                    Sign in
-                  </a>
+                  <Trans>
+                    Already have an account?{' '}
+                    <a href={`/${lang}/login`} className="underline hover:text-primary">
+                      Sign in
+                    </a>
+                  </Trans>
                 </FieldDescription>
               </Field>
             </FieldGroup>
@@ -244,15 +262,17 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center text-balance">
-        By clicking continue, you agree to our{' '}
-        <a href="#" className="underline hover:text-primary">
-          Terms of Service
-        </a>{' '}
-        and{' '}
-        <a href="#" className="underline hover:text-primary">
-          Privacy Policy
-        </a>
-        .
+        <Trans>
+          By clicking continue, you agree to our{' '}
+          <a href="#" className="underline hover:text-primary">
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href="#" className="underline hover:text-primary">
+            Privacy Policy
+          </a>
+          .
+        </Trans>
       </FieldDescription>
     </div>
   );

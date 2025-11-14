@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { Trans } from '@lingui/react/macro';
 
 export function ForgotPasswordForm({ className, ...props }: React.ComponentProps<'div'>) {
   const lang = useLocale();
@@ -34,6 +35,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
       }
 
       setIsSubmitted(true);
+      // Toast messages can remain in English or be handled separately
       toast.success('Check your email for the reset link');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to send reset email');
@@ -47,16 +49,23 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
       <div className={cn('flex flex-col gap-6', className)} {...props}>
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">Check your email</CardTitle>
+            <CardTitle className="text-xl">
+              <Trans>Check your email</Trans>
+            </CardTitle>
             <CardDescription>
-              If an account exists for {email}, you will receive a password reset link shortly.
+              <Trans>
+                If an account exists for <span className="font-medium">{email}</span>, you will receive a password reset
+                link shortly.
+              </Trans>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <FieldGroup>
               <Field>
                 <Button asChild className="w-full">
-                  <a href={`/${lang}/login`}>Return to login</a>
+                  <a href={`/${lang}/login`}>
+                    <Trans>Return to login</Trans>
+                  </a>
                 </Button>
               </Field>
             </FieldGroup>
@@ -70,14 +79,20 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Forgot your password?</CardTitle>
-          <CardDescription>Enter your email address and we&apos;ll send you a reset link</CardDescription>
+          <CardTitle className="text-xl">
+            <Trans>Forgot your password?</Trans>
+          </CardTitle>
+          <CardDescription>
+            <Trans>Enter your email address and we&apos;ll send you a reset link</Trans>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <FieldLabel htmlFor="email">
+                  <Trans>Email</Trans>
+                </FieldLabel>
                 <Input
                   id="email"
                   type="email"
@@ -90,13 +105,15 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
               </Field>
               <Field>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? 'Sending...' : 'Send reset link'}
+                  {isSubmitting ? <Trans>Sending...</Trans> : <Trans>Send reset link</Trans>}
                 </Button>
                 <FieldDescription className="text-center">
-                  Remember your password?{' '}
-                  <a href={`/${lang}/login`} className="underline hover:text-primary">
-                    Sign in
-                  </a>
+                  <Trans>
+                    Remember your password?{' '}
+                    <a href={`/${lang}/login`} className="underline hover:text-primary">
+                      Sign in
+                    </a>
+                  </Trans>
                 </FieldDescription>
               </Field>
             </FieldGroup>

@@ -13,18 +13,20 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. js-lingui-explicit-id
 #: app/[lang]/layout.tsx:27
 #: app/[lang]/layout.tsx:43
 #: app/[lang]/layout.tsx:64
+#. js-lingui-explicit-id
 msgid "Glass: AI that helps you speak any language"
 msgstr "Glass：帮助你开口说任何语言的 AI 助手"
 
-#. js-lingui-explicit-id
 #: app/[lang]/layout.tsx:28
 #: app/[lang]/layout.tsx:44
 #: app/[lang]/layout.tsx:65
-msgid "Glass is an AI that helps you speak any language. It uses the latest in AI to help you learn and speak any language."
+#. js-lingui-explicit-id
+msgid ""
+"Glass is an AI that helps you speak any language. It uses the latest in AI "
+"to help you learn and speak any language."
 msgstr "Glass 是一款帮助你开口说任何语言的 AI。它利用最新技术，让你更自然地学习和使用多种语言交流。"
 
 #: components/start-call.tsx:710
@@ -47,69 +49,24 @@ msgstr "← 返回"
 msgid "← Back to Home"
 msgstr "← 返回首页"
 
-#: components/start-call.tsx:702
-#~ msgid "⚠️ Make sure to enable \"Share audio\""
-#~ msgstr "请务必启用“共享音频”"
-
-#: components/call-summary.tsx:719
-#~ msgid "✓ Successfully saved! Redirecting..."
-#~ msgstr "✓ 已保存，正在跳转..."
-
 #: components/start-call.tsx:699
 msgid "1. Join a Discord voice chat or online call"
 msgstr "加入 Discord 语音聊天或在线通话"
-
-#: components/start-call.tsx:690
-#~ msgid "1. Open your meeting (Zoom, Google Meet, or Teams)"
-#~ msgstr "1. 打开你的会议（Zoom、Google Meet 或 Teams）"
-
-#: components/settings.tsx:211
-#~ msgid "10 seconds"
-#~ msgstr "10秒"
-
-#: components/settings.tsx:232
-#~ msgid "10 seconds (default)"
-#~ msgstr "10 秒（默认）"
-
-#: components/settings.tsx:235
-#~ msgid "15 seconds"
-#~ msgstr "15 秒"
 
 #: components/start-call.tsx:702
 msgid "2. Click \"Start\" below"
 msgstr "2. 击下方“开始”"
 
-#: components/settings.tsx:214
-#~ msgid "20 seconds"
-#~ msgstr "20秒"
-
-#: components/start-call.tsx:696
-#~ msgid "3. Share your meeting tab"
-#~ msgstr "3. 共享您的会议标签页"
-
 #: components/start-call.tsx:706
 msgid "3. Share your tab or screen with audio:"
 msgstr "3. 共享您的标签页或屏幕，并包括音频："
-
-#: components/settings.tsx:217
-#~ msgid "30 seconds"
-#~ msgstr "30秒钟"
-
-#: components/start-call.tsx:699
-#~ msgid "4. Make sure to enable \"Share audio\""
-#~ msgstr "4. 请确保启用“共享音频”"
 
 #: components/start-call.tsx:718
 msgid "4. Start talking and let Glass assist you"
 msgstr "4. 开始交流，让 Glass 协助你"
 
-#: components/settings.tsx:208
-#~ msgid "5 seconds"
-#~ msgstr "5秒"
-
 #: components/call-summary.tsx:371
 #: components/history/conversation-history.tsx:803
-#: components/history/ConversationHistory.tsx:624
 msgid "Accuracy"
 msgstr "准确性"
 
@@ -118,20 +75,18 @@ msgid "After each conversation"
 msgstr "每次对话后"
 
 #: lib/onboarding-tours.tsx:68
-msgid "After each conversation, I'll give you feedback on your grammar, pronunciation, and vocabulary. So you keep improving naturally."
+msgid ""
+"After each conversation, I'll give you feedback on your grammar, "
+"pronunciation, and vocabulary. So you keep improving naturally."
 msgstr "每次对话结束后，我都会为你提供语法、发音和词汇方面的反馈，帮助你自然地不断进步。"
-
-#: lib/onboarding-tours.tsx:73
-#~ msgid "After the conversation, I'll analyze your grammar, pronunciation, and vocabulary—giving you personalized feedback to help you improve naturally."
-#~ msgstr ""
-
-#: components/settings.tsx:187
-#~ msgid "AI message duration"
-#~ msgstr "AI 消息显示时长"
 
 #: components/start-call.tsx:660
 msgid "Airport Check-in"
 msgstr "机场值机"
+
+#: components/signup-form.tsx:252
+msgid "Already have an account? <0>Sign in</0>"
+msgstr "已有帐户？<0>登录</0>"
 
 #: components/bottom-panel.tsx:239
 #: components/onboarding/bottom-panel-demo.tsx:69
@@ -146,9 +101,21 @@ msgstr "发生错误"
 msgid "Analyzing Conversation"
 msgstr "正在分析对话..."
 
-#: lib/onboarding-tours.tsx:63
-#~ msgid "As I listen to the conversation, everything I do to help you will appear right here."
-#~ msgstr "在我聆听对话的同时，我给你的所有帮助都会显示在这里。"
+#: components/signup-form.tsx:47
+msgid "At least one number"
+msgstr "至少一个数字"
+
+#: components/signup-form.tsx:51
+msgid "At least one special character"
+msgstr "至少包含一个特殊字符"
+
+#: contexts/glass-context.tsx:992
+msgid "Authentication failed"
+msgstr "身份验证失败"
+
+#: contexts/glass-context.tsx:700
+msgid "Authentication token not available. Please refresh the page."
+msgstr "无法获取身份验证令牌。请刷新页面。"
 
 #: components/bottom-panel.tsx:240
 #: components/bottom-panel.tsx:246
@@ -160,10 +127,6 @@ msgstr "自动"
 msgid "Auto Response"
 msgstr "自动回复"
 
-#: components/settings.tsx:250
-#~ msgid "Auto-detected from browser. Your selection will be saved and remembered."
-#~ msgstr "已根据浏览器自动检测。你的选择会被保存并在下次继续使用。"
-
 #: components/call-summary.tsx:149
 msgid "Average"
 msgstr "一般"
@@ -172,17 +135,16 @@ msgstr "一般"
 msgid "Back"
 msgstr "返回"
 
-#: app/[lang]/waitlist/success/page.tsx:77
-#~ msgid "Back to Home"
-#~ msgstr "返回主页"
-
 #: components/call-summary.tsx:150
 msgid "Below Average"
 msgstr "低于平均"
 
-#: contexts/glass-context.tsx:1497
-#~ msgid "Call ended"
-#~ msgstr "通话结束"
+#: components/login-form.tsx:161
+#: components/signup-form.tsx:265
+msgid ""
+"By clicking continue, you agree to our <0>Terms of Service</0> and "
+"<1>Privacy Policy</1>."
+msgstr "点击继续，即表示您同意我们的<0>服务条款</0>和<1>隐私政策</1>。"
 
 #: components/call-summary.tsx:217
 msgid "Call Summary"
@@ -192,6 +154,11 @@ msgstr "通话总结"
 #: components/start-call.tsx:680
 msgid "Casual Chat"
 msgstr "轻松聊天"
+
+#: components/forgot-password-form.tsx:53
+#: components/verify-email-sent-content.tsx:75
+msgid "Check your email"
+msgstr "请检查您的电子邮件"
 
 #: components/bottom-panel.tsx:228
 #: components/onboarding/bottom-panel-demo.tsx:104
@@ -206,13 +173,13 @@ msgstr "选择一个练习场景"
 msgid "Choose the language you want to practice speaking"
 msgstr "请选择您想练习的语言"
 
-#: components/start-call.tsx:503
-#~ msgid "Choose Your Languages"
-#~ msgstr "选择语言"
-
 #: components/start-call.tsx:381
 msgid "Choose your preferred mode"
 msgstr "选择你想要的模式"
+
+#: components/verify-email-sent-content.tsx:88
+msgid "Click the link in the email to verify your account and continue to Glass."
+msgstr "点击邮件中的链接以验证您的账户，然后继续访问Glass。"
 
 #: components/call-summary.tsx:742
 msgid "Close"
@@ -224,13 +191,12 @@ msgstr "社区"
 
 #: components/call-summary.tsx:447
 #: components/history/conversation-history.tsx:860
-#: components/history/ConversationHistory.tsx:682
 msgid "Comprehensibility"
 msgstr "易懂程度"
 
-#: lib/onboarding-tours.tsx:110
-#~ msgid "Congrats! You're all set."
-#~ msgstr "恭喜，一切都准备好了！"
+#: components/reset-password-form.tsx:113
+msgid "Confirm Password"
+msgstr "确认密码"
 
 #: components/start-call.tsx:758
 #: components/start-call.tsx:770
@@ -244,23 +210,40 @@ msgstr "对话历史"
 
 #: components/call-summary.tsx:643
 #: components/history/conversation-history.tsx:1000
-#: components/history/ConversationHistory.tsx:823
 msgid "Conversation History"
 msgstr "对话记录"
+
+#: contexts/glass-context.tsx:1562
+#: contexts/glass-context.tsx:1614
+#: contexts/glass-context.tsx:1629
+msgid "Conversation saved"
+msgstr "对话已保存"
 
 #: app/[lang]/failure/page.tsx:21
 msgid "Couldn’t connect"
 msgstr "无法连接"
 
+#: components/signup-form.tsx:249
+msgid "Create Account"
+msgstr "创建账户"
+
+#: components/signup-form.tsx:143
+msgid "Create an account"
+msgstr "创建账户"
+
+#: components/signup-form.tsx:249
+msgid "Creating account..."
+msgstr "正在创建账户…"
+
 #: components/start-call.tsx:572
 msgid "Custom Scenario"
 msgstr "自定义场景"
 
-#: components/Settings.tsx:155
+#: components/settings.tsx:155
 msgid "Customize your Glass experience"
 msgstr "自定义您的 Glass 体验"
 
-#: components/Settings.tsx:341
+#: components/settings.tsx:341
 msgid "Dark"
 msgstr "深色"
 
@@ -276,15 +259,17 @@ msgstr "描述你的实际情况"
 msgid "Do you want pronunciation help?"
 msgstr "需要发音提示吗？"
 
-#: lib/onboarding-tours.tsx:53
-#~ msgid "Don't know how to say something? Just type what you want to say in your language, and I'll instantly translate it so you can speak with confidence."
-#~ msgstr ""
+#: components/login-form.tsx:148
+msgid "Don't have an account? <0>Sign up</0>"
+msgstr "还没有账号？<0>注册</0>"
 
-#: components/history/conversation-history.tsx:126
-#~ msgid "Duration:"
-#~ msgstr ""
+#: components/forgot-password-form.tsx:94
+#: components/login-form.tsx:105
+#: components/signup-form.tsx:188
+msgid "Email"
+msgstr "电子邮件"
 
-#: app/[lang]/(auth)/verify-email/page.tsx:78
+#: components/verify-email-form.tsx:112
 msgid "Email verified!"
 msgstr "邮箱验证成功！"
 
@@ -301,9 +286,13 @@ msgstr "即将结束：剩余不足 5 分钟"
 msgid "English"
 msgstr "英文"
 
-#: components/waitlist-modal.tsx:232
-#~ msgid "Enter your email"
-#~ msgstr "请输入你的邮箱"
+#: components/forgot-password-form.tsx:86
+msgid "Enter your email address and we'll send you a reset link"
+msgstr "请输入您的邮箱地址，我们将发送重置链接给您。"
+
+#: components/reset-password-form.tsx:79
+msgid "Enter your new password below"
+msgstr "请输入您的新密码"
 
 #: components/start-call.tsx:545
 msgid "Everyday conversation"
@@ -330,7 +319,6 @@ msgstr "正在获取线程上下文..."
 
 #: components/call-summary.tsx:290
 #: components/history/conversation-history.tsx:746
-#: components/history/ConversationHistory.tsx:566
 msgid "Fluency"
 msgstr "流利度"
 
@@ -338,9 +326,10 @@ msgstr "流利度"
 msgid "Follow these steps:"
 msgstr "请按照以下步骤操作："
 
-#: components/bottom-panel.tsx:37
-#~ msgid "Follow-up Suggestion"
-#~ msgstr "后续建议"
+#: components/forgot-password-form.tsx:83
+#: components/login-form.tsx:122
+msgid "Forgot your password?"
+msgstr "忘记密码了吗？"
 
 #: components/user-menu.tsx:128
 msgid "Free minutes"
@@ -351,35 +340,31 @@ msgstr "免费通话分钟"
 msgid "French"
 msgstr "法语"
 
+#: components/signup-form.tsx:176
+msgid "Full Name"
+msgstr "全名"
+
 #: components/chat.tsx:89
 msgid "Generating insights and feedback..."
 msgstr "正在生成分析和反馈..."
-
-#: components/bottom-panel.tsx:462
-#~ msgid "German"
-#~ msgstr "德语"
 
 #: components/bottom-panel.tsx:383
 #: components/onboarding/bottom-panel-demo.tsx:300
 msgid "Get Suggestions"
 msgstr "获取建议"
 
-#: components/waitlist-modal.tsx:193
-#~ msgid "Gets smarter every time you speak"
-#~ msgstr "每次对话都让它更了解你"
-
-#: components/Settings.tsx:357
+#: components/settings.tsx:357
 msgid "Glass"
 msgstr "Glass"
 
-#: components/waitlist-modal.tsx:167
-#~ msgid "Glass AI helps you speak any language in the real world"
-#~ msgstr "Glass AI 帮助你在真实场景中自如使用多种语言"
-
-#: app/[lang]/(auth)/verify-email/page.tsx:84
-#: app/[lang]/(auth)/verify-email/page.tsx:99
+#: components/verify-email-form.tsx:140
+#: components/verify-email-sent-content.tsx:116
 msgid "Go to Login"
 msgstr "前往登录"
+
+#: components/verify-email-form.tsx:140
+msgid "Go to Login Now"
+msgstr "立即登录"
 
 #: components/call-summary.tsx:148
 msgid "Good"
@@ -393,7 +378,7 @@ msgstr "帮助我们改进Glass"
 msgid "Hey! I'm Glass."
 msgstr "嘿！我是 Glass。"
 
-#: components/Settings.tsx:211
+#: components/settings.tsx:211
 msgid "Hide messages"
 msgstr "隐藏消息"
 
@@ -417,73 +402,37 @@ msgstr "帮助你理解"
 msgid "I listen and translate what they say in real time. You'll never miss a word."
 msgstr "我可以实时聆听并翻译他们所说的内容，确保你不错过任何一句话。"
 
-#: lib/onboarding-tours.tsx:31
-#~ msgid "I listen to your conversation"
-#~ msgstr "我会听你的对话。"
-
-#: lib/onboarding-tours.tsx:34
-#~ msgid "I listen to your conversation in real-time and translate what they say, so you never miss a word."
-#~ msgstr ""
-
 #: lib/onboarding-tours.tsx:107
-msgid "I remember things about you and get smarter at giving feedback and suggestions the more we talk."
+msgid ""
+"I remember things about you and get smarter at giving feedback and "
+"suggestions the more we talk."
 msgstr "我会记住关于你的信息，并在我们交流越多时，变得更擅长提供反馈和建议。"
 
 #: lib/onboarding-tours.tsx:104
 msgid "I remember you"
 msgstr "我记得你"
 
-#: components/start-call.tsx:543
-#~ msgid "I speak"
-#~ msgstr "我会说的语言"
-
-#: components/start-call.tsx:514
-#~ msgid "I want to learn"
-#~ msgstr "我想学习的语言"
-
-#: lib/onboarding-tours.tsx:70
-#~ msgid "I'll give you feedback"
-#~ msgstr "我也会给你一些反馈。"
-
-#: lib/onboarding-tours.tsx:53
-#~ msgid "I'll listen and help here. I'll suggest what to say next, so just say it. I remember a bit from our chats to get better over time."
-#~ msgstr "我会在这里倾听并帮你。接下来说什么我会给出建议，你照着说就好。我也会记住一部分之前的对话，慢慢变得更懂你。"
-
-#: lib/onboarding-tours.tsx:34
-#~ msgid "I'll listen to you and your partner, and translate what they say so you can understand each other."
-#~ msgstr "我会听你和对方的对话，并把内容翻译给你们，让彼此更好理解对方。"
-
-#: lib/onboarding-tours.tsx:80
-#~ msgid "I'll suggest what to say next"
-#~ msgstr "我会给你推荐接下来可以说的话。"
-
-#: lib/onboarding-tours.tsx:83
-#~ msgid "I'll suggest what you could say next, so just read it out loud. The more I learn about you, the better my suggestions will get."
-#~ msgstr "我会提示你接下来可以怎么说，你照着念就好。我越了解你，给出的建议就会越自然、越贴切。"
-
 #: lib/onboarding-tours.tsx:88
-msgid "I'll turn your real conversations into learning materials. Review the conversation history and feedback."
+msgid ""
+"I'll turn your real conversations into learning materials. Review the "
+"conversation history and feedback."
 msgstr "我会将您的真实对话转化为学习材料。查看对话记录和反馈。"
 
-#: lib/onboarding-tours.tsx:23
-#~ msgid "I'm here to help you communicate and learn a new language through real conversations and practice."
-#~ msgstr "我会通过真实对话和练习，帮你更自如地使用一门新的语言。"
-
 #: lib/onboarding-tours.tsx:17
-msgid "I'm here to help you communicate and learn a new language through real conversations."
+msgid ""
+"I'm here to help you communicate and learn a new language through real "
+"conversations."
 msgstr "我会通过真实对话，帮助你沟通并学习一门新语言。"
 
-#: lib/onboarding-tours.tsx:103
-#~ msgid "If you say something that sounds a bit off, I'll let you know and help you fix it."
-#~ msgstr "如果有哪句听起来不太自然，我会提醒你，并帮你换成更自然的说法。"
+#: components/forgot-password-form.tsx:56
+msgid ""
+"If an account exists for <0>{email}</0>, you will receive a password reset "
+"link shortly."
+msgstr "如果 <0>{email}</0> 已经注册账户，您将很快收到一个密码重置链接。"
 
-#: lib/onboarding-tours.tsx:73
-#~ msgid "If your grammar, pronunciation, or word choice is off, I'll flag it and suggest a clearer, more natural option."
-#~ msgstr "如果语法、发音或用词不太恰当，我会提示并给出更清晰、更自然的说法。"
-
-#: components/bottom-panel.tsx:463
-#~ msgid "Italian"
-#~ msgstr "意大利语"
+#: components/verify-email-sent-content.tsx:91
+msgid "If you don't see the email, check your spam folder."
+msgstr "如果没有看到邮件，请检查垃圾邮件文件夹。"
 
 #: components/bottom-panel.tsx:226
 #: components/onboarding/bottom-panel-demo.tsx:102
@@ -499,16 +448,10 @@ msgstr "求职面试"
 msgid "Join Community"
 msgstr "加入社区"
 
-#: components/waitlist-modal.tsx:295
-#~ msgid "Join Early Access"
-#~ msgstr "加入抢先体验"
-
-#: components/waitlist-modal.tsx:291
-#~ msgid "Joining..."
-#~ msgstr "正在加入..."
-
 #: lib/onboarding-tours.tsx:51
-msgid "Just type a few words in your language. I'll turn them into a full sentence you can speak."
+msgid ""
+"Just type a few words in your language. I'll turn them into a full sentence "
+"you can speak."
 msgstr "只需用你的语言输入几个字，我会把它变成一整句话，你可以直接说出来。"
 
 #: components/bottom-panel.tsx:227
@@ -516,15 +459,11 @@ msgstr "只需用你的语言输入几个字，我会把它变成一整句话，
 msgid "Korean"
 msgstr "韩语"
 
-#: components/settings.tsx:227
-#~ msgid "Language"
-#~ msgstr "语言"
-
 #: components/start-call.tsx:465
 msgid "Language Exchange • Calls"
 msgstr "语言交换 • 会议"
 
-#: components/Settings.tsx:263
+#: components/settings.tsx:263
 msgid "Learning language"
 msgstr "学习语言"
 
@@ -540,7 +479,7 @@ msgstr "开始吧！🎉"
 msgid "Let's start your first conversation!"
 msgstr "开启您的首次对话吧！"
 
-#: components/Settings.tsx:325
+#: components/settings.tsx:325
 msgid "Light"
 msgstr "浅色"
 
@@ -553,9 +492,28 @@ msgid "Listening… say anything when you're ready."
 msgstr "正在聆听，准备好就随时开口。"
 
 #: components/history/conversation-history.tsx:465
-#: components/history/ConversationHistory.tsx:316
 msgid "Loading history…"
 msgstr "正在加载历史记录…"
+
+#: components/login-form.tsx:145
+msgid "Logging in..."
+msgstr "正在登录…"
+
+#: components/login-form.tsx:145
+msgid "Login"
+msgstr "登录"
+
+#: components/login-form.tsx:95
+msgid "Login with Google"
+msgstr "使用 Google 登录"
+
+#: components/login-form.tsx:78
+msgid "Login with your email"
+msgstr "使用邮箱登录"
+
+#: components/login-form.tsx:76
+msgid "Login with your Google account or email"
+msgstr "使用您的 Google 帐号或电子邮件登录"
 
 #: components/bottom-panel.tsx:247
 msgid "Long"
@@ -565,13 +523,8 @@ msgstr "长"
 msgid "Low"
 msgstr "较低"
 
-#: components/onboarding/onboarding-client.tsx:460
-#~ msgid "Make suggestions readable for me"
-#~ msgstr "用我更容易读懂的方式显示建议"
-
 #: components/call-summary.tsx:560
 #: components/history/conversation-history.tsx:952
-#: components/history/ConversationHistory.tsx:775
 #: components/user-menu.tsx:155
 msgid "Memory"
 msgstr "记忆"
@@ -580,29 +533,33 @@ msgstr "记忆"
 msgid "Memory system"
 msgstr "内存系统"
 
-#: components/Settings.tsx:164
+#: components/settings.tsx:164
 msgid "Microphone"
 msgstr "麦克风"
 
-#: components/settings.tsx:150
-#~ msgid "Microphone {0}"
-#~ msgstr "麦克风 {0}"
+#: components/signup-form.tsx:43
+msgid "Minimum 8 characters"
+msgstr "至少8个字符"
 
-#: components/Settings.tsx:240
+#: components/reset-password-form.tsx:108
+msgid "Must be at least 8 characters long."
+msgstr "至少需包含8个字符。"
+
+#: components/settings.tsx:240
 msgid "Native language"
 msgstr "母语"
 
-#: components/Settings.tsx:198
+#: components/settings.tsx:198
 msgid "Native script"
 msgstr "原文字"
 
-#: components/waitlist-modal.tsx:91
-#~ msgid "Network error. Please check your connection and try again."
-#~ msgstr "网络错误。请检查您的连接后重试。"
-
-#: components/Settings.tsx:226
+#: components/settings.tsx:226
 msgid "Never"
 msgstr "从不"
+
+#: components/reset-password-form.tsx:87
+msgid "New Password"
+msgstr "新密码"
 
 #: components/onboarding/glass-onboarding-card.tsx:89
 #: components/onboarding/onboarding-client.tsx:467
@@ -616,54 +573,35 @@ msgid "No context available yet"
 msgstr "暂无可用的上下文信息"
 
 #: components/history/conversation-history.tsx:525
-#: components/history/ConversationHistory.tsx:376
 msgid "No conversations found"
 msgstr "没有找到对话内容"
 
 #: components/history/conversation-history.tsx:628
-#: components/history/ConversationHistory.tsx:479
 msgid "No conversations found for \"{debouncedSearchQuery}\""
 msgstr "未找到与“{debouncedSearchQuery}”相关的对话。"
 
 #: components/history/conversation-history.tsx:530
-#: components/history/ConversationHistory.tsx:381
 msgid "No conversations yet"
 msgstr "暂无对话"
 
-#: components/call-summary.tsx:626
-#~ msgid "No information saved yet"
-#~ msgstr "暂未保存任何信息"
-
 #: components/call-summary.tsx:728
 #: components/history/conversation-history.tsx:1046
-#: components/history/ConversationHistory.tsx:869
 msgid "No messages"
 msgstr "暂无消息"
-
-#: components/settings.tsx:205
-#~ msgid "No time limit (default)"
-#~ msgstr "不限时（默认）"
 
 #: components/onboarding/onboarding-client.tsx:595
 msgid "No, I'm fine"
 msgstr "不用，谢谢"
 
-#: lib/onboarding-tours.tsx:51
-#~ msgid "Not sure what to say? Just type a few words in your language. I'll turn them into a full sentence you can use."
-#~ msgstr ""
-
-#: lib/onboarding-tours.tsx:117
-#~ msgid "Now let's start your first real conversation!"
-#~ msgstr "现在，开始你的第一次真实对话吧！"
-
-#: lib/onboarding-tours.tsx:94
-#~ msgid "Now you're ready to have real conversations without fear or hesitation."
-#~ msgstr ""
-
 #: components/bottom-panel.tsx:241
 #: components/onboarding/bottom-panel-demo.tsx:71
 msgid "Off"
 msgstr "关闭"
+
+#: components/login-form.tsx:99
+#: components/signup-form.tsx:170
+msgid "Or continue with"
+msgstr "或继续使用"
 
 #: components/start-call.tsx:546
 msgid "Ordering food & drinks"
@@ -671,39 +609,48 @@ msgstr "点餐与饮品"
 
 #: components/call-summary.tsx:240
 #: components/history/conversation-history.tsx:698
-#: components/history/ConversationHistory.tsx:518
 msgid "Overall Score"
 msgstr "总评分"
 
 #: components/call-summary.tsx:679
 #: components/call-summary.tsx:681
 #: components/history/conversation-history.tsx:1023
-#: components/history/ConversationHistory.tsx:846
 #: components/messages.tsx:111
 #: components/messages.tsx:160
 msgid "Partner"
 msgstr "对方"
+
+#: components/login-form.tsx:119
+#: components/signup-form.tsx:201
+msgid "Password"
+msgstr "密码"
 
 #: components/start-call.tsx:542
 #: components/start-call.tsx:685
 msgid "Phone Call"
 msgstr "电话沟通"
 
-#: components/waitlist-modal.tsx:46
-#~ msgid "Please enter a valid email address"
-#~ msgstr "请输入有效的电子邮件地址"
-
 #: components/feedback.tsx:31
 msgid "Please enter your feedback"
 msgstr "请输入您的反馈意见"
 
-#: app/[lang]/(auth)/verify-email/page.tsx:69
+#: contexts/glass-context.tsx:993
+msgid "Please refresh the page and try again."
+msgstr "请刷新页面后再试。"
+
+#: contexts/glass-context.tsx:808
+msgid ""
+"Please share your screen with audio from your call platform (Zoom, Google "
+"Meet, Teams)."
+msgstr "请通过您的通话平台（Zoom, Google Meet, Teams）共享带有音频的屏幕。"
+
+#: contexts/glass-context.tsx:692
+msgid "Please wait for session to load and try again."
+msgstr "请等待会话加载完成后重试。"
+
+#: components/verify-email-form.tsx:116
 msgid "Please wait while we verify your email address"
 msgstr "请稍候，我们正在验证您的电子邮箱地址。"
-
-#: components/bottom-panel.tsx:464
-#~ msgid "Portuguese"
-#~ msgstr "葡萄牙语"
 
 #: components/start-call.tsx:402
 msgid "Practice"
@@ -713,14 +660,6 @@ msgstr "练习"
 msgid "Practice Mode"
 msgstr "练习模式"
 
-#: components/waitlist-modal.tsx:216
-#~ msgid "Practice mode or live on Zoom calls"
-#~ msgstr "可在练习模式或 Zoom 实时会议中使用"
-
-#: components/waitlist-modal.tsx:170
-#~ msgid "Practice speaking. Get help in real calls. Remembers everything."
-#~ msgstr "先在这里练习开口，在真实会议中获得实时帮助，并保留完整对话记录。"
-
 #: components/auth-gate.tsx:20
 msgid "Preparing your workspace…"
 msgstr "正在准备您的工作空间…"
@@ -729,17 +668,9 @@ msgstr "正在准备您的工作空间…"
 msgid "Professional conversation"
 msgstr "职场对话"
 
-#: components/Settings.tsx:187
+#: components/settings.tsx:187
 msgid "Pronunciation"
 msgstr "发音"
-
-#: components/settings.tsx:160
-#~ msgid "Pronunciation format"
-#~ msgstr "发音显示格式"
-
-#: lib/onboarding-tours.tsx:90
-#~ msgid "Quick translation"
-#~ msgstr "快速翻译"
 
 #: components/start-call.tsx:462
 msgid "Real Talk"
@@ -753,33 +684,52 @@ msgstr "真实对话模式"
 msgid "RECOMMENDED"
 msgstr "推荐"
 
-#: components/settings.tsx:125
-#~ msgid "Refresh"
-#~ msgstr "刷新"
+#: components/verify-email-form.tsx:132
+msgid "Redirecting to login in {countdown} seconds..."
+msgstr "将在 {countdown} 秒后重定向到登录页面..."
 
-#: components/waitlist-modal.tsx:196
-#~ msgid "Remembers who you are, what you care about"
-#~ msgstr "记住你的偏好和关注点"
+#: components/forgot-password-form.tsx:111
+msgid "Remember your password? <0>Sign in</0>"
+msgstr "还记得你的密码吗？<0>登录</0>"
 
 #: app/[lang]/time-limit/page.tsx:44
 msgid "Request more time from the host in the community"
 msgstr "在社区中向主持人请求更多时间"
+
+#: components/verify-email-sent-content.tsx:103
+msgid "Resend verification email"
+msgstr "重新发送验证邮件"
+
+#: components/verify-email-sent-content.tsx:100
+msgid "Resending..."
+msgstr "重新发送中..."
+
+#: components/reset-password-form.tsx:135
+msgid "Reset password"
+msgstr "重置密码"
+
+#: components/reset-password-form.tsx:76
+msgid "Reset your password"
+msgstr "重置您的密码"
+
+#: components/reset-password-form.tsx:135
+msgid "Resetting..."
+msgstr "正在重置..."
 
 #: components/start-call.tsx:540
 #: components/start-call.tsx:665
 msgid "Restaurant"
 msgstr "餐厅"
 
-#: components/start-call.tsx:1011
-#~ msgid "Retail & bargaining"
-#~ msgstr "购物与讲价"
-
 #: components/history/conversation-history.tsx:478
-#: components/history/ConversationHistory.tsx:329
 msgid "Retry"
 msgstr "重试"
 
-#: components/Settings.tsx:201
+#: components/forgot-password-form.tsx:67
+msgid "Return to login"
+msgstr "返回登录"
+
+#: components/settings.tsx:201
 msgid "Romaji (Latin)"
 msgstr "罗马字（拉丁字母）"
 
@@ -792,22 +742,17 @@ msgstr "保存通话"
 msgid "Scenario:"
 msgstr "场景: "
 
+#: contexts/glass-context.tsx:807
+msgid "Screen audio sharing required"
+msgstr "需要启用屏幕音频共享"
+
 #: components/history/conversation-history.tsx:630
-#: components/history/ConversationHistory.tsx:481
 msgid "Select a conversation to view details"
 msgstr "选择一个对话查看详情"
-
-#: components/history/conversation-history.tsx:678
-#~ msgid "Select a conversation to view the transcript and AI feedback."
-#~ msgstr ""
 
 #: components/onboarding/onboarding-client.tsx:438
 msgid "Select the language you speak fluently"
 msgstr "选择您熟练使用的语言"
-
-#: components/start-call.tsx:506
-#~ msgid "Select the language you want to practice"
-#~ msgstr "选择你想练习的语言"
 
 #: components/feedback.tsx:133
 msgid "Send"
@@ -817,11 +762,19 @@ msgstr "发送"
 msgid "Send Feedback"
 msgstr "发送反馈"
 
+#: components/forgot-password-form.tsx:108
+msgid "Send reset link"
+msgstr "发送重置链接"
+
+#: components/forgot-password-form.tsx:108
+msgid "Sending..."
+msgstr "发送中..."
+
 #: components/bottom-panel.tsx:473
 msgid "Sentence length"
 msgstr "句子长度"
 
-#: components/Settings.tsx:152
+#: components/settings.tsx:152
 #: components/user-menu.tsx:160
 msgid "Settings"
 msgstr "设置"
@@ -834,13 +787,25 @@ msgstr "购物"
 msgid "Short"
 msgstr "简短"
 
-#: components/onboarding/onboarding-client.tsx:493
-#~ msgid "Show suggestions only"
-#~ msgstr "仅显示建议"
-
 #: components/user-menu.tsx:169
 msgid "Sign out"
 msgstr "退出登录"
+
+#: components/signup-form.tsx:166
+msgid "Sign up with Google"
+msgstr "使用 Google 注册"
+
+#: components/signup-form.tsx:149
+msgid "Sign up with your email"
+msgstr "使用您的电子邮箱注册"
+
+#: components/signup-form.tsx:147
+msgid "Sign up with your Google account or email"
+msgstr "使用您的 Google 账号或邮箱注册"
+
+#: components/verify-email-sent-content.tsx:113
+msgid "Signing out..."
+msgstr "正在退出..."
 
 #: components/onboarding/glass-onboarding-card.tsx:72
 msgid "Skip tour"
@@ -879,11 +844,7 @@ msgstr "建议"
 msgid "Suggested Answer"
 msgstr "推荐回答"
 
-#: components/settings.tsx:211
-#~ msgid "Suggestion duration"
-#~ msgstr "建议显示时长"
-
-#: components/Settings.tsx:172
+#: components/settings.tsx:172
 msgid "System default"
 msgstr "系统默认"
 
@@ -895,17 +856,436 @@ msgstr "电话礼仪"
 msgid "Thank you for your feedback!"
 msgstr "感谢您的反馈！"
 
-#: app/[lang]/waitlist/success/page.tsx:66
-#~ msgid "Thanks for joining. We’ll email you when more access is available. Sit tight — it won’t be long."
-#~ msgstr "感谢加入。我们会在更多权限开放时通过电子邮件通知您。请稍安勿躁——很快就会有消息的。"
-
-#: app/[lang]/(auth)/verify-email/page.tsx:96
+#: components/verify-email-form.tsx:123
 msgid "The verification link is invalid or has expired."
 msgstr "验证链接无效或已过期。"
 
-#: components/Settings.tsx:309
+#: components/settings.tsx:309
 msgid "Theme"
 msgstr "主题"
+
+#: contexts/glass-context.tsx:945
+msgid "Trial session ended due to time limit."
+msgstr "试用会话因时间限制而结束。"
+
+#: app/[lang]/error.tsx:34
+#: app/[lang]/failure/page.tsx:32
+msgid "Try again"
+msgstr "请重试"
+
+#: components/start-call.tsx:405
+msgid "Tutorial with AI"
+msgstr "AI 引导教程"
+
+#: components/bottom-panel.tsx:235
+#: components/onboarding/bottom-panel-demo.tsx:110
+msgid "Type what you want to say in {nativeLangName}"
+msgstr "用{nativeLangName}输入您想说的话"
+
+#: components/settings.tsx:286
+msgid "UI Language"
+msgstr "界面语言"
+
+#: contexts/glass-context.tsx:691
+#: contexts/glass-context.tsx:699
+msgid "Unable to connect"
+msgstr "无法连接"
+
+#: components/call-summary.tsx:111
+msgid "Unable to load context from Zep."
+msgstr "无法从Zep加载上下文。"
+
+#: components/start-call.tsx:277
+msgid "Unable to start call"
+msgstr "无法开始通话"
+
+#: components/start-call.tsx:475
+msgid "Unavailable on mobile"
+msgstr "移动端暂不支持"
+
+#: components/verify-email-form.tsx:113
+msgid "Verification failed"
+msgstr "验证失败"
+
+#: components/verify-email-form.tsx:111
+msgid "Verifying your email..."
+msgstr "正在验证您的邮箱..."
+
+#: app/[lang]/error.tsx:30
+msgid "View Documentation"
+msgstr "查看文档"
+
+#: app/[lang]/time-limit/page.tsx:26
+msgid "Want to keep practicing?"
+msgstr "想继续练习吗？"
+
+#: components/history/conversation-history.tsx:474
+msgid "We couldn't load your history. Refresh and try again."
+msgstr "无法加载您的历史记录。请刷新后重试。"
+
+#: app/[lang]/failure/page.tsx:24
+msgid ""
+"We had trouble starting your session. Please check your internet and try "
+"again."
+msgstr "启动会话时出现问题，请检查网络连接后重试。"
+
+#: components/onboarding/onboarding-client.tsx:545
+msgid "We'll show how to read sentences in your alphabet when helpful"
+msgstr "在需要时，我们将展示如何用您的字母阅读句子。"
+
+#: components/verify-email-sent-content.tsx:79
+msgid "We've sent a verification link to"
+msgstr "我们已发送验证链接至"
+
+#: components/login-form.tsx:72
+msgid "Welcome back"
+msgstr "欢迎回来"
+
+#: components/bottom-panel.tsx:235
+#: components/onboarding/bottom-panel-demo.tsx:110
+msgid "What do you want to say..."
+msgstr "你想说什么..."
+
+#: components/onboarding/onboarding-client.tsx:435
+msgid "What is your native language?"
+msgstr "你的母语是什么？"
+
+#: components/start-call.tsx:513
+msgid "What would you like to practice?"
+msgstr "你想练习哪一类场景？"
+
+#: components/onboarding/onboarding-client.tsx:481
+msgid "Which language do you want to learn?"
+msgstr "你想学习哪种语言？"
+
+#: components/onboarding/onboarding-client.tsx:563
+msgid "Yes, show pronunciation"
+msgstr "是的，显示发音"
+
+#: components/call-summary.tsx:677
+#: components/history/conversation-history.tsx:1023
+#: components/messages.tsx:111
+#: components/messages.tsx:160
+msgid "You"
+msgstr "我"
+
+#: lib/onboarding-tours.tsx:123
+msgid "You're all set!"
+msgstr "一切准备就绪！"
+
+#: lib/onboarding-tours.tsx:127
+msgid "You're ready to have real conversations. No fear, no hesitation."
+msgstr "你已准备好进行真正的对话了。无畏无惧，无需犹豫。"
+
+#: contexts/glass-context.tsx:953
+msgid "You've used your free time"
+msgstr "您已用完您的免费时间"
+
+#: contexts/glass-context.tsx:1563
+#: contexts/glass-context.tsx:1615
+#: contexts/glass-context.tsx:1630
+msgid "Your conversation has been saved and is now available in History."
+msgstr "您的对话已保存，现已在历史记录中可查看。"
+
+#: components/verify-email-form.tsx:118
+msgid "Your email (<0>{email}</0>) has been successfully verified."
+msgstr "您的电子邮件地址（<0>{email}</0>）已成功验证。"
+
+#: components/feedback.tsx:91
+msgid "Your feedback..."
+msgstr "您的反馈..."
+
+#: app/[lang]/time-limit/page.tsx:23
+msgid "Your free time is up"
+msgstr "你的免费时间已用完"
+
+#: app/[lang]/(app)/memory/page.tsx:31
+msgid "Your memories"
+msgstr "您的回忆"
+
+#: app/[lang]/(app)/history/page.tsx:31
+msgid "Your saved calls"
+msgstr "已保存的通话"
+
+#: components/start-call.tsx:702
+#~ msgid "⚠️ Make sure to enable \"Share audio\""
+#~ msgstr "请务必启用“共享音频”"
+
+#: components/call-summary.tsx:719
+#~ msgid "✓ Successfully saved! Redirecting..."
+#~ msgstr "✓ 已保存，正在跳转..."
+
+#: components/start-call.tsx:690
+#~ msgid "1. Open your meeting (Zoom, Google Meet, or Teams)"
+#~ msgstr "1. 打开你的会议（Zoom、Google Meet 或 Teams）"
+
+#: components/settings.tsx:211
+#~ msgid "10 seconds"
+#~ msgstr "10秒"
+
+#: components/settings.tsx:232
+#~ msgid "10 seconds (default)"
+#~ msgstr "10 秒（默认）"
+
+#: components/settings.tsx:235
+#~ msgid "15 seconds"
+#~ msgstr "15 秒"
+
+#: components/settings.tsx:214
+#~ msgid "20 seconds"
+#~ msgstr "20秒"
+
+#: components/start-call.tsx:696
+#~ msgid "3. Share your meeting tab"
+#~ msgstr "3. 共享您的会议标签页"
+
+#: components/settings.tsx:217
+#~ msgid "30 seconds"
+#~ msgstr "30秒钟"
+
+#: components/start-call.tsx:699
+#~ msgid "4. Make sure to enable \"Share audio\""
+#~ msgstr "4. 请确保启用“共享音频”"
+
+#: components/settings.tsx:208
+#~ msgid "5 seconds"
+#~ msgstr "5秒"
+
+#: lib/onboarding-tours.tsx:73
+#~ msgid ""
+#~ "After the conversation, I'll analyze your grammar, pronunciation, and "
+#~ "vocabulary—giving you personalized feedback to help you improve naturally."
+#~ msgstr ""
+
+#: components/settings.tsx:187
+#~ msgid "AI message duration"
+#~ msgstr "AI 消息显示时长"
+
+#: lib/onboarding-tours.tsx:63
+#~ msgid ""
+#~ "As I listen to the conversation, everything I do to help you will appear "
+#~ "right here."
+#~ msgstr "在我聆听对话的同时，我给你的所有帮助都会显示在这里。"
+
+#: components/settings.tsx:250
+#~ msgid "Auto-detected from browser. Your selection will be saved and remembered."
+#~ msgstr "已根据浏览器自动检测。你的选择会被保存并在下次继续使用。"
+
+#: app/[lang]/waitlist/success/page.tsx:77
+#~ msgid "Back to Home"
+#~ msgstr "返回主页"
+
+#: contexts/glass-context.tsx:1497
+#~ msgid "Call ended"
+#~ msgstr "通话结束"
+
+#: components/start-call.tsx:503
+#~ msgid "Choose Your Languages"
+#~ msgstr "选择语言"
+
+#: lib/onboarding-tours.tsx:110
+#~ msgid "Congrats! You're all set."
+#~ msgstr "恭喜，一切都准备好了！"
+
+#: lib/onboarding-tours.tsx:53
+#~ msgid ""
+#~ "Don't know how to say something? Just type what you want to say in your "
+#~ "language, and I'll instantly translate it so you can speak with confidence."
+#~ msgstr ""
+
+#: components/history/conversation-history.tsx:126
+#~ msgid "Duration:"
+#~ msgstr ""
+
+#: components/waitlist-modal.tsx:232
+#~ msgid "Enter your email"
+#~ msgstr "请输入你的邮箱"
+
+#: components/bottom-panel.tsx:37
+#~ msgid "Follow-up Suggestion"
+#~ msgstr "后续建议"
+
+#: components/bottom-panel.tsx:462
+#~ msgid "German"
+#~ msgstr "德语"
+
+#: components/waitlist-modal.tsx:193
+#~ msgid "Gets smarter every time you speak"
+#~ msgstr "每次对话都让它更了解你"
+
+#: components/waitlist-modal.tsx:167
+#~ msgid "Glass AI helps you speak any language in the real world"
+#~ msgstr "Glass AI 帮助你在真实场景中自如使用多种语言"
+
+#: lib/onboarding-tours.tsx:31
+#~ msgid "I listen to your conversation"
+#~ msgstr "我会听你的对话。"
+
+#: lib/onboarding-tours.tsx:34
+#~ msgid ""
+#~ "I listen to your conversation in real-time and translate what they say, so "
+#~ "you never miss a word."
+#~ msgstr ""
+
+#: components/start-call.tsx:543
+#~ msgid "I speak"
+#~ msgstr "我会说的语言"
+
+#: components/start-call.tsx:514
+#~ msgid "I want to learn"
+#~ msgstr "我想学习的语言"
+
+#: lib/onboarding-tours.tsx:70
+#~ msgid "I'll give you feedback"
+#~ msgstr "我也会给你一些反馈。"
+
+#: lib/onboarding-tours.tsx:53
+#~ msgid ""
+#~ "I'll listen and help here. I'll suggest what to say next, so just say it. I "
+#~ "remember a bit from our chats to get better over time."
+#~ msgstr "我会在这里倾听并帮你。接下来说什么我会给出建议，你照着说就好。我也会记住一部分之前的对话，慢慢变得更懂你。"
+
+#: lib/onboarding-tours.tsx:34
+#~ msgid ""
+#~ "I'll listen to you and your partner, and translate what they say so you can "
+#~ "understand each other."
+#~ msgstr "我会听你和对方的对话，并把内容翻译给你们，让彼此更好理解对方。"
+
+#: lib/onboarding-tours.tsx:80
+#~ msgid "I'll suggest what to say next"
+#~ msgstr "我会给你推荐接下来可以说的话。"
+
+#: lib/onboarding-tours.tsx:83
+#~ msgid ""
+#~ "I'll suggest what you could say next, so just read it out loud. The more I "
+#~ "learn about you, the better my suggestions will get."
+#~ msgstr "我会提示你接下来可以怎么说，你照着念就好。我越了解你，给出的建议就会越自然、越贴切。"
+
+#: lib/onboarding-tours.tsx:23
+#~ msgid ""
+#~ "I'm here to help you communicate and learn a new language through real "
+#~ "conversations and practice."
+#~ msgstr "我会通过真实对话和练习，帮你更自如地使用一门新的语言。"
+
+#: lib/onboarding-tours.tsx:103
+#~ msgid ""
+#~ "If you say something that sounds a bit off, I'll let you know and help you "
+#~ "fix it."
+#~ msgstr "如果有哪句听起来不太自然，我会提醒你，并帮你换成更自然的说法。"
+
+#: lib/onboarding-tours.tsx:73
+#~ msgid ""
+#~ "If your grammar, pronunciation, or word choice is off, I'll flag it and "
+#~ "suggest a clearer, more natural option."
+#~ msgstr "如果语法、发音或用词不太恰当，我会提示并给出更清晰、更自然的说法。"
+
+#: components/bottom-panel.tsx:463
+#~ msgid "Italian"
+#~ msgstr "意大利语"
+
+#: components/waitlist-modal.tsx:295
+#~ msgid "Join Early Access"
+#~ msgstr "加入抢先体验"
+
+#: components/waitlist-modal.tsx:291
+#~ msgid "Joining..."
+#~ msgstr "正在加入..."
+
+#: components/settings.tsx:227
+#~ msgid "Language"
+#~ msgstr "语言"
+
+#: components/onboarding/onboarding-client.tsx:460
+#~ msgid "Make suggestions readable for me"
+#~ msgstr "用我更容易读懂的方式显示建议"
+
+#: components/settings.tsx:150
+#~ msgid "Microphone {0}"
+#~ msgstr "麦克风 {0}"
+
+#: components/waitlist-modal.tsx:91
+#~ msgid "Network error. Please check your connection and try again."
+#~ msgstr "网络错误。请检查您的连接后重试。"
+
+#: components/call-summary.tsx:626
+#~ msgid "No information saved yet"
+#~ msgstr "暂未保存任何信息"
+
+#: components/settings.tsx:205
+#~ msgid "No time limit (default)"
+#~ msgstr "不限时（默认）"
+
+#: lib/onboarding-tours.tsx:51
+#~ msgid ""
+#~ "Not sure what to say? Just type a few words in your language. I'll turn "
+#~ "them into a full sentence you can use."
+#~ msgstr ""
+
+#: lib/onboarding-tours.tsx:117
+#~ msgid "Now let's start your first real conversation!"
+#~ msgstr "现在，开始你的第一次真实对话吧！"
+
+#: lib/onboarding-tours.tsx:94
+#~ msgid "Now you're ready to have real conversations without fear or hesitation."
+#~ msgstr ""
+
+#: components/waitlist-modal.tsx:46
+#~ msgid "Please enter a valid email address"
+#~ msgstr "请输入有效的电子邮件地址"
+
+#: components/bottom-panel.tsx:464
+#~ msgid "Portuguese"
+#~ msgstr "葡萄牙语"
+
+#: components/waitlist-modal.tsx:216
+#~ msgid "Practice mode or live on Zoom calls"
+#~ msgstr "可在练习模式或 Zoom 实时会议中使用"
+
+#: components/waitlist-modal.tsx:170
+#~ msgid "Practice speaking. Get help in real calls. Remembers everything."
+#~ msgstr "先在这里练习开口，在真实会议中获得实时帮助，并保留完整对话记录。"
+
+#: components/settings.tsx:160
+#~ msgid "Pronunciation format"
+#~ msgstr "发音显示格式"
+
+#: lib/onboarding-tours.tsx:90
+#~ msgid "Quick translation"
+#~ msgstr "快速翻译"
+
+#: components/settings.tsx:125
+#~ msgid "Refresh"
+#~ msgstr "刷新"
+
+#: components/waitlist-modal.tsx:196
+#~ msgid "Remembers who you are, what you care about"
+#~ msgstr "记住你的偏好和关注点"
+
+#: components/start-call.tsx:1011
+#~ msgid "Retail & bargaining"
+#~ msgstr "购物与讲价"
+
+#: components/history/conversation-history.tsx:678
+#~ msgid "Select a conversation to view the transcript and AI feedback."
+#~ msgstr ""
+
+#: components/start-call.tsx:506
+#~ msgid "Select the language you want to practice"
+#~ msgstr "选择你想练习的语言"
+
+#: components/onboarding/onboarding-client.tsx:493
+#~ msgid "Show suggestions only"
+#~ msgstr "仅显示建议"
+
+#: components/settings.tsx:211
+#~ msgid "Suggestion duration"
+#~ msgstr "建议显示时长"
+
+#: app/[lang]/waitlist/success/page.tsx:66
+#~ msgid ""
+#~ "Thanks for joining. We’ll email you when more access is available. Sit "
+#~ "tight — it won’t be long."
+#~ msgstr "感谢加入。我们会在更多权限开放时通过电子邮件通知您。请稍安勿躁——很快就会有消息的。"
 
 #: lib/onboarding-tours.tsx:50
 #~ msgid "This is where I help and suggest what to say"
@@ -936,51 +1316,11 @@ msgstr "主题"
 #~ msgid "Travel & Immigration"
 #~ msgstr "旅行与出入境"
 
-#: app/[lang]/error.tsx:34
-#: app/[lang]/failure/page.tsx:32
-msgid "Try again"
-msgstr "请重试"
-
-#: components/start-call.tsx:405
-msgid "Tutorial with AI"
-msgstr "AI 引导教程"
-
-#: components/bottom-panel.tsx:235
-#: components/onboarding/bottom-panel-demo.tsx:110
-msgid "Type what you want to say in {nativeLangName}"
-msgstr "用{nativeLangName}输入您想说的话"
-
 #: lib/onboarding-tours.tsx:143
-#~ msgid "Type what you want to say in your language, or even just a few keywords. I'll listen to the conversation and suggest the right sentence for you."
+#~ msgid ""
+#~ "Type what you want to say in your language, or even just a few keywords. "
+#~ "I'll listen to the conversation and suggest the right sentence for you."
 #~ msgstr "你可以用自己的语言输入想说的话，哪怕只打几个关键词。我会根据对话内容帮你生成合适的句子。"
-
-#: components/Settings.tsx:286
-msgid "UI Language"
-msgstr "界面语言"
-
-#: components/call-summary.tsx:111
-msgid "Unable to load context from Zep."
-msgstr "无法从Zep加载上下文。"
-
-#: components/start-call.tsx:277
-msgid "Unable to start call"
-msgstr "无法开始通话"
-
-#: components/start-call.tsx:475
-msgid "Unavailable on mobile"
-msgstr "移动端暂不支持"
-
-#: app/[lang]/(auth)/verify-email/page.tsx:93
-msgid "Verification failed"
-msgstr "验证失败"
-
-#: app/[lang]/(auth)/verify-email/page.tsx:66
-msgid "Verifying your email..."
-msgstr "正在验证您的邮箱..."
-
-#: app/[lang]/error.tsx:30
-msgid "View Documentation"
-msgstr "查看文档"
 
 #: components/waitlist-modal.tsx:246
 #~ msgid "Waitlist Email Captured"
@@ -999,18 +1339,11 @@ msgstr "查看文档"
 #~ msgid "Waitlist Submit Succeeded"
 #~ msgstr "加入候补名单成功提交"
 
-#: app/[lang]/time-limit/page.tsx:26
-msgid "Want to keep practicing?"
-msgstr "想继续练习吗？"
-
 #: lib/onboarding-tours.tsx:93
-#~ msgid "Want to say something but don't know the sentence? Type in your language or a few keywords. I'll show the translation."
+#~ msgid ""
+#~ "Want to say something but don't know the sentence? Type in your language or "
+#~ "a few keywords. I'll show the translation."
 #~ msgstr "想说点什么却不知道怎么表达？用你的语言输入，或写几个关键词。我会显示翻译。"
-
-#: components/history/conversation-history.tsx:474
-#: components/history/ConversationHistory.tsx:325
-msgid "We couldn't load your history. Refresh and try again."
-msgstr "无法加载您的历史记录。请刷新后重试。"
 
 #: components/history/conversation-history.tsx:74
 #~ msgid "We couldn’t load your history. Refresh and try again."
@@ -1020,78 +1353,37 @@ msgstr "无法加载您的历史记录。请刷新后重试。"
 #~ msgid "We had trouble adding you. Please try again later."
 #~ msgstr "我们无法添加您。请稍后重试。"
 
-#: app/[lang]/failure/page.tsx:24
-msgid "We had trouble starting your session. Please check your internet and try again."
-msgstr "启动会话时出现问题，请检查网络连接后重试。"
-
 #: components/waitlist-modal.tsx:302
 #~ msgid "We'll notify you when early access is ready. No spam, ever."
 #~ msgstr "抢先体验版本准备好后我们会通知你，绝不发送垃圾邮件。"
-
-#: components/onboarding/onboarding-client.tsx:545
-msgid "We'll show how to read sentences in your alphabet when helpful"
-msgstr "在需要时，我们将展示如何用您的字母阅读句子。"
 
 #: components/onboarding/onboarding-client.tsx:439
 #~ msgid "We'll show how to read suggestions in your alphabet when helpful"
 #~ msgstr "在需要时，我们会用你熟悉的文字显示建议的读法。"
 
-#: components/bottom-panel.tsx:235
-#: components/onboarding/bottom-panel-demo.tsx:110
-msgid "What do you want to say..."
-msgstr "你想说什么..."
-
-#: components/onboarding/onboarding-client.tsx:435
-msgid "What is your native language?"
-msgstr "你的母语是什么？"
-
-#: components/start-call.tsx:513
-msgid "What would you like to practice?"
-msgstr "你想练习哪一类场景？"
-
-#: components/onboarding/onboarding-client.tsx:481
-msgid "Which language do you want to learn?"
-msgstr "你想学习哪种语言？"
-
 #: components/waitlist-modal.tsx:213
 #~ msgid "Works in real calls"
 #~ msgstr "在真实会议中同样好用"
-
-#: components/onboarding/onboarding-client.tsx:563
-msgid "Yes, show pronunciation"
-msgstr "是的，显示发音"
-
-#: components/call-summary.tsx:677
-#: components/history/conversation-history.tsx:1023
-#: components/history/ConversationHistory.tsx:846
-#: components/messages.tsx:111
-#: components/messages.tsx:160
-msgid "You"
-msgstr "我"
 
 #: lib/onboarding-tours.tsx:120
 #~ msgid "You can control how much I help"
 #~ msgstr "你可以自己决定我帮到什么程度。"
 
 #: lib/onboarding-tours.tsx:123
-#~ msgid "You can turn my suggestions and feedback on, off, or keep it on auto. By default, it's set to auto."
+#~ msgid ""
+#~ "You can turn my suggestions and feedback on, off, or keep it on auto. By "
+#~ "default, it's set to auto."
 #~ msgstr "你可以把我的建议和反馈设为开启、关闭或自动模式。默认是自动。"
 
 #: lib/onboarding-tours.tsx:91
-#~ msgid "You'll get a report like this with your scores, feedback, and everything we talked about. Track your progress over time!"
+#~ msgid ""
+#~ "You'll get a report like this with your scores, feedback, and everything we "
+#~ "talked about. Track your progress over time!"
 #~ msgstr ""
-
-#: lib/onboarding-tours.tsx:123
-msgid "You're all set!"
-msgstr "一切准备就绪！"
 
 #: app/[lang]/waitlist/success/page.tsx:63
 #~ msgid "You’re on the list 🎉"
 #~ msgstr "您已在名单上 🎉"
-
-#: lib/onboarding-tours.tsx:127
-msgid "You're ready to have real conversations. No fear, no hesitation."
-msgstr "你已准备好进行真正的对话了。无畏无惧，无需犹豫。"
 
 #: lib/onboarding-tours.tsx:114
 #~ msgid "You've completed the tour and learned how I work."
@@ -1102,25 +1394,9 @@ msgstr "你已准备好进行真正的对话了。无畏无惧，无需犹豫。
 #~ msgstr "您的对话正在保存，将很快出现在历史记录中。"
 
 #: app/[lang]/(auth)/verify-email/page.tsx:81
-msgid "Your email ({email}) has been successfully verified."
-msgstr "您的邮箱（{email}）已成功验证。"
-
-#: components/feedback.tsx:91
-msgid "Your feedback..."
-msgstr "您的反馈..."
-
-#: app/[lang]/time-limit/page.tsx:23
-msgid "Your free time is up"
-msgstr "你的免费时间已用完"
-
-#: app/[lang]/(app)/memory/page.tsx:31
-msgid "Your memories"
-msgstr "您的回忆"
+#~ msgid "Your email ({email}) has been successfully verified."
+#~ msgstr "您的邮箱（{email}）已成功验证。"
 
 #: components/history/conversation-history.tsx:219
 #~ msgid "Your recorded conversations will appear here once a call ends."
 #~ msgstr "通话结束后，您录制的对话将显示在此处。"
-
-#: app/[lang]/(app)/history/page.tsx:31
-msgid "Your saved calls"
-msgstr "已保存的通话"

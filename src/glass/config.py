@@ -9,6 +9,11 @@ from pydantic import Field, field_validator
 
 
 class Settings(BaseSettings):
+    # Provider selection
+    llm_provider: str = "openai"
+    asr_provider: str = "deepgram"
+    memory_provider: str = "zep"
+    
     # OpenAI LLM
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1-mini"

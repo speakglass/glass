@@ -109,7 +109,6 @@ msgstr "4. Start talking and let Glass assist you"
 
 #: components/call-summary.tsx:371
 #: components/history/conversation-history.tsx:803
-#: components/history/ConversationHistory.tsx:624
 msgid "Accuracy"
 msgstr "Accuracy"
 
@@ -133,6 +132,10 @@ msgstr "After each conversation, I'll give you feedback on your grammar, pronunc
 msgid "Airport Check-in"
 msgstr "Airport Check-in"
 
+#: components/signup-form.tsx:252
+msgid "Already have an account? <0>Sign in</0>"
+msgstr "Already have an account? <0>Sign in</0>"
+
 #: components/bottom-panel.tsx:239
 #: components/onboarding/bottom-panel-demo.tsx:69
 msgid "Always"
@@ -149,6 +152,22 @@ msgstr "Analyzing Conversation"
 #: lib/onboarding-tours.tsx:63
 #~ msgid "As I listen to the conversation, everything I do to help you will appear right here."
 #~ msgstr "As I listen to the conversation, everything I do to help you will appear right here."
+
+#: components/signup-form.tsx:47
+msgid "At least one number"
+msgstr "At least one number"
+
+#: components/signup-form.tsx:51
+msgid "At least one special character"
+msgstr "At least one special character"
+
+#: contexts/glass-context.tsx:992
+msgid "Authentication failed"
+msgstr "Authentication failed"
+
+#: contexts/glass-context.tsx:700
+msgid "Authentication token not available. Please refresh the page."
+msgstr "Authentication token not available. Please refresh the page."
 
 #: components/bottom-panel.tsx:240
 #: components/bottom-panel.tsx:246
@@ -180,6 +199,11 @@ msgstr "Back"
 msgid "Below Average"
 msgstr "Below Average"
 
+#: components/login-form.tsx:161
+#: components/signup-form.tsx:265
+msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
+msgstr "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
+
 #: contexts/glass-context.tsx:1497
 #~ msgid "Call ended"
 #~ msgstr "Call ended"
@@ -192,6 +216,11 @@ msgstr "Call Summary"
 #: components/start-call.tsx:680
 msgid "Casual Chat"
 msgstr "Casual Chat"
+
+#: components/forgot-password-form.tsx:53
+#: components/verify-email-sent-content.tsx:75
+msgid "Check your email"
+msgstr "Check your email"
 
 #: components/bottom-panel.tsx:228
 #: components/onboarding/bottom-panel-demo.tsx:104
@@ -214,6 +243,10 @@ msgstr "Choose the language you want to practice speaking"
 msgid "Choose your preferred mode"
 msgstr "Choose your preferred mode"
 
+#: components/verify-email-sent-content.tsx:88
+msgid "Click the link in the email to verify your account and continue to Glass."
+msgstr "Click the link in the email to verify your account and continue to Glass."
+
 #: components/call-summary.tsx:742
 msgid "Close"
 msgstr "Close"
@@ -224,9 +257,12 @@ msgstr "Community"
 
 #: components/call-summary.tsx:447
 #: components/history/conversation-history.tsx:860
-#: components/history/ConversationHistory.tsx:682
 msgid "Comprehensibility"
 msgstr "Comprehensibility"
+
+#: components/reset-password-form.tsx:113
+msgid "Confirm Password"
+msgstr "Confirm Password"
 
 #: lib/onboarding-tours.tsx:110
 #~ msgid "Congrats! You're all set."
@@ -244,23 +280,40 @@ msgstr "Conversation history"
 
 #: components/call-summary.tsx:643
 #: components/history/conversation-history.tsx:1000
-#: components/history/ConversationHistory.tsx:823
 msgid "Conversation History"
 msgstr "Conversation History"
+
+#: contexts/glass-context.tsx:1562
+#: contexts/glass-context.tsx:1614
+#: contexts/glass-context.tsx:1629
+msgid "Conversation saved"
+msgstr "Conversation saved"
 
 #: app/[lang]/failure/page.tsx:21
 msgid "Couldn’t connect"
 msgstr "Couldn’t connect"
 
+#: components/signup-form.tsx:249
+msgid "Create Account"
+msgstr "Create Account"
+
+#: components/signup-form.tsx:143
+msgid "Create an account"
+msgstr "Create an account"
+
+#: components/signup-form.tsx:249
+msgid "Creating account..."
+msgstr "Creating account..."
+
 #: components/start-call.tsx:572
 msgid "Custom Scenario"
 msgstr "Custom Scenario"
 
-#: components/Settings.tsx:155
+#: components/settings.tsx:155
 msgid "Customize your Glass experience"
 msgstr "Customize your Glass experience"
 
-#: components/Settings.tsx:341
+#: components/settings.tsx:341
 msgid "Dark"
 msgstr "Dark"
 
@@ -276,6 +329,10 @@ msgstr "Describe your own situation"
 msgid "Do you want pronunciation help?"
 msgstr "Do you want pronunciation help?"
 
+#: components/login-form.tsx:148
+msgid "Don't have an account? <0>Sign up</0>"
+msgstr "Don't have an account? <0>Sign up</0>"
+
 #: lib/onboarding-tours.tsx:53
 #~ msgid "Don't know how to say something? Just type what you want to say in your language, and I'll instantly translate it so you can speak with confidence."
 #~ msgstr "Don't know how to say something? Just type what you want to say in your language, and I'll instantly translate it so you can speak with confidence."
@@ -284,7 +341,13 @@ msgstr "Do you want pronunciation help?"
 #~ msgid "Duration:"
 #~ msgstr "Duration:"
 
-#: app/[lang]/(auth)/verify-email/page.tsx:78
+#: components/forgot-password-form.tsx:94
+#: components/login-form.tsx:105
+#: components/signup-form.tsx:188
+msgid "Email"
+msgstr "Email"
+
+#: components/verify-email-form.tsx:112
 msgid "Email verified!"
 msgstr "Email verified!"
 
@@ -304,6 +367,14 @@ msgstr "English"
 #: components/waitlist-modal.tsx:232
 #~ msgid "Enter your email"
 #~ msgstr "Enter your email"
+
+#: components/forgot-password-form.tsx:86
+msgid "Enter your email address and we'll send you a reset link"
+msgstr "Enter your email address and we'll send you a reset link"
+
+#: components/reset-password-form.tsx:79
+msgid "Enter your new password below"
+msgstr "Enter your new password below"
 
 #: components/start-call.tsx:545
 msgid "Everyday conversation"
@@ -330,7 +401,6 @@ msgstr "Fetching thread context..."
 
 #: components/call-summary.tsx:290
 #: components/history/conversation-history.tsx:746
-#: components/history/ConversationHistory.tsx:566
 msgid "Fluency"
 msgstr "Fluency"
 
@@ -342,6 +412,11 @@ msgstr "Follow these steps:"
 #~ msgid "Follow-up Suggestion"
 #~ msgstr "Follow-up Suggestion"
 
+#: components/forgot-password-form.tsx:83
+#: components/login-form.tsx:122
+msgid "Forgot your password?"
+msgstr "Forgot your password?"
+
 #: components/user-menu.tsx:128
 msgid "Free minutes"
 msgstr "Free minutes"
@@ -350,6 +425,10 @@ msgstr "Free minutes"
 #: components/onboarding/bottom-panel-demo.tsx:106
 msgid "French"
 msgstr "French"
+
+#: components/signup-form.tsx:176
+msgid "Full Name"
+msgstr "Full Name"
 
 #: components/chat.tsx:89
 msgid "Generating insights and feedback..."
@@ -368,7 +447,7 @@ msgstr "Get Suggestions"
 #~ msgid "Gets smarter every time you speak"
 #~ msgstr "Gets smarter every time you speak"
 
-#: components/Settings.tsx:357
+#: components/settings.tsx:357
 msgid "Glass"
 msgstr "Glass"
 
@@ -376,10 +455,14 @@ msgstr "Glass"
 #~ msgid "Glass AI helps you speak any language in the real world"
 #~ msgstr "Glass AI helps you speak any language in the real world"
 
-#: app/[lang]/(auth)/verify-email/page.tsx:84
-#: app/[lang]/(auth)/verify-email/page.tsx:99
+#: components/verify-email-form.tsx:140
+#: components/verify-email-sent-content.tsx:116
 msgid "Go to Login"
 msgstr "Go to Login"
+
+#: components/verify-email-form.tsx:140
+msgid "Go to Login Now"
+msgstr "Go to Login Now"
 
 #: components/call-summary.tsx:148
 msgid "Good"
@@ -393,7 +476,7 @@ msgstr "Help us improve Glass"
 msgid "Hey! I'm Glass."
 msgstr "Hey! I'm Glass."
 
-#: components/Settings.tsx:211
+#: components/settings.tsx:211
 msgid "Hide messages"
 msgstr "Hide messages"
 
@@ -473,6 +556,14 @@ msgstr "I'll turn your real conversations into learning materials. Review the co
 msgid "I'm here to help you communicate and learn a new language through real conversations."
 msgstr "I'm here to help you communicate and learn a new language through real conversations."
 
+#: components/forgot-password-form.tsx:56
+msgid "If an account exists for <0>{email}</0>, you will receive a password reset link shortly."
+msgstr "If an account exists for <0>{email}</0>, you will receive a password reset link shortly."
+
+#: components/verify-email-sent-content.tsx:91
+msgid "If you don't see the email, check your spam folder."
+msgstr "If you don't see the email, check your spam folder."
+
 #: lib/onboarding-tours.tsx:103
 #~ msgid "If you say something that sounds a bit off, I'll let you know and help you fix it."
 #~ msgstr "If you say something that sounds a bit off, I'll let you know and help you fix it."
@@ -524,7 +615,7 @@ msgstr "Korean"
 msgid "Language Exchange • Calls"
 msgstr "Language Exchange • Calls"
 
-#: components/Settings.tsx:263
+#: components/settings.tsx:263
 msgid "Learning language"
 msgstr "Learning language"
 
@@ -540,7 +631,7 @@ msgstr "Let's Go! 🎉"
 msgid "Let's start your first conversation!"
 msgstr "Let's start your first conversation!"
 
-#: components/Settings.tsx:325
+#: components/settings.tsx:325
 msgid "Light"
 msgstr "Light"
 
@@ -553,9 +644,28 @@ msgid "Listening… say anything when you're ready."
 msgstr "Listening… say anything when you're ready."
 
 #: components/history/conversation-history.tsx:465
-#: components/history/ConversationHistory.tsx:316
 msgid "Loading history…"
 msgstr "Loading history…"
+
+#: components/login-form.tsx:145
+msgid "Logging in..."
+msgstr "Logging in..."
+
+#: components/login-form.tsx:145
+msgid "Login"
+msgstr "Login"
+
+#: components/login-form.tsx:95
+msgid "Login with Google"
+msgstr "Login with Google"
+
+#: components/login-form.tsx:78
+msgid "Login with your email"
+msgstr "Login with your email"
+
+#: components/login-form.tsx:76
+msgid "Login with your Google account or email"
+msgstr "Login with your Google account or email"
 
 #: components/bottom-panel.tsx:247
 msgid "Long"
@@ -571,7 +681,6 @@ msgstr "Low"
 
 #: components/call-summary.tsx:560
 #: components/history/conversation-history.tsx:952
-#: components/history/ConversationHistory.tsx:775
 #: components/user-menu.tsx:155
 msgid "Memory"
 msgstr "Memory"
@@ -580,7 +689,7 @@ msgstr "Memory"
 msgid "Memory system"
 msgstr "Memory system"
 
-#: components/Settings.tsx:164
+#: components/settings.tsx:164
 msgid "Microphone"
 msgstr "Microphone"
 
@@ -588,11 +697,19 @@ msgstr "Microphone"
 #~ msgid "Microphone {0}"
 #~ msgstr "Microphone {0}"
 
-#: components/Settings.tsx:240
+#: components/signup-form.tsx:43
+msgid "Minimum 8 characters"
+msgstr "Minimum 8 characters"
+
+#: components/reset-password-form.tsx:108
+msgid "Must be at least 8 characters long."
+msgstr "Must be at least 8 characters long."
+
+#: components/settings.tsx:240
 msgid "Native language"
 msgstr "Native language"
 
-#: components/Settings.tsx:198
+#: components/settings.tsx:198
 msgid "Native script"
 msgstr "Native script"
 
@@ -600,9 +717,13 @@ msgstr "Native script"
 #~ msgid "Network error. Please check your connection and try again."
 #~ msgstr "Network error. Please check your connection and try again."
 
-#: components/Settings.tsx:226
+#: components/settings.tsx:226
 msgid "Never"
 msgstr "Never"
+
+#: components/reset-password-form.tsx:87
+msgid "New Password"
+msgstr "New Password"
 
 #: components/onboarding/glass-onboarding-card.tsx:89
 #: components/onboarding/onboarding-client.tsx:467
@@ -616,17 +737,14 @@ msgid "No context available yet"
 msgstr "No context available yet"
 
 #: components/history/conversation-history.tsx:525
-#: components/history/ConversationHistory.tsx:376
 msgid "No conversations found"
 msgstr "No conversations found"
 
 #: components/history/conversation-history.tsx:628
-#: components/history/ConversationHistory.tsx:479
 msgid "No conversations found for \"{debouncedSearchQuery}\""
 msgstr "No conversations found for \"{debouncedSearchQuery}\""
 
 #: components/history/conversation-history.tsx:530
-#: components/history/ConversationHistory.tsx:381
 msgid "No conversations yet"
 msgstr "No conversations yet"
 
@@ -636,7 +754,6 @@ msgstr "No conversations yet"
 
 #: components/call-summary.tsx:728
 #: components/history/conversation-history.tsx:1046
-#: components/history/ConversationHistory.tsx:869
 msgid "No messages"
 msgstr "No messages"
 
@@ -665,24 +782,32 @@ msgstr "No, I'm fine"
 msgid "Off"
 msgstr "Off"
 
+#: components/login-form.tsx:99
+#: components/signup-form.tsx:170
+msgid "Or continue with"
+msgstr "Or continue with"
+
 #: components/start-call.tsx:546
 msgid "Ordering food & drinks"
 msgstr "Ordering food & drinks"
 
 #: components/call-summary.tsx:240
 #: components/history/conversation-history.tsx:698
-#: components/history/ConversationHistory.tsx:518
 msgid "Overall Score"
 msgstr "Overall Score"
 
 #: components/call-summary.tsx:679
 #: components/call-summary.tsx:681
 #: components/history/conversation-history.tsx:1023
-#: components/history/ConversationHistory.tsx:846
 #: components/messages.tsx:111
 #: components/messages.tsx:160
 msgid "Partner"
 msgstr "Partner"
+
+#: components/login-form.tsx:119
+#: components/signup-form.tsx:201
+msgid "Password"
+msgstr "Password"
 
 #: components/start-call.tsx:542
 #: components/start-call.tsx:685
@@ -697,7 +822,19 @@ msgstr "Phone Call"
 msgid "Please enter your feedback"
 msgstr "Please enter your feedback"
 
-#: app/[lang]/(auth)/verify-email/page.tsx:69
+#: contexts/glass-context.tsx:993
+msgid "Please refresh the page and try again."
+msgstr "Please refresh the page and try again."
+
+#: contexts/glass-context.tsx:808
+msgid "Please share your screen with audio from your call platform (Zoom, Google Meet, Teams)."
+msgstr "Please share your screen with audio from your call platform (Zoom, Google Meet, Teams)."
+
+#: contexts/glass-context.tsx:692
+msgid "Please wait for session to load and try again."
+msgstr "Please wait for session to load and try again."
+
+#: components/verify-email-form.tsx:116
 msgid "Please wait while we verify your email address"
 msgstr "Please wait while we verify your email address"
 
@@ -729,7 +866,7 @@ msgstr "Preparing your workspace…"
 msgid "Professional conversation"
 msgstr "Professional conversation"
 
-#: components/Settings.tsx:187
+#: components/settings.tsx:187
 msgid "Pronunciation"
 msgstr "Pronunciation"
 
@@ -753,9 +890,17 @@ msgstr "Real Talk Mode"
 msgid "RECOMMENDED"
 msgstr "RECOMMENDED"
 
+#: components/verify-email-form.tsx:132
+msgid "Redirecting to login in {countdown} seconds..."
+msgstr "Redirecting to login in {countdown} seconds..."
+
 #: components/settings.tsx:125
 #~ msgid "Refresh"
 #~ msgstr "Refresh"
+
+#: components/forgot-password-form.tsx:111
+msgid "Remember your password? <0>Sign in</0>"
+msgstr "Remember your password? <0>Sign in</0>"
 
 #: components/waitlist-modal.tsx:196
 #~ msgid "Remembers who you are, what you care about"
@@ -764,6 +909,26 @@ msgstr "RECOMMENDED"
 #: app/[lang]/time-limit/page.tsx:44
 msgid "Request more time from the host in the community"
 msgstr "Request more time from the host in the community"
+
+#: components/verify-email-sent-content.tsx:103
+msgid "Resend verification email"
+msgstr "Resend verification email"
+
+#: components/verify-email-sent-content.tsx:100
+msgid "Resending..."
+msgstr "Resending..."
+
+#: components/reset-password-form.tsx:135
+msgid "Reset password"
+msgstr "Reset password"
+
+#: components/reset-password-form.tsx:76
+msgid "Reset your password"
+msgstr "Reset your password"
+
+#: components/reset-password-form.tsx:135
+msgid "Resetting..."
+msgstr "Resetting..."
 
 #: components/start-call.tsx:540
 #: components/start-call.tsx:665
@@ -775,11 +940,14 @@ msgstr "Restaurant"
 #~ msgstr "Retail & bargaining"
 
 #: components/history/conversation-history.tsx:478
-#: components/history/ConversationHistory.tsx:329
 msgid "Retry"
 msgstr "Retry"
 
-#: components/Settings.tsx:201
+#: components/forgot-password-form.tsx:67
+msgid "Return to login"
+msgstr "Return to login"
+
+#: components/settings.tsx:201
 msgid "Romaji (Latin)"
 msgstr "Romaji (Latin)"
 
@@ -792,8 +960,11 @@ msgstr "Save Call"
 msgid "Scenario:"
 msgstr "Scenario:"
 
+#: contexts/glass-context.tsx:807
+msgid "Screen audio sharing required"
+msgstr "Screen audio sharing required"
+
 #: components/history/conversation-history.tsx:630
-#: components/history/ConversationHistory.tsx:481
 msgid "Select a conversation to view details"
 msgstr "Select a conversation to view details"
 
@@ -817,11 +988,19 @@ msgstr "Send"
 msgid "Send Feedback"
 msgstr "Send Feedback"
 
+#: components/forgot-password-form.tsx:108
+msgid "Send reset link"
+msgstr "Send reset link"
+
+#: components/forgot-password-form.tsx:108
+msgid "Sending..."
+msgstr "Sending..."
+
 #: components/bottom-panel.tsx:473
 msgid "Sentence length"
 msgstr "Sentence length"
 
-#: components/Settings.tsx:152
+#: components/settings.tsx:152
 #: components/user-menu.tsx:160
 msgid "Settings"
 msgstr "Settings"
@@ -841,6 +1020,22 @@ msgstr "Short"
 #: components/user-menu.tsx:169
 msgid "Sign out"
 msgstr "Sign out"
+
+#: components/signup-form.tsx:166
+msgid "Sign up with Google"
+msgstr "Sign up with Google"
+
+#: components/signup-form.tsx:149
+msgid "Sign up with your email"
+msgstr "Sign up with your email"
+
+#: components/signup-form.tsx:147
+msgid "Sign up with your Google account or email"
+msgstr "Sign up with your Google account or email"
+
+#: components/verify-email-sent-content.tsx:113
+msgid "Signing out..."
+msgstr "Signing out..."
 
 #: components/onboarding/glass-onboarding-card.tsx:72
 msgid "Skip tour"
@@ -883,7 +1078,7 @@ msgstr "Suggested Answer"
 #~ msgid "Suggestion duration"
 #~ msgstr "Suggestion duration"
 
-#: components/Settings.tsx:172
+#: components/settings.tsx:172
 msgid "System default"
 msgstr "System default"
 
@@ -899,11 +1094,11 @@ msgstr "Thank you for your feedback!"
 #~ msgid "Thanks for joining. We’ll email you when more access is available. Sit tight — it won’t be long."
 #~ msgstr "Thanks for joining. We’ll email you when more access is available. Sit tight — it won’t be long."
 
-#: app/[lang]/(auth)/verify-email/page.tsx:96
+#: components/verify-email-form.tsx:123
 msgid "The verification link is invalid or has expired."
 msgstr "The verification link is invalid or has expired."
 
-#: components/Settings.tsx:309
+#: components/settings.tsx:309
 msgid "Theme"
 msgstr "Theme"
 
@@ -936,6 +1131,10 @@ msgstr "Theme"
 #~ msgid "Travel & Immigration"
 #~ msgstr "Travel & Immigration"
 
+#: contexts/glass-context.tsx:945
+msgid "Trial session ended due to time limit."
+msgstr "Trial session ended due to time limit."
+
 #: app/[lang]/error.tsx:34
 #: app/[lang]/failure/page.tsx:32
 msgid "Try again"
@@ -954,9 +1153,14 @@ msgstr "Type what you want to say in {nativeLangName}"
 #~ msgid "Type what you want to say in your language, or even just a few keywords. I'll listen to the conversation and suggest the right sentence for you."
 #~ msgstr "Type what you want to say in your language, or even just a few keywords. I'll listen to the conversation and suggest the right sentence for you."
 
-#: components/Settings.tsx:286
+#: components/settings.tsx:286
 msgid "UI Language"
 msgstr "UI Language"
+
+#: contexts/glass-context.tsx:691
+#: contexts/glass-context.tsx:699
+msgid "Unable to connect"
+msgstr "Unable to connect"
 
 #: components/call-summary.tsx:111
 msgid "Unable to load context from Zep."
@@ -970,11 +1174,11 @@ msgstr "Unable to start call"
 msgid "Unavailable on mobile"
 msgstr "Unavailable on mobile"
 
-#: app/[lang]/(auth)/verify-email/page.tsx:93
+#: components/verify-email-form.tsx:113
 msgid "Verification failed"
 msgstr "Verification failed"
 
-#: app/[lang]/(auth)/verify-email/page.tsx:66
+#: components/verify-email-form.tsx:111
 msgid "Verifying your email..."
 msgstr "Verifying your email..."
 
@@ -1008,7 +1212,6 @@ msgstr "Want to keep practicing?"
 #~ msgstr "Want to say something but don't know the sentence? Type in your language or a few keywords. I'll show the translation."
 
 #: components/history/conversation-history.tsx:474
-#: components/history/ConversationHistory.tsx:325
 msgid "We couldn't load your history. Refresh and try again."
 msgstr "We couldn't load your history. Refresh and try again."
 
@@ -1031,6 +1234,14 @@ msgstr "We'll show how to read sentences in your alphabet when helpful"
 #: components/onboarding/onboarding-client.tsx:439
 #~ msgid "We'll show how to read suggestions in your alphabet when helpful"
 #~ msgstr "We'll show how to read suggestions in your alphabet when helpful"
+
+#: components/verify-email-sent-content.tsx:79
+msgid "We've sent a verification link to"
+msgstr "We've sent a verification link to"
+
+#: components/login-form.tsx:72
+msgid "Welcome back"
+msgstr "Welcome back"
 
 #: components/bottom-panel.tsx:235
 #: components/onboarding/bottom-panel-demo.tsx:110
@@ -1059,7 +1270,6 @@ msgstr "Yes, show pronunciation"
 
 #: components/call-summary.tsx:677
 #: components/history/conversation-history.tsx:1023
-#: components/history/ConversationHistory.tsx:846
 #: components/messages.tsx:111
 #: components/messages.tsx:160
 msgid "You"
@@ -1093,13 +1303,27 @@ msgstr "You're ready to have real conversations. No fear, no hesitation."
 #~ msgid "You've completed the tour and learned how I work."
 #~ msgstr "You've completed the tour and learned how I work."
 
+#: contexts/glass-context.tsx:953
+msgid "You've used your free time"
+msgstr "You've used your free time"
+
+#: contexts/glass-context.tsx:1563
+#: contexts/glass-context.tsx:1615
+#: contexts/glass-context.tsx:1630
+msgid "Your conversation has been saved and is now available in History."
+msgstr "Your conversation has been saved and is now available in History."
+
 #: contexts/glass-context.tsx:1498
 #~ msgid "Your conversation is being saved and will appear in history shortly."
 #~ msgstr "Your conversation is being saved and will appear in history shortly."
 
 #: app/[lang]/(auth)/verify-email/page.tsx:81
-msgid "Your email ({email}) has been successfully verified."
-msgstr "Your email ({email}) has been successfully verified."
+#~ msgid "Your email ({email}) has been successfully verified."
+#~ msgstr "Your email ({email}) has been successfully verified."
+
+#: components/verify-email-form.tsx:118
+msgid "Your email (<0>{email}</0>) has been successfully verified."
+msgstr "Your email (<0>{email}</0>) has been successfully verified."
 
 #: components/feedback.tsx:91
 msgid "Your feedback..."
