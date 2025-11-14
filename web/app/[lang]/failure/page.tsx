@@ -1,6 +1,6 @@
 import { Trans } from '@lingui/react/macro';
 import { WifiOff } from 'lucide-react';
-import { initLingui } from '@/initLingui';
+import { initLingui } from '@/lib/init-lingui';
 import { DEFAULT_LANGUAGE, LOCALIZED_LANGUAGE_CODES } from '@/lib/supported-languages';
 
 export default async function ConnectFailurePage({ params }: { params: Promise<{ lang: string }> }) {

@@ -105,20 +105,20 @@ async def iter_multiplexed_audio(websocket, source_queues: dict[str, asyncio.Que
                         mode = data.get("mode", "auto")
                         pipeline.set_suggest_mode(mode)
                         LOGGER.info(f"Suggest mode set to: {mode}")
+                    elif msg_type == "set_suggest_length" and pipeline:
+                        mode = data.get("mode", "auto")
+                        pipeline.set_suggest_length_mode(mode)
+                        LOGGER.info(f"Suggest length mode set to: {mode}")
                     elif msg_type == "set_profile" and pipeline:
                         proficiency = data.get("proficiency")
                         pronunciation_mode = data.get("pronunciation_mode")
                         pipeline.set_user_profile(proficiency=proficiency, pronunciation_mode=pronunciation_mode)
                         LOGGER.info(f"Profile set - proficiency: {proficiency}, pronunciation_mode: {pronunciation_mode}")
                     elif msg_type == "request_suggestion" and pipeline:
-                        # Generate unified suggestion and emit as event
-                        asyncio.create_task(_handle_suggestion_request(pipeline))
-                    elif msg_type == "request_translate" and pipeline:
-                        # Translate user input
-                        text = data.get("text", "")
+                        # Generate suggestion (with or without hint)
+                        text = data.get("text", "")  # Empty = auto suggestion, non-empty = with hint
                         request_id = data.get("request_id")
-                        if text:
-                            asyncio.create_task(_handle_translate_request(pipeline, text, request_id))
+                        asyncio.create_task(_handle_suggestion_request(pipeline, text, request_id))
                     elif msg_type == "request_tts":
                         # Stream TTS audio from ElevenLabs
                         text = data.get("text", "")
@@ -134,48 +134,22 @@ async def iter_multiplexed_audio(websocket, source_queues: dict[str, asyncio.Que
             await queue.put(None)
 
 
-async def _handle_suggestion_request(pipeline) -> None:
-    """Handle unified suggestion generation request (answer or follow-up)."""
+async def _handle_suggestion_request(pipeline, text: str = "", request_id: str | None = None) -> None:
+    """Handle suggestion request (with or without hint)."""
     try:
         from ..domain.entities import EventType
-        suggestion_type, suggestion = await pipeline.generate_suggestion()
+        suggestion = await pipeline.generate_suggestion(text or None)
         
-        if isinstance(suggestion, dict):
-            event_type = EventType.ANSWER if suggestion_type == "answer" else EventType.FOLLOW_UP
-            await pipeline._emit(
-                event_type,
-                {"text": suggestion.get("target_text", ""), "suggestion": suggestion},
-            )
-        else:
-            event_type = EventType.ANSWER if suggestion_type == "answer" else EventType.FOLLOW_UP
-            await pipeline._emit(event_type, {"text": str(suggestion)})
+        if isinstance(suggestion, dict) and suggestion.get("target_text"):
+            payload = {
+                "text": suggestion.get("target_text", ""),
+                "suggestion": suggestion,
+            }
+            if request_id:
+                payload["request_id"] = request_id
+            await pipeline._emit(EventType.SUGGESTION, payload)
     except Exception as e:
         LOGGER.error(f"Failed to generate suggestion: {e}")
-
-
-async def _handle_translate_request(pipeline, text: str, request_id: str | None = None) -> None:
-    """Handle translation request."""
-    try:
-        from ..domain.entities import EventType
-        result = await pipeline.translate_input(text)
-        
-        if isinstance(result, dict):
-            await pipeline._emit(
-                EventType.ANSWER,  # Reuse ANSWER event type for translations
-                {
-                    "text": result.get("target_text", ""),
-                    "suggestion": result,
-                    "request_id": request_id,
-                    "is_translation": True,
-                },
-            )
-        else:
-            await pipeline._emit(
-                EventType.ANSWER,
-                {"text": str(result), "request_id": request_id, "is_translation": True},
-            )
-    except Exception as e:
-        LOGGER.error(f"Failed to translate input: {e}")
 
 
 async def _handle_tts_request(websocket, text: str, voice_id: str | None = None, request_id: str | None = None) -> None:

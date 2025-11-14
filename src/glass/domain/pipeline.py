@@ -11,7 +11,7 @@ from typing import AsyncIterable, Deque, Sequence
 from .asr_processor import ASRProcessor
 from .entities import EventType, SessionEvent
 from .llm_processor import LLMProcessor
-from .ports import ASRPort, DiarizationPort, EventsPort, LLMPort, MemoryPort, VisionPort
+from .ports import ASRPort, EventsPort, LLMPort, MemoryPort
 
 LOGGER = logging.getLogger(__name__)
 
@@ -27,21 +27,16 @@ class SessionPipeline:
         llm: LLMPort,
         memory: MemoryPort,
         events: EventsPort | None,
-        vision: VisionPort | None = None,
-        diarizer: DiarizationPort | None = None,
         llm_semaphore: asyncio.Semaphore | None = None,
         tail_size: int = 12,
+        context_window_size: int = 5,  # For LLM prompts (Zep best practice)
         default_lang: str = "en",
-        default_tone: str = "neutral",
     ) -> None:
         self.session_id = session_id
         self.memory = memory
         self.events_ports: list[EventsPort] = [events] if events else []
-        self.vision = vision
         self.tail: Deque[dict] = deque(maxlen=tail_size)
         self.default_lang = default_lang
-        self.default_tone = default_tone
-        self.screen_hint: str | None = None
         self.lang = default_lang
         self._llm_gate = llm_semaphore or asyncio.Semaphore(4)
         self.session_start_time = time.time()
@@ -53,7 +48,6 @@ class SessionPipeline:
         self.asr_processor = ASRProcessor(
             session_id=session_id,
             asr=asr,
-            diarizer=diarizer,
             emit_callback=self._emit,
             handle_transcript_callback=self._handle_transcript,
         )
@@ -64,18 +58,20 @@ class SessionPipeline:
             emit_callback=self._emit,
             llm_gate=self._llm_gate,
         )
+        # Pass memory to LLM processor for context retrieval
+        self.llm_processor.memory = memory
+        self.llm_processor.user_id = None  # Will be set in WebSocket route
+        # Set context window size (Zep best practice: 5 messages)
+        self.llm_processor.context_window_size = context_window_size
 
     async def process_audio_stream(
         self,
         audio_iter: AsyncIterable[bytes],
         *,
         source: str = "mixed",
-        enable_diarization: bool | None = None,
     ) -> None:
-        """Process an incoming audio stream with optional per-source diarization."""
-        queues: list[asyncio.Queue] = []
+        """Process an incoming audio stream."""
         asr_queue = asyncio.Queue(maxsize=8)
-        queues.append(asr_queue)
         
         tasks = [
             asyncio.create_task(
@@ -89,24 +85,8 @@ class SessionPipeline:
                 )
             )
         ]
-        
-        use_diarization = (
-            bool(enable_diarization)
-            if enable_diarization is not None
-            else self.asr_processor.diarizer is not None
-        )
-        if use_diarization and self.asr_processor.diarizer is not None:
-            diar_queue = asyncio.Queue(maxsize=8)
-            queues.append(diar_queue)
-            tasks.append(asyncio.create_task(
-                self.asr_processor.consume_diarizer(
-                    diar_queue, 
-                    source=source,
-                    event_type_speaker_activity=EventType.SPEAKER_ACTIVITY,
-                )
-            ))
 
-        producer = asyncio.create_task(ASRProcessor.broadcast_audio(audio_iter, queues))
+        producer = asyncio.create_task(ASRProcessor.broadcast_audio(audio_iter, [asr_queue]))
         try:
             await asyncio.gather(producer, *tasks)
         except Exception:
@@ -114,69 +94,6 @@ class SessionPipeline:
                 task.cancel()
             producer.cancel()
             raise
-
-    async def handle_text_query(self, text: str, tone: str | None = None, lang: str | None = None) -> dict:
-        """Handle an explicit text query (e.g. POST /ask)."""
-        tone = tone or self.default_tone
-        lang = lang or self.lang
-        msg = {"speaker": "user", "source": "manual", "text": text}
-        self.tail.append(msg)
-        self.full_conversation.append(msg)
-        context = await self.memory.retrieve(self.session_id, text, k=6)
-        suggestion = await self._generate_suggestion(context=context, tone=tone, lang=lang)
-        await self._persist_interaction(text=text, suggestion=suggestion, tone=tone, speaker=None)
-        await self._emit(EventType.SUGGESTION, suggestion)
-        return suggestion
-
-    async def handle_screen_hint(self, text: str, app: str | None = None) -> None:
-        """Update the active screen hint context."""
-        self.screen_hint = text
-        await self.memory.upsert(
-            nodes=[
-                {
-                    "type": "screen",
-                    "session_id": self.session_id,
-                    "text": text,
-                    "app": app,
-                }
-            ],
-            edges=None,
-        )
-
-    async def handle_image(self, blob_id: str, mime_type: str, *, local_path: str | None = None) -> None:
-        """Persist an image reference and optionally run a vision adapter."""
-        image_node = {
-            "type": "image",
-            "session_id": self.session_id,
-            "blob_id": blob_id,
-            "mime": mime_type,
-            "local_path": local_path,
-        }
-        description: str | None = None
-        if self.vision is not None:
-            description = await self.vision.describe(
-                session_id=self.session_id,
-                image_ref=image_node,
-            )
-            if description:
-                await self._emit(
-                    EventType.NOTE,
-                    {"text": description, "source": "vision"},
-                )
-        store_node = dict(image_node)
-        store_node.pop("local_path", None)
-        await self.memory.upsert(nodes=[store_node], edges=None)
-        if description:
-            await self.memory.upsert(
-                nodes=[
-                    {
-                        "type": "note",
-                        "session_id": self.session_id,
-                        "text": description,
-                    }
-                ],
-                edges=[("image", "supports", "note")],
-            )
 
     async def _handle_transcript(
         self,
@@ -192,12 +109,32 @@ class SessionPipeline:
     ) -> None:
         if not text:
             return
-        speaker_label = self._label_for_speaker(source, speaker)
-        # Determine if this is from user (mic) or remote (system)
-        is_mic = source and (source == "mic" or source.startswith("mic_"))
-        role = "user" if is_mic else "remote"
+
+        # Determine if this utterance came from the microphone (user) for downstream logic
+        source_label = (source or "").lower()
+        is_mic = bool(source_label == "mic" or source_label.startswith("mic_"))
+        
+        # Auto-assign speaker based on source if not explicitly provided
+        if not speaker:
+            if source and source == "mic":
+                speaker = "user"
+            elif source == "system":
+                # Set speaker based on mode
+                # Practice mode: system audio is not used (shouldn't happen)
+                # Real Talk mode: system audio is from conversation partner
+                mode = getattr(self.llm_processor, 'mode', 'real')
+                speaker = "partner" if mode == "real" else "ai"
+            elif source == "ai":
+                speaker = "ai"
+            else:
+                # Fallback for unknown sources
+                speaker = source or "unknown"
+
+        if not is_mic and speaker == "user":
+            is_mic = True
+        
         msg = {
-            "speaker": speaker_label or role,
+            "speaker": speaker,
             "source": source or "unknown",
             "text": text,
             "utterance_id": utterance_id,
@@ -246,18 +183,13 @@ class SessionPipeline:
             self.full_conversation.append(msg)
         
         self.lang = lang or self.lang
-        # Store context but don't auto-generate suggestion
-        context = await self.memory.retrieve(self.session_id, text, k=6)
-        await self._persist_interaction(
-            text=text,
-            suggestion=None,  # No auto-suggestion
-            tone=self.default_tone,
-            speaker=speaker_label,
-        )
+        # Note: Messages are automatically added to Zep at session end via add_conversation_messages()
+        # This provides better context and allows Zep to extract facts/entities from full conversations
+        # No need to persist individual utterances here
         
         # Trigger LLM processing only when speech is final (utterance complete)
         if speech_final:
-            asyncio.create_task(self.llm_processor.translate_and_emit(
+            asyncio.create_task(self.llm_processor.process_utterance(
                 text=text,
                 utterance_id=utterance_id or "",
                 source_lang=lang,
@@ -265,96 +197,12 @@ class SessionPipeline:
                 is_user=is_mic,
                 event_type_translation=EventType.TRANSLATION,
                 event_type_feedback=EventType.FEEDBACK,
-                event_type_answer=EventType.ANSWER,
-                event_type_follow_up=EventType.FOLLOW_UP,
+                event_type_suggestion=EventType.SUGGESTION,
                 event_type_transcript=EventType.TRANSCRIPT,
                 tail=list(self.tail),
                 start=start,
                 duration=duration,
             ))
-
-    async def _generate_suggestion(self, context: Sequence[dict], tone: str, lang: str) -> dict:
-        # Access LLM through processor
-        try:
-            # Compact preview of tail for debugging suggest behavior
-            preview_lines: list[str] = []
-            for entry in list(self.tail)[-8:]:
-                if isinstance(entry, dict):
-                    src = entry.get("source", "?")
-                    spk = entry.get("speaker", "?")
-                    txt = (entry.get("text", "") or "").replace("\n", " ")
-                    if len(txt) > 200:
-                        txt = txt[:200] + "…"
-                    preview_lines.append(f"[{src}|{spk}] {txt}")
-                else:
-                    preview_lines.append(str(entry))
-
-            print(f"[Suggest Tail] lang: {lang} tone: {tone} preview lines: {preview_lines}")
-            LOGGER.info(
-                "[Suggest Tail] lang=%s tone=%s\n%s",
-                lang,
-                tone,
-                "\n".join(preview_lines) or "(empty tail)",
-            )
-        except Exception:
-            pass
-        raw = await self.llm_processor.llm.suggest(
-            transcript_tail=list(self.tail),
-            screen=self.screen_hint,
-            memory=context,
-            tone=tone,
-            lang=lang,
-        )
-        if isinstance(raw, str):
-            return {"text": raw, "tone": tone, "notes": []}
-        merged = {"tone": tone, "notes": []}
-        merged.update(raw)
-        merged.setdefault("text", "")
-        merged.setdefault("notes", [])
-        return merged
-
-    async def _persist_interaction(
-        self,
-        text: str,
-        suggestion: dict | None,
-        tone: str,
-        speaker: str | None,
-    ) -> None:
-        nodes = [
-            {
-                "type": "utterance",
-                "session_id": self.session_id,
-                "text": text,
-                "tone": tone,
-            },
-        ]
-        if speaker:
-            nodes[0]["speaker"] = speaker
-        
-        edges = []
-        
-        # Only add suggestion and notes if a suggestion was provided
-        if suggestion is not None:
-            nodes.append({
-                "type": "suggestion",
-                "session_id": self.session_id,
-                "text": suggestion.get("text", ""),
-                "tone": suggestion.get("tone", tone),
-            })
-            edges.append(("utterance", "supports", "suggestion"))
-            
-            notes = suggestion.get("notes") or []
-            for note_text in notes:
-                nodes.append(
-                    {
-                        "type": "note",
-                        "session_id": self.session_id,
-                        "text": note_text,
-                    }
-                )
-                edges.append(("suggestion", "supports", "note"))
-        
-        await self.memory.upsert(nodes=nodes, edges=edges)
 
     async def _emit(
         self,
@@ -364,54 +212,71 @@ class SessionPipeline:
         source: str | None = None,
         speaker: str | None = None,
     ) -> None:
-        # Persist AI transcript events into conversation storage (practice mode AI turns)
+        # Persist important events into conversation storage for memory
         try:
-            if event_type == EventType.TRANSCRIPT:
-                evt_source = (payload.get("source") if isinstance(payload, dict) else None) or source or None
-                if evt_source == "ai":
-                    msg_text = (payload.get("text") if isinstance(payload, dict) else None) or ""
-                    utterance_id = (payload.get("utterance_id") if isinstance(payload, dict) else None)
-                    msg: dict = {
-                        "speaker": speaker or "ai",
-                        "source": "ai",
-                        "text": msg_text,
-                        "utterance_id": utterance_id,
-                    }
-                    # Optional timing
-                    if isinstance(payload, dict):
-                        if payload.get("start") is not None:
-                            msg["start"] = payload.get("start")
-                        if payload.get("duration") is not None:
-                            msg["duration"] = payload.get("duration")
-                    # Upsert into full_conversation
-                    if utterance_id:
-                        existing_idx = None
-                        for idx, conv_msg in enumerate(self.full_conversation):
-                            if conv_msg.get("utterance_id") == utterance_id and conv_msg.get("source") == "ai":
-                                existing_idx = idx
-                                break
-                        if existing_idx is not None:
-                            self.full_conversation[existing_idx] = msg
-                        else:
-                            self.full_conversation.append(msg)
+            evt_source = (payload.get("source") if isinstance(payload, dict) else None) or source or None
+            
+            # Store AI conversation turns (practice mode)
+            if event_type == EventType.TRANSCRIPT and evt_source == "ai":
+                msg_text = (payload.get("text") if isinstance(payload, dict) else None) or ""
+                utterance_id = (payload.get("utterance_id") if isinstance(payload, dict) else None)
+                msg: dict = {
+                    "speaker": speaker or "ai",
+                    "source": "ai",
+                    "text": msg_text,
+                    "utterance_id": utterance_id,
+                }
+                # Optional timing
+                if isinstance(payload, dict):
+                    if payload.get("start") is not None:
+                        msg["start"] = payload.get("start")
+                    if payload.get("duration") is not None:
+                        msg["duration"] = payload.get("duration")
+                # Upsert into full_conversation
+                if utterance_id:
+                    existing_idx = None
+                    for idx, conv_msg in enumerate(self.full_conversation):
+                        if conv_msg.get("utterance_id") == utterance_id and conv_msg.get("source") == "ai":
+                            existing_idx = idx
+                            break
+                    if existing_idx is not None:
+                        self.full_conversation[existing_idx] = msg
                     else:
                         self.full_conversation.append(msg)
-                    # Upsert into tail
-                    if utterance_id:
-                        existing_idx = None
-                        for idx, tmsg in enumerate(self.tail):
-                            if tmsg.get("utterance_id") == utterance_id and tmsg.get("source") == "ai":
-                                existing_idx = idx
-                                break
-                        if existing_idx is not None:
-                            try:
-                                self.tail[existing_idx] = msg
-                            except Exception:
-                                self.tail.append(msg)
-                        else:
+                else:
+                    self.full_conversation.append(msg)
+                # Upsert into tail
+                if utterance_id:
+                    existing_idx = None
+                    for idx, tmsg in enumerate(self.tail):
+                        if tmsg.get("utterance_id") == utterance_id and tmsg.get("source") == "ai":
+                            existing_idx = idx
+                            break
+                    if existing_idx is not None:
+                        try:
+                            self.tail[existing_idx] = msg
+                        except Exception:
                             self.tail.append(msg)
                     else:
                         self.tail.append(msg)
+                else:
+                    self.tail.append(msg)
+            
+            # Store Glass learning assistant feedback/suggestions for memory
+            elif evt_source == "glass" and event_type in (EventType.FEEDBACK, EventType.SUGGESTION):
+                msg_text = (payload.get("text") if isinstance(payload, dict) else None) or ""
+                utterance_id = (payload.get("utterance_id") if isinstance(payload, dict) else None)
+                glass_msg: dict = {
+                    "speaker": "glass",
+                    "source": "glass",
+                    "text": msg_text,
+                    "event_type": event_type.value,  # "feedback" or "suggestion"
+                }
+                if utterance_id:
+                    glass_msg["utterance_id"] = utterance_id
+                # Add to conversation history for Zep memory
+                self.full_conversation.append(glass_msg)
+                LOGGER.debug(f"[Memory] Stored Glass {event_type.value}: {msg_text[:50]}...")
         except Exception:
             # Do not let persistence errors block event delivery
             pass
@@ -450,6 +315,11 @@ class SessionPipeline:
         """Set the suggestion mode: 'always', 'auto', or 'off'."""
         self.llm_processor.suggest_mode = mode
         LOGGER.info(f"Session {self.session_id} suggest mode set to: {mode}")
+    
+    def set_suggest_length_mode(self, mode: str) -> None:
+        """Set the suggestion length mode: 'auto', 'short' (1 sentence), or 'long' (4 sentences)."""
+        self.llm_processor.suggest_length_mode = mode
+        LOGGER.info(f"Session {self.session_id} suggest length mode set to: {mode}")
 
     def set_user_profile(self, proficiency: str | None, pronunciation_mode: str | None = None) -> None:
         """Set user profile (proficiency and pronunciation mode)."""
@@ -466,44 +336,45 @@ class SessionPipeline:
         self.llm_processor.scenario = scenario
         LOGGER.info(f"Session {self.session_id} config - learning: {learning_lang}, native: {native_lang}, mode: {mode}, scenario: {scenario}")
     
-
-    async def _generate_initial_greeting(self) -> None:
-        """Generate initial AI greeting in practice mode."""
-        ai_msg = await self.llm_processor.generate_initial_greeting(
-            list(self.tail),
-            self.full_conversation,
-            EventType.TRANSCRIPT,
-            EventType.TRANSLATION,
-            EventType.ANSWER,
-        )
-
     # --- LLM-Related Methods (Delegated to LLMProcessor) -----------------
-    async def generate_answer(self) -> dict:
-        """Generate a structured answer suggestion based on conversation history."""
-        return await self.llm_processor.generate_answer(list(self.tail), self.lang)
-
-    async def generate_follow_up(self) -> dict:
-        """Generate a structured follow-up suggestion based on conversation history."""
-        return await self.llm_processor.generate_follow_up(list(self.tail), self.lang)
-
-    async def generate_suggestion(self) -> tuple[str, dict]:
-        """Generate a unified suggestion (answer or follow-up) based on conversation context.
-        
-        Returns:
-            A tuple of (suggestion_type, suggestion_dict) where suggestion_type is 'answer' or 'follow_up'
-        """
-        return await self.llm_processor.generate_suggestion(list(self.tail), self.lang)
-
-    async def translate_input(self, text: str) -> dict:
-        """Translate user input (keywords or sentence) to target language.
+    async def generate_suggestion(self, user_hint: str | None = None) -> dict:
+        """Generate a suggestion based on conversation context.
         
         Args:
-            text: User input to translate
+            user_hint: Optional hint from user (e.g., keywords, partial sentence)
         
         Returns:
             dict with target_text, native_translation, pronunciation
         """
-        return await self.llm_processor.translate_input(text, list(self.tail))
+        LOGGER.info(f"[Manual Suggestion] Starting with length_mode={self.llm_processor.suggest_length_mode}")
+        target_lang_name = self.llm_processor._lang_code_to_name(self.llm_processor.learning_lang)
+        native_lang_name = self.llm_processor._lang_code_to_name(self.llm_processor.native_lang)
+        
+        # Get thread context for personalized suggestions
+        thread_context = ""
+        if self.llm_processor.memory and self.llm_processor.user_id:
+            thread_context = await self.llm_processor.memory.get_context_for_prompt(
+                thread_id=self.session_id,
+                user_id=self.llm_processor.user_id,
+                scope="thread",
+                timeout=2.0,
+            )
+        
+        result = await self.llm_processor.llm.suggest(
+            recent_conversation=self.llm_processor._get_recent_conversation(list(self.tail)),
+            target_lang=target_lang_name,
+            native_lang=native_lang_name,
+            user_hint=user_hint,
+            user_context=self.llm_processor.user_context_block,
+            thread_context=thread_context,
+            length_mode=self.llm_processor.suggest_length_mode,
+        )
+        
+        if result:
+            # Ensure pronunciation if needed
+            suggestion = await self.llm_processor._ensure_pronunciation(result)
+            return suggestion
+        return {"target_text": ""}
 
     async def analyze_conversation(self) -> dict:
         """Analyze the full conversation and return scores, extracted info, and overall feedback."""
@@ -513,11 +384,3 @@ class SessionPipeline:
             self.llm_processor.native_lang,
             self.llm_processor.learning_lang,
         )
-
-    @staticmethod
-    def _label_for_speaker(source: str | None, speaker: str | None) -> str | None:
-        if speaker and source:
-            if speaker.startswith(source):
-                return speaker
-            return f"{source}:{speaker}"
-        return speaker or source

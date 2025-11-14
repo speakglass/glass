@@ -1,11 +1,11 @@
 'use client';
-import Messages from './Messages';
-import Controls from './Controls';
-import StartCall from './StartCall';
-import CallSummary from './CallSummary';
-import BottomPanel from './BottomPanel';
+import Messages from './messages';
+import Controls from './controls';
+import StartCall from './start-call';
+import CallSummary from './call-summary';
+import BottomPanel from './bottom-panel';
 import { ComponentRef, useEffect, useRef, useState } from 'react';
-import { useGlass } from '@/contexts/GlassContext';
+import { useGlass } from '@/contexts/glass-context';
 import { AnimatePresence, motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import Progress from '@/components/ui/progress';
@@ -15,6 +15,19 @@ export default function Chat() {
   const ref = useRef<ComponentRef<typeof Messages> | null>(null);
   const { status, conversationAnalysis, showSummary, closeSummary, startNewCallWithContext } = useGlass();
   const [analysisProgress, setAnalysisProgress] = useState(0);
+
+  // Debug: Log render conditions
+  console.log('[Chat] Rendering with:', {
+    status: status.value,
+    showSummary,
+    hasAnalysis: !!conversationAnalysis,
+  });
+
+  // Fade in on mount (after onboarding transition)
+  useEffect(() => {
+    document.body.style.opacity = '1';
+    document.body.style.transition = 'opacity 0.3s ease-in';
+  }, []);
 
   // Fake analysis progress: reach ~95% at 6s, then inch subtly while waiting
   useEffect(() => {
@@ -90,7 +103,7 @@ export default function Chat() {
         {showSummary && conversationAnalysis && (
           <CallSummary
             key={'call-summary'}
-            sessionId={conversationAnalysis.sessionId}
+            conversationId={conversationAnalysis.conversationId}
             scores={conversationAnalysis.scores}
             extractedInfo={conversationAnalysis.extractedInfo}
             feedback={conversationAnalysis.feedback}

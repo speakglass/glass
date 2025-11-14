@@ -1,17 +1,44 @@
-"""OpenAI LLM adapter."""
+"""OpenAI LLM adapter with Zep memory tool integration."""
 
 from __future__ import annotations
 
 from typing import Any, Sequence
+import json
 import logging
 
 import httpx
 
 from ...domain.prompts import resolve_prompt
 
+LOGGER = logging.getLogger(__name__)
+
+# Zep Memory Search Tool Definition for OpenAI Function Calling
+ZEP_SEARCH_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "search_user_facts",
+        "description": "Search for relevant facts about the user from their conversation history. Use this to personalize responses, suggestions, and translations based on user's preferences, background, and past interactions.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search query to find relevant user facts (e.g., 'user preferences', 'user background', 'topics user discussed')"
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Number of facts to return (default: 5)",
+                    "default": 5
+                }
+            },
+            "required": ["query"]
+        }
+    }
+}
+
 
 class OpenAILLMAdapter:
-    """Adapter that calls OpenAI's Responses API for suggestions."""
+    """Adapter that calls OpenAI's Responses API for suggestions with Zep memory tool support."""
 
     def __init__(
         self,
@@ -21,6 +48,7 @@ class OpenAILLMAdapter:
         base_url: str = "https://api.openai.com/v1",
         timeout: float = 15.0,
         role: str = "progress",
+        memory_adapter = None,  # Zep memory adapter for tool calls
     ) -> None:
         if not api_key:
             msg = "OpenAI API key is required."
@@ -30,37 +58,284 @@ class OpenAILLMAdapter:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.role = role
+        self.memory_adapter = memory_adapter  # For Zep tool calls
+        self.user_id: str | None = None  # Set by LLMProcessor
         self._logger = logging.getLogger(__name__)
 
-    async def suggest(
+    async def _handle_tool_call(self, tool_name: str, tool_args: dict) -> str:
+        """Handle OpenAI tool calls (currently only Zep search_user_facts).
+        
+        Args:
+            tool_name: Name of the tool to call
+            tool_args: Arguments for the tool
+            
+        Returns:
+            JSON string with tool results
+        """
+        if tool_name == "search_user_facts":
+            if not self.memory_adapter or not self.user_id:
+                return json.dumps({"facts": [], "message": "Memory search not available"})
+            
+            try:
+                query = tool_args.get("query", "")
+                limit = tool_args.get("limit", 5)
+                
+                LOGGER.info(f"[Tool:search_user_facts] Searching for: {query} (limit={limit})")
+                
+                # Search Zep Knowledge Graph
+                edges = await self.memory_adapter.client.graph.search(
+                    user_id=self.user_id,
+                    query=query,
+                    scope="edges",
+                    limit=limit,
+                )
+                
+                # Format facts with temporal validity
+                facts = []
+                for edge in edges.edges:
+                    if hasattr(edge, 'fact') and edge.fact:
+                        valid_at = edge.valid_at if hasattr(edge, 'valid_at') and edge.valid_at else "date unknown"
+                        invalid_at = edge.invalid_at if hasattr(edge, 'invalid_at') and edge.invalid_at else "present"
+                        fact_text = f"{edge.fact} (Valid: {valid_at} - {invalid_at})"
+                        facts.append(fact_text)
+                
+                LOGGER.info(f"[Tool:search_user_facts] Found {len(facts)} facts for query '{query}':")
+                for i, fact in enumerate(facts, 1):
+                    LOGGER.info(f"[Tool:search_user_facts]   {i}. {fact}")
+                
+                return json.dumps({
+                    "facts": facts,
+                    "count": len(facts),
+                    "query": query
+                })
+            except Exception as e:
+                LOGGER.error(f"[Tool:search_user_facts] Error: {e}", exc_info=True)
+                return json.dumps({"facts": [], "error": str(e)})
+        
+        return json.dumps({"error": f"Unknown tool: {tool_name}"})
+
+    async def _call_with_tools(
         self,
-        transcript_tail: Sequence[str | dict],
-        screen: str | None,
-        memory: Sequence[dict],
-        tone: str,
-        lang: str,
+        messages: list[dict],
+        model: str = "gpt-4.1-mini",
+        temperature: float = 0.3,
+        max_tokens: int = 1000,
+        response_format: dict | None = None,
     ) -> dict:
-        prompt = self._build_prompt(transcript_tail, screen, memory, tone, lang)
+        """Call OpenAI with tool support and handle tool calls loop.
+        
+        Args:
+            messages: Chat messages
+            model: Model to use
+            temperature: Sampling temperature
+            max_tokens: Max tokens in response
+            response_format: Optional response format (e.g., {"type": "json_object"})
+            
+        Returns:
+            Parsed JSON response from final LLM call
+        """
         payload = {
-            "model": self.model,
-            "input": prompt,
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "tools": [ZEP_SEARCH_TOOL] if self.memory_adapter and self.user_id else None,
+            "tool_choice": "auto",
         }
-        # For GPT-5 family models, request lower reasoning effort for faster responses
-        try:
-            if str(self.model).startswith("gpt-5"):
-                payload["reasoning"] = {"effort": "low"}
-        except Exception:
-            pass
+        
+        if response_format:
+            payload["response_format"] = response_format
+        
+        # Remove None values
+        payload = {k: v for k, v in payload.items() if v is not None}
+        
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
+        
         async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-            response = await client.post("/responses", json=payload, headers=headers)
+            # Initial call
+            response = await client.post("/chat/completions", json=payload, headers=headers)
             response.raise_for_status()
             data = response.json()
-        text = self._extract_text(data)
-        return {"text": text, "tone": tone, "notes": []}
+            
+            message = data["choices"][0]["message"]
+            
+            # Check if LLM requested tool calls
+            if tool_calls := message.get("tool_calls"):
+                LOGGER.info(f"[Tools] LLM requested {len(tool_calls)} tool call(s)")
+                
+                # Execute each tool call
+                tool_messages = [message]  # Add assistant's message with tool calls
+                
+                for tool_call in tool_calls:
+                    func_name = tool_call["function"]["name"]
+                    func_args = json.loads(tool_call["function"]["arguments"])
+                    
+                    # Call our handler
+                    result = await self._handle_tool_call(func_name, func_args)
+                    
+                    tool_messages.append({
+                        "tool_call_id": tool_call["id"],
+                        "role": "tool",
+                        "name": func_name,
+                        "content": result,
+                    })
+                
+                # Send tool results back to LLM
+                final_payload = {
+                    **payload,
+                    "messages": messages + tool_messages,
+                }
+                # Remove tools from final payload
+                final_payload.pop("tools", None)
+                final_payload.pop("tool_choice", None)
+                
+                LOGGER.info(f"[Tools] Sending tool results back to LLM for final response")
+                
+                final_response = await client.post("/chat/completions", json=final_payload, headers=headers)
+                final_response.raise_for_status()
+                final_data = final_response.json()
+                
+                return final_data["choices"][0]["message"]["content"]
+            
+            # No tool calls - return direct response
+            return message.get("content", "")
+
+    async def suggest(
+        self,
+        *,
+        recent_conversation: Sequence[dict],
+        target_lang: str,
+        native_lang: str,
+        user_hint: str | None = None,
+        user_context: str | None = None,
+        thread_context: str | None = None,
+        length_mode: str = "auto",
+    ) -> dict | None:
+        """Generate conversation suggestion with optional context and length control."""
+        
+        LOGGER.info(f"[Suggest] Received length_mode={length_mode}")
+        
+        # Determine length instruction based on mode
+        length_instruction = ""
+        if length_mode == "short":
+            length_instruction = "\n6. **Length**: EXACTLY 1 sentence only. No more, no less."
+            LOGGER.info("[Suggest] Using SHORT mode (1 sentence)")
+        elif length_mode == "long":
+            length_instruction = "\n6. **Length**: MUST provide EXACTLY 4 complete sentences. This is for extended practice. Count carefully and provide all 4 sentences."
+            LOGGER.info("[Suggest] Using LONG mode (4 sentences)")
+        else:
+            LOGGER.info("[Suggest] Using AUTO mode (natural length)")
+        # else: auto - no length instruction, let LLM decide naturally
+        
+        # System prompt: structured and direct (GPT-4.1 best practices)
+        system_prompt = f"""You are a language learning assistant helping a learner practice {target_lang}.
+
+# Your Task
+Suggest a natural, contextually appropriate response in {target_lang} for the learner to say next.
+
+# Suggestion Guidelines (Priority Order)
+1. **User hint first**: If user provides specific hint/topic, PRIORITIZE it over conversation flow
+   - User hint means they want to change topic or say something specific
+   - Even if hint is unrelated to current conversation, follow the hint
+2. **Flow-based**: If no hint, follow the natural conversation flow
+3. **Level-appropriate**: Match the user's proficiency level
+4. **Conversational**: Keep it natural and realistic
+5. **Context-aware**: Use provided context only when genuinely relevant{length_instruction}
+
+# Output Format
+Return JSON with suggestion and translation:
+- target_text: The suggested phrase in {target_lang}
+- native_translation: Translation in {native_lang}"""
+
+        # Build user prompt with clear structure (GPT-4.1 best practices)
+        prompt_sections = []
+        
+        # Section 1: User hint (if provided) - HIGHEST PRIORITY
+        if user_hint:
+            hint_section = f"""# ⚠️ USER'S SPECIFIC REQUEST (HIGHEST PRIORITY)
+The user wants to say: "{user_hint}"
+
+**IMPORTANT**: Base your suggestion on this hint, even if it changes the topic.
+The user is explicitly asking for help with this specific expression or topic."""
+            prompt_sections.append(hint_section)
+        
+        # Section 2: Recent conversation (for context)
+        if recent_conversation:
+            conv_lines = [
+                f"{msg.get('speaker', 'unknown')}: {msg.get('text', '')}"
+                for msg in recent_conversation
+            ]
+            conversation_header = "# Recent Conversation (For Context)"
+            if user_hint:
+                conversation_header += "\n_Note: User wants to change topic/say something specific (see above)_"
+            prompt_sections.append(conversation_header + "\n" + "\n".join(conv_lines))
+        
+        # Section 3: Optional contexts
+        context_parts = []
+        if user_context:
+            context_parts.append(f"## User Background\n{user_context}")
+        if thread_context:
+            context_parts.append(f"## Session Info\n{thread_context}")
+        
+        if context_parts:
+            prompt_sections.append("# Additional Context (Use if Relevant)\n" + "\n\n".join(context_parts))
+        
+        # Section 4: Task instruction with length requirement
+        length_requirement = ""
+        if length_mode == "short":
+            length_requirement = "\n\n**CRITICAL LENGTH REQUIREMENT**: Provide EXACTLY 1 sentence. No more, no less."
+        elif length_mode == "long":
+            length_requirement = "\n\n**CRITICAL LENGTH REQUIREMENT**: Provide EXACTLY 4 complete sentences. Count them carefully. This is mandatory for extended practice."
+        
+        if user_hint:
+            task_instruction = f"""# Your Task
+Create a suggestion based on the user's request: "{user_hint}"
+
+The suggestion should:
+1. Match what the user wants to say (their hint)
+2. Be in natural {target_lang}
+3. Appropriate for the context (topic change is OK){length_requirement}
+
+Return JSON format:
+```json
+{{
+  "target_text": "Suggested phrase in {target_lang} based on user's hint",
+  "native_translation": "Translation in {native_lang}"
+}}
+```"""
+        else:
+            task_instruction = f"""# Your Task
+Suggest what the learner should say next in {target_lang}, following the conversation flow.{length_requirement}
+
+Return JSON format:
+```json
+{{
+  "target_text": "Suggested phrase in {target_lang}",
+  "native_translation": "Translation in {native_lang}"
+}}
+```"""
+        prompt_sections.append(task_instruction)
+        
+        user_prompt = "\n\n".join(prompt_sections)
+        
+        # Call OpenAI with chat/completions
+        try:
+            response_text = await self._call_chat(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                model="gpt-4o-mini",
+                temperature=0.7,
+                response_format={"type": "json_object"},
+            )
+            
+            result = json.loads(response_text)
+            return result
+        except Exception as e:
+            LOGGER.error(f"Suggestion failed: {e}", exc_info=True)
+            return None
 
     def _build_prompt(
         self,
@@ -126,12 +401,14 @@ class OpenAILLMAdapter:
 
     async def translate(self, text: str, source_lang: str, target_lang: str) -> str:
         """Translate text with meaning-focused translation."""
-        prompt = f"Translate the following {source_lang} text to {target_lang}. Focus on conveying the meaning naturally, not word-by-word. Only respond with the translation:\n\n{text}"
+        system = f"You are a translator. Output ONLY the translation in {target_lang}. No explanations."
+        user = f"Translate from {source_lang} to {target_lang}. Preserve meaning, use natural phrasing:\n\n{text}"
         
         payload = {
             "model": "gpt-4.1-mini",
             "messages": [
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": system},
+                {"role": "user", "content": user}
             ],
             "temperature": 0.3,
             "max_tokens": 1000,
@@ -145,481 +422,6 @@ class OpenAILLMAdapter:
             response.raise_for_status()
             data = response.json()
         return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-
-    async def translate_structured(
-        self,
-        text: str,
-        *,
-        source_lang: str,
-        target_lang: str,
-        pronunciation_mode: str | None = None,
-        context: Sequence[str | dict] | None = None,
-    ) -> dict:
-        """Translate text with structured output including pronunciation.
-        
-        Args:
-            text: Input text (keywords or full sentence) to translate
-            source_lang: Source language name
-            target_lang: Target language name
-            pronunciation_mode: 'romaji' or 'native' for pronunciation
-            context: Optional conversation context for better translation
-        
-        Returns:
-            dict with target_text, native_translation (back-translation), pronunciation
-        """
-        # Build context if provided
-        context_text = ""
-        if context:
-            context_lines = self._format_transcript(context[-4:])  # Last 2 turns
-            context_text = f"\nConversation context:\n{context_lines}\n"
-
-        if pronunciation_mode == 'romaji':
-            example = self._get_romanization_example(target_lang)
-            pronunciation_rule = f"Include 'pronunciation' field with ONE line of romanization. Example: {example}"
-        elif pronunciation_mode == 'native':
-            pronunciation_rule = self._build_pronunciation_rule(source_lang, target_lang)
-        else:
-            pronunciation_rule = "Do not include a pronunciation field."
-
-        prompt = f"""
-You are a translation assistant helping a user learn {target_lang}.
-
-The user provided: "{text}"
-
-This might be:
-- Keywords they want to combine into a sentence
-- A partial phrase they want completed
-- A full sentence they want translated
-{context_text}
-Your task:
-1. If keywords: combine them into a natural, contextually appropriate sentence in {target_lang}
-2. If a phrase/sentence: translate it naturally to {target_lang}
-3. Keep it conversational and natural
-
-Return STRICT JSON only with keys:
-- "target_text": the sentence in {target_lang} (<= 30 words)
-- "native_translation": back-translation to {source_lang} (so user can verify meaning)
-{"- \"pronunciation\": ONE-LINE phonetic reading of target_text (NOT a translation)" if pronunciation_mode else ""}
-
-Rules:
-- Output JSON only. No backticks, no prefixes, no prose.
-- Keep culturally appropriate tone (polite when needed).
-- {pronunciation_rule}
-- CRITICAL: Pronunciation represents SOUNDS (phonetic), never meaning.
-- Do NOT drop punctuation. Preserve natural punctuation in target_text.
-
-JSON:
-"""
-
-        payload = {
-            "model": "gpt-4.1-mini",
-            "messages": [
-                {"role": "system", "content": "You output only strict JSON matching the requested schema."},
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.3,
-            "max_tokens": 1000,
-            "response_format": {"type": "json_object"},
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-            response = await client.post("/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-        content = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-
-        import json as _json
-        try:
-            parsed = _json.loads(content)
-            if isinstance(parsed, dict):
-                target_text = str(parsed.get("target_text") or "").strip()
-                native_translation = str(parsed.get("native_translation") or "").strip()
-                pronunciation = parsed.get("pronunciation")
-                out: dict = {"target_text": target_text}
-                if native_translation:
-                    out["native_translation"] = native_translation
-                if pronunciation:
-                    out["pronunciation"] = str(pronunciation).strip()
-                return out
-        except Exception:
-            pass
-
-        # Fallback to simple translation
-        simple = await self.translate(text, source_lang, target_lang)
-        return {"target_text": simple}
-
-    async def answer(self, transcript_tail: Sequence[str | dict], lang: str, mode: str = "real", target_lang: str | None = None) -> str:
-        """Generate an answer based on conversation history."""
-        transcript_lines = self._format_transcript(transcript_tail)
-        
-        if mode == "practice" and target_lang:
-            # In practice mode, suggest how user should respond to AI's question in target language
-            prompt = f"""Based on this conversation, the AI partner just asked a question or made a statement.
-Suggest how the USER should respond in {target_lang}.
-
-Conversation:
-{transcript_lines}
-
-Provide a natural response the user could say in {target_lang} (under 30 words):"""
-        else:
-            prompt = f"""Based on the following conversation, generate a helpful answer that addresses what was discussed.
-Keep it concise (under 30 words) and in {lang}.
-
-Conversation:
-{transcript_lines}
-
-Provide an appropriate response:"""
-        
-        payload = {
-            "model": "gpt-4.1-mini",
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 100,
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-            response = await client.post("/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-        return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-
-    async def follow_up(self, transcript_tail: Sequence[str | dict], lang: str) -> str:
-        """Suggest a follow-up based on what the user previously said."""
-        transcript_lines = self._format_transcript(transcript_tail)
-        
-        prompt = f"""Based on the conversation below, suggest what the user (You/Mic) could say next to continue their previous point.
-Keep it natural and concise (under 30 words) and in {lang}.
-
-Conversation:
-{transcript_lines}
-
-Suggest a follow-up:"""
-        
-        payload = {
-            "model": "gpt-4.1-mini",
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 100,
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-            response = await client.post("/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-        return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-
-    async def answer_structured(
-        self,
-        transcript_tail: Sequence[str | dict],
-        *,
-        target_lang: str,
-        native_lang: str,
-        pronunciation_mode: str | None = None,
-    ) -> dict:
-        """Return a structured suggestion with target sentence and simple pronunciation line.
-
-        Output schema:
-        {
-          "target_text": string,                 # sentence in target_lang
-          "native_translation": string | undefined,
-          "pronunciation": string | undefined    # one-line reading (e.g., romaji or Hangul)
-        }
-        """
-        transcript_lines = self._format_transcript(transcript_tail)
-
-        if pronunciation_mode == 'romaji':
-            example = self._get_romanization_example(target_lang)
-            pronunciation_rule = f"Include 'pronunciation' with ONE line of romanization. Example: {example}"
-        elif pronunciation_mode == 'native':
-            pronunciation_rule = self._build_pronunciation_rule(native_lang, target_lang)
-        else:
-            pronunciation_rule = "Do not include a pronunciation field."
-
-        prompt = f"""
-You are a precise language coach.
-
-Based on the conversation below, suggest ONE natural sentence the user could say in {target_lang}.
-
-Return STRICT JSON only with keys:
-- "target_text": the sentence in {target_lang} (<= 30 words)
-- "native_translation": natural translation in {native_lang}
-{"- \"pronunciation\": ONE-LINE phonetic reading of target_text (NOT a translation)" if pronunciation_mode else ""}
-
-Rules:
-- Output JSON only. No backticks, no prefixes, no prose.
-- Keep culturally appropriate tone (polite when needed). If {target_lang} is Japanese, default to polite unless clearly casual.
-- {pronunciation_rule}
-- CRITICAL: Pronunciation represents SOUNDS (phonetic), never meaning. Write sounds using the specified script ONLY.
-- If pronunciation duplicates native_translation or target_text exactly, omit it.
-- Do NOT drop punctuation. Preserve commas, periods, exclamation/question marks exactly as in target_text.
-
-Conversation:
-{transcript_lines}
-
-JSON:
-"""
-
-        payload = {
-            "model": "gpt-4.1-mini",
-            "messages": [
-                {"role": "system", "content": "You output only strict JSON matching the requested schema."},
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.2,
-            "max_tokens": 1000,
-            "response_format": {"type": "json_object"},
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-            response = await client.post("/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-        content = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-
-        import json as _json
-        try:
-            parsed = _json.loads(content)
-            if isinstance(parsed, dict):
-                # Normalize keys and ensure required fields exist
-                target_text = str(parsed.get("target_text") or "").strip()
-                native_translation = str(parsed.get("native_translation") or "").strip()
-                pronunciation = parsed.get("pronunciation")
-                out: dict = {"target_text": target_text}
-                if native_translation:
-                    out["native_translation"] = native_translation
-                if pronunciation:
-                    out["pronunciation"] = str(pronunciation).strip()
-                return out
-        except Exception:
-            pass
-
-        # Fallback to unstructured answer
-        plain = await self.answer(transcript_tail, lang=target_lang)
-        return {"target_text": plain}
-
-    async def follow_up_structured(
-        self,
-        transcript_tail: Sequence[str | dict],
-        *,
-        target_lang: str,
-        native_lang: str,
-        pronunciation_mode: str | None = None,
-    ) -> dict:
-        """Return a structured follow-up suggestion with optional one-line pronunciation."""
-        transcript_lines = self._format_transcript(transcript_tail)
-
-        if pronunciation_mode == 'romaji':
-            example = self._get_romanization_example(target_lang)
-            pronunciation_rule = f"Include 'pronunciation' with ONE line of romanization. Example: {example}"
-        elif pronunciation_mode == 'native':
-            pronunciation_rule = self._build_pronunciation_rule(native_lang, target_lang)
-        else:
-            pronunciation_rule = "Do not include a pronunciation field."
-
-        prompt = f"""
-You are a precise language coach.
-
-Based on the conversation below, suggest ONE short follow-up sentence the user could say next in {target_lang} to continue the conversation smoothly.
-
-Return STRICT JSON only with keys:
-- "target_text": the sentence in {target_lang} (<= 30 words)
-- "native_translation": natural translation in {native_lang}
-{"- \"pronunciation\": ONE-LINE phonetic reading of target_text (NOT a translation)" if pronunciation_mode else ""}
-
-Rules:
-- Output JSON only. No backticks, no prefixes, no prose.
-- Keep culturally appropriate tone; default to polite Japanese unless clearly casual.
-- {pronunciation_rule}
-- CRITICAL: Pronunciation represents SOUNDS (phonetic), never meaning. Write sounds using the specified script ONLY.
-- If pronunciation duplicates native_translation or target_text exactly, omit it.
-- Do NOT drop punctuation. Preserve commas, periods, exclamation/question marks exactly as in target_text.
-
-Conversation:
-{transcript_lines}
-
-JSON:
-"""
-
-        payload = {
-            "model": "gpt-4.1-mini",
-            "messages": [
-                {"role": "system", "content": "You output only strict JSON matching the requested schema."},
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.2,
-            "max_tokens": 1000,
-            "response_format": {"type": "json_object"},
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-            response = await client.post("/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-        content = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-
-        import json as _json
-        try:
-            parsed = _json.loads(content)
-            if isinstance(parsed, dict):
-                target_text = str(parsed.get("target_text") or "").strip()
-                native_translation = str(parsed.get("native_translation") or "").strip()
-                pronunciation = parsed.get("pronunciation")
-                out: dict = {"target_text": target_text}
-                if native_translation:
-                    out["native_translation"] = native_translation
-                if pronunciation:
-                    out["pronunciation"] = str(pronunciation).strip()
-                return out
-        except Exception:
-            pass
-
-        # Fallback to unstructured follow-up
-        plain = await self.follow_up(transcript_tail, lang=target_lang)
-        return {"target_text": plain}
-
-    async def suggest_unified(
-        self,
-        transcript_tail: Sequence[str | dict],
-        *,
-        target_lang: str,
-        native_lang: str,
-        pronunciation_mode: str | None = None,
-        mode: str = "real",
-        suggest_mode: str = "auto",
-    ) -> dict:
-        """Generate a unified suggestion in one LLM call with type determination.
-        
-        Returns a dict with:
-        - "type": "answer" | "follow_up" | "none"
-        - "target_text": the suggested sentence (if type != "none")
-        - "native_translation": translation to native language (optional)
-        - "pronunciation": phonetic reading (optional)
-        """
-        transcript_lines = self._format_transcript(transcript_tail)
-
-        if pronunciation_mode == 'romaji':
-            example = self._get_romanization_example(target_lang)
-            pronunciation_rule = f"Include 'pronunciation' with ONE line of romanization. Example: {example}"
-        elif pronunciation_mode == 'native':
-            pronunciation_rule = self._build_pronunciation_rule(native_lang, target_lang)
-        else:
-            pronunciation_rule = "Do not include a pronunciation field."
-
-        # Different prompts based on suggest_mode
-        if suggest_mode == "always":
-            # Always generate a suggestion, decide between answer and follow_up
-            type_instruction = """
-Decide which type of suggestion to provide:
-- "answer": if the conversation partner's last message invites a direct response or asks a question
-- "follow_up": if a new question/statement would help continue the conversation
-You MUST return either "answer" or "follow_up", never "none".
-"""
-        else:
-            # Auto mode: can return "none" if suggestion is not helpful
-            type_instruction = """
-Decide which type of suggestion to provide:
-- "answer": if the conversation partner's last message invites a direct response or asks a question
-- "follow_up": if a new question/statement would help continue the conversation
-- "none": if suggesting now would be redundant or unhelpful
-"""
-
-        prompt = f"""
-You are a precise language coach helping a user learn {target_lang}.
-
-Based on the conversation below, {type_instruction}
-
-Return STRICT JSON only with keys:
-- "type": "answer" | "follow_up" | "none"
-- "target_text": the suggested sentence in {target_lang} (<= 30 words) [only if type != "none"]
-- "native_translation": natural translation in {native_lang} [only if type != "none"]
-{"- \"pronunciation\": ONE-LINE phonetic reading of target_text (NOT a translation) [only if type != \"none\"]" if pronunciation_mode else ""}
-
-Rules:
-- Output JSON only. No backticks, no prefixes, no prose.
-- If type is "answer", suggest a direct reply to the partner's message.
-- If type is "follow_up", suggest a new question or statement to continue the conversation.
-- If type is "none", only include the "type" field.
-- Keep culturally appropriate tone (polite when needed). If {target_lang} is Japanese, default to polite unless clearly casual.
-- {pronunciation_rule}
-- CRITICAL: Pronunciation represents SOUNDS (phonetic), never meaning. Write sounds using the specified script ONLY.
-- If pronunciation duplicates native_translation or target_text exactly, omit it.
-- Do NOT drop punctuation. Preserve commas, periods, exclamation/question marks exactly as in target_text.
-{"- Be slightly more proactive in suggesting (prefer answer/follow_up over none)." if mode == "practice" else ""}
-
-Conversation:
-{transcript_lines}
-
-JSON:
-"""
-
-        payload = {
-            "model": "gpt-4.1-mini",
-            "messages": [
-                {"role": "system", "content": "You output only strict JSON matching the requested schema."},
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.2,
-            "max_tokens": 1000,
-            "response_format": {"type": "json_object"},
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-            response = await client.post("/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-        content = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-
-        import json as _json
-        try:
-            parsed = _json.loads(content)
-            if isinstance(parsed, dict):
-                suggestion_type = str(parsed.get("type", "none")).lower()
-                
-                if suggestion_type == "none":
-                    return {"type": "none"}
-                
-                # Normalize and validate
-                target_text = str(parsed.get("target_text") or "").strip()
-                native_translation = str(parsed.get("native_translation") or "").strip()
-                pronunciation = parsed.get("pronunciation")
-                
-                out: dict = {
-                    "type": suggestion_type if suggestion_type in ["answer", "follow_up"] else "follow_up",
-                    "target_text": target_text
-                }
-                if native_translation:
-                    out["native_translation"] = native_translation
-                if pronunciation:
-                    out["pronunciation"] = str(pronunciation).strip()
-                return out
-        except Exception:
-            pass
-
-        # Fallback: generate follow_up
-        plain = await self.follow_up(transcript_tail, lang=target_lang)
-        return {"type": "follow_up", "target_text": plain}
 
     def _get_pronunciation_example(self, native_lang: str, target_lang: str) -> str:
         """Get concrete pronunciation example for language pair."""
@@ -722,13 +524,13 @@ JSON:
             return ""
         native = (native_lang or "").strip()
         target = (target_lang or "").strip()
-        system = "Output only a SINGLE LINE with the pronunciation. No translation. No quotes. No extra words."
+        system = "Output ONLY a single line of pronunciation. No translation. No quotes. No prose."
         if (mode or "").strip().lower() == "romaji":
             example = self._get_romanization_example(target)
-            user = f"Romanize this {target} sentence. One line only.\nExample: {example}\n\n{text}"
+            user = f"Romanize in ONE line.\nExample: {example}\n\n{target} text: {text}"
         else:
-            rule = self._build_pronunciation_rule(native, target)
-            user = f"{rule}\nWrite sounds using {native} script for this {target} sentence:\n\n{text}"
+            example = self._get_pronunciation_example(native, target)
+            user = f"Write sounds in {native} script. ONE line.\nExample: {example}\n\n{target} text: {text}"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -747,6 +549,44 @@ JSON:
             response.raise_for_status()
             data = response.json()
         return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+    
+    async def _call_chat(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model: str,
+        temperature: float = 0.7,
+        max_tokens: int = 1000,
+        response_format: dict | None = None,
+    ) -> str:
+        """Unified method for calling OpenAI chat/completions."""
+        
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": user_prompt})
+        
+        payload = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        
+        if response_format:
+            payload["response_format"] = response_format
+        
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        
+        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
+            response = await client.post("/chat/completions", json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+        
+        return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
 
     async def feedback(
         self,
@@ -756,201 +596,176 @@ JSON:
         native_lang: str | None = None,
         mode: str = "real",
         *,
-        include_pronunciation: bool = False,
-        pronunciation_mode: str | None = None,
-        transcript_tail: Sequence[str | dict] | None = None,
+        recent_conversation: Sequence[dict] | None = None,
+        user_context: str | None = None,
+        thread_context: str | None = None,
+        last_suggestion: dict | None = None,
     ) -> str:
-        """Provide structured feedback (JSON) on the user's utterance.
-
-        When feedback is needed, returns STRICT JSON string with keys:
-          - "reason_native": short conversational feedback in the learner's native language
-          - "suggestion_target": corrected/natural phrasing in the target language
-          - "pronunciation": OPTIONAL one-line phonetic reading (only when include_pronunciation=True)
-
-        When feedback is NOT needed, returns the plain string "NONE".
+        """Generate feedback with optional context and suggestion comparison.
+        
+        Args:
+            last_suggestion: Most recent suggestion (if user tried to follow it).
+                            Used to detect pronunciation issues vs intentional changes.
         """
+        
         if not target_lang:
             target_lang = "English"
         if not native_lang:
             native_lang = "Korean"
-
-        # Optional short transcript context (last few turns)
-        transcript_context = ""
-        try:
-            if transcript_tail:
-                transcript_lines = self._format_transcript(list(transcript_tail))
-                if transcript_lines:
-                    transcript_context = f"""Recent conversation (last {len(transcript_tail)} turns):\n{transcript_lines}\n\n"""
-        except Exception:
-            pass
-        # System rules: minimal, unambiguous JSON schema (gating handled elsewhere)
-        system_rules = (
-            "You are a concise speaking coach (STT input). Ignore minor STT noise.\n"
-            f"Language policy: reason_native MUST be in {native_lang} only (no {target_lang}/English except quoted terms).\n"
-            "Output STRICT JSON with exactly these keys:\n"
-            f'- "reason_native": {native_lang}, ≤150 chars; you may quote ≤2 {target_lang} terms in single quotes.\n'
-            f'- "suggestion_target": {target_lang} only, ≤15 words.\n'
-            "No extra fields. No backticks. No prose outside JSON."
-        )
-
-        # User prompt
-        user_prompt = (
-            f"Native language: {native_lang}\n"
-            f"Target language: {target_lang}\n\n"
-            f"{transcript_context}"
-            f'Utterance: "{user_text}"\n\n'
-            "Return STRICT JSON as specified."
-        )
         
-        payload = {
-            "model": "gpt-4.1-mini",
-            "messages": [
-                {"role": "system", "content": system_rules},
-                {"role": "user", "content": user_prompt},
-            ],
-            "temperature": 0.1,
-            "max_tokens": 500,
-            "response_format": {"type": "json_object"},
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-            response = await client.post("/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
+        # System prompt: direct and structured (GPT-4.1 best practices)
+        system_prompt = f"""You are a language teacher evaluating a learner's {target_lang} utterance.
 
+# Your Task
+Provide direct, actionable feedback in {native_lang} when corrections are needed.
 
-        # Log prompt preview for debugging suggest behavior
-        try:
-            self._logger.info(
-                "[Feedback Prompt]\nSystem ---\n%s\n\nUser ---\n%s",
-                system_rules,
-                user_prompt,
+# Evaluation Criteria
+Assess these aspects:
+- Grammar and syntax
+- Vocabulary choice and usage
+- Pronunciation (sound-alike errors)
+- Natural expression
+
+# Feedback Rules
+1. **Be direct**: State the error clearly, don't speculate about intent
+   - Good: "'move' is mispronounced as 'new'"
+   - Bad: "You might have wanted to say 'new'"
+
+2. **Distinguish error types**:
+   - Pronunciation error: User attempted suggested phrase but mispronounced (e.g., "tank you" → "thank you")
+   - Intentional choice: User said something completely different (evaluate what they said)
+
+3. **Output format**:
+   - If correction needed: Return JSON with error explanation and corrected version
+   - If no correction needed: Return "NONE"
+
+# Tone
+Supportive but straightforward - focus on what's wrong, not what the user might have meant."""
+
+        # Build user prompt with clear structure (GPT-4.1 best practices)
+        prompt_sections = []
+        
+        # Section 1: User utterance
+        prompt_sections.append(f"# User Utterance\n\"{user_text}\"")
+        
+        # Section 2: Recent suggestion context (if available)
+        if last_suggestion:
+            suggested_text = last_suggestion.get("target_text", "")
+            suggested_translation = last_suggestion.get("native_translation", "")
+            
+            suggestion_info = f"# Recent Suggestion (Important Context)\nGlass suggested: \"{suggested_text}\""
+            if suggested_translation:
+                suggestion_info += f"\nTranslation: \"{suggested_translation}\""
+            
+            suggestion_info += (
+                "\n\n**Analysis Task**: Compare user's utterance with this suggestion."
+                "\n- If VERY SIMILAR sounds but different words → Pronunciation error"
+                "\n- If COMPLETELY DIFFERENT → Intentional choice (evaluate what they said)"
             )
-        except Exception:
-            pass
-
-        # Return raw content (STRICT JSON string when feedback is needed) or 'NONE'
-        return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip() # type: ignore
-
-    async def should_suggest(
-        self,
-        transcript_tail: Sequence[str | dict],
-        kind: str,
-        mode: str = "real",
-    ) -> bool:
-        """Ask the model to decide whether to surface a suggestion now.
-
-        kind: 'answer' (partner just spoke) or 'follow_up' (user just spoke)
-        Return True to show a suggestion, False to skip.
-        """
-        kind = (kind or "").strip().lower()
-        transcript_lines = self._format_transcript(transcript_tail)
+            prompt_sections.append(suggestion_info)
         
-        if kind == "answer":
-            # Partner spoke - suggest answer for user
-            prompt = f"""
-You are a concise conversation assistant. Decide if the user needs a response suggestion right now.
+        # Section 3: Conversation context (if helpful)
+        context_parts = []
+        if recent_conversation:
+            conv_lines = [
+                f"{msg.get('speaker', 'unknown')}: {msg.get('text', '')}"
+                for msg in recent_conversation[-3:]
+            ]
+            context_parts.append("## Recent Conversation\n" + "\n".join(conv_lines))
+        
+        if thread_context:
+            context_parts.append(f"## Session Patterns\n{thread_context}")
+        
+        if context_parts:
+            prompt_sections.append("# Additional Context (Use if relevant)\n" + "\n\n".join(context_parts))
+        
+        # Section 4: Output instructions
+        output_format = f"""# Output Format
 
-Guidelines:
-- Answer YES if the partner's last message invites a reply, contains a question, opens a new topic, or the user may need help responding.
-- Answer NO if the best action is to wait, or the next reply is obvious (e.g., brief acknowledgments), or suggesting would be noisy.
-- Be slightly more proactive in practice mode.
+Return JSON if correction needed:
+```json
+{{
+  "reason_native": "Direct error explanation in {native_lang}",
+  "suggestion_target": "Corrected version in {target_lang}"
+}}
+```
 
-Conversation:
-{transcript_lines}
+Or return: NONE (if no correction needed)
 
-Return YES or NO only.
+## Examples of Good Feedback (Direct Tone)
+✓ "'move'를 'new'로 잘못 발음했어요"
+✓ "'my'가 빠졌어요. 'my favorite dish'라고 해야 해요"
+✓ "'tank you'는 'thank you'로 발음해야 해요"
+
+## Examples to Avoid (Don't Speculate)
+✗ "'new'라고 말하고 싶었던 것 같습니다"
+✗ "아마도 'my'를 말하려고 했던 것 같아요"
 """
-        else:
-            # User spoke - suggest follow-up
-            prompt = f"""
-You are a concise conversation assistant. Decide if the user needs a follow-up suggestion right now.
-
-Guidelines:
-- Answer YES if the user made a statement that could naturally be continued or expanded (e.g., shared opinion, made observation, completed thought).
-- Answer NO if:
-  * The user asked a question (they are waiting for an answer, not looking to add more)
-  * The message is brief acknowledgment ("OK", "Thanks", "I see")
-  * The user clearly finished their turn and is waiting
-  * Suggesting would be noisy or interrupting
-- IMPORTANT: If the last message ends with '?' or is clearly a question, always answer NO.
-
-Conversation:
-{transcript_lines}
-
-Return YES or NO only.
-"""
-        if mode == "practice":
-            prompt = "[Practice Mode]\n" + prompt
-        payload = {
-            "model": "gpt-4.1-mini",
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.1,
-            "max_tokens": 10,
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-            response = await client.post("/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-        decision = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip().upper()
-        return "YES" in decision
+        prompt_sections.append(output_format)
+        
+        user_prompt = "\n\n".join(prompt_sections)
+        
+        try:
+            response = await self._call_chat(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                model="gpt-4o-mini",
+                temperature=0.3,
+            )
+            return response.strip()
+        except Exception as e:
+            LOGGER.error(f"Feedback failed: {e}", exc_info=True)
+            return "NONE"
 
     async def should_feedback(
         self,
-        transcript_tail: Sequence[str | dict],
+        recent_conversation: Sequence[dict],
         user_text: str,
         mode: str = "real",
     ) -> bool:
-        """Lightweight gate to decide if we should request feedback for user's utterance.
+        """Lightweight gate to decide if feedback is needed."""
+        
+        # Format recent conversation
+        conv_lines = [
+            f"{msg.get('speaker', 'unknown')}: {msg.get('text', '')}"
+            for msg in recent_conversation[-3:]
+        ]
+        context = "\n".join(conv_lines) if conv_lines else "(no context)"
+        
+        prompt = f"""You are a language coach. Decide if this needs feedback.
 
-        Returns True to request feedback, False to skip.
-        """
-        transcript_lines = self._format_transcript(transcript_tail)
-        prompt = f"""
-You are a concise speech coach. Decide if the user's last utterance needs feedback now.
+Give feedback when:
+- Grammar/conjugation is clearly wrong
+- Phrasing blocks understanding
+- Pronunciation/clarity issues
 
-Give feedback only when:
-- Grammar/conjugation is clearly wrong, OR
-- Phrasing blocks understanding, OR
-- Pronunciation/clarity likely needs help (stress/linking/vowel/consonant/intonation).
+Ignore:
+- Punctuation, casing, filler words, minor STT glitches
 
-IGNORE: spacing, punctuation, casing, filler words, or tiny STT glitches.
+Context:
+{context}
 
-Conversation:
-{transcript_lines}
+Utterance: "{user_text}"
 
-User utterance:
-"{user_text}"
-
-Return YES or NO only.
-"""
+Return ONLY: YES or NO"""
+        
         if mode == "practice":
             prompt = "[Practice Mode]\n" + prompt
-        payload = {
-            "model": "gpt-4.1-mini",
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.1,
-            "max_tokens": 10,
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-            response = await client.post("/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-        decision = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip().upper()
-        return "YES" in decision
+        
+        try:
+            response = await self._call_chat(
+                system_prompt="",
+                user_prompt=prompt,
+                model="gpt-4o-mini",
+                temperature=0.1,
+                max_tokens=10,
+            )
+            decision = response.strip().upper()
+            return "YES" in decision
+        except Exception as e:
+            LOGGER.warning(f"should_feedback failed: {e}")
+            # Fallback: allow feedback for longer utterances
+            return len(user_text.split()) >= 4
 
     def _format_transcript(self, transcript_tail: Sequence[str | dict]) -> str:
         """Format transcript for prompts."""
@@ -991,78 +806,102 @@ Return YES or NO only.
         self,
         user_text: str,
         scenario: str | None,
-        conversation_history: Sequence[dict],
+        *,
+        recent_conversation: Sequence[dict],
         target_lang: str,
+        native_lang: str,
+        user_context: str | None = None,
+        thread_context: str | None = None,
+        recent_feedback: Sequence[dict] | None = None,
     ) -> str:
-        """Generate AI response for practice mode based on scenario."""
-        # Build scenario context
-        scenario_context = self._get_scenario_context(scenario)
+        """Generate AI response in practice mode with optional context and Glass feedback."""
         
-        # Check if this is an initial greeting (empty conversation history)
-        is_initial = len(conversation_history) == 0 or user_text.startswith("[")
+        # System prompt: structured for conversation partner role (GPT-4.1 best practices)
+        system_prompt = f"""You are a native {target_lang} speaker having a conversation with a language learner.
+
+# Your Role
+Conversation partner in this scenario: {scenario or 'casual conversation'}
+
+# Response Guidelines
+1. **Natural conversation**: Respond in fluent, natural {target_lang}
+2. **Match level**: Adapt to the user's proficiency (simple if beginner, complex if advanced)
+3. **Brevity**: Keep responses conversational (2-3 sentences)
+4. **Context awareness**: Use provided context only if it enhances naturalness
+
+# Glass Feedback Integration (Critical)
+- Glass (AI tutor) provides corrections in {native_lang}
+- Use Glass feedback to understand what the user INTENDED to say
+- When user makes pronunciation/grammar errors, naturally incorporate the correct form
+- **Never mention Glass or corrections explicitly** - just respond naturally to their intent
+
+## Example Flow
+User says: "tzu tzu" (mispronounced "sushi")
+Glass correction: "sushi를 말하려고 한 것 같아요"
+Your response: "Oh, sushi! That sounds delicious. Do you like salmon or tuna?"
+
+# Key Principle
+Respond to what they MEANT, not what they literally said. Help them learn through natural conversation."""
+
+        # Build user prompt with clear structure (GPT-4.1 best practices)
+        prompt_sections = []
         
-        if is_initial:
-            # Generate initial greeting
-            style = self._greeting_style(target_lang, scenario_context)
-            prompt = f"""You are an AI language partner helping someone practice {target_lang}.
-
-Scenario: {scenario_context}
-
-This is the start of the conversation. Greet the user naturally in {target_lang} for this scenario. Keep it brief (1–2 sentences) and include a simple question to engage.
-
-Style:
-{style}
-
-Rules:
-- Stay within the scenario context. If the other person says something off-topic or breaks the scenario, gently clarify and steer the conversation back to the scenario in one sentence, then continue with a short, relevant question.
-- Keep the tone friendly and natural; avoid sounding robotic or generic.
-
-AI:"""
-        else:
-            # Build conversation history
-            history_text = ""
-            for entry in conversation_history[-6:]:  # Last 3 turns
-                speaker = entry.get("speaker", "unknown")
-                text = entry.get("text", "")
-                if speaker == "user":
-                    history_text += f"User: {text}\n"
-                elif speaker == "ai":
-                    history_text += f"AI: {text}\n"
+        # Section 1: Conversation history
+        if recent_conversation:
+            conv_lines = [
+                f"{msg.get('speaker', 'unknown')}: {msg.get('text', '')}"
+                for msg in recent_conversation
+            ]
+            prompt_sections.append("# Conversation History\n" + "\n".join(conv_lines))
+        
+        # Section 2: Glass feedback (critical for understanding intent)
+        if recent_feedback:
+            feedback_lines = []
+            for fb in recent_feedback:
+                # Extract correction if available
+                if fb.get('suggestion') and fb['suggestion'].get('target_text'):
+                    correction = fb['suggestion']['target_text']
+                    feedback_lines.append(f"→ Correction: {correction}")
+                elif fb.get('text'):
+                    feedback_lines.append(f"→ {fb['text']}")
             
-            prompt = f"""You are an AI language partner helping someone practice {target_lang}.
-
-Scenario: {scenario_context}
-
-Conversation so far:
-{history_text}
-User: {user_text}
-
-Respond naturally in {target_lang} as if you are in this scenario. Keep your response conversational and brief (1-2 sentences).
-
-Rules:
-- Maintain scenario continuity. If the user's message is off-topic or conflicts with the scenario, politely correct the context in one short sentence and guide the conversation back to the scenario with a brief, relevant question.
-- Stay friendly and human; avoid stock phrases.
-
-AI:"""
-
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": f"You are a helpful language practice partner. Always respond in {target_lang}."},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 150,
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-            response = await client.post("/chat/completions", json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-        return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+            if feedback_lines:
+                feedback_section = (
+                    "# Glass Feedback (User's Intent)\n"
+                    "_Use this to understand what user meant. Don't mention it directly._\n\n" +
+                    "\n".join(feedback_lines[-2:])
+                )
+                prompt_sections.append(feedback_section)
+        
+        # Section 3: Additional context (optional)
+        context_parts = []
+        if user_context:
+            context_parts.append(f"## About User\n{user_context}")
+        if thread_context:
+            context_parts.append(f"## Session Info\n{thread_context}")
+        
+        if context_parts:
+            prompt_sections.append("# Context (Use if Natural)\n" + "\n\n".join(context_parts))
+        
+        # Section 4: Current user input
+        prompt_sections.append(f"# User's Latest Message\n\"{user_text}\"")
+        
+        # Section 5: Response instruction
+        prompt_sections.append(f"# Your Task\nRespond naturally in {target_lang} as a conversation partner (2-3 sentences).")
+        
+        user_prompt = "\n\n".join(prompt_sections)
+        
+        try:
+            response = await self._call_chat(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                model="gpt-4o",  # Better for conversation
+                temperature=0.8,  # More natural
+                max_tokens=150,
+            )
+            return response.strip()
+        except Exception as e:
+            LOGGER.error(f"AI response failed: {e}", exc_info=True)
+            return ""
     
     def _get_scenario_context(self, scenario: str | None) -> str:
         """Get scenario description for prompt."""

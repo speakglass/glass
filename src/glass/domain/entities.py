@@ -15,14 +15,9 @@ def utcnow() -> datetime:
 
 class EventType(str, Enum):
     AUDIO_CHUNK = "audio_chunk"
-    TEXT_QUERY = "text_query"
-    SCREEN_HINT = "screen_hint"
-    IMAGE_UPLOAD = "image_upload"
     PARTIAL_TRANSCRIPT = "partial_transcript"
     TRANSCRIPT = "transcript"
     TRANSLATION = "translation"
-    ANSWER = "answer"
-    FOLLOW_UP = "follow_up"
     FEEDBACK = "feedback"
     SUGGESTION = "suggestion"
     NOTE = "note"

@@ -355,3 +355,22 @@
     --angle-2: -45deg;
   }
 }
+
+/* Sparkle animation for AI button */
+@keyframes sparkle {
+  0%,
+  34%,
+  71%,
+  100% {
+    transform: scale(1);
+  }
+  17% {
+    transform: scale(1.2);
+  }
+  49% {
+    transform: scale(1.2);
+  }
+  83% {
+    transform: scale(1.2);
+  }
+}

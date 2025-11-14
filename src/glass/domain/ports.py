@@ -16,6 +16,58 @@ class MemoryPort(Protocol):
 
     async def retrieve(self, session_id: str, query: str, k: int = 6) -> Sequence[dict]: ...
 
+    async def get_user_context_block(self, user_id: str, use_cache: bool = True) -> str:
+        """Get user-level context (all past conversations) for session start."""
+        ...
+    
+    async def get_context_for_prompt(
+        self,
+        thread_id: str,
+        user_id: str,
+        scope: str = "thread",
+        timeout: float = 3.0,
+    ) -> str:
+        """Get context for LLM prompts with timeout and error handling.
+        
+        Args:
+            thread_id: Thread/session ID
+            user_id: User ID
+            scope: Context scope - "thread" (fast) or "hybrid" (thread + user)
+            timeout: Timeout in seconds
+        
+        Returns:
+            Formatted context string
+        """
+        ...
+
+    async def get_raw_context_block(
+        self,
+        session_id: str,
+        user_id: str | None = None,
+    ) -> str:
+        """Get thread-level context (current conversation) for LLM prompts.
+        
+        DEPRECATED: Use get_context_for_prompt() instead.
+        """
+        ...
+
+    async def add_extracted_memories(
+        self,
+        user_id: str,
+        session_id: str,
+        extracted_info: list[dict],
+    ) -> None:
+        """Add extracted information to memory."""
+        ...
+
+    async def warm_user_cache(self, user_id: str) -> None:
+        """Warm cache for faster retrieval."""
+        ...
+    
+    def invalidate_user_cache(self, user_id: str) -> None:
+        """Invalidate cached user context."""
+        ...
+
 
 class ASRPort(Protocol):
     async def stream(
@@ -28,44 +80,29 @@ class ASRPort(Protocol):
 
 
 class LLMPort(Protocol):
-    # Core suggestion/summarization
-    async def suggest(self, transcript_tail: Sequence[str], screen: str | None, memory: Sequence[dict], tone: str, lang: str) -> dict: ...
-    async def suggest_unified(self, transcript_tail: Sequence[str], *, target_lang: str, native_lang: str, pronunciation_mode: str | None = None, mode: str = "real", suggest_mode: str = "auto") -> dict: ...
-    async def should_suggest(self, transcript_tail: Sequence[str | dict], kind: str, mode: str = "real") -> bool: ...
-    async def should_feedback(self, transcript_tail: Sequence[str | dict], user_text: str, mode: str = "real") -> bool: ...
+    # Core suggestion
+    async def suggest(
+        self,
+        *,
+        recent_conversation: Sequence[dict],
+        target_lang: str,
+        native_lang: str,
+        user_hint: str | None = None,
+        user_context: str | None = None,
+        thread_context: str | None = None,
+    ) -> dict | None: ...
+    
+    async def should_feedback(
+        self, 
+        recent_conversation: Sequence[dict], 
+        user_text: str, 
+        mode: str = "real"
+    ) -> bool: ...
+    
     async def generate_text(self, prompt: str, max_tokens: int = 2000, model: str | None = None) -> str: ...
 
     # Translation
     async def translate(self, text: str, source_lang: str, target_lang: str) -> str: ...
-    async def translate_structured(
-        self,
-        text: str,
-        *,
-        source_lang: str,
-        target_lang: str,
-        pronunciation_mode: str | None = None,
-        context: Sequence[str | dict] | None = None,
-    ) -> dict: ...
-
-    # Conversation answers/follow-ups
-    async def answer(self, transcript_tail: Sequence[str | dict], lang: str, mode: str = "real", target_lang: str | None = None) -> str: ...
-    async def follow_up(self, transcript_tail: Sequence[str | dict], lang: str) -> str: ...
-    async def answer_structured(
-        self,
-        transcript_tail: Sequence[str | dict],
-        *,
-        target_lang: str,
-        native_lang: str,
-        pronunciation_mode: str | None = None,
-    ) -> dict: ...
-    async def follow_up_structured(
-        self,
-        transcript_tail: Sequence[str | dict],
-        *,
-        target_lang: str,
-        native_lang: str,
-        pronunciation_mode: str | None = None,
-    ) -> dict: ...
 
     # Feedback
     async def feedback(
@@ -76,9 +113,9 @@ class LLMPort(Protocol):
         native_lang: str | None = None,
         mode: str = "real",
         *,
-        include_pronunciation: bool = False,
-        pronunciation_mode: str | None = None,
-        transcript_tail: Sequence[str | dict] | None = None,
+        recent_conversation: Sequence[dict] | None = None,
+        user_context: str | None = None,
+        thread_context: str | None = None,
     ) -> str: ...
 
     # Practice mode response
@@ -86,8 +123,11 @@ class LLMPort(Protocol):
         self,
         user_text: str,
         scenario: str | None,
-        conversation_history: Sequence[dict],
+        *,
+        recent_conversation: Sequence[dict],
         target_lang: str,
+        user_context: str | None = None,
+        thread_context: str | None = None,
     ) -> str: ...
 
     # Pronunciation (one-line)
@@ -101,19 +141,5 @@ class LLMPort(Protocol):
     ) -> str: ...
 
 
-class VisionPort(Protocol):
-    async def describe(self, session_id: str, image_ref: dict) -> str: ...
-
-
 class EventsPort(Protocol):
     async def send(self, event: SessionEvent) -> None: ...
-
-
-class DiarizationPort(Protocol):
-    async def stream(
-        self,
-        session_id: str,
-        audio_iter: AsyncIterable[bytes],
-        *,
-        source: str | None = None,
-    ) -> AsyncIterable[dict]: ...

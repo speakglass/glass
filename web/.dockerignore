@@ -1,0 +1,9 @@
+node_modules
+.next
+.swc
+.turbo
+dist
+coverage
+.env.local
+.env*
+!.env.example

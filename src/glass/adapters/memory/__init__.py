@@ -5,8 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Protocol
 
-from .graphiti import GraphitiMemoryAdapter
-from .local import InMemoryMemoryAdapter
+from .zep import ZepMemoryAdapter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -17,27 +16,22 @@ class MemoryAdapter(Protocol):
 
 
 def build_memory_adapter(settings) -> MemoryAdapter:
-    provider = (getattr(settings, "memory_provider", None) or "local").lower()
-    try:
-        if provider in {"graphiti", "graph"}:
-            api_key = getattr(settings, "graphiti_key", None)
-            if not api_key:
-                raise ValueError("Graphiti API key is required.")
-            return GraphitiMemoryAdapter(
-                api_key=api_key,
-                base_url=getattr(settings, "graphiti_base_url", "https://api.graphiti.ai/v1"),
-                upsert_path=getattr(settings, "graphiti_upsert_path", "/graph/upsert"),
-                retrieve_path=getattr(settings, "graphiti_retrieve_path", "/graph/retrieve"),
-                timeout=getattr(settings, "graphiti_timeout", 10.0),
-            )
-    except ValueError as exc:
-        LOGGER.warning("Falling back to in-memory adapter: %s", exc)
-    return InMemoryMemoryAdapter()
+    provider = getattr(settings, "memory_provider", "zep").lower()
+    
+    if provider == "zep":
+        api_key = getattr(settings, "zep_api_key", None)
+        if not api_key:
+            raise ValueError("Zep API key is required.")
+        return ZepMemoryAdapter(
+            api_key=api_key,
+            project_id=getattr(settings, "zep_project_id", None),
+        )
+    
+    raise ValueError(f"Unknown memory provider: {provider}")
 
 
 __all__ = [
     "MemoryAdapter",
     "build_memory_adapter",
-    "GraphitiMemoryAdapter",
-    "InMemoryMemoryAdapter",
+    "ZepMemoryAdapter",
 ]

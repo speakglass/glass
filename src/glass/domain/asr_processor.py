@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, AsyncIterable
 
 if TYPE_CHECKING:
     from .entities import EventType
-    from .ports import ASRPort, DiarizationPort
+    from .ports import ASRPort
 
 LOGGER = logging.getLogger(__name__)
 
@@ -25,13 +25,11 @@ class ASRProcessor:
         self,
         session_id: str,
         asr: ASRPort,
-        diarizer: DiarizationPort | None,
         emit_callback,
         handle_transcript_callback,
     ):
         self.session_id = session_id
         self.asr = asr
-        self.diarizer = diarizer
         self._emit = emit_callback
         self._handle_transcript = handle_transcript_callback
         
@@ -284,27 +282,6 @@ class ASRProcessor:
                     # Cache last final payload for potential utterance_end trigger
                     self._last_final_payload[chunk_source] = dict(payload)
                 continue
-
-    async def consume_diarizer(
-        self, 
-        queue: asyncio.Queue, 
-        *, 
-        source: str,
-        event_type_speaker_activity,
-    ) -> None:
-        """Consume diarization events."""
-        if self.diarizer is None:
-            return
-
-        async def queue_iter():
-            while True:
-                item = await queue.get()
-                if item is None:
-                    break
-                yield item
-
-        async for event in self.diarizer.stream(self.session_id, queue_iter(), source=source):
-            await self._emit(event_type_speaker_activity, event, source=source)
 
     @staticmethod
     async def broadcast_audio(audio_iter: AsyncIterable[bytes], queues: list[asyncio.Queue]) -> None:

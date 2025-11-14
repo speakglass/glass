@@ -1,11 +1,11 @@
 'use client';
-import { useGlass } from '@/contexts/GlassContext';
+import { useGlass } from '@/contexts/glass-context';
 import { Button } from './ui/button';
 import { Mic, MicOff, Phone, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { AnimatePresence, motion } from 'motion/react';
 import { Toggle } from './ui/toggle';
-import MicFFT from './MicFFT';
+import MicFFT from './mic-fft';
 import { cn } from '@/utils';
 import { useMemo } from 'react';
 import { Trans } from '@lingui/react/macro';

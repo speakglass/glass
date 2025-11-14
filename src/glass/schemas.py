@@ -5,26 +5,6 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 
-class AskRequest(BaseModel):
-    session_id: str | None = Field(default=None, description="Existing session identifier.")
-    text: str = Field(..., description="User prompt text.")
-    screen_context: str | None = Field(default=None, description="Current screen summary.")
-    language: str | None = Field(default=None, description="Preferred language code.")
-    tone: str | None = Field(default=None, description="Suggestion tone override.")
-
-
-class AskResponse(BaseModel):
-    session_id: str
-    answer: str
-    suggestions: list[str]
-    notes: list[str]
-
-
-class ImageUploadResponse(BaseModel):
-    session_id: str
-    blob_id: str
-
-
 class ConversationAnalysisRequest(BaseModel):
     session_id: str = Field(..., description="Session identifier for the conversation to analyze.")
 

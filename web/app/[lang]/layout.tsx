@@ -2,17 +2,13 @@ import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import './globals.css';
-import { Nav } from '@/components/Nav';
 import { cn } from '@/utils';
 import { Toaster } from '@/components/ui/sonner';
-import { AppProviders } from '@/components/AppProviders';
-import { LinguiClientProvider } from '@/components/providers/LinguiProviders';
-import { allMessages, createI18nForLocale } from '@/appRouterI18n';
-import { initLingui, PageLangParam } from '@/initLingui';
-import {
-  LOCALIZED_LANGUAGE_CODES,
-  DEFAULT_LANGUAGE,
-} from '@/lib/supported-languages';
+import { AppProviders } from '@/components/app-providers';
+import { LinguiClientProvider } from '@/components/providers/lingui-providers';
+import { allMessages, createI18nForLocale } from '@/lib/app-router-i18n';
+import { initLingui, PageLangParam } from '@/lib/init-lingui';
+import { LOCALIZED_LANGUAGE_CODES, DEFAULT_LANGUAGE } from '@/lib/supported-languages';
 
 export function generateStaticParams() {
   return LOCALIZED_LANGUAGE_CODES.map((lang) => ({
@@ -22,11 +18,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata(props: PageLangParam) {
   const rawLang = (await props.params).lang;
-  const lang = (LOCALIZED_LANGUAGE_CODES as readonly string[]).includes(
-    rawLang as any
-  )
-    ? rawLang
-    : DEFAULT_LANGUAGE;
+  const lang = (LOCALIZED_LANGUAGE_CODES as readonly string[]).includes(rawLang as any) ? rawLang : DEFAULT_LANGUAGE;
   const i18n = createI18nForLocale(lang);
   const baseUrl = process.env.SITE_URL || 'https://app.speakglass.com/';
   const canonicalUrl = lang === 'en' ? baseUrl : `${baseUrl}/${lang}`;
@@ -85,28 +77,14 @@ export default async function RootLayout({
   params: Promise<{ lang: string }>;
 }>) {
   const rawLang = (await params).lang;
-  const lang = (LOCALIZED_LANGUAGE_CODES as readonly string[]).includes(
-    rawLang as any
-  )
-    ? rawLang
-    : DEFAULT_LANGUAGE;
+  const lang = (LOCALIZED_LANGUAGE_CODES as readonly string[]).includes(rawLang as any) ? rawLang : DEFAULT_LANGUAGE;
   initLingui(lang);
 
   return (
     <html lang={lang} suppressHydrationWarning>
-      <body
-        className={cn(
-          GeistSans.variable,
-          GeistMono.variable,
-          'flex flex-col min-h-screen'
-        )}
-      >
-        <LinguiClientProvider
-          initialLocale={lang}
-          initialMessages={allMessages[lang]!}
-        >
+      <body className={cn(GeistSans.variable, GeistMono.variable, 'flex flex-col min-h-screen')}>
+        <LinguiClientProvider initialLocale={lang} initialMessages={allMessages[lang]!}>
           <AppProviders>
-            <Nav />
             {children}
             <Toaster position="top-center" richColors={true} />
           </AppProviders>

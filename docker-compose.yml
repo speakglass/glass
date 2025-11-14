@@ -1,0 +1,77 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: glass
+      POSTGRES_PASSWORD: glass
+      POSTGRES_DB: glass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U glass']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      GLASS_DATABASE_URL: postgresql+asyncpg://glass:glass@db:5432/glass
+      GLASS_REDIS_URL: redis://redis:6379/0
+      GLASS_ALLOW_ORIGIN: http://localhost:3000
+      GLASS_AUTH_JWT_SECRET: ${GLASS_AUTH_JWT_SECRET:-dev-secret-key}
+      GLASS_LOG_LEVEL: INFO
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./src:/app/src
+      - backend_uploads:/app/var/uploads
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    env_file:
+      - web/.env
+    environment:
+      NEXT_PUBLIC_GLASS_API_URL: http://localhost:8000
+      NEXT_PUBLIC_GLASS_WS_URL: ws://localhost:8000
+      NEXTAUTH_URL: http://localhost:3000
+      GLASS_API_BASE_URL: http://api:8000
+      GLASS_AUTH_JWT_SECRET: ${GLASS_AUTH_JWT_SECRET:-dev-secret-key}
+    depends_on:
+      - api
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./web/app:/app/app
+      - ./web/components:/app/components
+      - ./web/contexts:/app/contexts
+      - ./web/hooks:/app/hooks
+      - ./web/lib:/app/lib
+      - ./web/types:/app/types
+      - ./web/auth.ts:/app/auth.ts
+
+volumes:
+  pgdata:
+  backend_uploads:

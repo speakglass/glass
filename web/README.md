@@ -83,12 +83,12 @@ web/
 │   ├── layout.tsx         # Root layout with theme provider
 │   └── page.tsx           # Main page
 ├── components/            # React components
-│   ├── Chat.tsx          # Main chat container
-│   ├── StartCall.tsx     # Call initiation button
-│   ├── Controls.tsx      # Call controls (mute, end call)
-│   ├── Messages.tsx      # Message display
-│   ├── Nav.tsx           # Navigation bar
-│   └── MicFFT.tsx        # Audio visualization
+│   ├── chat.tsx          # Main chat container
+│   ├── start-call.tsx    # Call initiation button
+│   ├── controls.tsx      # Call controls (mute, end call)
+│   ├── messages.tsx      # Message display
+│   ├── nav.tsx           # Navigation bar
+│   └── mic-fft.tsx       # Audio visualization
 ├── contexts/             # React contexts
 │   └── VoiceContext.tsx  # Voice state and WebSocket management
 └── utils/                # Utility functions
