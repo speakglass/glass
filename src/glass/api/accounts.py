@@ -7,11 +7,13 @@ from ..auth.jwt import AuthenticatedUser, require_authenticated_user
 from ..persistence.service import (
     create_local_user,
     create_password_reset_token,
+    create_verification_token,
     get_user_by_email,
     get_user_by_id,
     mark_onboarding_completed,
     mark_token_as_used,
     set_user_password,
+    verify_email_token,
     verify_reset_token,
 )
 from ..auth.passwords import hash_password, verify_password
@@ -23,6 +25,13 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str | None = Field(default=None, min_length=8)
     name: str | None = None
+
+
+class OAuthSignInRequest(BaseModel):
+    """Request for OAuth sign-in (e.g., Google)."""
+    email: EmailStr
+    name: str | None = None
+    avatar_url: str | None = None
 
 
 class VerifyRequest(BaseModel):
@@ -40,7 +49,14 @@ class AuthenticatedUserResponse(BaseModel):
 
 @router.post("/accounts/register", response_model=AuthenticatedUserResponse)
 async def register_account(request: Request, payload: RegisterRequest) -> AuthenticatedUserResponse:
+    from .helpers import client_id_for_user
+    from ..auth.jwt import AuthenticatedUser
+    
     db = request.app.state.history_store
+    app_state = request.app.state.app_state
+    email_service = app_state.email_service
+    settings = app_state.settings
+    
     existing = await get_user_by_email(db, payload.email)
     
     # Hash password if provided (for email/password auth)
@@ -53,6 +69,8 @@ async def register_account(request: Request, payload: RegisterRequest) -> Authen
             raise HTTPException(status_code=409, detail="Account already exists")
         elif payload.password and not existing.password_hash:
             # OAuth user setting password
+            if not password_hash:
+                raise HTTPException(status_code=400, detail="Failed to hash password")
             updated = await set_user_password(
                 db,
                 user_id=existing.id,
@@ -77,6 +95,52 @@ async def register_account(request: Request, payload: RegisterRequest) -> Authen
         password_hash=password_hash,
         name=payload.name,
     )
+    
+    # Reset Redis budget for new user (clear any stale data from previous tests)
+    if app_state.has_budget_store():
+        try:
+            client_id = client_id_for_user(AuthenticatedUser(user_id=user.id, email=user.email))
+            # Delete old budget keys to start fresh
+            if app_state._redis:
+                await app_state._redis.delete(
+                    f"glass:budget:{client_id}:end_at",
+                    f"glass:budget:{client_id}"
+                )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to reset budget for new user {user.id}: {e}")
+    
+    # Send verification email if Resend is configured
+    if email_service.enabled:
+        try:
+            token, _ = await create_verification_token(db, user.id)
+            verification_url = f"{settings.frontend_url}/en/verify-email?token={token}"
+            await email_service.send_verification_email(
+                to=user.email,
+                name=user.name,
+                verification_url=verification_url,
+            )
+            return AuthenticatedUserResponse(
+                id=user.id,
+                email=user.email,
+                name=user.name,
+                avatar_url=user.avatar_url,
+                message="Please check your email to verify your account",
+            )
+        except Exception as e:
+            # Log error but don't block registration
+            import logging
+            logging.getLogger(__name__).error(f"Failed to send verification email: {e}")
+    
+    # If no email service or OAuth user, mark as verified
+    if not email_service.enabled or not password_hash:
+        user.email_verified = True
+        async_session_factory = db.session()
+        async with async_session_factory() as session:
+            session.add(user)
+            await session.commit()
+            await session.refresh(user)
+    
     return AuthenticatedUserResponse(
         id=user.id,
         email=user.email,
@@ -103,6 +167,8 @@ async def verify_account(request: Request, payload: VerifyRequest) -> Authentica
     if not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
+    # Allow login regardless of email verification status
+    # Email verification will be checked when accessing protected routes (dashboard/onboarding)
     return AuthenticatedUserResponse(
         id=user.id,
         email=user.email,
@@ -130,6 +196,75 @@ async def verify_oauth_account(request: Request, payload: VerifyOAuthRequest) ->
     )
 
 
+@router.post("/accounts/oauth-signin", response_model=AuthenticatedUserResponse)
+async def oauth_signin(request: Request, payload: OAuthSignInRequest) -> AuthenticatedUserResponse:
+    """Sign in or create user via OAuth (e.g., Google).
+    
+    This endpoint handles both new and existing OAuth users:
+    - If user doesn't exist, creates new user without password
+    - If user exists, updates name and avatar if provided
+    """
+    db = request.app.state.history_store
+    user = await get_user_by_email(db, payload.email)
+    
+    if user:
+        # Existing user - update profile if needed
+        updated = False
+        async_session_factory = db.session()
+        async with async_session_factory() as session:
+            if payload.name and payload.name != user.name:
+                user.name = payload.name
+                updated = True
+            if payload.avatar_url and payload.avatar_url != user.avatar_url:
+                user.avatar_url = payload.avatar_url
+                updated = True
+            
+            if updated:
+                session.add(user)
+                await session.commit()
+                await session.refresh(user)
+        
+        return AuthenticatedUserResponse(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            avatar_url=user.avatar_url,
+        )
+    else:
+        # New user - create without password (OAuth users are auto-verified)
+        new_user = await create_local_user(
+            db,
+            email=payload.email,
+            password_hash=None,  # OAuth users don't have passwords initially
+            name=payload.name,
+            avatar_url=payload.avatar_url,
+            email_verified=True,  # OAuth users are automatically verified
+        )
+        
+        # Reset Redis budget for new OAuth user (clear any stale data)
+        app_state = request.app.state.app_state
+        if app_state.has_budget_store():
+            try:
+                from .helpers import client_id_for_user
+                from ..auth.jwt import AuthenticatedUser
+                client_id = client_id_for_user(AuthenticatedUser(user_id=new_user.id, email=new_user.email))
+                if app_state._redis:
+                    await app_state._redis.delete(
+                        f"glass:budget:{client_id}:end_at",
+                        f"glass:budget:{client_id}"
+                    )
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Failed to reset budget for new OAuth user {new_user.id}: {e}")
+        
+        return AuthenticatedUserResponse(
+            id=new_user.id,
+            email=new_user.email,
+            name=new_user.name,
+            avatar_url=new_user.avatar_url,
+    )
+
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
@@ -141,6 +276,10 @@ class ForgotPasswordResponse(BaseModel):
 @router.post("/accounts/forgot-password", response_model=ForgotPasswordResponse)
 async def forgot_password(request: Request, payload: ForgotPasswordRequest) -> ForgotPasswordResponse:
     db = request.app.state.history_store
+    app_state = request.app.state.app_state
+    email_service = app_state.email_service
+    settings = app_state.settings
+    
     user = await get_user_by_email(db, payload.email)
     
     # Always return success to prevent email enumeration
@@ -150,9 +289,22 @@ async def forgot_password(request: Request, payload: ForgotPasswordRequest) -> F
     # Create reset token
     token = await create_password_reset_token(db, user_id=user.id, expires_in_hours=1)
     
-    # TODO: Send email with reset link
-    # For now, we'll just return the token in logs (remove in production!)
-    print(f"Password reset token for {user.email}: {token}")
+    # Send email if Resend is configured
+    if email_service.enabled:
+        try:
+            reset_url = f"{settings.frontend_url}/en/reset-password?token={token}"
+            await email_service.send_password_reset_email(
+                to=user.email,
+                name=user.name,
+                reset_url=reset_url,
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Failed to send password reset email: {e}")
+    else:
+        # If no email service, log the token (development only!)
+        import logging
+        logging.getLogger(__name__).info(f"Password reset token for {user.email}: {token}")
     
     return ForgotPasswordResponse(message="If the email exists, a reset link has been sent")
 
@@ -183,6 +335,76 @@ async def reset_password(request: Request, payload: ResetPasswordRequest) -> Res
     await mark_token_as_used(db, payload.token)
     
     return ResetPasswordResponse(message="Password has been reset successfully")
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+
+class VerifyEmailResponse(BaseModel):
+    message: str
+    email: EmailStr
+
+
+@router.post("/accounts/verify-email", response_model=VerifyEmailResponse)
+async def verify_email(request: Request, payload: VerifyEmailRequest) -> VerifyEmailResponse:
+    """Verify email address using token sent via email."""
+    db = request.app.state.history_store
+    
+    # Verify token and mark email as verified
+    user = await verify_email_token(db, payload.token)
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+    
+    return VerifyEmailResponse(
+        message="Email verified successfully",
+        email=user.email,
+    )
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
+class ResendVerificationResponse(BaseModel):
+    message: str
+
+
+@router.post("/accounts/resend-verification", response_model=ResendVerificationResponse)
+async def resend_verification(request: Request, payload: ResendVerificationRequest) -> ResendVerificationResponse:
+    """Resend verification email."""
+    db = request.app.state.history_store
+    app_state = request.app.state.app_state
+    email_service = app_state.email_service
+    settings = app_state.settings
+    
+    if not email_service.enabled:
+        raise HTTPException(status_code=503, detail="Email service not configured")
+    
+    user = await get_user_by_email(db, payload.email)
+    
+    # Always return success to prevent email enumeration
+    if not user:
+        return ResendVerificationResponse(message="If the email exists, a verification link has been sent")
+    
+    # Check if already verified
+    if user.email_verified:
+        return ResendVerificationResponse(message="Email is already verified")
+    
+    # Create new verification token
+    try:
+        token, _ = await create_verification_token(db, user.id)
+        verification_url = f"{settings.frontend_url}/en/verify-email?token={token}"
+        await email_service.send_verification_email(
+            to=user.email,
+            name=user.name,
+            verification_url=verification_url,
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to resend verification email: {e}")
+    
+    return ResendVerificationResponse(message="If the email exists, a verification link has been sent")
 
 
 class OnboardingStatusResponse(BaseModel):

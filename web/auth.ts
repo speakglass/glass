@@ -4,7 +4,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 
 // For server-side auth callbacks, we can use internal Docker names
 // This only runs on the Next.js server, never in the browser
-const apiBase = process.env.GLASS_API_BASE_URL || process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
+const apiBase = process.env.GLASS_API_URL_INTERNAL || process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
 
 export const {
   handlers: { GET, POST },
@@ -63,50 +63,29 @@ export const {
   },
   callbacks: {
     async signIn({ user, account }) {
-      // For Google OAuth, register user in backend if not exists
+      // For Google OAuth, ensure user exists in backend
       if (account?.provider === 'google' && user.email) {
         try {
-          // Check if user exists, if not register them
-          const response = await fetch(`${apiBase}/accounts/register`, {
+          const response = await fetch(`${apiBase}/accounts/oauth-signin`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: user.email,
               name: user.name,
-              // For OAuth users, we don't set a password
+              avatar_url: user.image,
             }),
           });
 
           if (response.ok) {
             const data = await response.json();
-            // Update user.id with backend user ID
             user.id = data.id;
-            console.log(`[auth] Registered new OAuth user: ${user.id}`);
-          } else if (response.status === 409) {
-            // User already exists, that's fine
-            // We'll get the ID from the verify endpoint
-            const verifyResponse = await fetch(`${apiBase}/accounts/verify-oauth`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email: user.email,
-              }),
-            });
-
-            if (verifyResponse.ok) {
-              const data = await verifyResponse.json();
-              user.id = data.id;
-              console.log(`[auth] Verified existing OAuth user: ${user.id}`);
-            } else {
-              console.error(`[auth] Failed to verify OAuth user: ${verifyResponse.status}`);
-              return false;
-            }
+            console.log(`[auth] OAuth sign-in successful for user: ${user.id}`);
           } else {
-            console.error(`[auth] Failed to register OAuth user: ${response.status}`);
+            console.error(`[auth] OAuth sign-in failed: ${response.status}`);
             return false;
           }
         } catch (error) {
-          console.error('[auth] Failed to register/verify OAuth user:', error);
+          console.error('[auth] OAuth sign-in error:', error);
           return false;
         }
       }

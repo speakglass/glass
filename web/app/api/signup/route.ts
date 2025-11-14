@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const apiBase =
-  process.env.GLASS_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_GLASS_API_URL ||
-  'http://localhost:8000';
+const apiBase = process.env.GLASS_API_URL_INTERNAL || process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
 
 export async function POST(request: Request) {
   const payload = await request.json();
@@ -21,4 +18,3 @@ export async function POST(request: Request) {
   }
   return NextResponse.json(data);
 }
-

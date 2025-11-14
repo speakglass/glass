@@ -14,7 +14,7 @@ class MemoryPort(Protocol):
         edges: Iterable[tuple[str, str, str]] | None = None,
     ) -> None: ...
 
-    async def retrieve(self, session_id: str, query: str, k: int = 6) -> Sequence[dict]: ...
+    async def retrieve(self, session_id: str, query: str, *, k: int = 6) -> Sequence[dict]: ...
 
     async def get_user_context_block(self, user_id: str, use_cache: bool = True) -> str:
         """Get user-level context (all past conversations) for session start."""
@@ -76,6 +76,8 @@ class ASRPort(Protocol):
         audio_iter: AsyncIterable[bytes],
         *,
         source: str | None = None,
+        language: str | None = None,
+        model: str | None = None,
     ) -> AsyncIterable[dict]: ...
 
 
@@ -90,6 +92,7 @@ class LLMPort(Protocol):
         user_hint: str | None = None,
         user_context: str | None = None,
         thread_context: str | None = None,
+        length_mode: str = "auto",
     ) -> dict | None: ...
     
     async def should_feedback(
@@ -116,6 +119,7 @@ class LLMPort(Protocol):
         recent_conversation: Sequence[dict] | None = None,
         user_context: str | None = None,
         thread_context: str | None = None,
+        last_suggestion: dict | None = None,
     ) -> str: ...
 
     # Practice mode response
@@ -126,8 +130,10 @@ class LLMPort(Protocol):
         *,
         recent_conversation: Sequence[dict],
         target_lang: str,
+        native_lang: str,
         user_context: str | None = None,
         thread_context: str | None = None,
+        recent_feedback: str | None = None,
     ) -> str: ...
 
     # Pronunciation (one-line)

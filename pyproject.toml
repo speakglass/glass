@@ -21,10 +21,13 @@ dependencies = [
     "redis>=7.0.1",
     "SQLAlchemy>=2.0",
     "asyncpg>=0.29",
-    "aiosqlite>=0.20",
+    "alembic>=1.13",
     "PyJWT>=2.9",
     "greenlet>=3.0",
     "passlib[bcrypt]>=1.7",
+    "email-validator>=2.0",
+    "zep-cloud>=2.0",
+    "bcrypt>=4.0",
 ]
 
 [tool.setuptools.packages.find]

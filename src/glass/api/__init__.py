@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from .accounts import router as accounts_router
 from .feedback import router as feedback_router
@@ -12,3 +13,16 @@ router.include_router(feedback_router)
 router.include_router(history_router)
 router.include_router(memory_router)
 router.include_router(waitlist_router)
+
+
+@router.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring and deployment verification."""
+    return JSONResponse(
+        content={
+            "status": "healthy",
+            "service": "glass-api",
+            "version": "0.1.0"
+        },
+        status_code=200
+    )

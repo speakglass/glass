@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/auth';
-import { getApiBase } from '@/lib/account-api';
 import { issueSessionToken } from '@/lib/session-token';
 
 export async function POST(request: NextRequest) {
@@ -19,8 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = await issueSessionToken(session.user);
-    const base = getApiBase();
-    const response = await fetch(`${base}/feedback`, {
+    const response = await fetch(`https://api.speakglass.com/feedback`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

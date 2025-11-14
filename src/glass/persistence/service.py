@@ -8,7 +8,6 @@ import uuid
 import secrets
 
 from sqlalchemy import select, delete
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.jwt import AuthenticatedUser
 from .db import AccountConversation, AccountUser, PasswordResetToken, PersistenceDatabase
@@ -249,9 +248,10 @@ async def create_local_user(
     db: PersistenceDatabase,
     *,
     email: str,
-    password_hash: str,
+    password_hash: str | None = None,
     name: str | None = None,
     avatar_url: str | None = None,
+    email_verified: bool = False,
 ) -> AccountUser:
     async_session_factory = db.session()
     async with async_session_factory() as session:
@@ -261,6 +261,7 @@ async def create_local_user(
             name=name,
             password_hash=password_hash,
             avatar_url=avatar_url,
+            email_verified=email_verified,
         )
         session.add(user)
         await session.commit()
@@ -393,6 +394,81 @@ async def mark_onboarding_completed(
         
         await session.commit()
         await session.refresh(user)
+        return user
+
+
+# ===== Email Verification =====
+
+async def create_verification_token(
+    db: PersistenceDatabase,
+    user_id: str,
+) -> tuple[str, datetime]:
+    """Create an email verification token for a user.
+    
+    Returns:
+        Tuple of (token, expires_at)
+    """
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+    
+    async_session_factory = db.session()
+    async with async_session_factory() as session:
+        user = await session.scalar(
+            select(AccountUser).where(AccountUser.id == user_id)
+        )
+        if user is None:
+            raise ValueError("User not found")
+        
+        user.verification_token = token
+        user.verification_token_expires = expires_at
+        
+        await session.commit()
+        await session.refresh(user)
+        return token, expires_at
+
+
+async def verify_email_token(
+    db: PersistenceDatabase,
+    token: str,
+) -> AccountUser | None:
+    """Verify an email verification token and mark email as verified.
+    
+    Returns:
+        User if token is valid, None otherwise
+    """
+    async_session_factory = db.session()
+    async with async_session_factory() as session:
+        user = await session.scalar(
+            select(AccountUser).where(AccountUser.verification_token == token)
+        )
+        
+        if user is None:
+            return None
+        
+        # Check if token is expired
+        if user.verification_token_expires is None or user.verification_token_expires < datetime.now(timezone.utc):
+            return None
+        
+        # Mark email as verified and clear token
+        user.email_verified = True
+        user.verification_token = None
+        user.verification_token_expires = None
+        
+        await session.commit()
+        await session.refresh(user)
+        return user
+
+
+async def get_user_by_verification_token(
+    db: PersistenceDatabase,
+    token: str,
+) -> AccountUser | None:
+    """Get a user by their verification token."""
+    async_session_factory = db.session()
+    async with async_session_factory() as session:
+        user = await session.scalar(
+            select(AccountUser).where(AccountUser.verification_token == token)
+        )
         return user
 
 

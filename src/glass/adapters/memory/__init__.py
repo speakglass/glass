@@ -22,7 +22,7 @@ def build_memory_adapter(settings) -> MemoryAdapter:
         api_key = getattr(settings, "zep_api_key", None)
         if not api_key:
             raise ValueError("Zep API key is required.")
-        return ZepMemoryAdapter(
+        return ZepMemoryAdapter(  # type: ignore[return-value]
             api_key=api_key,
             project_id=getattr(settings, "zep_project_id", None),
         )

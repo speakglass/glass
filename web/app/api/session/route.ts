@@ -33,9 +33,12 @@ export async function GET() {
     // Log detailed error information
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
+    const status = error instanceof Error && 'status' in error ? (error as Error & { status: number }).status : 500;
+    
     console.error('[session] Failed to initialize account snapshot:', {
       error: errorMessage,
       stack: errorStack,
+      status,
       userId: session.user.id,
       userEmail: session.user.email,
     });
@@ -43,12 +46,13 @@ export async function GET() {
     // Also log the raw error
     console.error('[session] Raw error:', error);
 
+    // Return the appropriate status code (401 for auth errors, 500 for others)
     return NextResponse.json(
       {
-        error: 'Failed to initialize account snapshot',
+        error: status === 401 ? 'Unauthorized' : 'Failed to initialize account snapshot',
         details: errorMessage,
       },
-      { status: 500 }
+      { status }
     );
   }
 }

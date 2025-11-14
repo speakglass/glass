@@ -193,7 +193,7 @@ async def _handle_tts_request(websocket, text: str, voice_id: str | None = None,
             async with client.stream("POST", url, headers=headers, json=payload) as response:
                 if response.status_code != 200:
                     error_text = await response.aread()
-                    LOGGER.error(f"ElevenLabs API error: {response.status_code} - {error_text}")
+                    LOGGER.error(f"ElevenLabs API error: {response.status_code} - {error_text}")  # type: ignore[str-bytes-safe]
                     await websocket.send_json({"t": "tts_error", "error": "TTS API error", "request_id": request_id})
                     return
                 

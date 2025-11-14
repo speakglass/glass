@@ -1,10 +1,11 @@
 import { auth } from '@/auth';
 import { issueSessionToken } from '@/lib/session-token';
+import { fetchAccountSnapshot } from '@/lib/account-api';
 import { redirect } from 'next/navigation';
 import type { Session } from 'next-auth';
 import Chat from '@/components/chat';
 
-const apiBase = process.env.GLASS_API_BASE_URL || process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
+const apiBase = process.env.GLASS_API_URL_INTERNAL || process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
 
 interface OnboardingStatusResponse {
   completed: boolean;
@@ -41,6 +42,14 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
   // This should not happen because middleware handles auth, but just in case
   if (!session?.user) {
     redirect(`/${lang}/login`);
+  }
+
+  // Check email verification status
+  const token = await issueSessionToken(session.user);
+  const snapshot = await fetchAccountSnapshot(token);
+
+  if (!snapshot.user.emailVerified) {
+    redirect(`/${lang}/verify-email-sent?email=${encodeURIComponent(snapshot.user.email)}`);
   }
 
   // Check onboarding status on server side

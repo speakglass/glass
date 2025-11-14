@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import httpx
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -9,9 +11,6 @@ router = APIRouter()
 
 class WaitlistRequest(BaseModel):
     email: str
-    sessionId: str | None = None
-    scores: dict | None = None
-    extractedInfo: list[dict] | None = None
 
 
 @router.post("/waitlist")
@@ -25,20 +24,13 @@ async def waitlist_endpoint(request: Request, payload: WaitlistRequest) -> dict:
     if not webhook:
         raise HTTPException(status_code=500, detail="Discord webhook not configured")
 
-    embed = {
+    embed: dict[str, Any] = {
         "title": "New Waitlist Entry",
         "color": 0x00BCD4,
         "fields": [
             {"name": "Email", "value": email, "inline": False},
         ],
     }
-    if payload.sessionId:
-        embed["fields"].append({"name": "Session ID", "value": payload.sessionId, "inline": False})
-    if payload.scores:
-        embed["fields"].append({"name": "Scores", "value": f"```json\n{payload.scores}\n```", "inline": False})
-    if payload.extractedInfo:
-        embed["fields"].append({"name": "Extracted Info", "value": f"```json\n{payload.extractedInfo}\n```", "inline": False})
-
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.post(
             webhook,

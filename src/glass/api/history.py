@@ -36,6 +36,7 @@ class UserResponse(BaseModel):
     learning_lang: str | None = None
     native_lang: str | None = None
     proficiency: str | None = None
+    email_verified: bool = False
 
 
 class ConversationSummary(BaseModel):
@@ -59,7 +60,6 @@ class ConversationDetail(ConversationSummary):
 class AccountSnapshot(BaseModel):
     user: UserResponse
     usage: UsageResponse
-    conversations: list[ConversationSummary]
 
 
 @router.get("/me", response_model=AccountSnapshot)
@@ -82,11 +82,8 @@ async def account_snapshot_endpoint(
             total_minutes = account_user.trial_minutes or settings.free_minutes_per_user or 0
             total_seconds = max(0, int(total_minutes) * 60)
             client_id = client_id_for_user(user)
-            remaining_seconds = await app_state.get_remaining_seconds_deadline(client_id)
-        history_limit = max(1, int(settings.history_limit or 20))
-        conversations = await list_recent_conversations(
-            db, user_id=user.user_id, limit=history_limit
-        )
+            # Use daily cumulative quota (resets at UTC midnight)
+            remaining_seconds = await app_state.get_remaining_seconds_quota(client_id)
         return AccountSnapshot(
             user=UserResponse(
                 id=account_user.id,
@@ -99,15 +96,12 @@ async def account_snapshot_endpoint(
                 learning_lang=account_user.learning_lang,
                 native_lang=account_user.native_lang,
                 proficiency=account_user.proficiency,
+                email_verified=account_user.email_verified,
             ),
             usage=UsageResponse(
                 total_seconds=total_seconds,
                 remaining_seconds=remaining_seconds,
             ),
-            conversations=[
-                ConversationSummary(**serialize_summary(convo))
-                for convo in conversations
-            ],
         )
     except Exception as exc:
         import traceback
@@ -134,23 +128,32 @@ async def conversation_list_endpoint(
     search: str | None = None,
     user: AuthenticatedUser = Depends(require_authenticated_user),
 ) -> ConversationListResponse:
-    app_state = request.app.state.app_state
+    """List conversations with pagination support.
+    
+    Args:
+        limit: Number of conversations to return per page (default: 20, max: 100)
+        offset: Number of conversations to skip for pagination
+        search: Optional search query to filter conversations
+    """
     db = request.app.state.history_store
-    max_limit = max(1, int(app_state.settings.history_limit or 100))
-    final_limit = min(limit, max_limit)
+    
+    # Apply reasonable limits for pagination
+    max_limit = 100
+    final_limit = max(1, min(limit, max_limit))
+    final_offset = max(0, offset)
     
     conversations = await list_recent_conversations(
-        db, user_id=user.user_id, limit=final_limit, offset=offset, search=search
+        db, user_id=user.user_id, limit=final_limit, offset=final_offset, search=search
     )
     total = await count_conversations(db, user_id=user.user_id, search=search)
     
     return ConversationListResponse(
         conversations=[
-        ConversationSummary(**serialize_summary(convo)) for convo in conversations
+            ConversationSummary(**serialize_summary(convo)) for convo in conversations
         ],
         total=total,
         limit=final_limit,
-        offset=offset,
+        offset=final_offset,
     )
 
 
@@ -275,7 +278,6 @@ async def get_conversation_zep_memories(
     
     # 3. Query Zep for facts from this thread
     # Use session_id as thread_id (they're the same)
-    thread_id = convo.session_id
     
     try:
         # Check if thread episodes are still being processed by Zep
@@ -316,7 +318,7 @@ async def get_conversation_zep_memories(
         # Search for facts from this specific conversation
         edges = await memory_adapter.client.graph.search(
             user_id=user.user_id,
-            query=f"facts and information from recent conversation",
+            query="facts and information from recent conversation",
             scope="edges",
             limit=50,
         )

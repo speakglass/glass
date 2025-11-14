@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import time
+from typing import Any
 
 LOGGER = logging.getLogger(__name__)
 
@@ -303,8 +304,9 @@ class ZepMemoryAdapter:
                 
                 # Combine (partial success OK)
                 if user_ctx and thread_ctx:
-                    return f"{user_ctx}\n\n{thread_ctx}"
-                return user_ctx or thread_ctx or ""
+                    result: str = f"{user_ctx}\n\n{thread_ctx}"
+                    return result
+                return user_ctx or thread_ctx or ""  # type: ignore[return-value]
             
             else:
                 LOGGER.warning(f"Unknown scope: {scope}, defaulting to thread")
@@ -571,7 +573,7 @@ class ZepMemoryAdapter:
                     created_at = datetime.fromtimestamp(msg_epoch, tz=timezone.utc).isoformat().replace("+00:00", "Z")
                 
                 # Build metadata for better context understanding
-                metadata = {}
+                metadata: dict[str, Any] = {}
                 
                 # Add role-specific metadata
                 if is_user_mic:
@@ -648,7 +650,7 @@ class ZepMemoryAdapter:
                 LOGGER.info(f"✅ Total {len(zep_messages)} messages added to Zep thread {thread_id}")
                 
                 if hasattr(zep_messages[0], 'created_at') and zep_messages[0].created_at:
-                    LOGGER.debug(f"⏰ Messages include timestamps for temporal understanding")
+                    LOGGER.debug("⏰ Messages include timestamps for temporal understanding")
         except Exception as e:
             LOGGER.error(f"Failed to add messages to Zep: {e}", exc_info=True)
 

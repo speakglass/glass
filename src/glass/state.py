@@ -14,6 +14,7 @@ from .adapters.llm import build_llm_adapter
 from .adapters.memory import build_memory_adapter
 from .config import Settings
 from .domain.pipeline import SessionPipeline
+from .services.email import EmailService
 
 LOGGER = logging.getLogger(__name__)    
 
@@ -26,12 +27,12 @@ class SessionManager:
         asr_adapter,
         llm_adapter,
         memory_adapter,
-        tail_size: int = 20,
+        context_window_size: int = 5,
     ) -> None:
         self.asr_adapter = asr_adapter
         self.llm_adapter = llm_adapter
         self.memory_adapter = memory_adapter
-        self.tail_size = tail_size
+        self.context_window_size = context_window_size
         self._pipelines: dict[str, SessionPipeline] = {}
         self._lock = asyncio.Lock()
 
@@ -45,7 +46,7 @@ class SessionManager:
                     llm=self.llm_adapter,
                     memory=self.memory_adapter,
                     events=events_port or NullEventsAdapter(),
-                    tail_size=self.tail_size,
+                    context_window_size=self.context_window_size,
                 )
                 self._pipelines[session_id] = pipeline
             else:
@@ -86,48 +87,24 @@ class AppState:
                 from redis.asyncio import Redis
                 import redis
                 parsed = urlparse(settings.redis_url)
-                # Decide cluster vs single-node:
-                # 1) Respect explicit flag
-                # 2) Auto-detect Azure OSSCluster by common ports (10000+)
-                auto_cluster = parsed.port in {10000, 10001, 10002}
-                use_cluster = settings.redis_cluster if settings.redis_cluster is not None else auto_cluster
-                client_kind = "cluster" if use_cluster else "single-node"
-                LOGGER.info(f"Connecting to Redis using {client_kind} client")
-                # Test connection on startup (fail-fast) using the appropriate client
+                LOGGER.info("Connecting to Redis using single-node client")
+                # Test connection on startup (fail-fast)
                 LOGGER.info("Testing Redis connection...")
-                if use_cluster:
-                    from redis.cluster import RedisCluster as SyncRedisCluster
-                    test_client = SyncRedisCluster.from_url(
-                        settings.redis_url,
-                        decode_responses=True,
-                        socket_connect_timeout=10.0,
-                        socket_timeout=10.0,
-                    )
-                    test_client.ping()
-                    test_client.close()
-                    from redis.asyncio.cluster import RedisCluster as AsyncRedisCluster
-                    self._redis = AsyncRedisCluster.from_url(
-                        settings.redis_url,
-                        decode_responses=True,
-                        socket_connect_timeout=10.0,
-                        socket_timeout=10.0,
-                    )
-                else:
-                    test_client = redis.Redis.from_url(
-                        settings.redis_url,
-                        socket_connect_timeout=10.0,
-                        socket_timeout=10.0,
-                    )
-                    test_client.ping()
-                    test_client.close()
-                    # Create async client for runtime
-                    self._redis = Redis.from_url(
-                        settings.redis_url,
-                        encoding="utf-8",
-                        decode_responses=True,
-                        socket_connect_timeout=10.0,
-                        socket_timeout=10.0,
-                    )
+                test_client = redis.Redis.from_url(
+                    settings.redis_url,
+                    socket_connect_timeout=10.0,
+                    socket_timeout=10.0,
+                )
+                test_client.ping()
+                test_client.close()
+                # Create async client for runtime
+                self._redis = Redis.from_url(
+                    settings.redis_url,
+                    encoding="utf-8",
+                    decode_responses=True,
+                    socket_connect_timeout=10.0,
+                    socket_timeout=10.0,
+                )
                 LOGGER.info("✅ Redis connected")
             except Exception as e:
                 # Log detailed error info
@@ -143,7 +120,7 @@ class AppState:
                     raise RuntimeError(
                         f"Redis required for time budget but connection failed: {e}\n"
                         f"Connection details: {error_detail}\n"
-                        f"Check: Redis URL, firewall, and port (Azure Managed Redis uses 10000)"
+                        f"Check: Redis URL, firewall, and port accessibility"
                     )
         asr_adapter = build_asr_adapter(settings)
         llm_adapter = build_llm_adapter(settings)
@@ -152,15 +129,15 @@ class AppState:
             asr_adapter=asr_adapter,
             llm_adapter=llm_adapter,
             memory_adapter=memory_adapter,
-            tail_size=int(settings.tail_size or 20),
+            context_window_size=int(settings.context_window_size or 5),
         )
-        # Guard to avoid multiple budget decrement watchers per client (per-process)
-        self._budget_watchers_lock = asyncio.Lock()
-        self._budget_watchers: set[str] = set()
-        # In-memory fallback remaining seconds per client (used if Redis temporarily fails)
-        self._fallback_remaining: dict[str, int] = {}
-        # In-memory fallback deadline (epoch seconds) per client for deadline-based budget
-        self._fallback_end_at: dict[str, int] = {}
+        # Email service for verification and password reset
+        self.email_service = EmailService(
+            api_key=settings.resend_api_key,
+            from_email=settings.from_email,
+            verification_template_id=settings.resend_verification_template_id,
+            password_reset_template_id=settings.resend_password_reset_template_id,
+        )
         # In-memory fallback for daily usage (used if Redis temporarily fails)
         # key: client_id, value: (date_str_utc, used_seconds)
         self._fallback_daily_usage: dict[str, tuple[str, int]] = {}
@@ -187,107 +164,6 @@ class AppState:
         """True if time budget is enabled and Redis is configured."""
         return self.settings.free_minutes_per_user is not None and self._redis is not None
 
-    # --------- Deadline-based budget helpers (no per-second decrement) ----------
-    async def get_or_init_end_at(self, client_id: str) -> int:
-        """Return per-client deadline (epoch seconds). Initialize if missing.
-
-        Uses Redis SETNX semantics; falls back to in-memory storage if Redis fails.
-        """
-        default_seconds = max(0, int(self.settings.free_minutes_per_user or 0) * 60)
-        now = int(time.time())
-        if not self.has_budget_store():
-            end_at = self._fallback_end_at.get(client_id)
-            if end_at is None:
-                end_at = now + default_seconds
-                self._fallback_end_at[client_id] = end_at
-            return end_at
-        try:
-            key = f"glass:budget:{client_id}:end_at"
-            end_at_val = await self._redis.get(key)  # type: ignore[operator]
-            if end_at_val is None:
-                # Attempt to initialize; race-safe via NX
-                desired = now + default_seconds
-                await self._redis.set(key, desired, nx=True)  # type: ignore[operator]
-                end_at_val = await self._redis.get(key)  # type: ignore[operator]
-                if end_at_val is None:
-                    end_at_val = desired
-            end_at = int(end_at_val)
-            # Cache fallback
-            self._fallback_end_at[client_id] = end_at
-            return end_at
-        except Exception as e:
-            if self._should_log_redis_error("get_or_init_end_at"):
-                LOGGER.warning("[Budget] get_or_init_end_at Redis error: %s; using fallback (logging throttled to 1/min)", e)
-            end_at = self._fallback_end_at.get(client_id)
-            if end_at is None:
-                end_at = now + default_seconds
-                self._fallback_end_at[client_id] = end_at
-            return end_at
-
-    async def get_remaining_seconds_deadline(self, client_id: str) -> int:
-        """Compute remaining seconds from stored deadline; never returns sentinel."""
-        end_at = await self.get_or_init_end_at(client_id)
-        now = int(time.time())
-        return max(0, int(end_at - now))
-
-    async def get_remaining_seconds(self, client_id: str) -> int:
-        """Return remaining free-usage seconds; never return sentinel values.
-
-        - If budget disabled, return full allowance (no special handling upstream).
-        - If Redis errors, return last known fallback or full allowance.
-        """
-        default_seconds = max(0, int(self.settings.free_minutes_per_user or 0) * 60)
-        if not self.has_budget_store():
-            return default_seconds
-        try:
-            key = f"glass:budget:{client_id}"
-            val = await self._redis.get(key)  # type: ignore[operator]
-            if val is None:
-                await self._redis.set(key, default_seconds)  # type: ignore[operator]
-                self._fallback_remaining[client_id] = default_seconds
-                return default_seconds
-            remaining = max(0, int(val))
-            self._fallback_remaining[client_id] = remaining
-            return remaining
-        except Exception as e:
-            if self._should_log_redis_error("get_remaining_seconds"):
-                LOGGER.warning("[Budget] get_remaining_seconds Redis error: %s; using fallback (logging throttled to 1/min)", e)
-            return int(self._fallback_remaining.get(client_id, default_seconds))
-
-    async def decrement_seconds(self, client_id: str, seconds: int = 1) -> int:
-        """Atomically decrement remaining seconds; clamp >= 0; no sentinel values.
-
-        - If budget disabled, return full allowance.
-        - On Redis error, use in-memory fallback decrement.
-        """
-        default_seconds = max(0, int(self.settings.free_minutes_per_user or 0) * 60)
-        if not self.has_budget_store():
-            return default_seconds
-        seconds = max(1, int(seconds))
-        try:
-            key = f"glass:budget:{client_id}"
-            # Initialize if missing
-            if await self._redis.get(key) is None:  # type: ignore[operator]
-                await self._redis.set(key, default_seconds)  # type: ignore[operator]
-                self._fallback_remaining[client_id] = default_seconds
-            remaining = await self._redis.decrby(key, seconds)  # type: ignore[attr-defined]
-            if remaining is None:
-                remaining_val = 0
-            elif remaining < 0:
-                await self._redis.set(key, 0)  # type: ignore[operator]
-                remaining_val = 0
-            else:
-                remaining_val = int(remaining)
-            self._fallback_remaining[client_id] = remaining_val
-            return remaining_val
-        except Exception as e:
-            if self._should_log_redis_error("decrement_seconds"):
-                LOGGER.warning("[Budget] decrement_seconds Redis error: %s; using fallback (logging throttled to 1/min)", e)
-            current = int(self._fallback_remaining.get(client_id, default_seconds))
-            current = max(0, current - seconds)
-            self._fallback_remaining[client_id] = current
-            return current
-
     # --------- Daily cumulative usage (resets every UTC midnight) ----------
     def _today_str_utc(self) -> str:
         now = datetime.now(timezone.utc)
@@ -303,7 +179,6 @@ class AppState:
 
         Requires Redis when feature is enabled; uses in-proc fallback on transient errors.
         """
-        total_allowance = max(0, int(self.settings.free_minutes_per_user or 0) * 60)
         if not self.has_budget_store():
             # With budget disabled, treat as 0 used so upstream returns full allowance
             return 0
@@ -311,14 +186,14 @@ class AppState:
         key = f"glass:usage:{client_id}:{date_str}"
         try:
             # Initialize key with TTL to next midnight if missing
-            if not await self._redis.exists(key):  # type: ignore[operator]
-                await self._redis.set(key, 0, ex=self._seconds_until_utc_midnight(), nx=True)  # type: ignore[operator]
-            val = await self._redis.get(key)  # type: ignore[operator]
+            if not await self._redis.exists(key):  # type: ignore[union-attr]
+                await self._redis.set(key, 0, ex=self._seconds_until_utc_midnight(), nx=True)  # type: ignore[union-attr]
+            val = await self._redis.get(key)  # type: ignore[union-attr]
             used = max(0, int(val or 0))
             # Ensure key has TTL; if not, set it
-            ttl = await self._redis.ttl(key)  # type: ignore[operator]
+            ttl = await self._redis.ttl(key)  # type: ignore[union-attr]
             if ttl is not None and ttl < 0:
-                await self._redis.expire(key, self._seconds_until_utc_midnight())  # type: ignore[operator]
+                await self._redis.expire(key, self._seconds_until_utc_midnight())  # type: ignore[union-attr]
             # Cache fallback
             self._fallback_daily_usage[client_id] = (date_str, used)
             return used
@@ -342,13 +217,13 @@ class AppState:
         key = f"glass:usage:{client_id}:{date_str}"
         try:
             # Ensure key exists with TTL to midnight
-            if not await self._redis.exists(key):  # type: ignore[operator]
-                await self._redis.set(key, 0, ex=self._seconds_until_utc_midnight(), nx=True)  # type: ignore[operator]
-            used = await self._redis.incrby(key, seconds)  # type: ignore[operator]
+            if not await self._redis.exists(key):  # type: ignore[union-attr]
+                await self._redis.set(key, 0, ex=self._seconds_until_utc_midnight(), nx=True)  # type: ignore[union-attr]
+            used = await self._redis.incrby(key, seconds)  # type: ignore[union-attr]
             # Ensure expiry is still present
-            ttl = await self._redis.ttl(key)  # type: ignore[operator]
+            ttl = await self._redis.ttl(key)  # type: ignore[union-attr]
             if ttl is not None and ttl < 0:
-                await self._redis.expire(key, self._seconds_until_utc_midnight())  # type: ignore[operator]
+                await self._redis.expire(key, self._seconds_until_utc_midnight())  # type: ignore[union-attr]
             # Cache fallback
             self._fallback_daily_usage[client_id] = (date_str, int(used))
             return int(used)
@@ -368,18 +243,6 @@ class AppState:
         total = max(0, int(self.settings.free_minutes_per_user or 0) * 60)
         used = await self.get_used_seconds_today(client_id)
         return max(0, total - used)
-
-    # --------- Budget watcher guard (per-process) ----------
-    async def acquire_budget_watcher(self, client_id: str) -> bool:
-        async with self._budget_watchers_lock:
-            if client_id in self._budget_watchers:
-                return False
-            self._budget_watchers.add(client_id)
-            return True
-
-    async def release_budget_watcher(self, client_id: str) -> None:
-        async with self._budget_watchers_lock:
-            self._budget_watchers.discard(client_id)
 
     # --------- Session ownership ----------
     async def set_session_owner(self, session_id: str, user_id: str) -> None:

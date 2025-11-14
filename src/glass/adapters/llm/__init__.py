@@ -20,7 +20,7 @@ def build_llm_adapter(settings) -> LLMAdapter:
         api_key = getattr(settings, "openai_api_key", None)
         if not api_key:
             raise ValueError("OpenAI API key is required.")
-        return OpenAILLMAdapter(
+        return OpenAILLMAdapter(  # type: ignore[return-value]
             api_key=api_key,
             model=getattr(settings, "openai_model", "gpt-4.1-mini"),
             base_url=getattr(settings, "openai_base_url", "https://api.openai.com/v1"),

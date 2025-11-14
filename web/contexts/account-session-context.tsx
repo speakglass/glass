@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useMemo } from 'react';
-import { useSession } from 'next-auth/react';
+import React, { createContext, useContext, useMemo, useEffect } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AccountSnapshot, OnboardingStatus } from '@/lib/account-api';
 import { fetchOnboardingStatus, completeOnboarding } from '@/lib/account-api';
@@ -46,6 +46,14 @@ async function fetchSessionData(): Promise<SessionData> {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[Session] API error:', response.status, errorText);
+
+      // If 401 Unauthorized, throw a special error that triggers logout
+      if (response.status === 401) {
+        const error = new Error('Unauthorized') as Error & { status: number };
+        error.status = 401;
+        throw error;
+      }
+
       throw new Error(`Failed to load session state: ${response.status}`);
     }
 
@@ -92,6 +100,7 @@ export function AccountSessionProvider({ children }: { children: React.ReactNode
     data: sessionData,
     isLoading,
     isError,
+    error,
     refetch,
   } = useQuery({
     queryKey: ['accountSession'],
@@ -99,12 +108,33 @@ export function AccountSessionProvider({ children }: { children: React.ReactNode
     enabled: authStatus === 'authenticated',
     staleTime: Infinity, // Never consider data stale - only refetch on explicit refresh
     gcTime: 30 * 60 * 1000, // 30 minutes cache time
-    retry: 3, // Retry up to 3 times to handle timing issues
+    retry: (failureCount, error) => {
+      // Don't retry on 401 errors
+      if (error instanceof Error && 'status' in error && (error as Error & { status: number }).status === 401) {
+        return false;
+      }
+      // Retry up to 3 times for other errors
+      return failureCount < 3;
+    },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000), // Exponential backoff: 1s, 2s, 3s
     refetchOnMount: false, // Don't refetch on component mount if data exists
     refetchOnWindowFocus: false, // Don't refetch when window regains focus
     refetchOnReconnect: false, // Don't refetch on reconnect
   });
+
+  // Handle 401 errors by signing out
+  useEffect(() => {
+    if (
+      isError &&
+      error instanceof Error &&
+      'status' in error &&
+      (error as Error & { status: number }).status === 401
+    ) {
+      console.warn('[Session] 401 Unauthorized - signing out');
+      // Sign out and redirect to login
+      void signOut({ redirect: true, callbackUrl: '/login' });
+    }
+  }, [isError, error]);
 
   // Mutation for completing onboarding
   const markOnboardingCompleteMutation = useMutation({

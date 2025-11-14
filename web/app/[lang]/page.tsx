@@ -3,7 +3,7 @@ import { issueSessionToken } from '@/lib/session-token';
 import { redirect } from 'next/navigation';
 import type { Session } from 'next-auth';
 
-const apiBase = process.env.GLASS_API_BASE_URL || process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
+const apiBase = process.env.GLASS_API_URL_INTERNAL || process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
 
 interface OnboardingStatusResponse {
   completed: boolean;

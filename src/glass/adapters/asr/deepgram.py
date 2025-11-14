@@ -6,7 +6,6 @@ import asyncio
 import contextlib
 import json
 import logging
-import re
 from typing import AsyncIterable, AsyncIterator
 from urllib.parse import urlencode
 
@@ -116,7 +115,7 @@ class DeepgramASRAdapter:
             try:
                 async for raw_message in ws:
                     # Raw Deepgram messages are very verbose; keep at DEBUG level
-                    LOGGER.debug(f"[Deepgram Raw] session={session_id}, source={source}: {raw_message}")
+                    LOGGER.debug(f"[Deepgram Raw] session={session_id}, source={source}: {raw_message}")  # type: ignore[str-bytes-safe]
                     events = self._parse_message(raw_message, stream_language, session_id, source)
                     if events is None:
                         continue

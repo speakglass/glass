@@ -14,6 +14,7 @@ export interface UserProfile {
   learningLang?: string | null;
   nativeLang?: string | null;
   proficiency?: string | null;
+  emailVerified: boolean;
 }
 
 export interface ConversationSummary {
@@ -138,6 +139,7 @@ type UserApi = {
   learning_lang?: string | null;
   native_lang?: string | null;
   proficiency?: string | null;
+  email_verified: boolean;
 };
 
 type UsageApi = {
@@ -148,7 +150,7 @@ type UsageApi = {
 interface AccountSnapshotApi {
   user: UserApi;
   usage: UsageApi;
-  conversations: ConversationSummaryApi[];
+  conversations?: ConversationSummaryApi[];
 }
 
 interface OnboardingStatusApi {
@@ -183,8 +185,8 @@ export function getApiBase(): string {
   const isServer = typeof window === 'undefined';
 
   if (isServer) {
-    // On the server, we can use internal Docker network names or configured server URL
-    return process.env.GLASS_API_BASE_URL || process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
+    // On the server, prefer internal Docker network URL, fallback to public URL
+    return process.env.GLASS_API_URL_INTERNAL || process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
   } else {
     // On the client (browser), always use localhost or public URL
     // NEVER use Docker container names like 'http://api:8000'
@@ -237,6 +239,7 @@ function mapUser(data: UserApi): UserProfile {
     learningLang: data.learning_lang,
     nativeLang: data.native_lang,
     proficiency: data.proficiency,
+    emailVerified: data.email_verified,
   };
 }
 
@@ -303,7 +306,13 @@ async function authedFetch<T>(path: string, token: string, init?: RequestInit): 
       statusText: response.statusText,
       errorText,
     });
-    throw new Error(`Account API request failed (${response.status}): ${errorText}`);
+
+    // Throw error with status code for proper handling upstream
+    const error = new Error(`Account API request failed (${response.status}): ${errorText}`) as Error & {
+      status: number;
+    };
+    error.status = response.status;
+    throw error;
   }
 
   // Handle 204 No Content responses (e.g., DELETE)
@@ -322,7 +331,7 @@ export async function fetchAccountSnapshot(token: string): Promise<AccountSnapsh
     return {
       user: mapUser(data.user),
       usage: mapUsage(data.usage),
-      conversations: data.conversations.map(mapSummary),
+      conversations: data.conversations ? data.conversations.map(mapSummary) : [],
     };
   } catch (error) {
     console.error('[accountApi] fetchAccountSnapshot error:', error);
@@ -394,10 +403,7 @@ export async function fetchConversationZepMemories(
   return await authedFetch<ZepMemoriesResponse>(`/conversations/${conversationId}/zep-memories`, token);
 }
 
-export async function fetchConversationZepContext(
-  token: string,
-  conversationId: string
-): Promise<ZepContextResponse> {
+export async function fetchConversationZepContext(token: string, conversationId: string): Promise<ZepContextResponse> {
   const data = await authedFetch<ZepContextResponseApi>(`/conversations/${conversationId}/zep-context`, token);
   return {
     items:

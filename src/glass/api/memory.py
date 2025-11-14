@@ -253,7 +253,7 @@ async def delete_user_memory(
     except Exception as e:
         logger.error(f"[Memory] Failed to delete memory: {e}", exc_info=True)
         # Don't fail hard - Zep might not support edge deletion yet
-        logger.warning(f"[Memory] Zep edge deletion not fully supported, marking as archived")
+        logger.warning("[Memory] Zep edge deletion not fully supported, marking as archived")
 
 
 @router.post("/bulk-delete", status_code=204)

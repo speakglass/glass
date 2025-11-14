@@ -4,15 +4,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import random
 import time
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from ..config import get_settings
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-    from .ports import LLMPort
+    from .ports import LLMPort, MemoryPort
 
 LOGGER = logging.getLogger(__name__)
 
@@ -53,7 +51,7 @@ class LLMProcessor:
         self._last_suggestion: dict | None = None  # Most recent suggestion (for comparison with next user utterance)
         
         # Memory and user context (set by pipeline)
-        self.memory = None  # Will be set by pipeline
+        self.memory: MemoryPort | None = None  # Will be set by pipeline
         self.user_id: str | None = None  # Will be set by WebSocket route
         self.user_context_block: str = ""  # Pre-fetched user context from Zep (fetched once at session start)
         self.user_context_loaded_at: float = 0  # When user context was loaded
@@ -282,12 +280,14 @@ class LLMProcessor:
                     return
             
             # Get thread context (fast, < 200ms)
-            thread_context = await self.memory.get_context_for_prompt(
-                thread_id=self.session_id,
-                user_id=self.user_id,
-                scope="thread",
-                timeout=2.0,
-            )
+            thread_context = ""
+            if self.memory and self.user_id:
+                thread_context = await self.memory.get_context_for_prompt(
+                    thread_id=self.session_id,
+                    user_id=self.user_id,
+                    scope="thread",
+                    timeout=2.0,
+                )
             
             # Generate feedback (with last suggestion if available)
             feedback_text = await self.llm.feedback(
@@ -329,7 +329,7 @@ class LLMProcessor:
                 json_match = re.search(r'```(?:json)?\s*\n?([\s\S]*?)\n?```', normalized)
                 if json_match:
                     json_text = json_match.group(1).strip()
-                    LOGGER.debug(f"[Feedback] Extracted JSON from code block")
+                    LOGGER.debug("[Feedback] Extracted JSON from code block")
                 
                 parsed = _json.loads(json_text)
                 if isinstance(parsed, dict):
@@ -366,7 +366,7 @@ class LLMProcessor:
             LOGGER.info(f"[Feedback] Decision - should_emit: {should_emit}, normalized: '{normalized[:50]}...', mode: {self.feedback_mode}")
             
             if should_emit:
-                feedback_data = {
+                feedback_data: dict[str, Any] = {
                     "utterance_id": utterance_id,
                     "text": feedback_text,
                 }
@@ -395,24 +395,26 @@ class LLMProcessor:
         event_type_translation,
         event_type_suggestion,
         user_message_end_time: float | None = None,
-    ) -> None:
+    ) -> dict | None:
         """Emit AI response in practice mode with optimized context."""
         try:
             LOGGER.info(f"[AI Response] Starting for utterance {utterance_id}")
             
             # Get thread context (fast, < 200ms)
-            thread_context = await self.memory.get_context_for_prompt(
-                thread_id=self.session_id,
-                user_id=self.user_id,
-                scope="thread",
-                timeout=2.0,
-            )
+            thread_context = ""
+            if self.memory and self.user_id:
+                thread_context = await self.memory.get_context_for_prompt(
+                    thread_id=self.session_id,
+                    user_id=self.user_id,
+                    scope="thread",
+                    timeout=2.0,
+                )
             
             target_lang = self._lang_code_to_name(self.learning_lang)
             native_lang = self._lang_code_to_name(self.native_lang)
             
             # Get recent Glass feedback to help AI understand user's intent
-            recent_feedback = self.all_feedback[-3:] if self.all_feedback else []
+            recent_feedback_text = "\n".join([f.get("text", "") for f in self.all_feedback[-3:]]) if self.all_feedback else None
             
             # Generate AI response
             ai_response = await self.llm.generate_ai_response(
@@ -423,14 +425,11 @@ class LLMProcessor:
                 native_lang=native_lang,
                 user_context=self.user_context_block,  # Pre-loaded (long-term)
                 thread_context=thread_context,  # Real-time (current session)
-                recent_feedback=recent_feedback,  # Glass feedback to understand user's intent
+                recent_feedback=recent_feedback_text,  # Glass feedback to understand user's intent
             )
             
             if not ai_response or not ai_response.strip():
-                return
-            
-            # Add natural delay
-            await asyncio.sleep(1.0)
+                return None
             
             ai_utterance_id = str(uuid.uuid4())
             
@@ -505,17 +504,19 @@ class LLMProcessor:
             native_lang_name = self._lang_code_to_name(self.native_lang)
 
             # Get hybrid context (user + thread) for personalized suggestions
-            context_tasks = [
-                self.memory.get_context_for_prompt(
-                    thread_id=self.session_id,
-                    user_id=self.user_id,
-                    scope="thread",
-                    timeout=2.0,
-                ),
-            ]
-            
-            results = await asyncio.gather(*context_tasks, return_exceptions=True)
-            thread_context = results[0] if not isinstance(results[0], Exception) else ""
+            thread_context = ""
+            if self.memory and self.user_id:
+                context_tasks = [
+                    self.memory.get_context_for_prompt(
+                        thread_id=self.session_id,
+                        user_id=self.user_id,
+                        scope="thread",
+                        timeout=2.0,
+                    ),
+                ]
+                
+                results = await asyncio.gather(*context_tasks, return_exceptions=True)
+                thread_context = results[0] if not isinstance(results[0], Exception) else ""  # type: ignore[assignment]
 
             # Generate suggestion
             result: dict | None = None
@@ -611,7 +612,7 @@ class LLMProcessor:
             }
             feedback_msg = no_utterance_messages.get(native_lang, no_utterance_messages['en'])
             
-            LOGGER.info(f"[Analysis] No user utterances found, returning default message")
+            LOGGER.info("[Analysis] No user utterances found, returning default message")
             return {
                 "scores": {"fluency": 0, "accuracy": 0, "comprehensibility": 0},
                 "feedback": feedback_msg,
@@ -758,16 +759,16 @@ Write conversational feedback (plain text, not JSON):"""
                             out["pronunciation"] = pron
                             LOGGER.info(f"[Pronunciation] Generated: {pron[:50]}...")
                         else:
-                            LOGGER.warning(f"[Pronunciation] Empty result from LLM")
+                            LOGGER.warning("[Pronunciation] Empty result from LLM")
                     except Exception as e:
                         LOGGER.error(f"[Pronunciation] Generation failed: {e}", exc_info=True)
                 else:
                     LOGGER.debug(f"[Pronunciation] Already exists: {out.get('pronunciation', '')[:50]}")
             else:
                 if not pronunciation_mode:
-                    LOGGER.debug(f"[Pronunciation] Skipped - mode is None")
+                    LOGGER.debug("[Pronunciation] Skipped - mode is None")
                 elif not out.get("target_text"):
-                    LOGGER.warning(f"[Pronunciation] Skipped - no target_text")
+                    LOGGER.warning("[Pronunciation] Skipped - no target_text")
         except Exception as e:
             LOGGER.error(f"[Pronunciation] Unexpected error: {e}", exc_info=True)
         return out

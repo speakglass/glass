@@ -192,7 +192,7 @@ class OpenAILLMAdapter:
                 final_payload.pop("tools", None)
                 final_payload.pop("tool_choice", None)
                 
-                LOGGER.info(f"[Tools] Sending tool results back to LLM for final response")
+                LOGGER.info("[Tools] Sending tool results back to LLM for final response")
                 
                 final_response = await client.post("/chat/completions", json=final_payload, headers=headers)
                 final_response.raise_for_status()

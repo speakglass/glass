@@ -13,24 +13,19 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. js-lingui-explicit-id
 #: app/[lang]/layout.tsx:27
 #: app/[lang]/layout.tsx:43
 #: app/[lang]/layout.tsx:64
-#. js-lingui-explicit-id
 msgid "Glass: AI that helps you speak any language"
 msgstr "Glass : l’IA qui vous aide à parler toutes les langues"
 
+#. js-lingui-explicit-id
 #: app/[lang]/layout.tsx:28
 #: app/[lang]/layout.tsx:44
 #: app/[lang]/layout.tsx:65
-#. js-lingui-explicit-id
-msgid ""
-"Glass is an AI that helps you speak any language. It uses the latest in AI "
-"to help you learn and speak any language."
-msgstr ""
-"Glass est une IA qui vous aide à parler n’importe quelle langue. Elle "
-"utilise les technologies les plus récentes pour vous aider à apprendre et à "
-"vous exprimer avec aisance."
+msgid "Glass is an AI that helps you speak any language. It uses the latest in AI to help you learn and speak any language."
+msgstr "Glass est une IA qui vous aide à parler n’importe quelle langue. Elle utilise les technologies les plus récentes pour vous aider à apprendre et à vous exprimer avec aisance."
 
 #: components/start-call.tsx:710
 msgid "• Browser tab → Enable \"Share tab audio\""
@@ -40,8 +35,8 @@ msgstr "• Onglet du navigateur → Activer \"Partager l’audio de l’onglet\
 msgid "• Desktop app → Enable \"Share system audio\""
 msgstr "• Application de bureau → Activer \"Partager le son du système\""
 
-#: components/onboarding/onboarding-client.tsx:867
-#: components/onboarding/onboarding-client.tsx:965
+#: components/onboarding/onboarding-client.tsx:517
+#: components/onboarding/onboarding-client.tsx:615
 #: components/start-call.tsx:485
 #: components/start-call.tsx:605
 #: components/start-call.tsx:727
@@ -52,21 +47,65 @@ msgstr "← Retour"
 msgid "← Back to Home"
 msgstr "← Retour à l'accueil"
 
+#: components/start-call.tsx:702
+#~ msgid "⚠️ Make sure to enable \"Share audio\""
+#~ msgstr "⚠️ Assurez-vous d’activer « Partager l’audio »."
+
+#: components/call-summary.tsx:719
+#~ msgid "✓ Successfully saved! Redirecting..."
+#~ msgstr "✓ Enregistré avec succès ! Redirection en cours..."
+
 #: components/start-call.tsx:699
 msgid "1. Join a Discord voice chat or online call"
 msgstr "1. Rejoignez un chat vocal Discord ou un appel en ligne"
+
+#: components/start-call.tsx:690
+#~ msgid "1. Open your meeting (Zoom, Google Meet, or Teams)"
+#~ msgstr "1. Ouvrez votre réunion (Zoom, Google Meet ou Teams)"
+
+#: components/settings.tsx:211
+#~ msgid "10 seconds"
+#~ msgstr "10 secondes"
+
+#: components/settings.tsx:232
+#~ msgid "10 seconds (default)"
+#~ msgstr "10 secondes (par défaut)"
+
+#: components/settings.tsx:235
+#~ msgid "15 seconds"
+#~ msgstr "15 secondes"
 
 #: components/start-call.tsx:702
 msgid "2. Click \"Start\" below"
 msgstr "2. Cliquez sur « Démarrer » ci-dessous"
 
+#: components/settings.tsx:214
+#~ msgid "20 seconds"
+#~ msgstr "20 secondes"
+
+#: components/start-call.tsx:696
+#~ msgid "3. Share your meeting tab"
+#~ msgstr "3. Partagez l’onglet de votre réunion"
+
 #: components/start-call.tsx:706
 msgid "3. Share your tab or screen with audio:"
 msgstr "3. Partagez votre onglet ou écran avec le son :"
 
+#: components/settings.tsx:217
+#~ msgid "30 seconds"
+#~ msgstr "30 secondes"
+
+#: components/start-call.tsx:699
+#~ msgid "4. Make sure to enable \"Share audio\""
+#~ msgstr "4. Vérifiez que « Partager l’audio » est bien activé"
+
 #: components/start-call.tsx:718
 msgid "4. Start talking and let Glass assist you"
 msgstr "4. Commencez à parler et laissez Glass vous aider"
+
+#: components/settings.tsx:208
+#~ msgid "5 seconds"
+#~ msgstr "5 secondes"
 
 #: components/call-summary.tsx:371
 #: components/history/conversation-history.tsx:803
@@ -79,13 +118,16 @@ msgid "After each conversation"
 msgstr "Après chaque conversation"
 
 #: lib/onboarding-tours.tsx:68
-msgid ""
-"After each conversation, I'll give you feedback on your grammar, "
-"pronunciation, and vocabulary. So you keep improving naturally."
-msgstr ""
-"Après chaque conversation, je vous donnerai des retours sur votre "
-"grammaire, prononciation et vocabulaire. Ainsi, vous continuez à vous "
-"améliorer naturellement."
+msgid "After each conversation, I'll give you feedback on your grammar, pronunciation, and vocabulary. So you keep improving naturally."
+msgstr "Après chaque conversation, je vous donnerai des retours sur votre grammaire, prononciation et vocabulaire. Ainsi, vous continuez à vous améliorer naturellement."
+
+#: lib/onboarding-tours.tsx:73
+#~ msgid "After the conversation, I'll analyze your grammar, pronunciation, and vocabulary—giving you personalized feedback to help you improve naturally."
+#~ msgstr ""
+
+#: components/settings.tsx:187
+#~ msgid "AI message duration"
+#~ msgstr "Durée du message de l’IA"
 
 #: components/start-call.tsx:660
 msgid "Airport Check-in"
@@ -104,6 +146,10 @@ msgstr "Une erreur s’est produite"
 msgid "Analyzing Conversation"
 msgstr "Analyse de la conversation en cours"
 
+#: lib/onboarding-tours.tsx:63
+#~ msgid "As I listen to the conversation, everything I do to help you will appear right here."
+#~ msgstr "Pendant que j’écoute la conversation, tout ce que je fais pour t’aider s’affichera juste ici."
+
 #: components/bottom-panel.tsx:240
 #: components/bottom-panel.tsx:246
 #: components/onboarding/bottom-panel-demo.tsx:70
@@ -114,6 +160,10 @@ msgstr "Auto"
 msgid "Auto Response"
 msgstr "Réponse automatique"
 
+#: components/settings.tsx:250
+#~ msgid "Auto-detected from browser. Your selection will be saved and remembered."
+#~ msgstr "Détecté automatiquement depuis votre navigateur. Votre sélection sera enregistrée pour la prochaine fois."
+
 #: components/call-summary.tsx:149
 msgid "Average"
 msgstr "Moyen"
@@ -122,9 +172,17 @@ msgstr "Moyen"
 msgid "Back"
 msgstr "Retour"
 
+#: app/[lang]/waitlist/success/page.tsx:77
+#~ msgid "Back to Home"
+#~ msgstr "Retour à l'accueil"
+
 #: components/call-summary.tsx:150
 msgid "Below Average"
 msgstr "Inférieur à la moyenne"
+
+#: contexts/glass-context.tsx:1497
+#~ msgid "Call ended"
+#~ msgstr "Appel terminé"
 
 #: components/call-summary.tsx:217
 msgid "Call Summary"
@@ -144,9 +202,13 @@ msgstr "Chinois"
 msgid "Choose a scenario"
 msgstr "Choisissez un scénario"
 
-#: components/onboarding/onboarding-client.tsx:834
+#: components/onboarding/onboarding-client.tsx:484
 msgid "Choose the language you want to practice speaking"
 msgstr "Choisissez la langue que vous souhaitez pratiquer à l'oral"
+
+#: components/start-call.tsx:503
+#~ msgid "Choose Your Languages"
+#~ msgstr "Choisissez vos langues"
 
 #: components/start-call.tsx:381
 msgid "Choose your preferred mode"
@@ -166,13 +228,17 @@ msgstr "Communauté"
 msgid "Comprehensibility"
 msgstr "Compréhension"
 
+#: lib/onboarding-tours.tsx:110
+#~ msgid "Congrats! You're all set."
+#~ msgstr "Félicitations ! Tout est prêt, on peut commencer."
+
 #: components/start-call.tsx:758
 #: components/start-call.tsx:770
 msgid "Connecting..."
 msgstr "Connexion en cours..."
 
 #: app/[lang]/(app)/history/page.tsx:28
-#: components/user-menu.tsx:145
+#: components/user-menu.tsx:149
 msgid "Conversation history"
 msgstr "Historique des conversations"
 
@@ -190,11 +256,11 @@ msgstr "Connexion impossible"
 msgid "Custom Scenario"
 msgstr "Scénario personnalisé"
 
-#: components/settings.tsx:155
+#: components/Settings.tsx:155
 msgid "Customize your Glass experience"
 msgstr "Personnalisez votre expérience Glass"
 
-#: components/settings.tsx:341
+#: components/Settings.tsx:341
 msgid "Dark"
 msgstr "Sombre"
 
@@ -206,9 +272,21 @@ msgstr "Décrivez la situation que vous souhaitez pratiquer..."
 msgid "Describe your own situation"
 msgstr "Décrivez votre situation"
 
-#: components/onboarding/onboarding-client.tsx:892
+#: components/onboarding/onboarding-client.tsx:542
 msgid "Do you want pronunciation help?"
 msgstr "Souhaitez-vous une aide pour la prononciation ?"
+
+#: lib/onboarding-tours.tsx:53
+#~ msgid "Don't know how to say something? Just type what you want to say in your language, and I'll instantly translate it so you can speak with confidence."
+#~ msgstr ""
+
+#: components/history/conversation-history.tsx:126
+#~ msgid "Duration:"
+#~ msgstr ""
+
+#: app/[lang]/(auth)/verify-email/page.tsx:78
+msgid "Email verified!"
+msgstr "E-mail vérifié !"
 
 #: components/controls.tsx:140
 msgid "End Call"
@@ -222,6 +300,10 @@ msgstr "Se termine bientôt : moins de 5 minutes restantes"
 #: components/onboarding/bottom-panel-demo.tsx:107
 msgid "English"
 msgstr "Anglais"
+
+#: components/waitlist-modal.tsx:232
+#~ msgid "Enter your email"
+#~ msgstr "Entrez votre adresse e-mail"
 
 #: components/start-call.tsx:545
 msgid "Everyday conversation"
@@ -256,7 +338,11 @@ msgstr "Fluidité"
 msgid "Follow these steps:"
 msgstr "Suivez ces étapes :"
 
-#: components/user-menu.tsx:125
+#: components/bottom-panel.tsx:37
+#~ msgid "Follow-up Suggestion"
+#~ msgstr "Suggestion de suivi"
+
+#: components/user-menu.tsx:128
 msgid "Free minutes"
 msgstr "Minutes gratuits"
 
@@ -269,14 +355,31 @@ msgstr "Français"
 msgid "Generating insights and feedback..."
 msgstr "Génération d’analyses et de retours..."
 
+#: components/bottom-panel.tsx:462
+#~ msgid "German"
+#~ msgstr "Allemand"
+
 #: components/bottom-panel.tsx:383
 #: components/onboarding/bottom-panel-demo.tsx:300
 msgid "Get Suggestions"
 msgstr "Obtenir des suggestions"
 
-#: components/settings.tsx:357
+#: components/waitlist-modal.tsx:193
+#~ msgid "Gets smarter every time you speak"
+#~ msgstr "Devient plus intelligent à chaque conversation"
+
+#: components/Settings.tsx:357
 msgid "Glass"
 msgstr "Glass"
+
+#: components/waitlist-modal.tsx:167
+#~ msgid "Glass AI helps you speak any language in the real world"
+#~ msgstr "Glass AI vous aide à parler n’importe quelle langue en situation réelle"
+
+#: app/[lang]/(auth)/verify-email/page.tsx:84
+#: app/[lang]/(auth)/verify-email/page.tsx:99
+msgid "Go to Login"
+msgstr "Accéder à la connexion"
 
 #: components/call-summary.tsx:148
 msgid "Good"
@@ -290,7 +393,7 @@ msgstr "Aidez-nous à améliorer Glass"
 msgid "Hey! I'm Glass."
 msgstr "Salut ! Moi, c’est Glass."
 
-#: components/settings.tsx:211
+#: components/Settings.tsx:211
 msgid "Hide messages"
 msgstr "Masquer les messages"
 
@@ -312,37 +415,75 @@ msgstr "Je vous aide à comprendre"
 
 #: lib/onboarding-tours.tsx:34
 msgid "I listen and translate what they say in real time. You'll never miss a word."
-msgstr ""
-"J'écoute et je traduis ce qu'ils disent en temps réel. Vous ne manquerez "
-"jamais un mot."
+msgstr "J'écoute et je traduis ce qu'ils disent en temps réel. Vous ne manquerez jamais un mot."
+
+#: lib/onboarding-tours.tsx:31
+#~ msgid "I listen to your conversation"
+#~ msgstr "J’écoute ta conversation."
+
+#: lib/onboarding-tours.tsx:34
+#~ msgid "I listen to your conversation in real-time and translate what they say, so you never miss a word."
+#~ msgstr ""
 
 #: lib/onboarding-tours.tsx:107
-msgid ""
-"I remember things about you and get smarter at giving feedback and "
-"suggestions the more we talk."
-msgstr ""
-"Je retiens des choses à votre sujet et je deviens plus pertinent dans mes "
-"retours et suggestions au fil de nos échanges."
+msgid "I remember things about you and get smarter at giving feedback and suggestions the more we talk."
+msgstr "Je retiens des choses à votre sujet et je deviens plus pertinent dans mes retours et suggestions au fil de nos échanges."
 
 #: lib/onboarding-tours.tsx:104
 msgid "I remember you"
 msgstr "Je me souviens de toi"
 
+#: components/start-call.tsx:543
+#~ msgid "I speak"
+#~ msgstr "Langue(s) que je parle"
+
+#: components/start-call.tsx:514
+#~ msgid "I want to learn"
+#~ msgstr "Langue(s) que je veux apprendre"
+
+#: lib/onboarding-tours.tsx:70
+#~ msgid "I'll give you feedback"
+#~ msgstr "Je te donnerai des retours."
+
+#: lib/onboarding-tours.tsx:53
+#~ msgid "I'll listen and help here. I'll suggest what to say next, so just say it. I remember a bit from our chats to get better over time."
+#~ msgstr "Je suis ici pour écouter et vous aider. Je vous suggérerai quoi dire ensuite, alors dites-le simplement. Je me souviens un peu de nos échanges pour m’améliorer au fil du temps."
+
+#: lib/onboarding-tours.tsx:34
+#~ msgid "I'll listen to you and your partner, and translate what they say so you can understand each other."
+#~ msgstr "J’écoute ta conversation avec ton interlocuteur et je traduis ce qui se dit pour que vous puissiez bien vous comprendre tous les deux."
+
+#: lib/onboarding-tours.tsx:80
+#~ msgid "I'll suggest what to say next"
+#~ msgstr "Je te proposerai quoi dire ensuite."
+
+#: lib/onboarding-tours.tsx:83
+#~ msgid "I'll suggest what you could say next, so just read it out loud. The more I learn about you, the better my suggestions will get."
+#~ msgstr "Je te suggérerai ce que tu peux dire ensuite : tu n’as qu’à le lire à voix haute. Plus j’en apprends sur toi, plus mes suggestions deviennent naturelles."
+
 #: lib/onboarding-tours.tsx:88
-msgid ""
-"I'll turn your real conversations into learning materials. Review the "
-"conversation history and feedback."
-msgstr ""
-"Je vais transformer vos conversations réelles en matériel d'apprentissage. "
-"Consultez l'historique des conversations et les retours."
+msgid "I'll turn your real conversations into learning materials. Review the conversation history and feedback."
+msgstr "Je vais transformer vos conversations réelles en matériel d'apprentissage. Consultez l'historique des conversations et les retours."
+
+#: lib/onboarding-tours.tsx:23
+#~ msgid "I'm here to help you communicate and learn a new language through real conversations and practice."
+#~ msgstr "Je suis là pour t’aider à communiquer et à apprendre une nouvelle langue grâce à de vraies conversations et à la pratique."
 
 #: lib/onboarding-tours.tsx:17
-msgid ""
-"I'm here to help you communicate and learn a new language through real "
-"conversations."
-msgstr ""
-"Je suis ici pour vous aider à communiquer et à apprendre une nouvelle "
-"langue grâce à des conversations authentiques."
+msgid "I'm here to help you communicate and learn a new language through real conversations."
+msgstr "Je suis ici pour vous aider à communiquer et à apprendre une nouvelle langue grâce à des conversations authentiques."
+
+#: lib/onboarding-tours.tsx:103
+#~ msgid "If you say something that sounds a bit off, I'll let you know and help you fix it."
+#~ msgstr "Si tu dis quelque chose qui sonne un peu étrange, je te le dirai et je t’aiderai à le corriger."
+
+#: lib/onboarding-tours.tsx:73
+#~ msgid "If your grammar, pronunciation, or word choice is off, I'll flag it and suggest a clearer, more natural option."
+#~ msgstr "Si votre grammaire, votre prononciation ou votre choix de mots n’est pas tout à fait juste, je vous le signalerai et vous proposerai une formulation plus claire et naturelle."
+
+#: components/bottom-panel.tsx:463
+#~ msgid "Italian"
+#~ msgstr "Italien"
 
 #: components/bottom-panel.tsx:226
 #: components/onboarding/bottom-panel-demo.tsx:102
@@ -358,24 +499,32 @@ msgstr "Entretien d’embauche"
 msgid "Join Community"
 msgstr "Rejoindre la communauté"
 
+#: components/waitlist-modal.tsx:295
+#~ msgid "Join Early Access"
+#~ msgstr "Rejoindre l’accès anticipé"
+
+#: components/waitlist-modal.tsx:291
+#~ msgid "Joining..."
+#~ msgstr "Inscription en cours..."
+
 #: lib/onboarding-tours.tsx:51
-msgid ""
-"Just type a few words in your language. I'll turn them into a full sentence "
-"you can speak."
-msgstr ""
-"Tapez simplement quelques mots dans votre langue. Je les transformerai en "
-"une phrase complète que vous pourrez dire."
+msgid "Just type a few words in your language. I'll turn them into a full sentence you can speak."
+msgstr "Tapez simplement quelques mots dans votre langue. Je les transformerai en une phrase complète que vous pourrez dire."
 
 #: components/bottom-panel.tsx:227
 #: components/onboarding/bottom-panel-demo.tsx:103
 msgid "Korean"
 msgstr "Coréen"
 
+#: components/settings.tsx:227
+#~ msgid "Language"
+#~ msgstr "Langue"
+
 #: components/start-call.tsx:465
 msgid "Language Exchange • Calls"
 msgstr "Échanges linguistiques • Réunions"
 
-#: components/settings.tsx:263
+#: components/Settings.tsx:263
 msgid "Learning language"
 msgstr "Langue d'apprentissage"
 
@@ -391,7 +540,7 @@ msgstr "C’est parti ! 🎉"
 msgid "Let's start your first conversation!"
 msgstr "Commençons votre première conversation !"
 
-#: components/settings.tsx:325
+#: components/Settings.tsx:325
 msgid "Light"
 msgstr "Clair"
 
@@ -416,10 +565,14 @@ msgstr "Long"
 msgid "Low"
 msgstr "Faible"
 
+#: components/onboarding/onboarding-client.tsx:460
+#~ msgid "Make suggestions readable for me"
+#~ msgstr "Afficher les suggestions de façon plus lisible"
+
 #: components/call-summary.tsx:560
 #: components/history/conversation-history.tsx:952
 #: components/history/ConversationHistory.tsx:775
-#: components/user-menu.tsx:151
+#: components/user-menu.tsx:155
 msgid "Memory"
 msgstr "Mémoire"
 
@@ -427,25 +580,33 @@ msgstr "Mémoire"
 msgid "Memory system"
 msgstr "Système de mémoire"
 
-#: components/settings.tsx:164
+#: components/Settings.tsx:164
 msgid "Microphone"
 msgstr "Microphone"
 
-#: components/settings.tsx:240
+#: components/settings.tsx:150
+#~ msgid "Microphone {0}"
+#~ msgstr "Microphone {0}"
+
+#: components/Settings.tsx:240
 msgid "Native language"
 msgstr "Langue maternelle"
 
-#: components/settings.tsx:198
+#: components/Settings.tsx:198
 msgid "Native script"
 msgstr "Alphabet d’origine"
 
-#: components/settings.tsx:226
+#: components/waitlist-modal.tsx:91
+#~ msgid "Network error. Please check your connection and try again."
+#~ msgstr "Erreur réseau. Veuillez vérifier votre connexion et réessayer."
+
+#: components/Settings.tsx:226
 msgid "Never"
 msgstr "Jamais"
 
 #: components/onboarding/glass-onboarding-card.tsx:89
-#: components/onboarding/onboarding-client.tsx:817
-#: components/onboarding/onboarding-client.tsx:876
+#: components/onboarding/onboarding-client.tsx:467
+#: components/onboarding/onboarding-client.tsx:526
 #: components/start-call.tsx:494
 msgid "Next →"
 msgstr "Suivant →"
@@ -469,15 +630,35 @@ msgstr "Aucune conversation trouvée pour « {debouncedSearchQuery} »"
 msgid "No conversations yet"
 msgstr "Aucune conversation pour le moment"
 
+#: components/call-summary.tsx:626
+#~ msgid "No information saved yet"
+#~ msgstr "Aucune information enregistrée pour le moment"
+
 #: components/call-summary.tsx:728
 #: components/history/conversation-history.tsx:1046
 #: components/history/ConversationHistory.tsx:869
 msgid "No messages"
 msgstr "Aucun message"
 
-#: components/onboarding/onboarding-client.tsx:945
+#: components/settings.tsx:205
+#~ msgid "No time limit (default)"
+#~ msgstr "Aucune limite de temps (par défaut)"
+
+#: components/onboarding/onboarding-client.tsx:595
 msgid "No, I'm fine"
 msgstr "Non, ça va."
+
+#: lib/onboarding-tours.tsx:51
+#~ msgid "Not sure what to say? Just type a few words in your language. I'll turn them into a full sentence you can use."
+#~ msgstr ""
+
+#: lib/onboarding-tours.tsx:117
+#~ msgid "Now let's start your first real conversation!"
+#~ msgstr "Alors, lançons ta première vraie conversation !"
+
+#: lib/onboarding-tours.tsx:94
+#~ msgid "Now you're ready to have real conversations without fear or hesitation."
+#~ msgstr ""
 
 #: components/bottom-panel.tsx:241
 #: components/onboarding/bottom-panel-demo.tsx:71
@@ -508,9 +689,21 @@ msgstr "Interlocuteur"
 msgid "Phone Call"
 msgstr "Appel téléphonique"
 
+#: components/waitlist-modal.tsx:46
+#~ msgid "Please enter a valid email address"
+#~ msgstr "Veuillez entrer une adresse e-mail valide"
+
 #: components/feedback.tsx:31
 msgid "Please enter your feedback"
 msgstr "Veuillez saisir vos commentaires"
+
+#: app/[lang]/(auth)/verify-email/page.tsx:69
+msgid "Please wait while we verify your email address"
+msgstr "Veuillez patienter pendant que nous vérifions votre adresse e-mail."
+
+#: components/bottom-panel.tsx:464
+#~ msgid "Portuguese"
+#~ msgstr "Portugais"
 
 #: components/start-call.tsx:402
 msgid "Practice"
@@ -520,6 +713,14 @@ msgstr "S’entraîner"
 msgid "Practice Mode"
 msgstr "Mode entraînement"
 
+#: components/waitlist-modal.tsx:216
+#~ msgid "Practice mode or live on Zoom calls"
+#~ msgstr "En mode entraînement ou en direct sur Zoom"
+
+#: components/waitlist-modal.tsx:170
+#~ msgid "Practice speaking. Get help in real calls. Remembers everything."
+#~ msgstr "Entraînez-vous à parler. Recevez de l’aide pendant vos réunions. Et Glass se souvient de tout."
+
 #: components/auth-gate.tsx:20
 msgid "Preparing your workspace…"
 msgstr "Préparation de votre espace de travail…"
@@ -528,9 +729,17 @@ msgstr "Préparation de votre espace de travail…"
 msgid "Professional conversation"
 msgstr "Conversation professionnelle"
 
-#: components/settings.tsx:187
+#: components/Settings.tsx:187
 msgid "Pronunciation"
 msgstr "Prononciation"
+
+#: components/settings.tsx:160
+#~ msgid "Pronunciation format"
+#~ msgstr "Format de prononciation"
+
+#: lib/onboarding-tours.tsx:90
+#~ msgid "Quick translation"
+#~ msgstr "Traduction rapide"
 
 #: components/start-call.tsx:462
 msgid "Real Talk"
@@ -544,6 +753,14 @@ msgstr "Mode conversation réelle"
 msgid "RECOMMENDED"
 msgstr "RECOMMANDÉ"
 
+#: components/settings.tsx:125
+#~ msgid "Refresh"
+#~ msgstr "Actualiser"
+
+#: components/waitlist-modal.tsx:196
+#~ msgid "Remembers who you are, what you care about"
+#~ msgstr "Se souvient de qui vous êtes et de ce qui compte pour vous"
+
 #: app/[lang]/time-limit/page.tsx:44
 msgid "Request more time from the host in the community"
 msgstr "Demandez plus de temps à l'hôte dans la communauté"
@@ -553,12 +770,16 @@ msgstr "Demandez plus de temps à l'hôte dans la communauté"
 msgid "Restaurant"
 msgstr "Restaurant"
 
+#: components/start-call.tsx:1011
+#~ msgid "Retail & bargaining"
+#~ msgstr "Magasin & négociation"
+
 #: components/history/conversation-history.tsx:478
 #: components/history/ConversationHistory.tsx:329
 msgid "Retry"
 msgstr "Réessayer"
 
-#: components/settings.tsx:201
+#: components/Settings.tsx:201
 msgid "Romaji (Latin)"
 msgstr "Rōmaji (latin)"
 
@@ -576,9 +797,17 @@ msgstr "Scénario :"
 msgid "Select a conversation to view details"
 msgstr "Sélectionnez une conversation pour voir les détails"
 
-#: components/onboarding/onboarding-client.tsx:788
+#: components/history/conversation-history.tsx:678
+#~ msgid "Select a conversation to view the transcript and AI feedback."
+#~ msgstr ""
+
+#: components/onboarding/onboarding-client.tsx:438
 msgid "Select the language you speak fluently"
 msgstr "Sélectionnez la langue que vous parlez couramment"
+
+#: components/start-call.tsx:506
+#~ msgid "Select the language you want to practice"
+#~ msgstr "Sélectionnez la langue que vous souhaitez pratiquer"
 
 #: components/feedback.tsx:133
 msgid "Send"
@@ -592,8 +821,8 @@ msgstr "Envoyer des commentaires"
 msgid "Sentence length"
 msgstr "Longueur de la phrase"
 
-#: components/settings.tsx:152
-#: components/user-menu.tsx:156
+#: components/Settings.tsx:152
+#: components/user-menu.tsx:160
 msgid "Settings"
 msgstr "Paramètres"
 
@@ -605,7 +834,11 @@ msgstr "Achats"
 msgid "Short"
 msgstr "Court"
 
-#: components/user-menu.tsx:165
+#: components/onboarding/onboarding-client.tsx:493
+#~ msgid "Show suggestions only"
+#~ msgstr "Afficher uniquement les suggestions"
+
+#: components/user-menu.tsx:169
 msgid "Sign out"
 msgstr "Se déconnecter"
 
@@ -632,7 +865,7 @@ msgstr "Démarrer"
 msgid "Start Call"
 msgstr "Démarrer l’appel"
 
-#: components/onboarding/onboarding-client.tsx:974
+#: components/onboarding/onboarding-client.tsx:624
 msgid "Start Tutorial"
 msgstr "Démarrer le tutoriel"
 
@@ -646,7 +879,11 @@ msgstr "Suggérer"
 msgid "Suggested Answer"
 msgstr "Réponse suggérée"
 
-#: components/settings.tsx:172
+#: components/settings.tsx:211
+#~ msgid "Suggestion duration"
+#~ msgstr "Durée d’affichage des suggestions"
+
+#: components/Settings.tsx:172
 msgid "System default"
 msgstr "Paramètre système par défaut"
 
@@ -658,425 +895,17 @@ msgstr "Étiquette téléphonique"
 msgid "Thank you for your feedback!"
 msgstr "Merci pour votre retour !"
 
-#: components/settings.tsx:309
+#: app/[lang]/waitlist/success/page.tsx:66
+#~ msgid "Thanks for joining. We’ll email you when more access is available. Sit tight — it won’t be long."
+#~ msgstr "Merci de nous avoir rejoints. Nous vous enverrons un e-mail dès que plus d'accès sera disponible. Restez patient — cela ne devrait pas prendre longtemps."
+
+#: app/[lang]/(auth)/verify-email/page.tsx:96
+msgid "The verification link is invalid or has expired."
+msgstr "Le lien de vérification est invalide ou a expiré."
+
+#: components/Settings.tsx:309
 msgid "Theme"
 msgstr "Thème"
-
-#: app/[lang]/error.tsx:34
-#: app/[lang]/failure/page.tsx:32
-msgid "Try again"
-msgstr "Réessayer"
-
-#: components/start-call.tsx:405
-msgid "Tutorial with AI"
-msgstr "Tutoriel avec l’IA"
-
-#: components/bottom-panel.tsx:235
-#: components/onboarding/bottom-panel-demo.tsx:110
-msgid "Type what you want to say in {nativeLangName}"
-msgstr "Tapez ce que vous souhaitez dire en {nativeLangName}"
-
-#: components/settings.tsx:286
-msgid "UI Language"
-msgstr "Langue de l'interface"
-
-#: components/call-summary.tsx:111
-msgid "Unable to load context from Zep."
-msgstr "Impossible de charger le contexte depuis Zep."
-
-#: components/start-call.tsx:277
-msgid "Unable to start call"
-msgstr "Impossible de lancer l’appel"
-
-#: components/start-call.tsx:475
-msgid "Unavailable on mobile"
-msgstr "Non disponible sur mobile"
-
-#: app/[lang]/error.tsx:30
-msgid "View Documentation"
-msgstr "Afficher la documentation"
-
-#: app/[lang]/time-limit/page.tsx:26
-msgid "Want to keep practicing?"
-msgstr "Envie de continuer à vous exercer ?"
-
-#: components/history/conversation-history.tsx:474
-#: components/history/ConversationHistory.tsx:325
-msgid "We couldn't load your history. Refresh and try again."
-msgstr "Nous n'avons pas pu charger votre historique. Actualisez et réessayez."
-
-#: app/[lang]/failure/page.tsx:24
-msgid ""
-"We had trouble starting your session. Please check your internet and try "
-"again."
-msgstr ""
-"Nous n’avons pas pu démarrer votre session. Vérifiez votre connexion "
-"Internet et réessayez."
-
-#: components/onboarding/onboarding-client.tsx:895
-msgid "We'll show how to read sentences in your alphabet when helpful"
-msgstr ""
-"Nous vous montrerons comment lire les phrases dans votre alphabet lorsque "
-"cela est utile."
-
-#: components/bottom-panel.tsx:235
-#: components/onboarding/bottom-panel-demo.tsx:110
-msgid "What do you want to say..."
-msgstr "Que voulez-vous dire..."
-
-#: components/onboarding/onboarding-client.tsx:785
-msgid "What is your native language?"
-msgstr "Quelle est votre langue maternelle ?"
-
-#: components/start-call.tsx:513
-msgid "What would you like to practice?"
-msgstr "Qu’aimeriez-vous pratiquer ?"
-
-#: components/onboarding/onboarding-client.tsx:831
-msgid "Which language do you want to learn?"
-msgstr "Quelle langue souhaitez-vous apprendre ?"
-
-#: components/onboarding/onboarding-client.tsx:913
-msgid "Yes, show pronunciation"
-msgstr "Oui, afficher la prononciation"
-
-#: components/call-summary.tsx:677
-#: components/history/conversation-history.tsx:1023
-#: components/history/ConversationHistory.tsx:846
-#: components/messages.tsx:111
-#: components/messages.tsx:160
-msgid "You"
-msgstr "Moi"
-
-#: lib/onboarding-tours.tsx:123
-msgid "You're all set!"
-msgstr "Tout est prêt !"
-
-#: lib/onboarding-tours.tsx:127
-msgid "You're ready to have real conversations. No fear, no hesitation."
-msgstr ""
-"Vous êtes prêt(e) à avoir de vraies conversations. Sans crainte, sans "
-"hésitation."
-
-#: components/feedback.tsx:91
-msgid "Your feedback..."
-msgstr "Vos commentaires..."
-
-#: app/[lang]/time-limit/page.tsx:23
-msgid "Your free time is up"
-msgstr "Votre période gratuite est terminée"
-
-#: app/[lang]/(app)/memory/page.tsx:31
-msgid "Your memories"
-msgstr "Vos souvenirs"
-
-#: app/[lang]/(app)/history/page.tsx:31
-msgid "Your saved calls"
-msgstr "Vos appels enregistrés"
-
-#: components/start-call.tsx:702
-#~ msgid "⚠️ Make sure to enable \"Share audio\""
-#~ msgstr "⚠️ Assurez-vous d’activer « Partager l’audio »."
-
-#: components/call-summary.tsx:719
-#~ msgid "✓ Successfully saved! Redirecting..."
-#~ msgstr "✓ Enregistré avec succès ! Redirection en cours..."
-
-#: components/start-call.tsx:690
-#~ msgid "1. Open your meeting (Zoom, Google Meet, or Teams)"
-#~ msgstr "1. Ouvrez votre réunion (Zoom, Google Meet ou Teams)"
-
-#: components/settings.tsx:211
-#~ msgid "10 seconds"
-#~ msgstr "10 secondes"
-
-#: components/settings.tsx:232
-#~ msgid "10 seconds (default)"
-#~ msgstr "10 secondes (par défaut)"
-
-#: components/settings.tsx:235
-#~ msgid "15 seconds"
-#~ msgstr "15 secondes"
-
-#: components/settings.tsx:214
-#~ msgid "20 seconds"
-#~ msgstr "20 secondes"
-
-#: components/start-call.tsx:696
-#~ msgid "3. Share your meeting tab"
-#~ msgstr "3. Partagez l’onglet de votre réunion"
-
-#: components/settings.tsx:217
-#~ msgid "30 seconds"
-#~ msgstr "30 secondes"
-
-#: components/start-call.tsx:699
-#~ msgid "4. Make sure to enable \"Share audio\""
-#~ msgstr "4. Vérifiez que « Partager l’audio » est bien activé"
-
-#: components/settings.tsx:208
-#~ msgid "5 seconds"
-#~ msgstr "5 secondes"
-
-#: lib/onboarding-tours.tsx:73
-#~ msgid ""
-#~ "After the conversation, I'll analyze your grammar, pronunciation, and "
-#~ "vocabulary—giving you personalized feedback to help you improve naturally."
-#~ msgstr ""
-
-#: components/settings.tsx:187
-#~ msgid "AI message duration"
-#~ msgstr "Durée du message de l’IA"
-
-#: lib/onboarding-tours.tsx:63
-#~ msgid ""
-#~ "As I listen to the conversation, everything I do to help you will appear "
-#~ "right here."
-#~ msgstr ""
-#~ "Pendant que j’écoute la conversation, tout ce que je fais pour t’aider "
-#~ "s’affichera juste ici."
-
-#: components/settings.tsx:250
-#~ msgid "Auto-detected from browser. Your selection will be saved and remembered."
-#~ msgstr ""
-#~ "Détecté automatiquement depuis votre navigateur. Votre sélection sera "
-#~ "enregistrée pour la prochaine fois."
-
-#: app/[lang]/waitlist/success/page.tsx:77
-#~ msgid "Back to Home"
-#~ msgstr "Retour à l'accueil"
-
-#: contexts/glass-context.tsx:1497
-#~ msgid "Call ended"
-#~ msgstr "Appel terminé"
-
-#: components/start-call.tsx:503
-#~ msgid "Choose Your Languages"
-#~ msgstr "Choisissez vos langues"
-
-#: lib/onboarding-tours.tsx:110
-#~ msgid "Congrats! You're all set."
-#~ msgstr "Félicitations ! Tout est prêt, on peut commencer."
-
-#: lib/onboarding-tours.tsx:53
-#~ msgid ""
-#~ "Don't know how to say something? Just type what you want to say in your "
-#~ "language, and I'll instantly translate it so you can speak with confidence."
-#~ msgstr ""
-
-#: components/history/conversation-history.tsx:126
-#~ msgid "Duration:"
-#~ msgstr ""
-
-#: components/waitlist-modal.tsx:232
-#~ msgid "Enter your email"
-#~ msgstr "Entrez votre adresse e-mail"
-
-#: components/bottom-panel.tsx:37
-#~ msgid "Follow-up Suggestion"
-#~ msgstr "Suggestion de suivi"
-
-#: components/bottom-panel.tsx:462
-#~ msgid "German"
-#~ msgstr "Allemand"
-
-#: components/waitlist-modal.tsx:193
-#~ msgid "Gets smarter every time you speak"
-#~ msgstr "Devient plus intelligent à chaque conversation"
-
-#: components/waitlist-modal.tsx:167
-#~ msgid "Glass AI helps you speak any language in the real world"
-#~ msgstr "Glass AI vous aide à parler n’importe quelle langue en situation réelle"
-
-#: lib/onboarding-tours.tsx:31
-#~ msgid "I listen to your conversation"
-#~ msgstr "J’écoute ta conversation."
-
-#: lib/onboarding-tours.tsx:34
-#~ msgid ""
-#~ "I listen to your conversation in real-time and translate what they say, so "
-#~ "you never miss a word."
-#~ msgstr ""
-
-#: components/start-call.tsx:543
-#~ msgid "I speak"
-#~ msgstr "Langue(s) que je parle"
-
-#: components/start-call.tsx:514
-#~ msgid "I want to learn"
-#~ msgstr "Langue(s) que je veux apprendre"
-
-#: lib/onboarding-tours.tsx:70
-#~ msgid "I'll give you feedback"
-#~ msgstr "Je te donnerai des retours."
-
-#: lib/onboarding-tours.tsx:53
-#~ msgid ""
-#~ "I'll listen and help here. I'll suggest what to say next, so just say it. I "
-#~ "remember a bit from our chats to get better over time."
-#~ msgstr ""
-#~ "Je suis ici pour écouter et vous aider. Je vous suggérerai quoi dire "
-#~ "ensuite, alors dites-le simplement. Je me souviens un peu de nos échanges "
-#~ "pour m’améliorer au fil du temps."
-
-#: lib/onboarding-tours.tsx:34
-#~ msgid ""
-#~ "I'll listen to you and your partner, and translate what they say so you can "
-#~ "understand each other."
-#~ msgstr ""
-#~ "J’écoute ta conversation avec ton interlocuteur et je traduis ce qui se dit "
-#~ "pour que vous puissiez bien vous comprendre tous les deux."
-
-#: lib/onboarding-tours.tsx:80
-#~ msgid "I'll suggest what to say next"
-#~ msgstr "Je te proposerai quoi dire ensuite."
-
-#: lib/onboarding-tours.tsx:83
-#~ msgid ""
-#~ "I'll suggest what you could say next, so just read it out loud. The more I "
-#~ "learn about you, the better my suggestions will get."
-#~ msgstr ""
-#~ "Je te suggérerai ce que tu peux dire ensuite : tu n’as qu’à le lire à voix "
-#~ "haute. Plus j’en apprends sur toi, plus mes suggestions deviennent "
-#~ "naturelles."
-
-#: lib/onboarding-tours.tsx:23
-#~ msgid ""
-#~ "I'm here to help you communicate and learn a new language through real "
-#~ "conversations and practice."
-#~ msgstr ""
-#~ "Je suis là pour t’aider à communiquer et à apprendre une nouvelle langue "
-#~ "grâce à de vraies conversations et à la pratique."
-
-#: lib/onboarding-tours.tsx:103
-#~ msgid ""
-#~ "If you say something that sounds a bit off, I'll let you know and help you "
-#~ "fix it."
-#~ msgstr ""
-#~ "Si tu dis quelque chose qui sonne un peu étrange, je te le dirai et je "
-#~ "t’aiderai à le corriger."
-
-#: lib/onboarding-tours.tsx:73
-#~ msgid ""
-#~ "If your grammar, pronunciation, or word choice is off, I'll flag it and "
-#~ "suggest a clearer, more natural option."
-#~ msgstr ""
-#~ "Si votre grammaire, votre prononciation ou votre choix de mots n’est pas "
-#~ "tout à fait juste, je vous le signalerai et vous proposerai une formulation "
-#~ "plus claire et naturelle."
-
-#: components/bottom-panel.tsx:463
-#~ msgid "Italian"
-#~ msgstr "Italien"
-
-#: components/waitlist-modal.tsx:295
-#~ msgid "Join Early Access"
-#~ msgstr "Rejoindre l’accès anticipé"
-
-#: components/waitlist-modal.tsx:291
-#~ msgid "Joining..."
-#~ msgstr "Inscription en cours..."
-
-#: components/settings.tsx:227
-#~ msgid "Language"
-#~ msgstr "Langue"
-
-#: components/onboarding/onboarding-client.tsx:460
-#~ msgid "Make suggestions readable for me"
-#~ msgstr "Afficher les suggestions de façon plus lisible"
-
-#: components/settings.tsx:150
-#~ msgid "Microphone {0}"
-#~ msgstr "Microphone {0}"
-
-#: components/waitlist-modal.tsx:91
-#~ msgid "Network error. Please check your connection and try again."
-#~ msgstr "Erreur réseau. Veuillez vérifier votre connexion et réessayer."
-
-#: components/call-summary.tsx:626
-#~ msgid "No information saved yet"
-#~ msgstr "Aucune information enregistrée pour le moment"
-
-#: components/settings.tsx:205
-#~ msgid "No time limit (default)"
-#~ msgstr "Aucune limite de temps (par défaut)"
-
-#: lib/onboarding-tours.tsx:51
-#~ msgid ""
-#~ "Not sure what to say? Just type a few words in your language. I'll turn "
-#~ "them into a full sentence you can use."
-#~ msgstr ""
-
-#: lib/onboarding-tours.tsx:117
-#~ msgid "Now let's start your first real conversation!"
-#~ msgstr "Alors, lançons ta première vraie conversation !"
-
-#: lib/onboarding-tours.tsx:94
-#~ msgid "Now you're ready to have real conversations without fear or hesitation."
-#~ msgstr ""
-
-#: components/waitlist-modal.tsx:46
-#~ msgid "Please enter a valid email address"
-#~ msgstr "Veuillez entrer une adresse e-mail valide"
-
-#: components/bottom-panel.tsx:464
-#~ msgid "Portuguese"
-#~ msgstr "Portugais"
-
-#: components/waitlist-modal.tsx:216
-#~ msgid "Practice mode or live on Zoom calls"
-#~ msgstr "En mode entraînement ou en direct sur Zoom"
-
-#: components/waitlist-modal.tsx:170
-#~ msgid "Practice speaking. Get help in real calls. Remembers everything."
-#~ msgstr ""
-#~ "Entraînez-vous à parler. Recevez de l’aide pendant vos réunions. Et Glass "
-#~ "se souvient de tout."
-
-#: components/settings.tsx:160
-#~ msgid "Pronunciation format"
-#~ msgstr "Format de prononciation"
-
-#: lib/onboarding-tours.tsx:90
-#~ msgid "Quick translation"
-#~ msgstr "Traduction rapide"
-
-#: components/settings.tsx:125
-#~ msgid "Refresh"
-#~ msgstr "Actualiser"
-
-#: components/waitlist-modal.tsx:196
-#~ msgid "Remembers who you are, what you care about"
-#~ msgstr "Se souvient de qui vous êtes et de ce qui compte pour vous"
-
-#: components/start-call.tsx:1011
-#~ msgid "Retail & bargaining"
-#~ msgstr "Magasin & négociation"
-
-#: components/history/conversation-history.tsx:678
-#~ msgid "Select a conversation to view the transcript and AI feedback."
-#~ msgstr ""
-
-#: components/start-call.tsx:506
-#~ msgid "Select the language you want to practice"
-#~ msgstr "Sélectionnez la langue que vous souhaitez pratiquer"
-
-#: components/onboarding/onboarding-client.tsx:493
-#~ msgid "Show suggestions only"
-#~ msgstr "Afficher uniquement les suggestions"
-
-#: components/settings.tsx:211
-#~ msgid "Suggestion duration"
-#~ msgstr "Durée d’affichage des suggestions"
-
-#: app/[lang]/waitlist/success/page.tsx:66
-#~ msgid ""
-#~ "Thanks for joining. We’ll email you when more access is available. Sit "
-#~ "tight — it won’t be long."
-#~ msgstr ""
-#~ "Merci de nous avoir rejoints. Nous vous enverrons un e-mail dès que plus "
-#~ "d'accès sera disponible. Restez patient — cela ne devrait pas prendre "
-#~ "longtemps."
 
 #: lib/onboarding-tours.tsx:50
 #~ msgid "This is where I help and suggest what to say"
@@ -1107,14 +936,51 @@ msgstr "Vos appels enregistrés"
 #~ msgid "Travel & Immigration"
 #~ msgstr "Voyage & immigration"
 
+#: app/[lang]/error.tsx:34
+#: app/[lang]/failure/page.tsx:32
+msgid "Try again"
+msgstr "Réessayer"
+
+#: components/start-call.tsx:405
+msgid "Tutorial with AI"
+msgstr "Tutoriel avec l’IA"
+
+#: components/bottom-panel.tsx:235
+#: components/onboarding/bottom-panel-demo.tsx:110
+msgid "Type what you want to say in {nativeLangName}"
+msgstr "Tapez ce que vous souhaitez dire en {nativeLangName}"
+
 #: lib/onboarding-tours.tsx:143
-#~ msgid ""
-#~ "Type what you want to say in your language, or even just a few keywords. "
-#~ "I'll listen to the conversation and suggest the right sentence for you."
-#~ msgstr ""
-#~ "Écris ce que tu veux dire dans ta langue, même avec seulement quelques "
-#~ "mots-clés. J’écouterai la conversation et je te proposerai la phrase la "
-#~ "plus adaptée."
+#~ msgid "Type what you want to say in your language, or even just a few keywords. I'll listen to the conversation and suggest the right sentence for you."
+#~ msgstr "Écris ce que tu veux dire dans ta langue, même avec seulement quelques mots-clés. J’écouterai la conversation et je te proposerai la phrase la plus adaptée."
+
+#: components/Settings.tsx:286
+msgid "UI Language"
+msgstr "Langue de l'interface"
+
+#: components/call-summary.tsx:111
+msgid "Unable to load context from Zep."
+msgstr "Impossible de charger le contexte depuis Zep."
+
+#: components/start-call.tsx:277
+msgid "Unable to start call"
+msgstr "Impossible de lancer l’appel"
+
+#: components/start-call.tsx:475
+msgid "Unavailable on mobile"
+msgstr "Non disponible sur mobile"
+
+#: app/[lang]/(auth)/verify-email/page.tsx:93
+msgid "Verification failed"
+msgstr "Échec de la vérification"
+
+#: app/[lang]/(auth)/verify-email/page.tsx:66
+msgid "Verifying your email..."
+msgstr "Vérification de votre e-mail..."
+
+#: app/[lang]/error.tsx:30
+msgid "View Documentation"
+msgstr "Afficher la documentation"
 
 #: components/waitlist-modal.tsx:246
 #~ msgid "Waitlist Email Captured"
@@ -1133,14 +999,18 @@ msgstr "Vos appels enregistrés"
 #~ msgid "Waitlist Submit Succeeded"
 #~ msgstr "Inscription à la liste d'attente réussie"
 
+#: app/[lang]/time-limit/page.tsx:26
+msgid "Want to keep practicing?"
+msgstr "Envie de continuer à vous exercer ?"
+
 #: lib/onboarding-tours.tsx:93
-#~ msgid ""
-#~ "Want to say something but don't know the sentence? Type in your language or "
-#~ "a few keywords. I'll show the translation."
-#~ msgstr ""
-#~ "Envie de dire quelque chose mais vous ne savez pas comment le formuler ? "
-#~ "Tapez dans votre langue ou quelques mots-clés, je vous montrerai la "
-#~ "traduction."
+#~ msgid "Want to say something but don't know the sentence? Type in your language or a few keywords. I'll show the translation."
+#~ msgstr "Envie de dire quelque chose mais vous ne savez pas comment le formuler ? Tapez dans votre langue ou quelques mots-clés, je vous montrerai la traduction."
+
+#: components/history/conversation-history.tsx:474
+#: components/history/ConversationHistory.tsx:325
+msgid "We couldn't load your history. Refresh and try again."
+msgstr "Nous n'avons pas pu charger votre historique. Actualisez et réessayez."
 
 #: components/history/conversation-history.tsx:74
 #~ msgid "We couldn’t load your history. Refresh and try again."
@@ -1148,45 +1018,80 @@ msgstr "Vos appels enregistrés"
 
 #: components/waitlist-modal.tsx:82
 #~ msgid "We had trouble adding you. Please try again later."
-#~ msgstr ""
-#~ "Nous avons rencontré un problème en vous ajoutant. Veuillez réessayer plus "
-#~ "tard."
+#~ msgstr "Nous avons rencontré un problème en vous ajoutant. Veuillez réessayer plus tard."
+
+#: app/[lang]/failure/page.tsx:24
+msgid "We had trouble starting your session. Please check your internet and try again."
+msgstr "Nous n’avons pas pu démarrer votre session. Vérifiez votre connexion Internet et réessayez."
 
 #: components/waitlist-modal.tsx:302
 #~ msgid "We'll notify you when early access is ready. No spam, ever."
 #~ msgstr "Nous vous préviendrons lorsque l’accès anticipé sera prêt. Jamais de spam."
 
+#: components/onboarding/onboarding-client.tsx:545
+msgid "We'll show how to read sentences in your alphabet when helpful"
+msgstr "Nous vous montrerons comment lire les phrases dans votre alphabet lorsque cela est utile."
+
 #: components/onboarding/onboarding-client.tsx:439
 #~ msgid "We'll show how to read suggestions in your alphabet when helpful"
-#~ msgstr ""
-#~ "Nous afficherons la prononciation dans votre alphabet lorsque cela pourra "
-#~ "vous aider."
+#~ msgstr "Nous afficherons la prononciation dans votre alphabet lorsque cela pourra vous aider."
+
+#: components/bottom-panel.tsx:235
+#: components/onboarding/bottom-panel-demo.tsx:110
+msgid "What do you want to say..."
+msgstr "Que voulez-vous dire..."
+
+#: components/onboarding/onboarding-client.tsx:435
+msgid "What is your native language?"
+msgstr "Quelle est votre langue maternelle ?"
+
+#: components/start-call.tsx:513
+msgid "What would you like to practice?"
+msgstr "Qu’aimeriez-vous pratiquer ?"
+
+#: components/onboarding/onboarding-client.tsx:481
+msgid "Which language do you want to learn?"
+msgstr "Quelle langue souhaitez-vous apprendre ?"
 
 #: components/waitlist-modal.tsx:213
 #~ msgid "Works in real calls"
 #~ msgstr "Fonctionne aussi pendant vos réunions réelles"
+
+#: components/onboarding/onboarding-client.tsx:563
+msgid "Yes, show pronunciation"
+msgstr "Oui, afficher la prononciation"
+
+#: components/call-summary.tsx:677
+#: components/history/conversation-history.tsx:1023
+#: components/history/ConversationHistory.tsx:846
+#: components/messages.tsx:111
+#: components/messages.tsx:160
+msgid "You"
+msgstr "Moi"
 
 #: lib/onboarding-tours.tsx:120
 #~ msgid "You can control how much I help"
 #~ msgstr "Tu peux choisir à quel point je t’aide."
 
 #: lib/onboarding-tours.tsx:123
-#~ msgid ""
-#~ "You can turn my suggestions and feedback on, off, or keep it on auto. By "
-#~ "default, it's set to auto."
-#~ msgstr ""
-#~ "Tu peux activer, désactiver ou laisser mes suggestions et mes retours en "
-#~ "mode automatique. Par défaut, le mode automatique est activé."
+#~ msgid "You can turn my suggestions and feedback on, off, or keep it on auto. By default, it's set to auto."
+#~ msgstr "Tu peux activer, désactiver ou laisser mes suggestions et mes retours en mode automatique. Par défaut, le mode automatique est activé."
 
 #: lib/onboarding-tours.tsx:91
-#~ msgid ""
-#~ "You'll get a report like this with your scores, feedback, and everything we "
-#~ "talked about. Track your progress over time!"
+#~ msgid "You'll get a report like this with your scores, feedback, and everything we talked about. Track your progress over time!"
 #~ msgstr ""
+
+#: lib/onboarding-tours.tsx:123
+msgid "You're all set!"
+msgstr "Tout est prêt !"
 
 #: app/[lang]/waitlist/success/page.tsx:63
 #~ msgid "You’re on the list 🎉"
 #~ msgstr "Vous êtes sur la liste 🎉"
+
+#: lib/onboarding-tours.tsx:127
+msgid "You're ready to have real conversations. No fear, no hesitation."
+msgstr "Vous êtes prêt(e) à avoir de vraies conversations. Sans crainte, sans hésitation."
 
 #: lib/onboarding-tours.tsx:114
 #~ msgid "You've completed the tour and learned how I work."
@@ -1194,10 +1099,28 @@ msgstr "Vos appels enregistrés"
 
 #: contexts/glass-context.tsx:1498
 #~ msgid "Your conversation is being saved and will appear in history shortly."
-#~ msgstr ""
-#~ "Votre conversation est en cours de sauvegarde et apparaîtra bientôt dans "
-#~ "l'historique."
+#~ msgstr "Votre conversation est en cours de sauvegarde et apparaîtra bientôt dans l'historique."
+
+#: app/[lang]/(auth)/verify-email/page.tsx:81
+msgid "Your email ({email}) has been successfully verified."
+msgstr "Votre adresse e-mail ({email}) a été vérifiée avec succès."
+
+#: components/feedback.tsx:91
+msgid "Your feedback..."
+msgstr "Vos commentaires..."
+
+#: app/[lang]/time-limit/page.tsx:23
+msgid "Your free time is up"
+msgstr "Votre période gratuite est terminée"
+
+#: app/[lang]/(app)/memory/page.tsx:31
+msgid "Your memories"
+msgstr "Vos souvenirs"
 
 #: components/history/conversation-history.tsx:219
 #~ msgid "Your recorded conversations will appear here once a call ends."
 #~ msgstr "Vos conversations enregistrées apparaîtront ici une fois l'appel terminé."
+
+#: app/[lang]/(app)/history/page.tsx:31
+msgid "Your saved calls"
+msgstr "Vos appels enregistrés"

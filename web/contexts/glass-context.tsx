@@ -831,7 +831,9 @@ export function GlassProvider({
         updateFFT();
 
         // Connect WebSocket to Glass API with language parameters
-        const wsUrl = process.env.NEXT_PUBLIC_GLASS_WS_URL || 'ws://localhost:8000';
+        // Auto-convert HTTP URL to WebSocket URL (http→ws, https→wss)
+        const apiUrl = process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
+        const wsUrl = apiUrl.replace(/^http/, 'ws');
         const params = new URLSearchParams({
           sid: sessionIdRef.current,
           events: 'true',

@@ -44,33 +44,32 @@ class Settings(BaseSettings):
     
     # Security limits
     ws_max_message_bytes: int = 131072  # 128 KiB
-    
-    # Defaults
-    default_tone: str = "neutral"
-    default_language: str = "en"
-    storage_dir: str = "./var/uploads"
-    
+
     # Notifications
     discord_webhook_url: str | None = None
     
-    # Conversation window for LLM context
-    tail_size: int = 20
+    # Resend email service (optional - if not set, email verification is disabled)
+    resend_api_key: str | None = None
+    from_email: str = "Glass <hello@updates.speakglass.com>"
+    frontend_url: str = "http://localhost:3000"
+    # Resend template IDs (optional - if not set, uses inline HTML)
+    resend_verification_template_id: str | None = None
+    resend_password_reset_template_id: str | None = None
+    
+    # Conversation window for LLM context (Zep best practice: 5 messages)
+    context_window_size: int = 5
     
     # Redis (usage tracking)
     redis_url: str | None = None
-    redis_cluster: bool | None = None
     
     # Free usage budget per client (in minutes) across sessions (None disables)
-    free_minutes_per_user: int | None = 30
+    free_minutes_per_user: int | None = None
     
     # Database for account persistence (meeting history, auth metadata)
     database_url: str = "postgresql+asyncpg://glass:glass@localhost:5432/glass"
     
     # Shared secret for verifying service-to-service JWTs (required)
     auth_jwt_secret: str = Field(min_length=8)
-    
-    # Max number of historical conversations returned per request
-    history_limit: int = 20
     
     # Logging
     log_level: str = "INFO"  # e.g., DEBUG, INFO, WARNING
@@ -92,4 +91,4 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return Settings()
+    return Settings()  # type: ignore[call-arg]

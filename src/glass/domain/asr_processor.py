@@ -9,7 +9,6 @@ import uuid
 from typing import TYPE_CHECKING, AsyncIterable
 
 if TYPE_CHECKING:
-    from .entities import EventType
     from .ports import ASRPort
 
 LOGGER = logging.getLogger(__name__)
@@ -73,7 +72,7 @@ class ASRProcessor:
             except Exception:
                 pass
 
-        async for chunk in self.asr.stream(
+        async for chunk in self.asr.stream(  # type: ignore[attr-defined]
             self.session_id,
             queue_iter(),
             source=source,
@@ -98,7 +97,7 @@ class ASRProcessor:
                         # Compute timing if available
                         starts = [s.get("start") for s in segments if isinstance(s.get("start"), (int, float))]
                         durations = [s.get("duration") for s in segments if isinstance(s.get("duration"), (int, float))]
-                        agg_start = min(starts) if starts else None
+                        agg_start = min(starts) if starts else None  # type: ignore[type-var]
                         agg_end = None
                         if starts and durations:
                             last_idx = max(range(len(segments)), key=lambda i: (segments[i].get("start") or 0))
@@ -244,7 +243,7 @@ class ASRProcessor:
                         full_text = " ".join([(s.get("text") or "").strip() for s in segments if (s.get("text") or "").strip()])
                         starts = [s.get("start") for s in segments if isinstance(s.get("start"), (int, float))]
                         durations = [s.get("duration") for s in segments if isinstance(s.get("duration"), (int, float))]
-                        agg_start = min(starts) if starts else payload.get("start")
+                        agg_start = min(starts) if starts else payload.get("start")  # type: ignore[type-var]
                         agg_end = None
                         if starts and durations:
                             last_idx = max(range(len(segments)), key=lambda i: (segments[i].get("start") or 0))

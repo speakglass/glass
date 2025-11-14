@@ -34,8 +34,8 @@ services:
       GLASS_DATABASE_URL: postgresql+asyncpg://glass:glass@db:5432/glass
       GLASS_REDIS_URL: redis://redis:6379/0
       GLASS_ALLOW_ORIGIN: http://localhost:3000
-      GLASS_AUTH_JWT_SECRET: ${GLASS_AUTH_JWT_SECRET:-dev-secret-key}
       GLASS_LOG_LEVEL: INFO
+      PORT: 8000
     depends_on:
       db:
         condition: service_healthy
@@ -45,6 +45,7 @@ services:
       - '8000:8000'
     volumes:
       - ./src:/app/src
+      - ./migrations:/app/migrations
       - backend_uploads:/app/var/uploads
 
   web:
@@ -54,11 +55,13 @@ services:
     env_file:
       - web/.env
     environment:
+      # Client-side: Use localhost for browser access
       NEXT_PUBLIC_GLASS_API_URL: http://localhost:8000
-      NEXT_PUBLIC_GLASS_WS_URL: ws://localhost:8000
+      # Server-side: Use internal Docker network for SSR/API routes
+      GLASS_API_URL_INTERNAL: http://api:8000
       NEXTAUTH_URL: http://localhost:3000
-      GLASS_API_BASE_URL: http://api:8000
-      GLASS_AUTH_JWT_SECRET: ${GLASS_AUTH_JWT_SECRET:-dev-secret-key}
+      # Must match the API's GLASS_AUTH_JWT_SECRET for JWT verification
+      GLASS_AUTH_JWT_SECRET: ${GLASS_AUTH_JWT_SECRET}
     depends_on:
       - api
     ports:

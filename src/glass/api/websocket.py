@@ -73,7 +73,6 @@ async def audio_stream(
     events: bool = Query(default=True),
 ) -> None:
     # Minimal origin check before accepting
-    settings = get_settings()
     origin = websocket.headers.get("origin")
     if not _is_origin_allowed(origin):
         await websocket.close(code=1008)
@@ -119,7 +118,6 @@ async def audio_stream_multiplexed(
     scenario: str | None = Query(default=None),
 ) -> None:
     """Multiplexed audio: 0x01=mic, 0x02=system."""
-    settings = get_settings()
     origin = websocket.headers.get("origin")
     if not _is_origin_allowed(origin):
         await websocket.close(code=1008)
@@ -205,8 +203,8 @@ async def audio_stream_multiplexed(
             pass
     LOGGER.info(f"WebSocket connected with learning_lang={learning_lang}, native_lang={native_lang}, mode={mode}, scenario={scenario}, user_id={user.user_id}")
     
-    mic_queue = asyncio.Queue(maxsize=8)
-    system_queue = asyncio.Queue(maxsize=8)
+    mic_queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=8)
+    system_queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=8)
     source_queues = {"mic": mic_queue, "system": system_queue}
     
     LOGGER.debug(f"Starting multiplexed audio streams for session {sid}")
@@ -248,7 +246,6 @@ async def session_events(
     sid: str,
     auth_token: str | None = Query(default=None, alias="auth_token"),
 ) -> None:
-    settings = get_settings()
     origin = websocket.headers.get("origin")
     if not _is_origin_allowed(origin):
         await websocket.close(code=1008)
@@ -266,53 +263,6 @@ async def session_events(
             if data == "close":
                 break
     except WebSocketDisconnect:
-        return
-
-
-
-
-async def _enforce_time_budget(websocket: WebSocket, app_state, client_id: str) -> None:
-    """Deprecated: kept for compatibility; not used in deadline-based mode."""
-    try:
-        remaining = await app_state.get_remaining_seconds_deadline(client_id)
-        total = int(app_state.settings.free_minutes_per_user or 0) * 60
-        if remaining > 0:
-            await websocket.send_json({"t": "time_remaining", "seconds": int(remaining), "total": total})
-            await asyncio.sleep(int(remaining))
-        await websocket.send_json({"t": "limit_reached", "reason": "time", "max": total})
-        await websocket.close(code=1000)
-    except Exception:
-        LOGGER.exception("[Budget] enforce (legacy) error client=%s", client_id)
-        return
-
-
-async def _monitor_time_budget(websocket: WebSocket, app_state, client_id: str) -> None:
-    """Deprecated passive monitor (not used in deadline mode)."""
-    try:
-        remaining = await app_state.get_remaining_seconds_deadline(client_id)
-        total = int(app_state.settings.free_minutes_per_user or 0) * 60
-        if remaining > 0:
-            await asyncio.sleep(int(remaining))
-        await websocket.send_json({"t": "limit_reached", "reason": "time", "max": total})
-        await websocket.close(code=1000)
-    except Exception:
-        LOGGER.exception("[Budget] monitor (legacy) error client=%s", client_id)
-        return
-
-async def _close_when_deadline(websocket: WebSocket, remaining_sec: int, total_sec: int) -> None:
-    """Sleep until deadline then close this websocket with limit event."""
-    try:
-        await asyncio.sleep(max(0, int(remaining_sec)))
-        try:
-            await websocket.send_json({"t": "limit_reached", "reason": "time", "max": total_sec})
-        except Exception:
-            pass
-        try:
-            await websocket.close(code=1000)
-        except Exception:
-            pass
-    except Exception:
-        LOGGER.exception("[Budget] close_when_deadline error")
         return
 
 
@@ -453,25 +403,33 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
         ))
         
         # Wait for both to complete
-        analysis, title = await asyncio.gather(analysis_task, title_task, return_exceptions=True)
+        results_tuple = await asyncio.gather(analysis_task, title_task, return_exceptions=True)
+        analysis_result: dict[str, Any] | BaseException = results_tuple[0]  # type: ignore[assignment]
+        title_result: str | BaseException = results_tuple[1]  # type: ignore[assignment]
         
         # Handle exceptions
-        if isinstance(analysis, Exception):
-            LOGGER.error(f"[AutoSave] Analysis failed: {analysis}")
+        analysis: dict[str, Any]
+        if isinstance(analysis_result, BaseException):
+            LOGGER.error(f"[AutoSave] Analysis failed: {analysis_result}")
             analysis = {
                 "scores": {"fluency": 0, "accuracy": 0, "comprehensibility": 0},
                 "feedback": "Analysis failed",
             }
+        else:
+            analysis = analysis_result
         
-        if isinstance(title, Exception) or not title:
-            LOGGER.warning(f"[AutoSave] Title generation failed, using fallback")
+        title: str
+        if isinstance(title_result, BaseException) or not title_result:
+            LOGGER.warning("[AutoSave] Title generation failed, using fallback")
             # Fallback to date-based title (extracted_info is now handled by Zep)
             title = derive_conversation_title(None, started_at)
+        else:
+            title = title_result
         
         # Save to database
         # Note: Memory extraction is now handled by Zep (no extracted_info field)
         db = app.state.history_store
-        conversation = await upsert_conversation(
+        await upsert_conversation(
             db,
             user_id=user_id,
             session_id=session_id,
@@ -499,7 +457,7 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
                 session_start_time=started_epoch,
             )
             LOGGER.info(f"[AutoSave] Added {len(messages)} messages to Zep thread {session_id}")
-            LOGGER.info(f"[AutoSave] Zep will automatically extract facts and entities from these messages")
+            LOGGER.info("[AutoSave] Zep will automatically extract facts and entities from these messages")
         except Exception as e:
             LOGGER.error(f"[AutoSave] Failed to add messages to Zep thread: {e}", exc_info=True)
         

@@ -6,7 +6,7 @@ import asyncio
 import logging
 import time
 from collections import deque
-from typing import AsyncIterable, Deque, Sequence
+from typing import Any, AsyncIterable, Deque
 
 from .asr_processor import ASRProcessor
 from .entities import EventType, SessionEvent
@@ -28,14 +28,14 @@ class SessionPipeline:
         memory: MemoryPort,
         events: EventsPort | None,
         llm_semaphore: asyncio.Semaphore | None = None,
-        tail_size: int = 12,
         context_window_size: int = 5,  # For LLM prompts (Zep best practice)
         default_lang: str = "en",
     ) -> None:
         self.session_id = session_id
         self.memory = memory
         self.events_ports: list[EventsPort] = [events] if events else []
-        self.tail: Deque[dict] = deque(maxlen=tail_size)
+        # Tail keeps recent messages for real-time LLM processing
+        self.tail: Deque[dict] = deque(maxlen=context_window_size)
         self.default_lang = default_lang
         self.lang = default_lang
         self._llm_gate = llm_semaphore or asyncio.Semaphore(4)
@@ -71,7 +71,7 @@ class SessionPipeline:
         source: str = "mixed",
     ) -> None:
         """Process an incoming audio stream."""
-        asr_queue = asyncio.Queue(maxsize=8)
+        asr_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=8)
         
         tasks = [
             asyncio.create_task(
@@ -133,7 +133,7 @@ class SessionPipeline:
         if not is_mic and speaker == "user":
             is_mic = True
         
-        msg = {
+        msg: dict[str, Any] = {
             "speaker": speaker,
             "source": source or "unknown",
             "text": text,

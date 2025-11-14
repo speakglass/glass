@@ -53,7 +53,7 @@ script yet. This repo hosts both the FastAPI backend (speech → understanding �
 - 🔤 Keyword → natural sentence translation with context awareness
 - 🗣️ Practice mode with on-device mic + optional AI voice partner
 - 🧠 Persistent memory backed by Zep that personalizes over time
-- 💾 Meeting history, transcripts, and summaries stored in Postgres or SQLite
+- 💾 Meeting history, transcripts, and summaries stored in Postgres
 - 🌐 Fully localized Next.js 16 app (Lingui PO workflows + dark mode UI)
 
 ## Use cases
@@ -66,7 +66,7 @@ script yet. This repo hosts both the FastAPI backend (speech → understanding �
 
 - **Backend:** Python 3.11+, FastAPI, WebSockets, SQLAlchemy, Redis, Deepgram, OpenAI, ElevenLabs, Zep
 - **Frontend:** Next.js 16 App Router, React 18, NextAuth, TanStack Query/Table, Lingui, Tailwind tooling
-- **Data & infra:** Postgres (or SQLite fallback) for history, Redis for usage metering, Docker images for api/web, pnpm-managed frontend
+- **Data & infra:** Postgres for history, Redis for usage metering, Docker images for api/web, pnpm-managed frontend
 - **Testing & tooling:** Pytest, Next lint, Lingui extraction/compile, Husky + Commitlint
 
 ## Repository layout
@@ -77,11 +77,10 @@ script yet. This repo hosts both the FastAPI backend (speech → understanding �
 ├── web/                  # Next.js 16 app (components, locales, hooks, providers)
 ├── migrations/           # SQL migrations for persistence tweaks
 ├── tests/                # Backend pytest suite
-├── docker-compose.yml    # Local stack (FastAPI + Next.js + Postgres + Redis)
+├── docker-compose.yml    # Local stack (FastAPI + Next.js + Postgres, optional Redis)
 ├── Dockerfile            # Backend image (uvicorn + FastAPI)
 ├── web/Dockerfile        # Frontend image (pnpm + Next dev server)
-├── requirements.txt      # Backend dependency lock for Docker/pip installs
-└── var/                  # Runtime uploads & default SQLite history database
+└── requirements.txt      # Backend dependency lock for Docker/pip installs
 ```
 
 ## Architecture
@@ -89,42 +88,53 @@ script yet. This repo hosts both the FastAPI backend (speech → understanding �
 1. **Browser ↔ Next.js:** The web app captures microphone audio (and optionally system audio) and drives authentication, onboarding, and history views. It communicates with the backend via REST + WebSocket endpoints (`/api/*` + `/ws/*`).
 2. **Real-time pipeline:** `src/glass/domain/pipeline.py` orchestrates ASR → memory → LLM. Audio chunks stream into `ASRProcessor`, transcripts flow through `LLMProcessor`, and events fan out over the active WebSocket for UI updates.
 3. **Providers & adapters:** ASR/LLM/TTS adapters live under `src/glass/adapters/*` and conform to ports defined in `src/glass/domain/ports.py`, making it straightforward to swap providers or add self-hosted models.
-4. **State & persistence:** `AppState` wires together Redis (usage quotas), Postgres/SQLite (meeting history via `src/glass/persistence`), and optional Zep memory (`src/glass/adapters/memory/zep.py`). Uploaded audio and cached artifacts live under `var/uploads`.
+4. **State & persistence:** `AppState` wires together Postgres (user accounts & meeting history via `src/glass/persistence`), optional Redis (usage quotas), and Zep memory (`src/glass/adapters/memory/zep.py`). Uploaded audio and cached artifacts live under `var/uploads`.
 5. **API surface:** FastAPI exposes `GET/POST /api/...` routes for auth, accounts, history, and feedback plus `/docs`/`/redoc` for auto-generated documentation. The websocket router (`src/glass/api/websocket.py`) streams pipeline events in both practice and “Real Talk” modes.
 
 ## Configuration
 
 ### Environment variables
 
-Copy `.env.example` (backend) and `web/.env.example` (frontend) to start. Notable backend keys (prefixed with `GLASS_`) include:
+Copy `.env.example` (backend) and `web/.env.example` (frontend) to start.
 
-| Variable                                         | Purpose                                          | Default                                                  |
-| ------------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------- |
-| `GLASS_AUTH_JWT_SECRET`                          | Shared signing secret between FastAPI + NextAuth | _required_                                               |
-| `GLASS_ALLOW_ORIGIN` / `GLASS_ALLOW_CREDENTIALS` | CORS control for the API                         | `*` / `false`                                            |
-| `GLASS_DATABASE_URL`                             | SQLAlchemy URL for meeting history               | `sqlite+aiosqlite:///./var/glass-history.db` via example |
-| `GLASS_REDIS_URL` / `GLASS_REDIS_CLUSTER`        | Usage metering + quota cache                     | unset (feature disabled unless provided)                 |
-| `GLASS_FREE_MINUTES_PER_USER`                    | Daily free budget per account (minutes)          | `30`                                                     |
-| `GLASS_LOG_LEVEL`                                | Backend logging verbosity                        | `INFO`                                                   |
-| `GLASS_DISCORD_WEBHOOK_URL`                      | Server-side notification hook                    | unset                                                    |
-| `GLASS_STORAGE_DIR`                              | Upload directory for incoming audio              | `./var/uploads`                                          |
+#### Required backend variables (prefixed with `GLASS_`)
 
-Frontend variables (set in `web/.env.local` or `web/.env`) mirror these:
+| Variable                   | Purpose                                    | Example                                          |
+| -------------------------- | ------------------------------------------ | ------------------------------------------------ |
+| `GLASS_OPENAI_API_KEY`     | OpenAI API key for LLM                     | `sk-...`                                         |
+| `GLASS_ELEVENLABS_API_KEY` | ElevenLabs API key for TTS                 | `sk-...`                                         |
+| `GLASS_DEEPGRAM_KEY`       | Deepgram API key for ASR                   | `dg-...`                                         |
+| `GLASS_ZEP_API_KEY`        | Zep Cloud API key for memory               | `z_...`                                          |
+| `GLASS_AUTH_JWT_SECRET`    | Shared signing secret (FastAPI ↔ NextAuth) | _generate with `openssl rand -hex 32`_           |
+| `GLASS_DATABASE_URL`       | PostgreSQL URL for user accounts & history | `postgresql+asyncpg://glass:glass@db:5432/glass` |
 
-- `NEXT_PUBLIC_GLASS_API_URL` / `NEXT_PUBLIC_GLASS_WS_URL`
-- `GLASS_API_BASE_URL` (server-to-server URL, e.g., `http://api:8000` inside Docker)
+**Email Verification (Resend):**
+
+- `GLASS_RESEND_API_KEY`: Resend API key (required for email verification)
+- `GLASS_RESEND_VERIFICATION_TEMPLATE_ID`: Template ID for email verification
+- `GLASS_RESEND_PASSWORD_RESET_TEMPLATE_ID`: Template ID for password reset
+- Without Resend configured, users are auto-verified on registration
+
+**Optional:**
+
+- Set `GLASS_REDIS_URL` + `GLASS_FREE_MINUTES_PER_USER` to enable usage quotas
+
+Frontend variables (set in `web/.env.local` or `web/.env`):
+
+- `NEXT_PUBLIC_GLASS_API_URL` - Glass API URL (WebSocket URL auto-generated)
+- `GLASS_API_URL_INTERNAL` - Internal Docker URL for SSR (optional, defaults to public URL)
 - `NEXTAUTH_URL`, `NEXTAUTH_SECRET`
 - `GLASS_AUTH_JWT_SECRET` (must match backend)
-- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (optional, for Google OAuth)
 - Feedback + waitlist notifications reuse the backend `GLASS_DISCORD_WEBHOOK_URL` secret—no extra frontend env needed.
 
 ### Authentication & meeting history
 
-To unlock Google login, gated free minutes, and meeting history synchronization:
+1. **Backend** – set `GLASS_AUTH_JWT_SECRET` and `GLASS_DATABASE_URL`.
+2. **Frontend** – set `NEXTAUTH_SECRET`, `NEXT_PUBLIC_GLASS_API_URL`, and copy the same `GLASS_AUTH_JWT_SECRET`.
+3. Run database migrations: `cd migrations && alembic upgrade head` (or use Docker Compose which auto-runs migrations).
 
-1. **Backend** – set `GLASS_AUTH_JWT_SECRET`, `GLASS_DATABASE_URL`, and (optionally) `GLASS_REDIS_URL` for quota tracking.
-2. **Frontend** – set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `GLASS_API_BASE_URL`, and copy the same `GLASS_AUTH_JWT_SECRET`.
-3. Run migrations (if needed) by applying SQL files in `migrations/` or letting FastAPI auto-create tables on first boot. SQLite works for single-user dev; use Postgres (`postgresql+asyncpg://...`) for production or multi-user testing.
+Email/password authentication works out of the box. For Google OAuth, add `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` to frontend env ([setup guide](https://console.cloud.google.com/)).
 
 ### Providers (recommended)
 
@@ -164,7 +174,8 @@ Local/self-hosted adapter support (LLM/ASR/TTS) is implemented via the shared po
 - Docker 24+ and Docker Compose v2 (for the recommended workflow)
 - Python 3.11+ plus `pip`/`venv` (backend dev)
 - Node.js 20+ with `corepack` (pnpm 10.x) for the web app
-- Redis + Postgres (local containers are provided in `docker-compose.yml`)
+- PostgreSQL (local container provided in `docker-compose.yml`)
+- Redis (optional, for usage quotas; container provided in `docker-compose.yml`)
 
 ### Docker quickstart
 
@@ -187,13 +198,19 @@ Compose mounts `src/` and key `web/*` directories for hot reloads while the rest
 
 #### Shared services
 
-Spin up Postgres + Redis once:
+Spin up Postgres (required):
 
 ```bash
-docker compose up -d db redis
+docker compose up -d db
 ```
 
-Or point `GLASS_DATABASE_URL`/`GLASS_REDIS_URL` at your own infrastructure.
+Optionally, add Redis for usage quotas:
+
+```bash
+docker compose up -d redis
+```
+
+Or point `GLASS_DATABASE_URL` (and optionally `GLASS_REDIS_URL`) at your own infrastructure.
 
 #### Backend (FastAPI)
 
@@ -217,7 +234,7 @@ cp .env.example .env.local   # or .env
 pnpm dev
 ```
 
-This launches the Next.js dev server on http://localhost:3000 with hot reload, Lingui message extraction, and NextAuth callbacks hitting the locally running API (`GLASS_API_BASE_URL=http://localhost:8000`).
+This launches the Next.js dev server on http://localhost:3000 with hot reload, Lingui message extraction, and NextAuth callbacks hitting the locally running API (`NEXT_PUBLIC_GLASS_API_URL=http://localhost:8000`).
 
 ## Testing & quality
 

@@ -28,7 +28,7 @@ def build_asr_adapter(settings) -> ASRAdapter:
         api_key = getattr(settings, "deepgram_key", None)
         if not api_key:
             raise ValueError("Deepgram API key is required.")
-        return DeepgramASRAdapter(
+        return DeepgramASRAdapter(  # type: ignore[return-value]
             api_key=api_key,
             model=getattr(settings, "deepgram_model", "nova-3"),
             language=getattr(settings, "deepgram_language", "en"),

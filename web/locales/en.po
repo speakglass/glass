@@ -35,8 +35,8 @@ msgstr "• Browser tab → Enable \"Share tab audio\""
 msgid "• Desktop app → Enable \"Share system audio\""
 msgstr "• Desktop app → Enable \"Share system audio\""
 
-#: components/onboarding/onboarding-client.tsx:867
-#: components/onboarding/onboarding-client.tsx:965
+#: components/onboarding/onboarding-client.tsx:517
+#: components/onboarding/onboarding-client.tsx:615
 #: components/start-call.tsx:485
 #: components/start-call.tsx:605
 #: components/start-call.tsx:727
@@ -202,7 +202,7 @@ msgstr "Chinese"
 msgid "Choose a scenario"
 msgstr "Choose a scenario"
 
-#: components/onboarding/onboarding-client.tsx:834
+#: components/onboarding/onboarding-client.tsx:484
 msgid "Choose the language you want to practice speaking"
 msgstr "Choose the language you want to practice speaking"
 
@@ -238,7 +238,7 @@ msgid "Connecting..."
 msgstr "Connecting..."
 
 #: app/[lang]/(app)/history/page.tsx:28
-#: components/user-menu.tsx:145
+#: components/user-menu.tsx:149
 msgid "Conversation history"
 msgstr "Conversation history"
 
@@ -256,11 +256,11 @@ msgstr "Couldn’t connect"
 msgid "Custom Scenario"
 msgstr "Custom Scenario"
 
-#: components/settings.tsx:155
+#: components/Settings.tsx:155
 msgid "Customize your Glass experience"
 msgstr "Customize your Glass experience"
 
-#: components/settings.tsx:341
+#: components/Settings.tsx:341
 msgid "Dark"
 msgstr "Dark"
 
@@ -272,7 +272,7 @@ msgstr "Describe the scenario you want to practice..."
 msgid "Describe your own situation"
 msgstr "Describe your own situation"
 
-#: components/onboarding/onboarding-client.tsx:892
+#: components/onboarding/onboarding-client.tsx:542
 msgid "Do you want pronunciation help?"
 msgstr "Do you want pronunciation help?"
 
@@ -283,6 +283,10 @@ msgstr "Do you want pronunciation help?"
 #: components/history/conversation-history.tsx:126
 #~ msgid "Duration:"
 #~ msgstr "Duration:"
+
+#: app/[lang]/(auth)/verify-email/page.tsx:78
+msgid "Email verified!"
+msgstr "Email verified!"
 
 #: components/controls.tsx:140
 msgid "End Call"
@@ -338,7 +342,7 @@ msgstr "Follow these steps:"
 #~ msgid "Follow-up Suggestion"
 #~ msgstr "Follow-up Suggestion"
 
-#: components/user-menu.tsx:125
+#: components/user-menu.tsx:128
 msgid "Free minutes"
 msgstr "Free minutes"
 
@@ -364,13 +368,18 @@ msgstr "Get Suggestions"
 #~ msgid "Gets smarter every time you speak"
 #~ msgstr "Gets smarter every time you speak"
 
-#: components/settings.tsx:357
+#: components/Settings.tsx:357
 msgid "Glass"
 msgstr "Glass"
 
 #: components/waitlist-modal.tsx:167
 #~ msgid "Glass AI helps you speak any language in the real world"
 #~ msgstr "Glass AI helps you speak any language in the real world"
+
+#: app/[lang]/(auth)/verify-email/page.tsx:84
+#: app/[lang]/(auth)/verify-email/page.tsx:99
+msgid "Go to Login"
+msgstr "Go to Login"
 
 #: components/call-summary.tsx:148
 msgid "Good"
@@ -384,7 +393,7 @@ msgstr "Help us improve Glass"
 msgid "Hey! I'm Glass."
 msgstr "Hey! I'm Glass."
 
-#: components/settings.tsx:211
+#: components/Settings.tsx:211
 msgid "Hide messages"
 msgstr "Hide messages"
 
@@ -515,7 +524,7 @@ msgstr "Korean"
 msgid "Language Exchange • Calls"
 msgstr "Language Exchange • Calls"
 
-#: components/settings.tsx:263
+#: components/Settings.tsx:263
 msgid "Learning language"
 msgstr "Learning language"
 
@@ -531,7 +540,7 @@ msgstr "Let's Go! 🎉"
 msgid "Let's start your first conversation!"
 msgstr "Let's start your first conversation!"
 
-#: components/settings.tsx:325
+#: components/Settings.tsx:325
 msgid "Light"
 msgstr "Light"
 
@@ -563,7 +572,7 @@ msgstr "Low"
 #: components/call-summary.tsx:560
 #: components/history/conversation-history.tsx:952
 #: components/history/ConversationHistory.tsx:775
-#: components/user-menu.tsx:151
+#: components/user-menu.tsx:155
 msgid "Memory"
 msgstr "Memory"
 
@@ -571,7 +580,7 @@ msgstr "Memory"
 msgid "Memory system"
 msgstr "Memory system"
 
-#: components/settings.tsx:164
+#: components/Settings.tsx:164
 msgid "Microphone"
 msgstr "Microphone"
 
@@ -579,11 +588,11 @@ msgstr "Microphone"
 #~ msgid "Microphone {0}"
 #~ msgstr "Microphone {0}"
 
-#: components/settings.tsx:240
+#: components/Settings.tsx:240
 msgid "Native language"
 msgstr "Native language"
 
-#: components/settings.tsx:198
+#: components/Settings.tsx:198
 msgid "Native script"
 msgstr "Native script"
 
@@ -591,13 +600,13 @@ msgstr "Native script"
 #~ msgid "Network error. Please check your connection and try again."
 #~ msgstr "Network error. Please check your connection and try again."
 
-#: components/settings.tsx:226
+#: components/Settings.tsx:226
 msgid "Never"
 msgstr "Never"
 
 #: components/onboarding/glass-onboarding-card.tsx:89
-#: components/onboarding/onboarding-client.tsx:817
-#: components/onboarding/onboarding-client.tsx:876
+#: components/onboarding/onboarding-client.tsx:467
+#: components/onboarding/onboarding-client.tsx:526
 #: components/start-call.tsx:494
 msgid "Next →"
 msgstr "Next →"
@@ -635,7 +644,7 @@ msgstr "No messages"
 #~ msgid "No time limit (default)"
 #~ msgstr "No time limit (default)"
 
-#: components/onboarding/onboarding-client.tsx:945
+#: components/onboarding/onboarding-client.tsx:595
 msgid "No, I'm fine"
 msgstr "No, I'm fine"
 
@@ -688,6 +697,10 @@ msgstr "Phone Call"
 msgid "Please enter your feedback"
 msgstr "Please enter your feedback"
 
+#: app/[lang]/(auth)/verify-email/page.tsx:69
+msgid "Please wait while we verify your email address"
+msgstr "Please wait while we verify your email address"
+
 #: components/bottom-panel.tsx:464
 #~ msgid "Portuguese"
 #~ msgstr "Portuguese"
@@ -716,7 +729,7 @@ msgstr "Preparing your workspace…"
 msgid "Professional conversation"
 msgstr "Professional conversation"
 
-#: components/settings.tsx:187
+#: components/Settings.tsx:187
 msgid "Pronunciation"
 msgstr "Pronunciation"
 
@@ -766,7 +779,7 @@ msgstr "Restaurant"
 msgid "Retry"
 msgstr "Retry"
 
-#: components/settings.tsx:201
+#: components/Settings.tsx:201
 msgid "Romaji (Latin)"
 msgstr "Romaji (Latin)"
 
@@ -788,7 +801,7 @@ msgstr "Select a conversation to view details"
 #~ msgid "Select a conversation to view the transcript and AI feedback."
 #~ msgstr "Select a conversation to view the transcript and AI feedback."
 
-#: components/onboarding/onboarding-client.tsx:788
+#: components/onboarding/onboarding-client.tsx:438
 msgid "Select the language you speak fluently"
 msgstr "Select the language you speak fluently"
 
@@ -808,8 +821,8 @@ msgstr "Send Feedback"
 msgid "Sentence length"
 msgstr "Sentence length"
 
-#: components/settings.tsx:152
-#: components/user-menu.tsx:156
+#: components/Settings.tsx:152
+#: components/user-menu.tsx:160
 msgid "Settings"
 msgstr "Settings"
 
@@ -825,7 +838,7 @@ msgstr "Short"
 #~ msgid "Show suggestions only"
 #~ msgstr "Show suggestions only"
 
-#: components/user-menu.tsx:165
+#: components/user-menu.tsx:169
 msgid "Sign out"
 msgstr "Sign out"
 
@@ -852,7 +865,7 @@ msgstr "Start"
 msgid "Start Call"
 msgstr "Start Call"
 
-#: components/onboarding/onboarding-client.tsx:974
+#: components/onboarding/onboarding-client.tsx:624
 msgid "Start Tutorial"
 msgstr "Start Tutorial"
 
@@ -870,7 +883,7 @@ msgstr "Suggested Answer"
 #~ msgid "Suggestion duration"
 #~ msgstr "Suggestion duration"
 
-#: components/settings.tsx:172
+#: components/Settings.tsx:172
 msgid "System default"
 msgstr "System default"
 
@@ -886,7 +899,11 @@ msgstr "Thank you for your feedback!"
 #~ msgid "Thanks for joining. We’ll email you when more access is available. Sit tight — it won’t be long."
 #~ msgstr "Thanks for joining. We’ll email you when more access is available. Sit tight — it won’t be long."
 
-#: components/settings.tsx:309
+#: app/[lang]/(auth)/verify-email/page.tsx:96
+msgid "The verification link is invalid or has expired."
+msgstr "The verification link is invalid or has expired."
+
+#: components/Settings.tsx:309
 msgid "Theme"
 msgstr "Theme"
 
@@ -937,7 +954,7 @@ msgstr "Type what you want to say in {nativeLangName}"
 #~ msgid "Type what you want to say in your language, or even just a few keywords. I'll listen to the conversation and suggest the right sentence for you."
 #~ msgstr "Type what you want to say in your language, or even just a few keywords. I'll listen to the conversation and suggest the right sentence for you."
 
-#: components/settings.tsx:286
+#: components/Settings.tsx:286
 msgid "UI Language"
 msgstr "UI Language"
 
@@ -952,6 +969,14 @@ msgstr "Unable to start call"
 #: components/start-call.tsx:475
 msgid "Unavailable on mobile"
 msgstr "Unavailable on mobile"
+
+#: app/[lang]/(auth)/verify-email/page.tsx:93
+msgid "Verification failed"
+msgstr "Verification failed"
+
+#: app/[lang]/(auth)/verify-email/page.tsx:66
+msgid "Verifying your email..."
+msgstr "Verifying your email..."
 
 #: app/[lang]/error.tsx:30
 msgid "View Documentation"
@@ -999,7 +1024,7 @@ msgstr "We had trouble starting your session. Please check your internet and try
 #~ msgid "We'll notify you when early access is ready. No spam, ever."
 #~ msgstr "We'll notify you when early access is ready. No spam, ever."
 
-#: components/onboarding/onboarding-client.tsx:895
+#: components/onboarding/onboarding-client.tsx:545
 msgid "We'll show how to read sentences in your alphabet when helpful"
 msgstr "We'll show how to read sentences in your alphabet when helpful"
 
@@ -1012,7 +1037,7 @@ msgstr "We'll show how to read sentences in your alphabet when helpful"
 msgid "What do you want to say..."
 msgstr "What do you want to say..."
 
-#: components/onboarding/onboarding-client.tsx:785
+#: components/onboarding/onboarding-client.tsx:435
 msgid "What is your native language?"
 msgstr "What is your native language?"
 
@@ -1020,7 +1045,7 @@ msgstr "What is your native language?"
 msgid "What would you like to practice?"
 msgstr "What would you like to practice?"
 
-#: components/onboarding/onboarding-client.tsx:831
+#: components/onboarding/onboarding-client.tsx:481
 msgid "Which language do you want to learn?"
 msgstr "Which language do you want to learn?"
 
@@ -1028,7 +1053,7 @@ msgstr "Which language do you want to learn?"
 #~ msgid "Works in real calls"
 #~ msgstr "Works in real calls"
 
-#: components/onboarding/onboarding-client.tsx:913
+#: components/onboarding/onboarding-client.tsx:563
 msgid "Yes, show pronunciation"
 msgstr "Yes, show pronunciation"
 
@@ -1071,6 +1096,10 @@ msgstr "You're ready to have real conversations. No fear, no hesitation."
 #: contexts/glass-context.tsx:1498
 #~ msgid "Your conversation is being saved and will appear in history shortly."
 #~ msgstr "Your conversation is being saved and will appear in history shortly."
+
+#: app/[lang]/(auth)/verify-email/page.tsx:81
+msgid "Your email ({email}) has been successfully verified."
+msgstr "Your email ({email}) has been successfully verified."
 
 #: components/feedback.tsx:91
 msgid "Your feedback..."
