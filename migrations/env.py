@@ -23,9 +23,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Set the database URL from environment variable if available
+# Note: We don't use config.set_main_option() because URL-encoded passwords
+# with % characters cause ConfigParser interpolation errors
 db_url = os.getenv("GLASS_DATABASE_URL")
-if db_url:
-    config.set_main_option("sqlalchemy.url", db_url)
 
 # Add your model's MetaData object here for 'autogenerate' support
 target_metadata = Base.metadata
@@ -42,7 +42,7 @@ def run_migrations_offline() -> None:
     Calls to context.execute() here emit the given string to the
     script output.
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = db_url or config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -71,11 +71,16 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode with async support."""
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    # Use environment variable URL if available, otherwise use config
+    if db_url:
+        from sqlalchemy.ext.asyncio import create_async_engine
+        connectable = create_async_engine(db_url, poolclass=pool.NullPool)
+    else:
+        connectable = async_engine_from_config(
+            config.get_section(config.config_ini_section, {}),
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
 
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
