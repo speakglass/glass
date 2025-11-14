@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.1.6](https://github.com/speakglass/glass/compare/v0.1.5...v0.1.6) (2025-11-14)
+
+
+### Features
+
+* **app_state:** enhance Redis error logging and connection information ([a22cbe1](https://github.com/speakglass/glass/commit/a22cbe1d6639a8dbc6a823a406e469da8469f585))
+* **asr:** add ElevenLabs Scribe ASR adapter and update version to 0.1.5 ([65b95f9](https://github.com/speakglass/glass/commit/65b95f9ff034e41fbb517ff0ca02ee8289562ef3))
+* **config:** add redis_cluster setting and enhance Redis connection handling ([273749e](https://github.com/speakglass/glass/commit/273749e8d7e8df12a017c81c6d08d7118a2ccb24))
+* **config:** add RedisCluster auto-detection and support\n\n- Add GLASS_REDIS_CLUSTER option (true/false/auto)\n- Support redis+cluster scheme and ?cluster=true\n- Auto-detect cluster via CLUSTER INFO probe\n- Create proper async RedisCluster client when needed\n- Improve logs for chosen Redis mode ([8a8a322](https://github.com/speakglass/glass/commit/8a8a322168e623b85c742da9804a612466f4cd6a))
+* **config:** update Deepgram settings and enhance AI message duration management ([949bf74](https://github.com/speakglass/glass/commit/949bf743dea129b0142246541d03d6c2aacd997f))
+* **config:** update environment configuration and dependencies ([6eee70e](https://github.com/speakglass/glass/commit/6eee70e863e7ae0d39042673a4b3697981a8fc0e))
+* **config:** update environment variables and enhance database configuration ([06ee945](https://github.com/speakglass/glass/commit/06ee945485aba969b6b5da0b8b5da73faba62b66))
+* **context:** add feedback and translation management to GlassProvider ([a072de7](https://github.com/speakglass/glass/commit/a072de7eb702a12fd9e849a0115979da2c14980f))
+* **i18n:** enhance translation support in UI components ([632d31c](https://github.com/speakglass/glass/commit/632d31c4f635af59b4a6a329c9d4a4506f4b1a87))
+* **i18n:** implement request-scoped i18n instance and enhance localization support ([8a6dec9](https://github.com/speakglass/glass/commit/8a6dec94597f79d78aed15950fc003a8178f5ba3))
+* **llm:** enhance initial greeting generation with scenario-specific options ([1bfea9b](https://github.com/speakglass/glass/commit/1bfea9b4014cd67dae0aa925cd52cbadddebe306))
+* **llm:** implement unified suggestion generation and translation features ([6f75a15](https://github.com/speakglass/glass/commit/6f75a157d5a7bc4e99333fdc146c56df7c0ddf59))
+* **ui:** add Chat, Controls, Messages, Nav, and Settings components ([7a6359a](https://github.com/speakglass/glass/commit/7a6359ad8c3f8c3d11aa24a400848476b7169df7))
+* **ui:** add language examples and pronunciation support in StartCall component ([6a6108a](https://github.com/speakglass/glass/commit/6a6108a491c5fb2d5d5b2d49f4a82894ac355f21))
+* **ui:** enhance feedback and translation handling in BottomPanel ([95e9820](https://github.com/speakglass/glass/commit/95e9820b81e104cc4f1c0e7e1328dec1ff031d72))
+* **ui:** implement onboarding process for first-time users ([a0a7cf9](https://github.com/speakglass/glass/commit/a0a7cf9913813978b0ba84a07849995561fb384e))
+* **ui:** update project structure and add localization support ([c128296](https://github.com/speakglass/glass/commit/c1282967132c804ca487eb24104e99ffdb738e71))
+
+
+### Bug Fixes
+
+* **build:** add editable install for src layout ([e4e8ef3](https://github.com/speakglass/glass/commit/e4e8ef35be3fb3f98469503bbe926412e3afaf51))
+* **build:** add setuptools package discovery for src layout ([2746cff](https://github.com/speakglass/glass/commit/2746cff80785dd9d9002e9d3a5499efa3cb31980))
+* **llm:** improve feedback clarity and adjust max tokens limit ([005a3f9](https://github.com/speakglass/glass/commit/005a3f9d08cc2d92b3671eabb65174feec523e2d))
+* **llm:** update coaching instructions to ignore STT formatting issues ([270ab6f](https://github.com/speakglass/glass/commit/270ab6fb8450444f512387c2674d818203bc7a1a))
+* **ui:** add missing onboarding-tours file and update .gitignore ([d10a1ad](https://github.com/speakglass/glass/commit/d10a1ad23e12b4a77031c596005c93c966f3b870))
+* **ui:** adjust BottomPanel and Chat component heights ([88d36b5](https://github.com/speakglass/glass/commit/88d36b593df5dc4be1c82a61a75896eae410d58e))
+* **ui:** avoid analyze when no time was available at session start; show waitlist ([49a798f](https://github.com/speakglass/glass/commit/49a798f0b4a27e19eb38d33f8613ec2208bbe387))
+* **ui:** correct import path for Settings component ([b4ae238](https://github.com/speakglass/glass/commit/b4ae2389b2ce0f699539fa5985f2c80aa6396530))
+
+
+### Code Refactoring
+
+* **app_state:** simplify Redis connection handling and remove cluster configuration logic ([59af279](https://github.com/speakglass/glass/commit/59af2799d0f9b378028b14c44515f0bd2d62a6c7))
+* **ui:** remove unused handleArchive function and update column creation ([81a7131](https://github.com/speakglass/glass/commit/81a713107e46e60c0b7c4572969572ec9ba41169))
+
 ## [0.1.5](https://github.com/speakglass/glass/compare/v0.1.4...v0.1.5) (2025-11-11)
 
 
