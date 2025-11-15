@@ -18,14 +18,14 @@ from sqlalchemy.ext.asyncio import create_async_engine
 async def check():
     db_url = os.getenv('GLASS_DATABASE_URL', 'postgresql+asyncpg://glass:glass@localhost:5432/glass')
     engine = create_async_engine(db_url, echo=False)
-        try:
-            async with engine.connect() as conn:
+    try:
+        async with engine.connect() as conn:
             await conn.execute(text('SELECT 1'))
-            await engine.dispose()
-            return True
+        await engine.dispose()
+        return True
     except:
-                await engine.dispose()
-    return False
+        await engine.dispose()
+        return False
 
 exit(0 if asyncio.run(check()) else 1)
 " 2>/dev/null; then
