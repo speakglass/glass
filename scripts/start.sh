@@ -46,7 +46,65 @@ fi
 
 # Run database migrations
 echo "🔄 Running database migrations..."
-alembic upgrade head
+
+# Check if alembic_version table exists and if migrations are needed
+python3 << 'PYEOF'
+import sys
+import os
+import asyncio
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy import text
+
+async def check_and_stamp():
+    db_url = os.getenv("GLASS_DATABASE_URL", "postgresql+asyncpg://glass:glass@localhost:5432/glass")
+    engine = create_async_engine(db_url, echo=False)
+    
+    try:
+        async with engine.connect() as conn:
+            # Check if alembic_version table exists
+            result = await conn.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'alembic_version'
+                )
+            """))
+            table_exists = result.scalar()
+            
+            if not table_exists:
+                # Check if account_users exists (means DB was created without alembic)
+                result = await conn.execute(text("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'account_users'
+                    )
+                """))
+                has_tables = result.scalar()
+                
+                if has_tables:
+                    print("⚠️  Database has tables but no alembic_version. Will stamp current version.")
+                    await engine.dispose()
+                    return "stamp"
+            
+            await engine.dispose()
+            return "upgrade"
+    except Exception as e:
+        print(f"Error checking database: {e}")
+        await engine.dispose()
+        return "upgrade"
+
+result = asyncio.run(check_and_stamp())
+sys.exit(0 if result == "upgrade" else 1)
+PYEOF
+
+if [ $? -eq 0 ]; then
+    # Normal upgrade
+    alembic upgrade head
+else
+    # Stamp first, then upgrade
+    echo "📌 Stamping database to current migration version..."
+    alembic stamp head
+    alembic upgrade head
+fi
 
 if [ $? -ne 0 ]; then
     echo "❌ Migration failed"
