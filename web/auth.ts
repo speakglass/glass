@@ -6,6 +6,8 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 // This only runs on the Next.js server, never in the browser
 const apiBase = process.env.GLASS_API_URL_INTERNAL || process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 export const {
   handlers: { GET, POST },
   auth,
@@ -13,6 +15,17 @@ export const {
   signOut,
 } = NextAuth({
   trustHost: true,
+  cookies: {
+    sessionToken: {
+      name: `authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: isProduction,
+      },
+    },
+  },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
