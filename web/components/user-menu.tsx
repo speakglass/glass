@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
-import { LogOut, History, Loader2, Clock, Settings as SettingsIcon, Brain } from 'lucide-react';
+import { LogOut, History, Settings as SettingsIcon, Brain } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
 import { useQuery } from '@tanstack/react-query';
 import Settings from './settings';
@@ -20,11 +20,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAccountSession } from '@/contexts/account-session-context';
-
-function formatMinutes(seconds: number | null | undefined) {
-  if (seconds === null || seconds === undefined) return '∞';
-  return `${Math.max(0, Math.floor(seconds / 60))}`;
-}
+import { cn } from '@/utils';
 
 async function fetchUsage(token: string | null) {
   if (!token) throw new Error('No token');
@@ -76,10 +72,11 @@ export function UserMenu({
       .slice(0, 2)
       .toUpperCase() || '?';
 
-  const remainingMinutes = formatMinutes(usage?.remainingSeconds ?? null);
-  const totalMinutes = formatMinutes(usage?.totalSeconds ?? null);
-  // Show usage only if quotas are configured (both total and remaining are defined)
-  const showUsage = usage && typeof usage.totalSeconds === 'number' && typeof usage.remainingSeconds === 'number';
+  // Format usage display
+  // Show usage only if daily quota is configured
+  const showUsage = usage && usage.dailyTotalSeconds !== null;
+  const isUsingBonus = usage && usage.dailyRemainingSeconds === 0 && (usage.bonusRemainingSeconds ?? 0) > 0;
+  const hasBonusMinutes = usage?.bonusTotalSeconds != null && usage.bonusTotalSeconds > 0;
 
   if (!session?.user) {
     if (sessionStatus === 'loading') {
@@ -118,31 +115,29 @@ export function UserMenu({
               </div>
             </div>
           </DropdownMenuLabel>
+          {showUsage && (
+            <div className="px-3 pb-2 space-y-2">
+              <UsageBar
+                label={<Trans>Daily free minutes</Trans>}
+                remainingSeconds={usage?.dailyRemainingSeconds ?? 0}
+                totalSeconds={usage?.dailyTotalSeconds ?? undefined}
+                highlight={isUsingBonus ? 'bg-amber-500' : 'bg-primary'}
+                minLabel="min"
+              />
+              {hasBonusMinutes && (
+                <UsageBar
+                  label={<Trans>Bonus minutes</Trans>}
+                  remainingSeconds={usage?.bonusRemainingSeconds ?? 0}
+                  totalSeconds={usage?.bonusTotalSeconds ?? undefined}
+                  highlight="bg-purple-500"
+                  minLabel="min"
+                />
+              )}
+            </div>
+          )}
           <DropdownMenuSeparator />
 
           <DropdownMenuGroup>
-            {showUsage && (
-              <DropdownMenuItem className="cursor-default focus:bg-transparent py-1.5">
-                <Clock className="size-4" />
-                <span className="flex-1 text-sm">
-                  <Trans>Free minutes</Trans>
-                </span>
-                {!usage ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                ) : (
-                  <span className="text-sm font-semibold tabular-nums">
-                    {remainingMinutes}
-                    {totalMinutes !== '∞' && (
-                      <span className="text-muted-foreground font-normal">
-                        {' / '}
-                        {totalMinutes}
-                      </span>
-                    )}
-                    <span className="text-muted-foreground font-normal ml-0.5">min</span>
-                  </span>
-                )}
-              </DropdownMenuItem>
-            )}
             <DropdownMenuItem asChild>
               <Link id="glass-history-link" href={historyHref} className="cursor-pointer">
                 <History />
@@ -171,5 +166,42 @@ export function UserMenu({
         </DropdownMenuContent>
       </DropdownMenu>
     </>
+  );
+}
+
+type UsageBarProps = {
+  label: ReactNode;
+  remainingSeconds?: number | null;
+  totalSeconds?: number | null;
+  highlight?: string;
+  minLabel?: string;
+};
+
+function UsageBar({ label, remainingSeconds, totalSeconds, highlight = 'bg-primary', minLabel = 'min' }: UsageBarProps) {
+  const rawRemaining = typeof remainingSeconds === 'number' ? Math.max(0, remainingSeconds) : 0;
+  const rawTotal = typeof totalSeconds === 'number' && totalSeconds > 0 ? totalSeconds : null;
+  const remainingMinutes = Math.max(0, Math.floor(rawRemaining / 60));
+  const totalMinutes = rawTotal ? Math.max(0, Math.floor(rawTotal / 60)) : null;
+  const percent = rawTotal ? Math.min(100, (rawRemaining / rawTotal) * 100) : rawRemaining > 0 ? 100 : 0;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-[11px] uppercase">
+        <span className="font-semibold tracking-wide text-muted-foreground">{label}</span>
+        <span className="tabular-nums text-[11px] font-semibold text-foreground">
+          {totalMinutes !== null ? (
+            <>
+              {remainingMinutes} / {totalMinutes}
+            </>
+          ) : (
+            remainingMinutes
+          )}
+          <span className="ml-1 text-[10px] font-normal text-muted-foreground">{minLabel}</span>
+        </span>
+      </div>
+      <div className="h-1 rounded-full bg-border/70 overflow-hidden">
+        <div className={cn('h-full rounded-full transition-all duration-300', highlight)} style={{ width: `${percent}%` }} />
+      </div>
+    </div>
   );
 }
