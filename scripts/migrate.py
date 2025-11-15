@@ -59,7 +59,6 @@ async def check_migration_state():
 
 def run_migrations():
     """Run database migrations using Alembic API."""
-    # Get alembic.ini path
     script_dir = Path(__file__).parent.parent
     alembic_ini = script_dir / "alembic.ini"
     
@@ -67,11 +66,9 @@ def run_migrations():
         print(f"❌ alembic.ini not found at {alembic_ini}")
         return False
     
-    # Configure Alembic
     alembic_cfg = Config(str(alembic_ini))
     alembic_cfg.set_main_option("script_location", str(script_dir / "migrations"))
     
-    # Check migration state
     print("🔍 Checking database state...")
     state = asyncio.run(check_migration_state())
     
@@ -80,13 +77,13 @@ def run_migrations():
     
     try:
         if state == "stamp":
-            print("📌 Database has tables but no migration history. Stamping current version...")
+            print("📌 Stamping database to current version...")
             command.stamp(alembic_cfg, "head")
-            print("✅ Database stamped successfully")
+            print("✅ Stamp complete")
         
         print("🔄 Running migrations...")
         command.upgrade(alembic_cfg, "head")
-        print("✅ Migrations completed successfully")
+        print("✅ Migrations completed")
         return True
         
     except Exception as e:
@@ -97,4 +94,3 @@ def run_migrations():
 if __name__ == "__main__":
     success = run_migrations()
     sys.exit(0 if success else 1)
-
