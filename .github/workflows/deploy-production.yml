@@ -79,7 +79,7 @@ jobs:
         with:
           app-name: 'glass'
           slot-name: 'staging'
-          startup-command: '/home/site/wwwroot/scripts/start.sh'
+          startup-command: 'bash scripts/start.sh'
 
       - name: '🔄 Run Database Migrations on Staging'
         uses: azure/cli@v2
@@ -98,4 +98,3 @@ jobs:
               --slot staging \
               --target-slot production
             echo "🎉 Deployment complete!"
-            echo "🔗 Production URL: https://app.speakglass.com"
