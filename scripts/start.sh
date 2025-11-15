@@ -23,7 +23,8 @@ async def check():
             await conn.execute(text('SELECT 1'))
         await engine.dispose()
         return True
-    except:
+    except Exception as e:
+        print(f'DB Connection Error: {e}')
         await engine.dispose()
         return False
 
