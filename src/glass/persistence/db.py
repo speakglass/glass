@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime
 from typing import Any
@@ -9,6 +10,8 @@ from typing import Any
 from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Base(DeclarativeBase):
@@ -106,6 +109,18 @@ class PersistenceDatabase:
     """Async SQLAlchemy helper for PostgreSQL-based persistent account storage."""
 
     def __init__(self, url: str) -> None:
+        # Log database connection info (mask password for security)
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            if parsed.password:
+                masked_url = f"{parsed.scheme}://{parsed.username}:***@{parsed.hostname}:{parsed.port}{parsed.path}"
+            else:
+                masked_url = url
+            LOGGER.info(f"🔧 Database URL configured: {masked_url}")
+        except Exception:
+            LOGGER.info("🔧 Database URL configured (parsing failed)")
+        
         self.engine = create_async_engine(url, future=True)
         self._sessionmaker = async_sessionmaker(
             self.engine, expire_on_commit=False, class_=AsyncSession
@@ -113,12 +128,19 @@ class PersistenceDatabase:
 
     async def init_models(self) -> None:
         """Initialize database models and apply migrations."""
-        async with self.engine.begin() as conn:
-            # Create all tables
-            await conn.run_sync(Base.metadata.create_all)
+        LOGGER.info("Testing database connection...")
+        try:
+            async with self.engine.begin() as conn:
+                # Create all tables
+                await conn.run_sync(Base.metadata.create_all)
+                
+                # Apply migrations for existing databases
+                await self._apply_migrations(conn)
             
-            # Apply migrations for existing databases
-            await self._apply_migrations(conn)
+            LOGGER.info("✅ Database connected and initialized")
+        except Exception as e:
+            LOGGER.error(f"❌ Database connection or initialization failed: {e}")
+            raise
     
     async def _apply_migrations(self, conn) -> None:
         """Apply schema migrations for existing databases.

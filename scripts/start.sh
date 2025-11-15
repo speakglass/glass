@@ -103,7 +103,7 @@ else
     # Stamp first, then upgrade
     echo "📌 Stamping database to current migration version..."
     alembic stamp head
-    alembic upgrade head
+alembic upgrade head
 fi
 
 if [ $? -ne 0 ]; then
