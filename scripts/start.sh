@@ -28,7 +28,7 @@ async def check():
         return False
 
 exit(0 if asyncio.run(check()) else 1)
-" 2>/dev/null; then
+"; then
         echo "✅ Database is ready"
         break
     fi
