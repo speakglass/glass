@@ -119,12 +119,10 @@ export function VerifyEmailForm({ className, ...props }: React.ComponentProps<'d
                 Your email (<span className="font-medium">{email}</span>) has been successfully verified.
               </Trans>
             )}
-            {status === 'error' && (
-              errorMessage || <Trans>The verification link is invalid or has expired.</Trans>
-            )}
+            {status === 'error' && (errorMessage || <Trans>The verification link is invalid or has expired.</Trans>)}
           </CardDescription>
         </CardHeader>
-        
+
         {(status === 'success' || status === 'error') && (
           <CardContent className="space-y-4">
             {status === 'success' && (
@@ -132,11 +130,7 @@ export function VerifyEmailForm({ className, ...props }: React.ComponentProps<'d
                 <Trans>Redirecting to login in {countdown} seconds...</Trans>
               </p>
             )}
-            <Button 
-              onClick={handleGoToLogin} 
-              variant={status === 'error' ? 'outline' : 'default'}
-              className="w-full"
-            >
+            <Button onClick={handleGoToLogin} variant={status === 'error' ? 'outline' : 'default'} className="w-full">
               {status === 'success' ? <Trans>Go to Login Now</Trans> : <Trans>Go to Login</Trans>}
             </Button>
           </CardContent>
@@ -145,4 +139,3 @@ export function VerifyEmailForm({ className, ...props }: React.ComponentProps<'d
     </div>
   );
 }
-
