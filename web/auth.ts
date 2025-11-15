@@ -12,10 +12,18 @@ export const {
   signIn,
   signOut,
 } = NextAuth({
+  trustHost: true,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          prompt: 'consent',
+          access_type: 'offline',
+          response_type: 'code',
+        },
+      },
     }),
     CredentialsProvider({
       name: 'Email',
@@ -79,13 +87,12 @@ export const {
           if (response.ok) {
             const data = await response.json();
             user.id = data.id;
-            console.log(`[auth] OAuth sign-in successful for user: ${user.id}`);
           } else {
-            console.error(`[auth] OAuth sign-in failed: ${response.status}`);
+            console.error(`[auth] OAuth sign-in failed: ${response.status} - ${apiBase}`);
             return false;
           }
         } catch (error) {
-          console.error('[auth] OAuth sign-in error:', error);
+          console.error('[auth] OAuth sign-in error:', error instanceof Error ? error.message : error);
           return false;
         }
       }
