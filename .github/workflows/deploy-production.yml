@@ -79,7 +79,7 @@ jobs:
         with:
           app-name: 'glass'
           slot-name: 'staging'
-          startup-command: 'scripts/start.sh'
+          startup-command: '/home/site/wwwroot/scripts/start.sh'
 
       - name: '🔄 Run Database Migrations on Staging'
         uses: azure/cli@v2
