@@ -24,6 +24,15 @@ services:
       timeout: 5s
       retries: 5
 
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.31.0
+    restart: unless-stopped
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --debug /data/debug.log
+    ports:
+      - '10000:10000'
+    volumes:
+      - azurite_data:/data
+
   api:
     build:
       context: .
@@ -40,6 +49,8 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_started
+      azurite:
         condition: service_started
     ports:
       - '8000:8000'
@@ -70,11 +81,14 @@ services:
       - ./web/app:/app/app
       - ./web/components:/app/components
       - ./web/contexts:/app/contexts
+      - ./web/data:/app/data
       - ./web/hooks:/app/hooks
       - ./web/lib:/app/lib
       - ./web/types:/app/types
       - ./web/auth.ts:/app/auth.ts
+      - ./web/public:/app/public
 
 volumes:
   pgdata:
   backend_uploads:
+  azurite_data:

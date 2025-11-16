@@ -1,17 +1,44 @@
 import { useGlass, LanguageSettings, SessionConfig } from '@/contexts/glass-context';
 import { useAccountSession } from '@/contexts/account-session-context';
 import { AnimatePresence, motion } from 'motion/react';
-import { Loader2, Phone } from 'lucide-react';
+import { Loader2, Phone, UserRound } from 'lucide-react';
 import LiquidGlass from './liquid-glass';
 import { toast } from 'sonner';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import type { ComponentType, SVGProps } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from './ui/button';
 import { cn } from '@/utils';
 import { Trans } from '@lingui/react/macro';
 import { t } from '@lingui/core/macro';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ConversationPartner, fetchPartners, createPartner, uploadPartnerAvatar } from '@/lib/account-api';
+import DiscordLogo from './logos/discord';
+import { PartnerAvatar } from '@/components/partner-avatar';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 type SetupStep = 'start' | 'languages' | 'level' | 'mode' | 'scenario' | 'instructions' | 'connecting';
+type LiveCallPlatform = 'discord' | 'zoom' | 'google_meet' | 'teams' | 'other';
+type LiveCallPlatformOption = {
+  id: LiveCallPlatform;
+  label: string;
+  iconSrc?: string;
+  iconAlt?: string;
+  iconBg?: string;
+  fallbackIcon?: string;
+  iconComponent?: ComponentType<SVGProps<SVGSVGElement>>;
+  iconClassName?: string;
+};
 
 interface LanguageOption {
   code: string;
@@ -116,6 +143,46 @@ const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = {
   },
 };
 
+const DISCORD_CHANNEL_URL = 'https://discord.gg/GxJwcgnchM';
+
+const LIVE_CALL_PLATFORM_OPTIONS: LiveCallPlatformOption[] = [
+  {
+    id: 'discord',
+    label: 'Discord',
+    iconComponent: (props) => <DiscordLogo {...props} />,
+    iconAlt: 'Discord logo',
+    iconBg: 'bg-[#5865F2]/15',
+    iconClassName: 'text-[#5865F2]',
+  },
+  {
+    id: 'zoom',
+    label: 'Zoom',
+    iconSrc: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Zoom_Communications_Logo.svg',
+    iconAlt: 'Zoom logo',
+    iconBg: 'bg-[#0B5CFF]/10',
+  },
+  {
+    id: 'google_meet',
+    label: 'Google Meet',
+    iconSrc: 'https://upload.wikimedia.org/wikipedia/commons/9/9b/Google_Meet_icon_%282020%29.svg',
+    iconAlt: 'Google Meet logo',
+    iconBg: 'bg-[#0F9D58]/10',
+  },
+  {
+    id: 'teams',
+    label: 'Microsoft Teams',
+    iconSrc: 'https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg',
+    iconAlt: 'Microsoft Teams logo',
+    iconBg: 'bg-[#5946B2]/10',
+  },
+  {
+    id: 'other',
+    label: 'Other',
+    fallbackIcon: '✨',
+    iconBg: 'bg-muted/60',
+  },
+];
+
 // Get example for language pair, fallback to Japanese->English if not found
 const getLanguageExample = (learningLang: string, nativeLang: string): ExamplePhrase | undefined => {
   return LANGUAGE_EXAMPLES[learningLang]?.[nativeLang] || LANGUAGE_EXAMPLES['ja']?.['en'];
@@ -123,10 +190,11 @@ const getLanguageExample = (learningLang: string, nativeLang: string): ExamplePh
 
 export default function StartCall() {
   const { status, connect, updateSettings, settings } = useGlass();
-  const { onboardingStatus, snapshot } = useAccountSession();
+  const { onboardingStatus, snapshot, token } = useAccountSession();
   const router = useRouter();
   const pathname = usePathname();
   const containerRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
   const [step, setStep] = useState<SetupStep>('start');
 
   // Initialize languages from user profile (from onboarding)
@@ -134,15 +202,77 @@ export default function StartCall() {
     learningLang: snapshot?.user.learningLang || settings.languages?.learningLang || '',
     nativeLang: snapshot?.user.nativeLang || settings.languages?.nativeLang || '',
   });
-  const [selectedMode, setSelectedMode] = useState<'practice' | 'real' | null>(null);
+  const currentLearningLang = languages.learningLang || snapshot?.user.learningLang || 'en';
+  const [selectedMode, setSelectedMode] = useState<'roleplay' | 'live_call' | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string>('');
-  const [customScenario, setCustomScenario] = useState<string>('');
+  const [customScenario, setCustomScenario] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('glass_custom_scenario') || '';
+    }
+    return '';
+  });
+  const [customName, setCustomName] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('glass_custom_name') || '';
+    }
+    return '';
+  });
+  const [isCustomPartnerModalOpen, setIsCustomPartnerModalOpen] = useState(false);
+  const [customPartnerNameDraft, setCustomPartnerNameDraft] = useState<string>('');
+  const [customPartnerDescriptionDraft, setCustomPartnerDescriptionDraft] = useState<string>('');
+  const [customPartnerAvatarPreview, setCustomPartnerAvatarPreview] = useState<string | null>(null);
+  const [customPartnerAvatarFile, setCustomPartnerAvatarFile] = useState<File | null>(null);
+  const customAvatarInputRef = useRef<HTMLInputElement>(null);
+  const [isSavingCustomPartner, setIsSavingCustomPartner] = useState(false);
+  const [previousScenarioBeforeCustomModal, setPreviousScenarioBeforeCustomModal] = useState<string>('');
+  const persistCustomName = useCallback((value: string) => {
+    setCustomName(value);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('glass_custom_name', value);
+    }
+  }, []);
+  const persistCustomScenario = useCallback((value: string) => {
+    setCustomScenario(value);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('glass_custom_scenario', value);
+    }
+  }, []);
+  const clearCustomPartnerAvatarPreview = useCallback(() => {
+    setCustomPartnerAvatarFile(null);
+    setCustomPartnerAvatarPreview((previous) => {
+      if (previous && previous.startsWith('blob:')) {
+        URL.revokeObjectURL(previous);
+      }
+      return null;
+    });
+    if (customAvatarInputRef.current) {
+      customAvatarInputRef.current.value = '';
+    }
+  }, []);
   const [proficiency, setProficiency] = useState<'cant_read' | 'can_read' | undefined>(
     (settings.proficiency as 'cant_read' | 'can_read' | undefined) || undefined
   );
+  const [selectedPlatform, setSelectedPlatform] = useState<LiveCallPlatform>('discord');
 
   const isConnecting = status.value === 'connecting' || step === 'connecting';
   const glassMode = settings.glassMode ?? false;
+  const partnersQueryEnabled = !!token && !!currentLearningLang;
+  const {
+    data: partnersData,
+    isLoading: partnersQueryLoading,
+    isFetching: partnersFetching,
+  } = useQuery({
+    queryKey: ['partners', token, currentLearningLang],
+    queryFn: () => fetchPartners(token!, currentLearningLang),
+    enabled: partnersQueryEnabled,
+    staleTime: 60 * 1000,
+  });
+  const partnersLoading = partnersQueryEnabled ? partnersQueryLoading || partnersFetching : true;
+  const roleplayContacts: ConversationPartner[] = (partnersData ?? []).filter(
+    (partner) => partner.kind === 'roleplay'
+  );
+  const selectedRoleplayPartner = roleplayContacts.find((partner) => partner.id === selectedScenario);
+  const [hoveredPartner, setHoveredPartner] = useState<ConversationPartner | null>(null);
 
   // Removed: Auto-start language selection moved to onboarding flow
 
@@ -196,6 +326,31 @@ export default function StartCall() {
     }
   }, [settings.proficiency]);
 
+  useEffect(() => {
+    return () => {
+      if (customPartnerAvatarPreview && customPartnerAvatarPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(customPartnerAvatarPreview);
+      }
+    };
+  }, [customPartnerAvatarPreview]);
+
+  useEffect(() => {
+    if (
+      selectedScenario &&
+      selectedScenario !== 'custom' &&
+      roleplayContacts.length > 0 &&
+      !roleplayContacts.some((contact) => contact.id === selectedScenario)
+    ) {
+      setSelectedScenario('');
+    }
+  }, [roleplayContacts, selectedScenario]);
+
+  useEffect(() => {
+    if (!selectedScenario && roleplayContacts.length > 0) {
+      setSelectedScenario(roleplayContacts[0].id);
+    }
+  }, [roleplayContacts, selectedScenario]);
+
   // Sync languages from user profile when snapshot loads
   useEffect(() => {
     if (snapshot?.user.learningLang && snapshot?.user.nativeLang) {
@@ -242,31 +397,140 @@ export default function StartCall() {
 
   // Removed: Level completion logic moved to onboarding flow
 
-  const handleModeSelect = (mode: 'practice' | 'real') => {
+  const handleModeSelect = (mode: 'roleplay' | 'live_call') => {
     setSelectedMode(mode);
-    if (mode === 'practice') {
+    if (mode === 'roleplay') {
       setStep('scenario');
     } else {
+      setSelectedPlatform('discord');
       setStep('instructions');
     }
   };
 
+  const openCustomPartnerModal = () => {
+    if (!token) {
+      toast.error(t`Unable to create a partner`, {
+        description: t`Authentication token not available. Please refresh the page.`,
+      });
+      return;
+    }
+    setPreviousScenarioBeforeCustomModal(selectedScenario);
+    setSelectedScenario('custom');
+    setCustomPartnerNameDraft(customName);
+    setCustomPartnerDescriptionDraft(customScenario);
+    clearCustomPartnerAvatarPreview();
+    setIsCustomPartnerModalOpen(true);
+  };
+
+  const handleCloseCustomPartnerModal = () => {
+    setIsCustomPartnerModalOpen(false);
+    if (selectedScenario === 'custom') {
+      setSelectedScenario(previousScenarioBeforeCustomModal);
+    }
+    clearCustomPartnerAvatarPreview();
+  };
+
+  const handleCustomAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    const nextUrl = URL.createObjectURL(file);
+    setCustomPartnerAvatarFile(file);
+    setCustomPartnerAvatarPreview((previous) => {
+      if (previous && previous.startsWith('blob:')) {
+        URL.revokeObjectURL(previous);
+      }
+      return nextUrl;
+    });
+  };
+
+  const handleCustomPartnerSave = async () => {
+    if (!token) {
+      toast.error(t`Unable to save partner`, {
+        description: t`Authentication token not available. Please refresh the page.`,
+      });
+      return;
+    }
+    const trimmedName = customPartnerNameDraft.trim();
+    if (!trimmedName) {
+      toast.error(t`Enter a name for your partner`);
+      return;
+    }
+    setIsSavingCustomPartner(true);
+    try {
+      let partner = await createPartner(token, {
+        name: trimmedName,
+        description: customPartnerDescriptionDraft.trim() || undefined,
+        learningLang: currentLearningLang,
+        nativeLang: languages.nativeLang || undefined,
+      });
+      if (customPartnerAvatarFile) {
+        partner = await uploadPartnerAvatar(token, partner.id, customPartnerAvatarFile);
+      }
+      queryClient.setQueryData<ConversationPartner[] | undefined>(
+        ['partners', token, currentLearningLang],
+        (previous) => {
+          const existing = previous || [];
+          if (existing.some((item) => item.id === partner.id)) {
+            return existing;
+          }
+          return [partner, ...existing];
+        }
+      );
+      setSelectedScenario(partner.id);
+      persistCustomName(partner.name || '');
+      persistCustomScenario(partner.description || '');
+      toast.success(t`Custom partner ready`);
+      setIsCustomPartnerModalOpen(false);
+      clearCustomPartnerAvatarPreview();
+    } catch (error) {
+      console.error('[StartCall] Failed to save partner', error);
+      toast.error(t`Unable to save partner`);
+    } finally {
+      setIsSavingCustomPartner(false);
+    }
+  };
+
   const handleScenarioSelect = (scenario: string) => {
-    setSelectedScenario(scenario);
-    // Just set the selection, don't navigate
+    if (scenario === 'custom') {
+      openCustomPartnerModal();
+      return;
+    }
+    setSelectedScenario((prev) => (prev === scenario ? '' : scenario));
   };
 
   const handleStartCall = async () => {
-    // Build config
+    if (!selectedMode) {
+      toast.error(t`Select a mode to continue`);
+      return;
+    }
+
+    let selectedPartnerId: string | null =
+      selectedMode === 'roleplay' && selectedScenario && selectedScenario !== 'custom'
+        ? selectedScenario
+        : selectedMode === 'roleplay'
+          ? null
+          : null;
+    let partnerForSession: ConversationPartner | null = null;
+
+    if (selectedMode === 'roleplay') {
+      if (!selectedPartnerId) {
+        toast.error(t`Select a conversation partner`);
+        return;
+      }
+      partnerForSession = roleplayContacts.find((contact) => contact.id === selectedPartnerId) || null;
+      if (!partnerForSession) {
+        toast.error(t`Select a conversation partner`);
+        return;
+      }
+    }
+
     const config: SessionConfig = {
       languages,
-      mode: selectedMode!,
-      scenario:
-        selectedMode === 'practice'
-          ? selectedScenario === 'custom'
-            ? `custom:${customScenario}`
-            : selectedScenario
-          : undefined,
+      mode: selectedMode,
+      partnerId: partnerForSession?.id || selectedPartnerId || null,
+      partner: partnerForSession,
     };
 
     // Proceed with connection (onboarding should already be completed at this point)
@@ -276,6 +540,120 @@ export default function StartCall() {
     } catch {
       toast.error(t`Unable to start call`);
       setStep('instructions');
+    }
+  };
+
+  const renderPlatformInstructions = () => {
+    const stepsClass = cn('list-decimal list-inside space-y-1.5 text-sm leading-relaxed', getTextClass('subtitle'));
+
+    switch (selectedPlatform) {
+      case 'discord':
+        return (
+          <div className="space-y-3">
+            <ol className={stepsClass}>
+              <li>
+                <Trans>
+                  Join our{' '}
+                  <a
+                    href={DISCORD_CHANNEL_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline underline-offset-4 font-medium"
+                  >
+                    Discord voice channel
+                  </a>{' '}
+                  (or your own server).
+                </Trans>
+              </li>
+              <li>
+                <Trans>Back in Glass, press Start Call.</Trans>
+              </li>
+              <li>
+                <Trans>Choose the Discord window (or desktop) and enable system audio.</Trans>
+              </li>
+              <li>
+                <Trans>Keep Glass open to get live help during your call.</Trans>
+              </li>
+            </ol>
+          </div>
+        );
+      case 'zoom':
+        return (
+          <div className="space-y-3">
+            <ol className={stepsClass}>
+              <li>
+                <Trans>Join or start your Zoom meeting.</Trans>
+              </li>
+              <li>
+                <Trans>Back in Glass, press Start Call.</Trans>
+              </li>
+              <li>
+                <Trans>Choose the Zoom window (or desktop) and enable system audio.</Trans>
+              </li>
+              <li>
+                <Trans>Keep Glass open to get live help during your call.</Trans>
+              </li>
+            </ol>
+          </div>
+        );
+      case 'google_meet':
+        return (
+          <div className="space-y-3">
+            <ol className={stepsClass}>
+              <li>
+                <Trans>Join the Google Meet room.</Trans>
+              </li>
+              <li>
+                <Trans>Back in Glass, press Start Call.</Trans>
+              </li>
+              <li>
+                <Trans>Select the Chrome tab with Meet, toggle Share tab audio, and confirm.</Trans>
+              </li>
+              <li>
+                <Trans>Keep Glass open to get live help during your call.</Trans>
+              </li>
+            </ol>
+          </div>
+        );
+      case 'teams':
+        return (
+          <div className="space-y-3">
+            <ol className={stepsClass}>
+              <li>
+                <Trans>Join your Microsoft Teams meeting.</Trans>
+              </li>
+              <li>
+                <Trans>Back in Glass, press Start Call.</Trans>
+              </li>
+              <li>
+                <Trans>Choose the Teams window (or desktop) and enable system audio.</Trans>
+              </li>
+              <li>
+                <Trans>Keep Glass open to get live help during your call.</Trans>
+              </li>
+            </ol>
+          </div>
+        );
+      case 'other':
+      default:
+        return (
+          <div className="space-y-3">
+            <ol className={stepsClass}>
+              <li>
+                <Trans>Join the call in your preferred platform.</Trans>
+              </li>
+              <li>
+                <Trans>Back in Glass, press Start Call.</Trans>
+              </li>
+              <li>
+                <Trans>Pick the window/tab for that platform and turn on system or tab audio.</Trans>
+              </li>
+              <li>
+                <Trans>Keep Glass open to get live help during your call.</Trans>
+              </li>
+            </ol>
+          </div>
+        );
     }
   };
 
@@ -291,7 +669,8 @@ export default function StartCall() {
   console.log('[StartCall] Should show UI:', shouldShow, 'status:', status.value);
 
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       {shouldShow ? (
         <motion.div
           key="overlay"
@@ -384,7 +763,7 @@ export default function StartCall() {
 
               <div className={'flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start'}>
                 <button
-                  onClick={() => handleModeSelect('practice')}
+                  onClick={() => handleModeSelect('roleplay')}
                   className={cn(
                     'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
                     getCardClass(),
@@ -394,22 +773,22 @@ export default function StartCall() {
                   <div className={'flex flex-col items-center gap-3'}>
                     <img
                       src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=facearea&facepad=2&w=80&h=80&q=80"
-                      alt="Practice person"
+                      alt="AI Roleplay person"
                       className={'h-[24px] w-[24px] sm:h-[28px] sm:w-[28px] object-cover rounded-full'}
                     />
                     <div className={'text-center'}>
                       <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
-                        <Trans>Practice</Trans>
+                        <Trans>AI Roleplay</Trans>
                       </div>
                       <div className={`${getTextClass('body')} text-xs`}>
-                        <Trans>Tutorial with AI</Trans>
+                        <Trans>Practice Conversations</Trans>
                       </div>
                     </div>
                   </div>
                 </button>
 
                 <button
-                  onClick={() => handleModeSelect('real')}
+                  onClick={() => handleModeSelect('live_call')}
                   className={cn(
                     'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0 relative',
                     getCardClass(),
@@ -459,7 +838,7 @@ export default function StartCall() {
                     </div>
                     <div className={'text-center'}>
                       <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
-                        <Trans>Real Talk</Trans>
+                        <Trans>Live Call</Trans>
                       </div>
                       <div className={`${getTextClass('body')} text-xs`}>
                         <Trans>Language Exchange • Calls</Trans>
@@ -481,15 +860,15 @@ export default function StartCall() {
               </div>
 
               <div className={'flex justify-between items-center w-full'}>
-                <button onClick={() => setStep('start')} className={getBackButtonClass()}>
+                <button onClick={() => setStep('start')} className={cn(getBackButtonClass(), 'cursor-pointer')}>
                   <Trans>← Back</Trans>
                 </button>
                 <Button
-                  onClick={() => setStep(selectedMode === 'practice' ? 'scenario' : 'instructions')}
+                  onClick={() => setStep(selectedMode === 'roleplay' ? 'scenario' : 'instructions')}
                   disabled={!selectedMode}
                   variant={glassMode ? 'translucent' : 'default'}
                   size="sm"
-                  className={cn('text-sm', !selectedMode && 'opacity-50 cursor-not-allowed')}
+                  className={cn('text-sm cursor-pointer', !selectedMode && 'opacity-50 cursor-not-allowed')}
                 >
                   <Trans>Next →</Trans>
                 </Button>
@@ -497,7 +876,7 @@ export default function StartCall() {
             </motion.div>
           )}
 
-          {/* Scenario Selection (Practice Mode Only) */}
+          {/* Scenario Selection (Roleplay Mode Only) */}
           {step === 'scenario' && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -507,114 +886,130 @@ export default function StartCall() {
             >
               <div className={'text-center'}>
                 <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
-                  <Trans>Choose a scenario</Trans>
+                  <Trans>Choose who to call</Trans>
                 </h2>
                 <p className={`${getTextClass('body')} text-sm`}>
-                  <Trans>What would you like to practice?</Trans>
+                  <Trans>Select a conversation partner</Trans>
                 </p>
               </div>
 
-              <div className={'grid grid-cols-2 gap-3.5 sm:gap-4 w-full'}>
-                {[
-                  { id: 'casual', emoji: '💬' },
-                  { id: 'restaurant', emoji: '🍽️' },
-                  { id: 'interview', emoji: '💼' },
-                  { id: 'phone', emoji: '📞' },
-                ].map((scenario) => (
+              <div className={'flex flex-col gap-2 w-full max-w-md mx-auto'}>
+                {partnersLoading ? (
+                  <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
+                    <Trans>Loading partners...</Trans>
+                  </div>
+                ) : roleplayContacts.length === 0 ? (
+                  <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
+                    <Trans>No partners available</Trans>
+                  </div>
+                ) : (
+                  roleplayContacts.map((contact) => (
+                    <button
+                      key={contact.id}
+                      onClick={() => handleScenarioSelect(contact.id)}
+                      onMouseEnter={() => setHoveredPartner(contact)}
+                      onMouseLeave={() => setHoveredPartner(null)}
+                      className={cn(
+                        'px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
+                        getCardClass(),
+                        'hover:scale-[1.01]',
+                        selectedScenario === contact.id &&
+                          (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent/50 border-foreground/30')
+                      )}
+                    >
+                      <div className="relative flex items-center gap-3">
+                        {contact.avatarUrl && (
+                          <div
+                            className={cn(
+                              'hidden sm:block absolute -left-48 top-1/2 -translate-y-1/2 w-40 h-40 rounded-[36px] overflow-hidden shadow-2xl border pointer-events-none transition-all duration-200',
+                              hoveredPartner?.id === contact.id
+                                ? 'opacity-100 translate-x-0'
+                                : 'opacity-0 -translate-x-3'
+                            )}
+                          >
+                            <img src={contact.avatarUrl} alt={contact.name} className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        {contact.avatarUrl ? (
+                          <img
+                            src={contact.avatarUrl}
+                            alt={contact.name}
+                            className={'w-12 h-12 rounded-full object-cover'}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.src =
+                                'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Crect width="48" height="48" fill="%23ccc"/%3E%3C/svg%3E';
+                            }}
+                          />
+                        ) : (
+                          <div
+                            className={cn(
+                              'w-12 h-12 rounded-full flex items-center justify-center text-base font-semibold uppercase',
+                              glassMode ? 'bg-white/10 text-white/80' : 'bg-muted text-foreground/80'
+                            )}
+                          >
+                            {contact.name.slice(0, 2)}
+                          </div>
+                        )}
+                        <div className={'flex-1 min-w-0'}>
+                          <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>{contact.name}</div>
+                          <div className={`${getTextClass('muted')} text-xs truncate`}>{contact.description}</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
+
+                {/* Custom Contact */}
+                <div className={'w-full'}>
                   <button
-                    key={scenario.id}
-                    onClick={() => handleScenarioSelect(scenario.id)}
+                    onClick={() => handleScenarioSelect('custom')}
                     className={cn(
-                      'px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
+                      'w-full px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
                       getCardClass(),
-                      getScaleClass(),
-                      selectedScenario === scenario.id &&
-                        (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent border-foreground/30')
+                      'hover:scale-[1.01]',
+                      selectedScenario === 'custom' &&
+                        (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent/50 border-foreground/30')
                     )}
                   >
-                    <div className={'flex items-start gap-2 sm:gap-3'}>
-                      <span className={'text-lg sm:text-2xl'}>{scenario.emoji}</span>
-                      <div>
-                        <div className={`${getTextClass('title')} font-medium mb-0.5 text-sm sm:text-base`}>
-                          {scenario.id === 'casual' && <Trans>Casual Chat</Trans>}
-                          {scenario.id === 'restaurant' && <Trans>Restaurant</Trans>}
-                          {scenario.id === 'interview' && <Trans>Job Interview</Trans>}
-                          {scenario.id === 'phone' && <Trans>Phone Call</Trans>}
+                    <div className={'flex items-center gap-3'}>
+                      <div
+                        className={cn(
+                          'w-12 h-12 rounded-full flex items-center justify-center border',
+                          glassMode ? 'border-white/30 bg-white/5 text-white/80' : 'border-border bg-muted text-muted-foreground'
+                        )}
+                      >
+                        <UserRound className="w-6 h-6" strokeWidth={1.75} />
+                      </div>
+                      <div className={'flex-1 min-w-0'}>
+                        <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
+                          <Trans>Custom partner</Trans>
                         </div>
-                        <div className={`${getTextClass('muted')} text-xs`}>
-                          {scenario.id === 'casual' && <Trans>Everyday conversation</Trans>}
-                          {scenario.id === 'restaurant' && <Trans>Ordering food & drinks</Trans>}
-                          {scenario.id === 'interview' && <Trans>Professional conversation</Trans>}
-                          {scenario.id === 'phone' && <Trans>Telephone etiquette</Trans>}
+                        <div className={`${getTextClass('muted')} text-xs truncate`}>
+                          <Trans>Create your own conversation partner</Trans>
                         </div>
                       </div>
                     </div>
                   </button>
-                ))}
-              </div>
-
-              {/* Custom Scenario */}
-              <div className={'w-full'}>
-                <button
-                  onClick={() => handleScenarioSelect('custom')}
-                  className={cn(
-                    'w-full px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2',
-                    getCardClass(),
-                    getScaleClass(),
-                    selectedScenario === 'custom' &&
-                      (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent border-foreground/30')
-                  )}
-                >
-                  <div className={'flex items-center gap-3'}>
-                    <span className={'text-lg sm:text-2xl'}>✨</span>
-                    <div className={'text-left'}>
-                      <div className={`${getTextClass('title')} font-medium mb-0.5 text-sm sm:text-base`}>
-                        <Trans>Custom Scenario</Trans>
-                      </div>
-                      <div className={`${getTextClass('muted')} text-xs`}>
-                        <Trans>Describe your own situation</Trans>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-
-                {selectedScenario === 'custom' && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className={'mt-3'}
-                  >
-                    <textarea
-                      value={customScenario}
-                      onChange={(e) => setCustomScenario(e.target.value)}
-                      placeholder={t`Describe the scenario you want to practice...`}
-                      className={cn(
-                        'w-full px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-lg resize-none focus:outline-none text-sm',
-                        glassMode
-                          ? 'backdrop-blur-sm bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:border-white/40'
-                          : 'bg-background border border-input text-foreground placeholder:text-muted-foreground focus:border-ring'
-                      )}
-                      rows={3}
-                    />
-                  </motion.div>
-                )}
+                </div>
               </div>
 
               <div className={'flex justify-between items-center w-full'}>
-                <button onClick={() => setStep('mode')} className={getBackButtonClass()}>
+                <button onClick={() => setStep('mode')} className={cn(getBackButtonClass(), 'cursor-pointer')}>
                   <Trans>← Back</Trans>
                 </button>
                 <Button
                   onClick={handleStartCall}
-                  disabled={!selectedScenario || (selectedScenario === 'custom' && !customScenario.trim())}
-                  variant={glassMode ? 'translucent' : 'default'}
+                  disabled={!selectedScenario || selectedScenario === 'custom'}
+                  variant="default"
                   className={cn(
-                    'rounded-full px-6 py-2 sm:px-8 sm:py-2.5',
-                    (!selectedScenario || (selectedScenario === 'custom' && !customScenario.trim())) &&
-                      'opacity-50 cursor-not-allowed'
+                    'cursor-pointer rounded-full px-6 py-2 sm:px-7 sm:py-2.5 inline-flex items-center gap-1.5 font-semibold tracking-tight text-white bg-emerald-500 hover:bg-emerald-600',
+                    (!selectedScenario || selectedScenario === 'custom') && 'opacity-50 cursor-not-allowed'
                   )}
                 >
-                  <Trans>Start</Trans>
+                  <Phone className="size-4 opacity-80" strokeWidth={2.25} />
+                  <Trans>Start Call</Trans>
                 </Button>
               </div>
             </motion.div>
@@ -630,7 +1025,7 @@ export default function StartCall() {
             >
               <div className={'text-center'}>
                 <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
-                  {selectedMode === 'practice' ? <Trans>Practice Mode</Trans> : <Trans>Real Talk Mode</Trans>}
+                  {selectedMode === 'roleplay' ? <Trans>AI Roleplay</Trans> : <Trans>Live Call</Trans>}
                 </h2>
               </div>
 
@@ -640,98 +1035,111 @@ export default function StartCall() {
                   glassMode ? 'bg-white/10 backdrop-blur-sm border border-white/20' : 'bg-card border border-border'
                 )}
               >
-                {selectedMode === 'practice' ? (
+                {selectedMode === 'roleplay' ? (
                   <div className={getTextClass('title')}>
-                    {selectedScenario === 'custom' && customScenario ? (
+                    {selectedRoleplayPartner ? (
+                      <div>
+                        <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>
+                          <Trans>Partner</Trans>
+                        </p>
+                        <p className={'text-base font-medium'}>{selectedRoleplayPartner.name}</p>
+                        {selectedRoleplayPartner.description && (
+                          <p className={`${getTextClass('body')} text-sm mt-1`}>
+                            {selectedRoleplayPartner.description}
+                          </p>
+                        )}
+                      </div>
+                    ) : selectedScenario === 'custom' && customScenario ? (
                       <div>
                         <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>
                           <Trans>Scenario:</Trans>
                         </p>
                         <p className={'text-sm'}>{customScenario}</p>
                       </div>
-                    ) : selectedScenario ? (
-                      <div>
-                        <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>
-                          <Trans>Scenario:</Trans>
-                        </p>
-                        <p className={'text-base font-medium'}>
-                          {selectedScenario === 'airport' && (
-                            <>
-                              ✈️ <Trans>Airport Check-in</Trans>
-                            </>
-                          )}
-                          {selectedScenario === 'restaurant' && (
-                            <>
-                              🍽️ <Trans>Restaurant</Trans>
-                            </>
-                          )}
-                          {selectedScenario === 'interview' && (
-                            <>
-                              💼 <Trans>Job Interview</Trans>
-                            </>
-                          )}
-                          {selectedScenario === 'shopping' && (
-                            <>
-                              🛍️ <Trans>Shopping</Trans>
-                            </>
-                          )}
-                          {selectedScenario === 'casual' && (
-                            <>
-                              💬 <Trans>Casual Chat</Trans>
-                            </>
-                          )}
-                          {selectedScenario === 'phone' && (
-                            <>
-                              📞 <Trans>Phone Call</Trans>
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    ) : null}
+                    ) : (
+                      <p className={`${getTextClass('muted')} text-sm`}>
+                        <Trans>Select a partner to see details.</Trans>
+                      </p>
+                    )}
                   </div>
                 ) : (
-                  <div className={cn(getTextClass('title'), 'space-y-3')}>
-                    <p className={'text-base leading-relaxed font-medium mb-2.5 sm:mb-3'}>
-                      <Trans>Follow these steps:</Trans>
-                    </p>
-                    <div className={cn('text-sm space-y-2.5', getTextClass('subtitle'))}>
-                      <p>
-                        <Trans>1. Join a Discord voice chat or online call</Trans>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p
+                        className={cn(
+                          'text-[11px] font-semibold',
+                          getTextClass('muted')
+                        )}
+                      >
+                        <Trans>Choose your platform</Trans>
                       </p>
-                      <p>
-                        <Trans>2. Click "Start" below</Trans>
-                      </p>
-                      <div className={'space-y-1.5'}>
-                        <p>
-                          <Trans>3. Share your tab or screen with audio:</Trans>
-                        </p>
-                        <div className={'pl-3 space-y-1 text-xs'}>
-                          <p className={getTextClass('body')}>
-                            <Trans>• Browser tab → Enable "Share tab audio"</Trans>
-                          </p>
-                          <p className={getTextClass('body')}>
-                            <Trans>• Desktop app → Enable "Share system audio"</Trans>
-                          </p>
-                        </div>
+                      <div className="flex flex-wrap gap-2">
+                        {LIVE_CALL_PLATFORM_OPTIONS.map((option) => {
+                          const isActive = option.id === selectedPlatform;
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={() => setSelectedPlatform(option.id)}
+                              aria-pressed={isActive}
+                              className={cn(
+                                'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] sm:text-xs transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-1 outline-none',
+                                glassMode
+                                  ? 'border-white/25 text-white/70 hover:text-white hover:border-white/60 focus-visible:ring-white/40'
+                                  : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/60 focus-visible:ring-foreground/30',
+                                isActive &&
+                                  (glassMode
+                                    ? 'bg-white text-foreground border-white shadow-sm'
+                                    : 'bg-primary/10 text-primary border-primary/70 shadow-sm')
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  'flex h-5 w-5 items-center justify-center rounded-full border text-[10px]',
+                                  glassMode
+                                    ? 'border-white/20 bg-white/10 text-white'
+                                    : 'border-border bg-background text-foreground/70',
+                                  option.iconBg
+                                )}
+                              >
+                                {option.iconComponent ? (
+                                  <option.iconComponent className={cn('h-3.5 w-3.5', option.iconClassName)} />
+                                ) : option.iconSrc ? (
+                                  <img
+                                    src={option.iconSrc}
+                                    alt={option.iconAlt || option.label}
+                                    className="h-3.5 w-3.5 object-contain"
+                                  />
+                                ) : (
+                                  <span>{option.fallbackIcon}</span>
+                                )}
+                              </span>
+                              <span>{option.label}</span>
+                            </button>
+                          );
+                        })}
                       </div>
-                      <p>
-                        <Trans>4. Start talking and let Glass assist you</Trans>
-                      </p>
                     </div>
+                    {renderPlatformInstructions()}
                   </div>
                 )}
               </div>
 
               <div className={'flex justify-between items-center w-full'}>
-                <button onClick={() => setStep('mode')} className={getBackButtonClass()}>
+                <button onClick={() => setStep('mode')} className={cn(getBackButtonClass(), 'cursor-pointer')}>
                   <Trans>← Back</Trans>
                 </button>
                 <Button
-                  variant={glassMode ? 'translucent' : 'default'}
+                  variant="default"
                   onClick={handleStartCall}
-                  className={'rounded-full px-6 py-2 sm:px-8 sm:py-2.5'}
+                  disabled={!selectedScenario || selectedScenario === 'custom'}
+                  className={cn(
+                    'cursor-pointer rounded-full px-6 py-2 sm:px-7 sm:py-2.5 inline-flex items-center gap-1.5 font-semibold tracking-tight text-white bg-emerald-500 hover:bg-emerald-600',
+                    (!selectedScenario || selectedScenario === 'custom') && 'opacity-50 cursor-not-allowed'
+                  )}
                 >
-                  <Trans>Start</Trans>
+                  <Phone className="size-4 opacity-80" strokeWidth={2.25} />
+                  <Trans>Start Call</Trans>
                 </Button>
               </div>
             </motion.div>
@@ -776,6 +1184,114 @@ export default function StartCall() {
           )}
         </motion.div>
       ) : null}
-    </AnimatePresence>
+      </AnimatePresence>
+      <Dialog
+        open={isCustomPartnerModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseCustomPartnerModal();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>Create partner</Trans>
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              <Trans>Give your custom partner a name, description, and optional photo.</Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <input
+            ref={customAvatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleCustomAvatarChange}
+          />
+          <div className="flex items-start gap-4">
+            <div className="flex flex-col items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => customAvatarInputRef.current?.click()}
+                disabled={isSavingCustomPartner}
+                className="group relative inline-flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-border/70 bg-muted/40 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                aria-label={t`Change partner photo`}
+              >
+                <PartnerAvatar
+                  className="pointer-events-none h-20 w-20"
+                  fallbackSize="lg"
+                  name={customPartnerNameDraft || undefined}
+                  src={customPartnerAvatarPreview || undefined}
+                  alt={customPartnerNameDraft || t`Partner`}
+                />
+                <span
+                  className={cn(
+                    'pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 transition group-hover:opacity-100',
+                    isSavingCustomPartner && 'opacity-100'
+                  )}
+                >
+                  {isSavingCustomPartner ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trans>Edit</Trans>}
+                </span>
+              </button>
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <Trans>Photo</Trans>
+              </span>
+            </div>
+            <div className="flex flex-1 flex-col gap-3">
+              <div className="space-y-1">
+                <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Trans>Name</Trans>
+                </Label>
+                <Input
+                  value={customPartnerNameDraft}
+                  onChange={(event) => {
+                    setCustomPartnerNameDraft(event.target.value);
+                    persistCustomName(event.target.value);
+                  }}
+                  placeholder={t`Enter a name`}
+                  disabled={isSavingCustomPartner}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Trans>Description</Trans>
+                </Label>
+                <Textarea
+                  value={customPartnerDescriptionDraft}
+                  onChange={(event) => {
+                    setCustomPartnerDescriptionDraft(event.target.value);
+                    persistCustomScenario(event.target.value);
+                  }}
+                  placeholder={t`Add a short description`}
+                  disabled={isSavingCustomPartner}
+                  rows={3}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleCloseCustomPartnerModal}
+              disabled={isSavingCustomPartner}
+              className="cursor-pointer disabled:cursor-not-allowed"
+            >
+              <Trans>Close</Trans>
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleCustomPartnerSave}
+              disabled={isSavingCustomPartner || !customPartnerNameDraft.trim()}
+              className="cursor-pointer disabled:cursor-not-allowed"
+            >
+              {isSavingCustomPartner && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              <Trans>Create</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
