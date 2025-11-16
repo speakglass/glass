@@ -29,19 +29,57 @@ msgid ""
 "to help you learn and speak any language."
 msgstr "Glass 是一款帮助你开口说任何语言的 AI。它利用最新技术，让你更自然地学习和使用多种语言交流。"
 
-#: components/start-call.tsx:710
-msgid "• Browser tab → Enable \"Share tab audio\""
-msgstr "• 浏览器选项卡 → 启用“共享选项卡音频”"
+#: components/memory/data-table.tsx:210
+#. placeholder {0}: table.getFilteredSelectedRowModel().rows.length
+#. placeholder {1}: table.getFilteredRowModel().rows.length
+msgid "{0} of {1} rows selected"
+msgstr "已选择 {0} 行，共 {1} 行"
 
-#: components/start-call.tsx:713
-msgid "• Desktop app → Enable \"Share system audio\""
-msgstr "• 桌面应用 → 启用“共享系统音频”"
+#: components/history/conversation-history.tsx:98
+msgid "{diffInDays, plural, one {# day ago} other {# days ago}}"
+msgstr "{diffInDays, plural, one {# 天前} other {# 天前}}"
 
-#: components/onboarding/onboarding-client.tsx:517
-#: components/onboarding/onboarding-client.tsx:615
-#: components/start-call.tsx:485
-#: components/start-call.tsx:605
-#: components/start-call.tsx:727
+#: components/history/conversation-history.tsx:90
+msgid "{diffInHours, plural, one {# hour ago} other {# hours ago}}"
+msgstr "{diffInHours, plural, one {# 小时前} other {# 小时前}}"
+
+#: components/history/conversation-history.tsx:82
+msgid "{diffInMinutes, plural, one {# min ago} other {# mins ago}}"
+msgstr "{diffInMinutes, plural, one {# 分钟前} other {# 分钟前}}"
+
+#: components/history/conversation-history.tsx:114
+msgid "{diffInMonths, plural, one {# month ago} other {# months ago}}"
+msgstr "{diffInMonths, plural, one {# 个月前} other {# 个月前}}"
+
+#: components/history/conversation-history.tsx:106
+msgid "{diffInWeeks, plural, one {# week ago} other {# weeks ago}}"
+msgstr "{diffInWeeks, plural, one {# 周前} other {# 周前}}"
+
+#: components/history/conversation-history.tsx:121
+msgid "{diffInYears, plural, one {# year ago} other {# years ago}}"
+msgstr "{diffInYears, plural, one {# 年前} other {# 年前}}"
+
+#: components/history/conversation-history.tsx:154
+msgid "{mins}m {secs}s"
+msgstr "{mins}分{secs}秒"
+
+#: components/history/conversation-history.tsx:153
+msgid "{secs}s"
+msgstr "{secs}秒"
+
+#: components/history/conversation-history.tsx:995
+msgid "{totalConversations, plural, one {# conversation} other {# conversations}}"
+msgstr "{totalConversations, plural, one {# 次对话} other {# 次对话}}"
+
+#: components/memory/data-table.tsx:204
+msgid "{totalCount, plural, one {# memory total • } other {# memories total • }}"
+msgstr "{totalCount, plural, one {共 # 条记忆 • } other {共 # 条记忆 • }}"
+
+#: components/onboarding/onboarding-client.tsx:535
+#: components/onboarding/onboarding-client.tsx:633
+#: components/start-call.tsx:1027
+#: components/start-call.tsx:1206
+#: components/start-call.tsx:1331
 msgid "← Back"
 msgstr "← 返回"
 
@@ -49,26 +87,33 @@ msgstr "← 返回"
 msgid "← Back to Home"
 msgstr "← 返回首页"
 
-#: components/start-call.tsx:699
-msgid "1. Join a Discord voice chat or online call"
-msgstr "加入 Discord 语音聊天或在线通话"
-
-#: components/start-call.tsx:702
-msgid "2. Click \"Start\" below"
-msgstr "2. 击下方“开始”"
-
-#: components/start-call.tsx:706
-msgid "3. Share your tab or screen with audio:"
-msgstr "3. 共享您的标签页或屏幕，并包括音频："
-
-#: components/start-call.tsx:718
-msgid "4. Start talking and let Glass assist you"
-msgstr "4. 开始交流，让 Glass 协助你"
-
-#: components/call-summary.tsx:371
-#: components/history/conversation-history.tsx:803
+#: components/call-summary.tsx:958
+#: components/history/conversation-history.tsx:1384
 msgid "Accuracy"
 msgstr "准确性"
+
+#: components/memory/columns.tsx:147
+msgid "Actions"
+msgstr "操作"
+
+#: components/memory/columns.tsx:112
+msgid "Active"
+msgstr "启用"
+
+#: components/call-summary.tsx:1421
+#: components/history/conversation-history.tsx:1756
+#: components/start-call.tsx:1462
+#: components/start-call.tsx:1557
+msgid "Add a short description"
+msgstr "添加简短描述"
+
+#: components/memory/data-table.tsx:156
+msgid "Add memory"
+msgstr "添加内存"
+
+#: components/memory/memory-dialog.tsx:58
+msgid "Add new memory"
+msgstr "添加新记忆"
 
 #: lib/onboarding-tours.tsx:85
 msgid "After each conversation"
@@ -80,9 +125,14 @@ msgid ""
 "pronunciation, and vocabulary. So you keep improving naturally."
 msgstr "每次对话结束后，我都会为你提供语法、发音和词汇方面的反馈，帮助你自然地不断进步。"
 
-#: components/start-call.tsx:660
-msgid "Airport Check-in"
-msgstr "机场值机"
+#: components/start-call.tsx:944
+#: components/start-call.tsx:1234
+msgid "AI Roleplay"
+msgstr "AI角色扮演"
+
+#: components/memory/memory-dialog.tsx:82
+msgid "AI will automatically organize and categorize this information"
+msgstr "AI 将自动整理和分类这些信息"
 
 #: components/signup-form.tsx:252
 msgid "Already have an account? <0>Sign in</0>"
@@ -93,13 +143,25 @@ msgstr "已有帐户？<0>登录</0>"
 msgid "Always"
 msgstr "始终"
 
-#: app/[lang]/error.tsx:19
+#: app/[lang]/error.tsx:18
 msgid "An error occurred"
 msgstr "发生错误"
 
 #: components/chat.tsx:86
 msgid "Analyzing Conversation"
 msgstr "正在分析对话..."
+
+#: components/history/conversation-history.tsx:1680
+msgid ""
+"Are you sure you want to delete \"{selectedConversationName}\"? This action "
+"cannot be undone and will permanently remove this conversation from your "
+"history."
+msgstr "您确定要删除“{selectedConversationName}”吗？此操作无法撤销，将永久删除此对话记录。"
+
+#: components/start-call.tsx:1595
+#. placeholder {0}: partnerPendingDelete.name
+msgid "Are you sure you want to delete {0}? This action cannot be undone."
+msgstr "您确定要删除{0}吗？此操作无法撤销。"
 
 #: components/signup-form.tsx:47
 msgid "At least one number"
@@ -109,11 +171,14 @@ msgstr "至少一个数字"
 msgid "At least one special character"
 msgstr "至少包含一个特殊字符"
 
-#: contexts/glass-context.tsx:992
+#: contexts/glass-context.tsx:1021
 msgid "Authentication failed"
 msgstr "身份验证失败"
 
-#: contexts/glass-context.tsx:700
+#: components/start-call.tsx:468
+#: components/start-call.tsx:542
+#: components/start-call.tsx:588
+#: contexts/glass-context.tsx:730
 msgid "Authentication token not available. Please refresh the page."
 msgstr "无法获取身份验证令牌。请刷新页面。"
 
@@ -123,11 +188,11 @@ msgstr "无法获取身份验证令牌。请刷新页面。"
 msgid "Auto"
 msgstr "自动"
 
-#: components/onboarding/bottom-panel-demo.tsx:356
+#: components/onboarding/bottom-panel-demo.tsx:354
 msgid "Auto Response"
 msgstr "自动回复"
 
-#: components/call-summary.tsx:149
+#: components/call-summary.tsx:551
 msgid "Average"
 msgstr "一般"
 
@@ -135,9 +200,21 @@ msgstr "一般"
 msgid "Back"
 msgstr "返回"
 
-#: components/call-summary.tsx:150
+#: components/start-call.tsx:732
+#: components/start-call.tsx:751
+#: components/start-call.tsx:770
+#: components/start-call.tsx:789
+#: components/start-call.tsx:809
+msgid "Back in Glass, press Start Call."
+msgstr "返回Glass，按下开始通话。"
+
+#: components/call-summary.tsx:552
 msgid "Below Average"
 msgstr "低于平均"
+
+#: components/user-menu.tsx:128
+msgid "Bonus minutes"
+msgstr "奖励分钟"
 
 #: components/login-form.tsx:161
 #: components/signup-form.tsx:265
@@ -146,14 +223,28 @@ msgid ""
 "<1>Privacy Policy</1>."
 msgstr "点击继续，即表示您同意我们的<0>服务条款</0>和<1>隐私政策</1>。"
 
-#: components/call-summary.tsx:217
+#: components/call-summary.tsx:784
 msgid "Call Summary"
 msgstr "通话总结"
 
-#: components/start-call.tsx:539
-#: components/start-call.tsx:680
-msgid "Casual Chat"
-msgstr "轻松聊天"
+#: components/history/conversation-history.tsx:1685
+#: components/memory/memory-dialog.tsx:96
+#: components/memory/memory-table.tsx:251
+#: components/memory/memory-table.tsx:286
+#: components/start-call.tsx:1605
+msgid "Cancel"
+msgstr "取消"
+
+#: components/memory/columns.tsx:76
+msgid "Category"
+msgstr "类别"
+
+#: components/call-summary.tsx:1377
+#: components/history/conversation-history.tsx:1712
+#: components/start-call.tsx:1415
+#: components/start-call.tsx:1516
+msgid "Change partner photo"
+msgstr "更换伙伴照片"
 
 #: components/forgot-password-form.tsx:53
 #: components/verify-email-sent-content.tsx:75
@@ -165,15 +256,31 @@ msgstr "请检查您的电子邮件"
 msgid "Chinese"
 msgstr "中文"
 
-#: components/start-call.tsx:510
-msgid "Choose a scenario"
-msgstr "选择一个练习场景"
+#: components/start-call.tsx:735
+msgid "Choose the Discord window (or desktop) and enable system audio."
+msgstr "选择Discord窗口（或桌面），并启用系统音频。"
 
-#: components/onboarding/onboarding-client.tsx:484
+#: components/onboarding/onboarding-client.tsx:502
 msgid "Choose the language you want to practice speaking"
 msgstr "请选择您想练习的语言"
 
-#: components/start-call.tsx:381
+#: components/start-call.tsx:792
+msgid "Choose the Teams window (or desktop) and enable system audio."
+msgstr "选择Teams窗口（或桌面）并启用系统音频。"
+
+#: components/start-call.tsx:754
+msgid "Choose the Zoom window (or desktop) and enable system audio."
+msgstr "选择 Zoom 窗口（或桌面），并启用系统音频。"
+
+#: components/start-call.tsx:1052
+msgid "Choose who to call"
+msgstr "选择拨打电话的对象"
+
+#: components/start-call.tsx:1275
+msgid "Choose your platform"
+msgstr "选择您的平台"
+
+#: components/start-call.tsx:923
 msgid "Choose your preferred mode"
 msgstr "选择你想要的模式"
 
@@ -181,16 +288,33 @@ msgstr "选择你想要的模式"
 msgid "Click the link in the email to verify your account and continue to Glass."
 msgstr "点击邮件中的链接以验证您的账户，然后继续访问Glass。"
 
-#: components/call-summary.tsx:742
+#: components/history/conversation-history.tsx:1067
+msgid "Click to edit"
+msgstr "点击编辑"
+
+#: components/memory/columns.tsx:98
+msgid "Click to view full content"
+msgstr "点击查看完整内容"
+
+#: components/call-summary.tsx:1355
+#: components/call-summary.tsx:1452
+#: components/history/conversation-history.tsx:1787
+#: components/memory/memory-dialog.tsx:91
+#: components/start-call.tsx:1477
+#: components/start-call.tsx:1572
 msgid "Close"
 msgstr "关闭"
+
+#: components/memory/data-table.tsx:131
+msgid "Columns"
+msgstr "列"
 
 #: components/nav.tsx:86
 msgid "Community"
 msgstr "社区"
 
-#: components/call-summary.tsx:447
-#: components/history/conversation-history.tsx:860
+#: components/call-summary.tsx:1034
+#: components/history/conversation-history.tsx:1441
 msgid "Comprehensibility"
 msgstr "易懂程度"
 
@@ -198,30 +322,52 @@ msgstr "易懂程度"
 msgid "Confirm Password"
 msgstr "确认密码"
 
-#: components/start-call.tsx:758
-#: components/start-call.tsx:770
+#: components/start-call.tsx:1367
+#: components/start-call.tsx:1381
 msgid "Connecting..."
 msgstr "正在连接..."
 
+#: components/history/conversation-history.tsx:971
+msgid "Conversation"
+msgstr "对话"
+
+#: components/history/conversation-history.tsx:701
+msgid "Conversation deleted"
+msgstr "对话已删除"
+
 #: app/[lang]/(app)/history/page.tsx:28
-#: components/user-menu.tsx:149
+#: components/user-menu.tsx:142
 msgid "Conversation history"
 msgstr "对话历史"
 
-#: components/call-summary.tsx:643
-#: components/history/conversation-history.tsx:1000
+#: components/call-summary.tsx:1231
+#: components/history/conversation-history.tsx:1582
 msgid "Conversation History"
 msgstr "对话记录"
 
-#: contexts/glass-context.tsx:1562
-#: contexts/glass-context.tsx:1614
-#: contexts/glass-context.tsx:1629
+#: components/call-summary.tsx:391
+#: components/history/conversation-history.tsx:545
+msgid "Conversation partner assigned"
+msgstr "已指派对话伙伴"
+
+#: contexts/glass-context.tsx:1595
+#: contexts/glass-context.tsx:1651
+#: contexts/glass-context.tsx:1666
 msgid "Conversation saved"
 msgstr "对话已保存"
+
+#: components/memory/columns.tsx:156
+msgid "Copy"
+msgstr "复制"
 
 #: app/[lang]/failure/page.tsx:21
 msgid "Couldn’t connect"
 msgstr "无法连接"
+
+#: components/memory/memory-dialog.tsx:104
+#: components/start-call.tsx:1486
+msgid "Create"
+msgstr "创建"
 
 #: components/signup-form.tsx:249
 msgid "Create Account"
@@ -231,37 +377,151 @@ msgstr "创建账户"
 msgid "Create an account"
 msgstr "创建账户"
 
+#: components/start-call.tsx:1395
+msgid "Create partner"
+msgstr "创建合作伙伴"
+
+#: components/start-call.tsx:1196
+msgid "Create your own conversation partner"
+msgstr "创建您的专属对话伙伴"
+
+#: components/memory/columns.tsx:56
+msgid "Created at"
+msgstr "创建于"
+
 #: components/signup-form.tsx:249
 msgid "Creating account..."
 msgstr "正在创建账户…"
 
-#: components/start-call.tsx:572
-msgid "Custom Scenario"
-msgstr "自定义场景"
+#: components/start-call.tsx:1193
+msgid "Custom partner"
+msgstr "自定义合作伙伴"
 
-#: components/settings.tsx:155
+#: components/start-call.tsx:575
+msgid "Custom partner ready"
+msgstr "自定义合作伙伴已就绪"
+
+#: components/settings.tsx:162
 msgid "Customize your Glass experience"
 msgstr "自定义您的 Glass 体验"
 
-#: components/settings.tsx:341
+#: components/user-menu.tsx:121
+msgid "Daily free minutes"
+msgstr "每日免费分钟"
+
+#: components/settings.tsx:325
 msgid "Dark"
 msgstr "深色"
 
-#: components/start-call.tsx:590
-msgid "Describe the scenario you want to practice..."
-msgstr "简单描述你想练习的场景..."
+#: components/history/conversation-history.tsx:1268
+#: components/history/conversation-history.tsx:1694
+#: components/memory/columns.tsx:172
+#: components/memory/data-table.tsx:124
+#: components/memory/memory-table.tsx:255
+#: components/memory/memory-table.tsx:290
+#: components/start-call.tsx:1157
+#: components/start-call.tsx:1616
+msgid "Delete"
+msgstr "删除"
 
-#: components/start-call.tsx:575
-msgid "Describe your own situation"
-msgstr "描述你的实际情况"
+#: components/history/conversation-history.tsx:1677
+msgid "Delete conversation"
+msgstr "删除对话"
 
-#: components/onboarding/onboarding-client.tsx:542
+#: components/memory/memory-table.tsx:237
+msgid "Delete memory?"
+msgstr "删除记忆？"
+
+#: components/call-summary.tsx:1439
+#: components/history/conversation-history.tsx:1774
+#: components/start-call.tsx:1591
+msgid "Delete partner"
+msgstr "删除合作伙伴"
+
+#: components/memory/memory-table.tsx:272
+msgid "Delete selected memories?"
+msgstr "删除选定的记忆吗？"
+
+#: components/call-summary.tsx:372
+#: components/history/conversation-history.tsx:492
+msgid "Delete this partner? This cannot be undone."
+msgstr "您确定要删除此合作伙伴吗？此操作无法撤销。"
+
+#: components/memory/memory-table.tsx:86
+#. placeholder {0}: variables.length
+msgid "Deleted {0} memories"
+msgstr "已删除{0}条记忆"
+
+#: components/memory/memory-table.tsx:83
+#. placeholder {0}: result.deleted
+#. placeholder {1}: result.failed.length
+msgid "Deleted {0} memories, but {1} could not be removed. Please retry later."
+msgstr "已删除{0}条记忆，但{1}条无法移除。请稍后再试。"
+
+#: components/memory/memory-table.tsx:77
+#. placeholder {0}: memoryIds.length
+msgid "Deleting {0} selected memories..."
+msgstr "正在删除已选的 {0} 条记忆..."
+
+#: components/memory/memory-table.tsx:53
+msgid "Deleting memory..."
+msgstr "正在删除记忆..."
+
+#: components/memory/memory-table.tsx:280
+msgid "Deleting selected memories..."
+msgstr "正在删除选定的记忆..."
+
+#: components/memory/memory-table.tsx:245
+msgid "Deleting..."
+msgstr "正在删除..."
+
+#: components/call-summary.tsx:1416
+#: components/history/conversation-history.tsx:1751
+#: components/start-call.tsx:1454
+#: components/start-call.tsx:1552
+msgid "Description"
+msgstr "描述"
+
+#: components/onboarding/onboarding-client.tsx:560
 msgid "Do you want pronunciation help?"
 msgstr "需要发音提示吗？"
+
+#: app/[lang]/error.tsx:24
+msgid "Docs"
+msgstr "文档"
 
 #: components/login-form.tsx:148
 msgid "Don't have an account? <0>Sign up</0>"
 msgstr "还没有账号？<0>注册</0>"
+
+#: components/memory/memory-dialog.tsx:72
+msgid ""
+"e.g., I love hiking in the mountains, My favorite food is sushi, I'm "
+"learning Spanish..."
+msgstr "例如，我喜欢在山里徒步旅行，我最喜欢的食物是寿司，我正在学习西班牙语……"
+
+#: components/call-summary.tsx:653
+#: components/call-summary.tsx:713
+#: components/call-summary.tsx:1395
+#: components/history/conversation-history.tsx:1151
+#: components/history/conversation-history.tsx:1211
+#: components/history/conversation-history.tsx:1730
+#: components/memory/columns.tsx:167
+#: components/start-call.tsx:1147
+#: components/start-call.tsx:1430
+#: components/start-call.tsx:1531
+msgid "Edit"
+msgstr "编辑"
+
+#: components/memory/memory-dialog.tsx:56
+msgid "Edit memory"
+msgstr "编辑内存"
+
+#: components/call-summary.tsx:1369
+#: components/history/conversation-history.tsx:1704
+#: components/start-call.tsx:1496
+msgid "Edit partner"
+msgstr "编辑合作方"
 
 #: components/forgot-password-form.tsx:94
 #: components/login-form.tsx:105
@@ -286,6 +546,23 @@ msgstr "即将结束：剩余不足 5 分钟"
 msgid "English"
 msgstr "英文"
 
+#: components/call-summary.tsx:1410
+#: components/history/conversation-history.tsx:1745
+#: components/start-call.tsx:1448
+#: components/start-call.tsx:1546
+msgid "Enter a name"
+msgstr "输入名称"
+
+#: components/call-summary.tsx:305
+#: components/history/conversation-history.tsx:506
+msgid "Enter a name first"
+msgstr "请先输入名称"
+
+#: components/start-call.tsx:548
+#: components/start-call.tsx:594
+msgid "Enter a name for your partner"
+msgstr "请输入您合作伙伴的名称"
+
 #: components/forgot-password-form.tsx:86
 msgid "Enter your email address and we'll send you a reset link"
 msgstr "请输入您的邮箱地址，我们将发送重置链接给您。"
@@ -294,17 +571,82 @@ msgstr "请输入您的邮箱地址，我们将发送重置链接给您。"
 msgid "Enter your new password below"
 msgstr "请输入您的新密码"
 
-#: components/start-call.tsx:545
-msgid "Everyday conversation"
-msgstr "日常对话"
-
-#: components/call-summary.tsx:147
+#: components/call-summary.tsx:549
 msgid "Excellent"
 msgstr "非常好"
+
+#: components/memory/columns.tsx:113
+msgid "Expired"
+msgstr "已过期"
+
+#: components/memory/columns.tsx:129
+msgid "Expired memories cannot be edited"
+msgstr "已过期的记忆无法编辑"
+
+#: components/call-summary.tsx:394
+#: components/history/conversation-history.tsx:548
+msgid "Failed to assign partner"
+msgstr "合作伙伴分配失败"
+
+#: components/memory/memory-table.tsx:115
+#. placeholder {0}: error.message
+msgid "Failed to create memory: {0}"
+msgstr "创建内存失败：{0}"
+
+#: components/call-summary.tsx:326
+#: components/history/conversation-history.tsx:527
+msgid "Failed to create partner"
+msgstr "创建合作伙伴失败"
+
+#: components/history/conversation-history.tsx:716
+msgid "Failed to delete conversation"
+msgstr "删除会话失败"
+
+#: components/memory/memory-table.tsx:91
+#. placeholder {0}: error.message
+msgid "Failed to delete memories: {0}"
+msgstr "无法删除记忆：{0}"
+
+#: components/memory/memory-table.tsx:61
+#. placeholder {0}: error.message
+msgid "Failed to delete memory: {0}"
+msgstr "删除内存失败：{0}"
+
+#: components/call-summary.tsx:359
+#: components/history/conversation-history.tsx:480
+msgid "Failed to delete partner"
+msgstr "删除合作伙伴失败"
+
+#: components/history/conversation-history.tsx:586
+msgid "Failed to load conversation detail. Please try again."
+msgstr "无法加载对话详情。请重试。"
+
+#: components/history/conversation-history.tsx:736
+msgid "Failed to load conversations"
+msgstr "无法加载会话"
 
 #: components/feedback.tsx:59
 msgid "Failed to submit feedback. Please try again."
 msgstr "反馈提交失败，请重试。"
+
+#: components/memory/memory-table.tsx:131
+#. placeholder {0}: error.message
+msgid "Failed to update memory: {0}"
+msgstr "更新记忆失败：{0}"
+
+#: components/call-summary.tsx:294
+#: components/history/conversation-history.tsx:443
+msgid "Failed to update partner"
+msgstr "更新合作伙伴失败"
+
+#: components/history/conversation-history.tsx:686
+msgid "Failed to update title"
+msgstr "更新标题失败"
+
+#: components/call-summary.tsx:244
+#: components/history/conversation-history.tsx:391
+msgid "Failed to upload image"
+msgstr "上传图片失败"
 
 #: components/bottom-panel.tsx:155
 #: components/bottom-panel.tsx:445
@@ -313,27 +655,19 @@ msgstr "反馈提交失败，请重试。"
 msgid "Feedback"
 msgstr "反馈"
 
-#: components/call-summary.tsx:588
+#: components/call-summary.tsx:1176
 msgid "Fetching thread context..."
 msgstr "正在获取线程上下文..."
 
-#: components/call-summary.tsx:290
-#: components/history/conversation-history.tsx:746
+#: components/call-summary.tsx:877
+#: components/history/conversation-history.tsx:1327
 msgid "Fluency"
 msgstr "流利度"
-
-#: components/start-call.tsx:695
-msgid "Follow these steps:"
-msgstr "请按照以下步骤操作："
 
 #: components/forgot-password-form.tsx:83
 #: components/login-form.tsx:122
 msgid "Forgot your password?"
 msgstr "忘记密码了吗？"
-
-#: components/user-menu.tsx:128
-msgid "Free minutes"
-msgstr "免费通话分钟"
 
 #: components/bottom-panel.tsx:230
 #: components/onboarding/bottom-panel-demo.tsx:106
@@ -349,24 +683,46 @@ msgid "Generating insights and feedback..."
 msgstr "正在生成分析和反馈..."
 
 #: components/bottom-panel.tsx:383
-#: components/onboarding/bottom-panel-demo.tsx:300
+#: components/onboarding/bottom-panel-demo.tsx:298
 msgid "Get Suggestions"
 msgstr "获取建议"
 
-#: components/settings.tsx:357
+#: components/start-call.tsx:1398
+msgid "Give your custom partner a name, description, and optional photo."
+msgstr "为您的自定义合作伙伴提供名称、描述和可选的照片。"
+
+#: components/call-summary.tsx:407
+#: components/history/conversation-history.tsx:839
+#: components/settings.tsx:341
 msgid "Glass"
 msgstr "Glass"
 
-#: components/verify-email-form.tsx:140
+#: components/memory/data-table.tsx:246
+msgid "Go to first page"
+msgstr "前往第一页"
+
+#: components/memory/data-table.tsx:282
+msgid "Go to last page"
+msgstr "前往最后一页"
+
+#: components/verify-email-form.tsx:134
 #: components/verify-email-sent-content.tsx:116
 msgid "Go to Login"
 msgstr "前往登录"
 
-#: components/verify-email-form.tsx:140
+#: components/verify-email-form.tsx:134
 msgid "Go to Login Now"
 msgstr "立即登录"
 
-#: components/call-summary.tsx:148
+#: components/memory/data-table.tsx:270
+msgid "Go to next page"
+msgstr "前往下一页"
+
+#: components/memory/data-table.tsx:258
+msgid "Go to previous page"
+msgstr "前往上一页"
+
+#: components/call-summary.tsx:550
 msgid "Good"
 msgstr "好"
 
@@ -378,11 +734,11 @@ msgstr "帮助我们改进Glass"
 msgid "Hey! I'm Glass."
 msgstr "嘿！我是 Glass。"
 
-#: components/settings.tsx:211
+#: components/settings.tsx:218
 msgid "Hide messages"
 msgstr "隐藏消息"
 
-#: components/start-call.tsx:378
+#: components/start-call.tsx:920
 msgid "How would you like to use Glass?"
 msgstr "你希望怎样使用 Glass？"
 
@@ -434,19 +790,42 @@ msgstr "如果 <0>{email}</0> 已经注册账户，您将很快收到一个密�
 msgid "If you don't see the email, check your spam folder."
 msgstr "如果没有看到邮件，请检查垃圾邮件文件夹。"
 
+#: components/memory/columns.tsx:114
+msgid "Invalid"
+msgstr "无效"
+
 #: components/bottom-panel.tsx:226
 #: components/onboarding/bottom-panel-demo.tsx:102
 msgid "Japanese"
 msgstr "日语"
 
-#: components/start-call.tsx:541
-#: components/start-call.tsx:670
-msgid "Job Interview"
-msgstr "求职面试"
-
 #: app/[lang]/time-limit/page.tsx:40
 msgid "Join Community"
 msgstr "加入社区"
+
+#: components/start-call.tsx:748
+msgid "Join or start your Zoom meeting."
+msgstr "加入或开始您的 Zoom 会议。"
+
+#: components/start-call.tsx:718
+msgid "Join our <0>Discord voice channel</0> (or your own server)."
+msgstr "加入我们的<0>Discord语音频道</0>（或您自己的服务器）。"
+
+#: components/start-call.tsx:806
+msgid "Join the call in your preferred platform."
+msgstr "在您喜欢的平台上加入通话。"
+
+#: components/start-call.tsx:767
+msgid "Join the Google Meet room."
+msgstr "加入 Google Meet 会议室。"
+
+#: components/start-call.tsx:786
+msgid "Join your Microsoft Teams meeting."
+msgstr "加入您的 Microsoft Teams 会议。"
+
+#: components/history/conversation-history.tsx:77
+msgid "just now"
+msgstr "刚刚"
 
 #: lib/onboarding-tours.tsx:51
 msgid ""
@@ -454,16 +833,24 @@ msgid ""
 "you can speak."
 msgstr "只需用你的语言输入几个字，我会把它变成一整句话，你可以直接说出来。"
 
+#: components/start-call.tsx:738
+#: components/start-call.tsx:757
+#: components/start-call.tsx:776
+#: components/start-call.tsx:795
+#: components/start-call.tsx:815
+msgid "Keep Glass open to get live help during your call."
+msgstr "在通话期间保持 Glass 打开，以便获得实时帮助。"
+
 #: components/bottom-panel.tsx:227
 #: components/onboarding/bottom-panel-demo.tsx:103
 msgid "Korean"
 msgstr "韩语"
 
-#: components/start-call.tsx:465
+#: components/start-call.tsx:1007
 msgid "Language Exchange • Calls"
 msgstr "语言交换 • 会议"
 
-#: components/settings.tsx:263
+#: components/settings.tsx:270
 msgid "Learning language"
 msgstr "学习语言"
 
@@ -479,11 +866,11 @@ msgstr "开始吧！🎉"
 msgid "Let's start your first conversation!"
 msgstr "开启您的首次对话吧！"
 
-#: components/settings.tsx:325
+#: components/settings.tsx:309
 msgid "Light"
 msgstr "浅色"
 
-#: components/onboarding/bottom-panel-demo.tsx:432
+#: components/onboarding/bottom-panel-demo.tsx:430
 msgid "Listening. Say anything when you're ready."
 msgstr "正在聆听，你准备好就可以开始说话。"
 
@@ -491,9 +878,27 @@ msgstr "正在聆听，你准备好就可以开始说话。"
 msgid "Listening… say anything when you're ready."
 msgstr "正在聆听，准备好就随时开口。"
 
-#: components/history/conversation-history.tsx:465
+#: components/start-call.tsx:1004
+#: components/start-call.tsx:1234
+msgid "Live Call"
+msgstr "实时通话"
+
+#: components/history/conversation-history.tsx:873
 msgid "Loading history…"
 msgstr "正在加载历史记录…"
+
+#: components/memory/memory-table.tsx:187
+msgid "Loading memories..."
+msgstr "正在加载记忆..."
+
+#: components/start-call.tsx:1062
+msgid "Loading partners..."
+msgstr "正在加载合作伙伴..."
+
+#: components/call-summary.tsx:664
+#: components/history/conversation-history.tsx:1162
+msgid "Loading partners…"
+msgstr "正在加载合作伙伴…"
 
 #: components/login-form.tsx:145
 msgid "Logging in..."
@@ -519,77 +924,146 @@ msgstr "使用您的 Google 帐号或电子邮件登录"
 msgid "Long"
 msgstr "长"
 
-#: components/call-summary.tsx:151
+#: components/call-summary.tsx:553
 msgid "Low"
 msgstr "较低"
 
-#: components/call-summary.tsx:560
-#: components/history/conversation-history.tsx:952
-#: components/user-menu.tsx:155
+#: app/[lang]/(app)/memory/page.tsx:28
+#: components/call-summary.tsx:1148
+#: components/history/conversation-history.tsx:1534
+#: components/memory/columns.tsx:88
+#: components/memory/memory-dialog.tsx:54
+#: components/user-menu.tsx:148
 msgid "Memory"
 msgstr "记忆"
 
-#: app/[lang]/(app)/memory/page.tsx:28
-msgid "Memory system"
-msgstr "内存系统"
+#: components/memory/columns.tsx:152
+msgid "Memory copied to clipboard"
+msgstr "已将内容复制到剪贴板"
 
-#: components/settings.tsx:164
+#: components/memory/memory-table.tsx:109
+msgid "Memory created successfully"
+msgstr "内存创建成功"
+
+#: components/memory/memory-table.tsx:57
+msgid "Memory deleted successfully"
+msgstr "内存已成功删除"
+
+#: components/memory/memory-table.tsx:126
+msgid "Memory updated successfully"
+msgstr "内存更新成功"
+
+#: components/settings.tsx:171
 msgid "Microphone"
 msgstr "麦克风"
+
+#: components/user-menu.tsx:183
+msgid "min"
+msgstr "分"
 
 #: components/signup-form.tsx:43
 msgid "Minimum 8 characters"
 msgstr "至少8个字符"
 
+#: components/call-summary.tsx:301
+#: components/call-summary.tsx:369
+#: components/history/conversation-history.tsx:489
+#: components/history/conversation-history.tsx:502
+msgid "Missing authentication"
+msgstr "缺少身份验证"
+
+#: components/call-summary.tsx:384
+#: components/history/conversation-history.tsx:534
+msgid "Missing conversation"
+msgstr "对话缺失"
+
+#: components/call-summary.tsx:208
+#: components/call-summary.tsx:256
+#: components/call-summary.tsx:334
+#: components/history/conversation-history.tsx:347
+#: components/history/conversation-history.tsx:402
+#: components/history/conversation-history.tsx:450
+msgid "Missing partner information"
+msgstr "缺少合作伙伴信息"
+
 #: components/reset-password-form.tsx:108
 msgid "Must be at least 8 characters long."
 msgstr "至少需包含8个字符。"
 
-#: components/settings.tsx:240
+#: components/call-summary.tsx:1405
+#: components/history/conversation-history.tsx:1740
+#: components/start-call.tsx:1440
+#: components/start-call.tsx:1541
+msgid "Name"
+msgstr "姓名"
+
+#: components/settings.tsx:247
 msgid "Native language"
 msgstr "母语"
 
-#: components/settings.tsx:198
+#: components/settings.tsx:205
 msgid "Native script"
 msgstr "原文字"
 
-#: components/settings.tsx:226
+#: components/settings.tsx:233
 msgid "Never"
 msgstr "从不"
+
+#: components/call-summary.tsx:735
+#: components/history/conversation-history.tsx:1233
+msgid "New {trimmedPartnerSearch}"
+msgstr "新的 {trimmedPartnerSearch}"
 
 #: components/reset-password-form.tsx:87
 msgid "New Password"
 msgstr "新密码"
 
 #: components/onboarding/glass-onboarding-card.tsx:89
-#: components/onboarding/onboarding-client.tsx:467
-#: components/onboarding/onboarding-client.tsx:526
-#: components/start-call.tsx:494
+#: components/onboarding/onboarding-client.tsx:485
+#: components/onboarding/onboarding-client.tsx:544
+#: components/start-call.tsx:1036
 msgid "Next →"
 msgstr "下一步 →"
 
-#: components/call-summary.tsx:623
+#: components/call-summary.tsx:1211
 msgid "No context available yet"
 msgstr "暂无可用的上下文信息"
 
-#: components/history/conversation-history.tsx:525
+#: components/history/conversation-history.tsx:934
 msgid "No conversations found"
 msgstr "没有找到对话内容"
 
-#: components/history/conversation-history.tsx:628
+#: components/history/conversation-history.tsx:1040
 msgid "No conversations found for \"{debouncedSearchQuery}\""
 msgstr "未找到与“{debouncedSearchQuery}”相关的对话。"
 
-#: components/history/conversation-history.tsx:530
+#: components/history/conversation-history.tsx:939
 msgid "No conversations yet"
 msgstr "暂无对话"
 
-#: components/call-summary.tsx:728
-#: components/history/conversation-history.tsx:1046
+#: components/call-summary.tsx:721
+#: components/history/conversation-history.tsx:1219
+msgid "No matching partners."
+msgstr "找不到匹配的合作伙伴。"
+
+#: components/call-summary.tsx:1341
+#: components/history/conversation-history.tsx:1655
 msgid "No messages"
 msgstr "暂无消息"
 
-#: components/onboarding/onboarding-client.tsx:595
+#: components/start-call.tsx:1066
+msgid "No partners available"
+msgstr "暂无合作伙伴"
+
+#: components/memory/data-table.tsx:191
+msgid "No results."
+msgstr "无结果。"
+
+#: components/memory/data-table.tsx:92
+msgid "No rows selected"
+msgstr "未选择任何行"
+
+#: components/onboarding/onboarding-client.tsx:613
 msgid "No, I'm fine"
 msgstr "不用，谢谢"
 
@@ -598,53 +1072,109 @@ msgstr "不用，谢谢"
 msgid "Off"
 msgstr "关闭"
 
+#: components/memory/columns.tsx:141
+msgid "Open menu"
+msgstr "打开菜单"
+
 #: components/login-form.tsx:99
 #: components/signup-form.tsx:170
 msgid "Or continue with"
 msgstr "或继续使用"
 
-#: components/start-call.tsx:546
-msgid "Ordering food & drinks"
-msgstr "点餐与饮品"
-
-#: components/call-summary.tsx:240
-#: components/history/conversation-history.tsx:698
+#: components/call-summary.tsx:827
+#: components/history/conversation-history.tsx:1279
 msgid "Overall Score"
 msgstr "总评分"
 
-#: components/call-summary.tsx:679
-#: components/call-summary.tsx:681
-#: components/history/conversation-history.tsx:1023
-#: components/messages.tsx:111
-#: components/messages.tsx:160
+#: components/memory/data-table.tsx:236
+#. placeholder {0}: table.getState().pagination.pageIndex + 1
+#. placeholder {1}: table.getPageCount()
+msgid "Page {0} of {1}"
+msgstr "第 {0} 页，共 {1} 页"
+
+#: components/history/conversation-history.tsx:999
+#. placeholder {0}: page + 1
+msgid "Page {0} of {totalPages}"
+msgstr "第{0}页，共{totalPages}页"
+
+#: components/call-summary.tsx:410
+#: components/call-summary.tsx:467
+#: components/call-summary.tsx:611
+#: components/call-summary.tsx:641
+#: components/call-summary.tsx:752
+#: components/call-summary.tsx:1387
+#: components/history/conversation-history.tsx:842
+#: components/history/conversation-history.tsx:864
+#: components/history/conversation-history.tsx:1109
+#: components/history/conversation-history.tsx:1139
+#: components/history/conversation-history.tsx:1250
+#: components/history/conversation-history.tsx:1722
+#: components/messages.tsx:116
+#: components/messages.tsx:149
+#: components/start-call.tsx:1249
+#: components/start-call.tsx:1422
+#: components/start-call.tsx:1523
 msgid "Partner"
 msgstr "对方"
+
+#: components/call-summary.tsx:323
+#: components/history/conversation-history.tsx:524
+msgid "Partner created"
+msgstr "合作伙伴已创建"
+
+#: components/call-summary.tsx:356
+#: components/history/conversation-history.tsx:477
+#: components/start-call.tsx:648
+msgid "Partner deleted"
+msgstr "合作伙伴已删除"
+
+#: components/call-summary.tsx:260
+#: components/history/conversation-history.tsx:406
+msgid "Partner name is required"
+msgstr "必须填写合作伙伴名称"
+
+#: components/call-summary.tsx:291
+#: components/history/conversation-history.tsx:440
+#: components/start-call.tsx:613
+msgid "Partner updated"
+msgstr "合作伙伴已更新"
 
 #: components/login-form.tsx:119
 #: components/signup-form.tsx:201
 msgid "Password"
 msgstr "密码"
 
-#: components/start-call.tsx:542
-#: components/start-call.tsx:685
-msgid "Phone Call"
-msgstr "电话沟通"
+#: components/call-summary.tsx:1399
+#: components/history/conversation-history.tsx:1734
+#: components/start-call.tsx:1434
+#: components/start-call.tsx:1535
+msgid "Photo"
+msgstr "照片"
+
+#: components/call-summary.tsx:241
+#: components/history/conversation-history.tsx:388
+msgid "Photo updated"
+msgstr "照片已更新"
+
+#: components/start-call.tsx:812
+msgid "Pick the window/tab for that platform and turn on system or tab audio."
+msgstr "选择该平台的窗口或标签页，并启用系统或标签页音频。"
 
 #: components/feedback.tsx:31
 msgid "Please enter your feedback"
 msgstr "请输入您的反馈意见"
 
-#: contexts/glass-context.tsx:993
+#: contexts/glass-context.tsx:1022
 msgid "Please refresh the page and try again."
 msgstr "请刷新页面后再试。"
 
-#: contexts/glass-context.tsx:808
+#: contexts/glass-context.tsx:837
 msgid ""
 "Please share your screen with audio from your call platform (Zoom, Google "
 "Meet, Teams)."
 msgstr "请通过您的通话平台（Zoom, Google Meet, Teams）共享带有音频的屏幕。"
 
-#: contexts/glass-context.tsx:692
+#: contexts/glass-context.tsx:722
 msgid "Please wait for session to load and try again."
 msgstr "请等待会话加载完成后重试。"
 
@@ -652,39 +1182,23 @@ msgstr "请等待会话加载完成后重试。"
 msgid "Please wait while we verify your email address"
 msgstr "请稍候，我们正在验证您的电子邮箱地址。"
 
-#: components/start-call.tsx:402
-msgid "Practice"
-msgstr "练习"
-
-#: components/start-call.tsx:633
-msgid "Practice Mode"
-msgstr "练习模式"
+#: components/start-call.tsx:947
+msgid "Practice Conversations"
+msgstr "会话练习"
 
 #: components/auth-gate.tsx:20
 msgid "Preparing your workspace…"
 msgstr "正在准备您的工作空间…"
 
-#: components/start-call.tsx:547
-msgid "Professional conversation"
-msgstr "职场对话"
-
-#: components/settings.tsx:187
+#: components/settings.tsx:194
 msgid "Pronunciation"
 msgstr "发音"
 
-#: components/start-call.tsx:462
-msgid "Real Talk"
-msgstr "实话实说"
-
-#: components/start-call.tsx:633
-msgid "Real Talk Mode"
-msgstr "真实对话模式"
-
-#: components/start-call.tsx:427
+#: components/start-call.tsx:969
 msgid "RECOMMENDED"
 msgstr "推荐"
 
-#: components/verify-email-form.tsx:132
+#: components/verify-email-form.tsx:130
 msgid "Redirecting to login in {countdown} seconds..."
 msgstr "将在 {countdown} 秒后重定向到登录页面..."
 
@@ -716,12 +1230,8 @@ msgstr "重置您的密码"
 msgid "Resetting..."
 msgstr "正在重置..."
 
-#: components/start-call.tsx:540
-#: components/start-call.tsx:665
-msgid "Restaurant"
-msgstr "餐厅"
-
-#: components/history/conversation-history.tsx:478
+#: app/[lang]/error.tsx:28
+#: components/history/conversation-history.tsx:886
 msgid "Retry"
 msgstr "重试"
 
@@ -729,28 +1239,94 @@ msgstr "重试"
 msgid "Return to login"
 msgstr "返回登录"
 
-#: components/settings.tsx:201
+#: components/call-summary.tsx:212
+#: components/history/conversation-history.tsx:355
+msgid "Roleplay conversations cannot change partner images"
+msgstr "角色扮演对话无法更改对方的头像"
+
+#: components/settings.tsx:208
 msgid "Romaji (Latin)"
 msgstr "罗马字（拉丁字母）"
 
-#: components/call-summary.tsx:746
+#: components/memory/data-table.tsx:215
+msgid "Rows per page"
+msgstr "每页行数"
+
+#: components/call-summary.tsx:1461
+#: components/history/conversation-history.tsx:1796
+#: components/start-call.tsx:1581
+msgid "Save"
+msgstr "保存"
+
+#: components/call-summary.tsx:1359
 msgid "Save Call"
 msgstr "保存通话"
 
-#: components/start-call.tsx:648
-#: components/start-call.tsx:655
+#: components/memory/memory-dialog.tsx:100
+msgid "Saving..."
+msgstr "正在保存..."
+
+#: components/start-call.tsx:1261
 msgid "Scenario:"
 msgstr "场景: "
 
-#: contexts/glass-context.tsx:807
+#: contexts/glass-context.tsx:836
 msgid "Screen audio sharing required"
 msgstr "需要启用屏幕音频共享"
 
-#: components/history/conversation-history.tsx:630
+#: components/history/conversation-history.tsx:901
+msgid "Search conversations..."
+msgstr "搜索会话..."
+
+#: components/memory/data-table.tsx:109
+msgid "Search memories..."
+msgstr "搜索记忆..."
+
+#: components/call-summary.tsx:625
+#: components/history/conversation-history.tsx:1123
+msgid "Search partners"
+msgstr "搜索合作伙伴"
+
+#: components/history/conversation-history.tsx:351
+msgid "Select a conversation first"
+msgstr "请先选择一个对话"
+
+#: components/start-call.tsx:682
+#: components/start-call.tsx:687
+#: components/start-call.tsx:1055
+msgid "Select a conversation partner"
+msgstr "选择对话伙伴"
+
+#: components/history/conversation-history.tsx:1042
 msgid "Select a conversation to view details"
 msgstr "选择一个对话查看详情"
 
-#: components/onboarding/onboarding-client.tsx:438
+#: components/start-call.tsx:668
+msgid "Select a mode to continue"
+msgstr "请选择一种模式以继续"
+
+#: components/call-summary.tsx:658
+#: components/history/conversation-history.tsx:1156
+msgid "Select a partner"
+msgstr "选择合作伙伴"
+
+#: components/start-call.tsx:1267
+msgid "Select a partner to see details."
+msgstr "选择合作伙伴查看详情。"
+
+#: components/memory/columns.tsx:34
+msgid "Select all"
+msgstr "全选"
+
+#: components/memory/columns.tsx:43
+msgid "Select row"
+msgstr "选择行"
+
+#: components/start-call.tsx:773
+msgid "Select the Chrome tab with Meet, toggle Share tab audio, and confirm."
+msgstr "选择带有 Meet 的 Chrome 标签页，切换共享标签页音频，并确认。"
+
+#: components/onboarding/onboarding-client.tsx:456
 msgid "Select the language you speak fluently"
 msgstr "选择您熟练使用的语言"
 
@@ -774,20 +1350,16 @@ msgstr "发送中..."
 msgid "Sentence length"
 msgstr "句子长度"
 
-#: components/settings.tsx:152
-#: components/user-menu.tsx:160
+#: components/settings.tsx:159
+#: components/user-menu.tsx:153
 msgid "Settings"
 msgstr "设置"
-
-#: components/start-call.tsx:675
-msgid "Shopping"
-msgstr "购物"
 
 #: components/bottom-panel.tsx:245
 msgid "Short"
 msgstr "简短"
 
-#: components/user-menu.tsx:169
+#: components/user-menu.tsx:162
 msgid "Sign out"
 msgstr "退出登录"
 
@@ -820,22 +1392,23 @@ msgstr "西班牙语"
 msgid "Star on GitHub"
 msgstr "在 GitHub 上加星标"
 
-#: components/start-call.tsx:617
-#: components/start-call.tsx:734
-msgid "Start"
-msgstr "开始"
-
-#: components/start-call.tsx:340
-#: components/start-call.tsx:357
+#: components/start-call.tsx:882
+#: components/start-call.tsx:899
+#: components/start-call.tsx:1218
+#: components/start-call.tsx:1343
 msgid "Start Call"
 msgstr "开始通话"
 
-#: components/onboarding/onboarding-client.tsx:624
+#: components/onboarding/onboarding-client.tsx:642
 msgid "Start Tutorial"
 msgstr "开始教程"
 
+#: components/memory/columns.tsx:108
+msgid "Status"
+msgstr "状态"
+
 #: components/bottom-panel.tsx:417
-#: components/onboarding/bottom-panel-demo.tsx:332
+#: components/onboarding/bottom-panel-demo.tsx:330
 msgid "Suggest"
 msgstr "建议"
 
@@ -844,64 +1417,101 @@ msgstr "建议"
 msgid "Suggested Answer"
 msgstr "推荐回答"
 
-#: components/settings.tsx:172
+#: components/settings.tsx:179
 msgid "System default"
 msgstr "系统默认"
-
-#: components/start-call.tsx:548
-msgid "Telephone etiquette"
-msgstr "电话礼仪"
 
 #: components/feedback.tsx:53
 msgid "Thank you for your feedback!"
 msgstr "感谢您的反馈！"
 
-#: components/verify-email-form.tsx:123
+#: components/verify-email-form.tsx:122
 msgid "The verification link is invalid or has expired."
 msgstr "验证链接无效或已过期。"
 
-#: components/settings.tsx:309
+#: components/settings.tsx:293
 msgid "Theme"
 msgstr "主题"
 
-#: contexts/glass-context.tsx:945
+#: components/start-call.tsx:1599
+msgid "This action cannot be undone."
+msgstr "此操作无法撤销。"
+
+#: components/memory/memory-table.tsx:275
+#. placeholder {0}: memoriesToDelete?.length ?? 0
+msgid ""
+"This action will permanently delete {0} selected memories. This cannot be "
+"undone."
+msgstr "此操作将永久删除已选择的 {0} 条记忆。操作无法撤销。"
+
+#: components/history/conversation-history.tsx:867
+msgid "this conversation"
+msgstr "此对话"
+
+#: components/memory/memory-table.tsx:240
+msgid "This will permanently remove the selected memory from your knowledge graph."
+msgstr "这将永久删除您知识图谱中的选定记忆。"
+
+#: components/history/conversation-history.tsx:682
+msgid "Title updated"
+msgstr "标题已更新"
+
+#: contexts/glass-context.tsx:974
 msgid "Trial session ended due to time limit."
 msgstr "试用会话因时间限制而结束。"
 
-#: app/[lang]/error.tsx:34
 #: app/[lang]/failure/page.tsx:32
 msgid "Try again"
 msgstr "请重试"
-
-#: components/start-call.tsx:405
-msgid "Tutorial with AI"
-msgstr "AI 引导教程"
 
 #: components/bottom-panel.tsx:235
 #: components/onboarding/bottom-panel-demo.tsx:110
 msgid "Type what you want to say in {nativeLangName}"
 msgstr "用{nativeLangName}输入您想说的话"
 
-#: components/settings.tsx:286
-msgid "UI Language"
-msgstr "界面语言"
-
-#: contexts/glass-context.tsx:691
-#: contexts/glass-context.tsx:699
+#: contexts/glass-context.tsx:721
+#: contexts/glass-context.tsx:729
 msgid "Unable to connect"
 msgstr "无法连接"
 
-#: components/call-summary.tsx:111
+#: components/start-call.tsx:467
+msgid "Unable to create a partner"
+msgstr "无法创建合作伙伴"
+
+#: components/start-call.tsx:651
+msgid "Unable to delete partner"
+msgstr "无法删除合作伙伴"
+
+#: components/call-summary.tsx:513
 msgid "Unable to load context from Zep."
 msgstr "无法从Zep加载上下文。"
 
-#: components/start-call.tsx:277
+#: components/start-call.tsx:541
+#: components/start-call.tsx:579
+#: components/start-call.tsx:587
+#: components/start-call.tsx:617
+msgid "Unable to save partner"
+msgstr "无法保存合作伙伴"
+
+#: components/start-call.tsx:704
 msgid "Unable to start call"
 msgstr "无法开始通话"
 
-#: components/start-call.tsx:475
+#: components/start-call.tsx:1017
 msgid "Unavailable on mobile"
 msgstr "移动端暂不支持"
+
+#: components/history/conversation-history.tsx:1069
+msgid "Untitled Conversation"
+msgstr "未命名对话"
+
+#: components/memory/memory-dialog.tsx:102
+msgid "Update"
+msgstr "更新"
+
+#: components/start-call.tsx:1499
+msgid "Update your custom partner details."
+msgstr "更新您的自定义合作伙伴信息。"
 
 #: components/verify-email-form.tsx:113
 msgid "Verification failed"
@@ -911,15 +1521,11 @@ msgstr "验证失败"
 msgid "Verifying your email..."
 msgstr "正在验证您的邮箱..."
 
-#: app/[lang]/error.tsx:30
-msgid "View Documentation"
-msgstr "查看文档"
-
 #: app/[lang]/time-limit/page.tsx:26
 msgid "Want to keep practicing?"
 msgstr "想继续练习吗？"
 
-#: components/history/conversation-history.tsx:474
+#: components/history/conversation-history.tsx:882
 msgid "We couldn't load your history. Refresh and try again."
 msgstr "无法加载您的历史记录。请刷新后重试。"
 
@@ -929,7 +1535,7 @@ msgid ""
 "again."
 msgstr "启动会话时出现问题，请检查网络连接后重试。"
 
-#: components/onboarding/onboarding-client.tsx:545
+#: components/onboarding/onboarding-client.tsx:563
 msgid "We'll show how to read sentences in your alphabet when helpful"
 msgstr "在需要时，我们将展示如何用您的字母阅读句子。"
 
@@ -946,26 +1552,31 @@ msgstr "欢迎回来"
 msgid "What do you want to say..."
 msgstr "你想说什么..."
 
-#: components/onboarding/onboarding-client.tsx:435
+#: components/onboarding/onboarding-client.tsx:453
 msgid "What is your native language?"
 msgstr "你的母语是什么？"
 
-#: components/start-call.tsx:513
-msgid "What would you like to practice?"
-msgstr "你想练习哪一类场景？"
+#: components/memory/memory-dialog.tsx:67
+msgid "What would you like to remember?"
+msgstr "你想记住什么内容？"
 
-#: components/onboarding/onboarding-client.tsx:481
+#: components/onboarding/onboarding-client.tsx:499
 msgid "Which language do you want to learn?"
 msgstr "你想学习哪种语言？"
 
-#: components/onboarding/onboarding-client.tsx:563
+#: components/memory/data-table.tsx:98
+#. placeholder {0}: selectedRows.length
+msgid "Would delete {0} memories"
+msgstr "将删除{0}个记忆"
+
+#: components/onboarding/onboarding-client.tsx:581
 msgid "Yes, show pronunciation"
 msgstr "是的，显示发音"
 
-#: components/call-summary.tsx:677
-#: components/history/conversation-history.tsx:1023
-#: components/messages.tsx:111
-#: components/messages.tsx:160
+#: components/call-summary.tsx:408
+#: components/history/conversation-history.tsx:840
+#: components/messages.tsx:116
+#: components/messages.tsx:146
 msgid "You"
 msgstr "我"
 
@@ -977,13 +1588,13 @@ msgstr "一切准备就绪！"
 msgid "You're ready to have real conversations. No fear, no hesitation."
 msgstr "你已准备好进行真正的对话了。无畏无惧，无需犹豫。"
 
-#: contexts/glass-context.tsx:953
+#: contexts/glass-context.tsx:982
 msgid "You've used your free time"
 msgstr "您已用完您的免费时间"
 
-#: contexts/glass-context.tsx:1563
-#: contexts/glass-context.tsx:1615
-#: contexts/glass-context.tsx:1630
+#: contexts/glass-context.tsx:1596
+#: contexts/glass-context.tsx:1652
+#: contexts/glass-context.tsx:1667
 msgid "Your conversation has been saved and is now available in History."
 msgstr "您的对话已保存，现已在历史记录中可查看。"
 
@@ -1007,396 +1618,131 @@ msgstr "您的回忆"
 msgid "Your saved calls"
 msgstr "已保存的通话"
 
-#: components/start-call.tsx:702
-#~ msgid "⚠️ Make sure to enable \"Share audio\""
-#~ msgstr "请务必启用“共享音频”"
-
-#: components/call-summary.tsx:719
-#~ msgid "✓ Successfully saved! Redirecting..."
-#~ msgstr "✓ 已保存，正在跳转..."
-
-#: components/start-call.tsx:690
-#~ msgid "1. Open your meeting (Zoom, Google Meet, or Teams)"
-#~ msgstr "1. 打开你的会议（Zoom、Google Meet 或 Teams）"
-
-#: components/settings.tsx:211
-#~ msgid "10 seconds"
-#~ msgstr "10秒"
-
-#: components/settings.tsx:232
-#~ msgid "10 seconds (default)"
-#~ msgstr "10 秒（默认）"
-
-#: components/settings.tsx:235
-#~ msgid "15 seconds"
-#~ msgstr "15 秒"
-
-#: components/settings.tsx:214
-#~ msgid "20 seconds"
-#~ msgstr "20秒"
-
-#: components/start-call.tsx:696
-#~ msgid "3. Share your meeting tab"
-#~ msgstr "3. 共享您的会议标签页"
-
-#: components/settings.tsx:217
-#~ msgid "30 seconds"
-#~ msgstr "30秒钟"
-
-#: components/start-call.tsx:699
-#~ msgid "4. Make sure to enable \"Share audio\""
-#~ msgstr "4. 请确保启用“共享音频”"
-
-#: components/settings.tsx:208
-#~ msgid "5 seconds"
-#~ msgstr "5秒"
-
-#: lib/onboarding-tours.tsx:73
-#~ msgid ""
-#~ "After the conversation, I'll analyze your grammar, pronunciation, and "
-#~ "vocabulary—giving you personalized feedback to help you improve naturally."
-#~ msgstr ""
-
-#: components/settings.tsx:187
-#~ msgid "AI message duration"
-#~ msgstr "AI 消息显示时长"
-
-#: lib/onboarding-tours.tsx:63
-#~ msgid ""
-#~ "As I listen to the conversation, everything I do to help you will appear "
-#~ "right here."
-#~ msgstr "在我聆听对话的同时，我给你的所有帮助都会显示在这里。"
-
-#: components/settings.tsx:250
-#~ msgid "Auto-detected from browser. Your selection will be saved and remembered."
-#~ msgstr "已根据浏览器自动检测。你的选择会被保存并在下次继续使用。"
-
-#: app/[lang]/waitlist/success/page.tsx:77
-#~ msgid "Back to Home"
-#~ msgstr "返回主页"
-
-#: contexts/glass-context.tsx:1497
-#~ msgid "Call ended"
-#~ msgstr "通话结束"
-
-#: components/start-call.tsx:503
-#~ msgid "Choose Your Languages"
-#~ msgstr "选择语言"
-
-#: lib/onboarding-tours.tsx:110
-#~ msgid "Congrats! You're all set."
-#~ msgstr "恭喜，一切都准备好了！"
-
-#: lib/onboarding-tours.tsx:53
-#~ msgid ""
-#~ "Don't know how to say something? Just type what you want to say in your "
-#~ "language, and I'll instantly translate it so you can speak with confidence."
-#~ msgstr ""
-
-#: components/history/conversation-history.tsx:126
-#~ msgid "Duration:"
-#~ msgstr ""
-
-#: components/waitlist-modal.tsx:232
-#~ msgid "Enter your email"
-#~ msgstr "请输入你的邮箱"
-
-#: components/bottom-panel.tsx:37
-#~ msgid "Follow-up Suggestion"
-#~ msgstr "后续建议"
-
-#: components/bottom-panel.tsx:462
-#~ msgid "German"
-#~ msgstr "德语"
-
-#: components/waitlist-modal.tsx:193
-#~ msgid "Gets smarter every time you speak"
-#~ msgstr "每次对话都让它更了解你"
-
-#: components/waitlist-modal.tsx:167
-#~ msgid "Glass AI helps you speak any language in the real world"
-#~ msgstr "Glass AI 帮助你在真实场景中自如使用多种语言"
-
-#: lib/onboarding-tours.tsx:31
-#~ msgid "I listen to your conversation"
-#~ msgstr "我会听你的对话。"
-
-#: lib/onboarding-tours.tsx:34
-#~ msgid ""
-#~ "I listen to your conversation in real-time and translate what they say, so "
-#~ "you never miss a word."
-#~ msgstr ""
-
-#: components/start-call.tsx:543
-#~ msgid "I speak"
-#~ msgstr "我会说的语言"
-
-#: components/start-call.tsx:514
-#~ msgid "I want to learn"
-#~ msgstr "我想学习的语言"
-
-#: lib/onboarding-tours.tsx:70
-#~ msgid "I'll give you feedback"
-#~ msgstr "我也会给你一些反馈。"
-
-#: lib/onboarding-tours.tsx:53
-#~ msgid ""
-#~ "I'll listen and help here. I'll suggest what to say next, so just say it. I "
-#~ "remember a bit from our chats to get better over time."
-#~ msgstr "我会在这里倾听并帮你。接下来说什么我会给出建议，你照着说就好。我也会记住一部分之前的对话，慢慢变得更懂你。"
-
-#: lib/onboarding-tours.tsx:34
-#~ msgid ""
-#~ "I'll listen to you and your partner, and translate what they say so you can "
-#~ "understand each other."
-#~ msgstr "我会听你和对方的对话，并把内容翻译给你们，让彼此更好理解对方。"
-
-#: lib/onboarding-tours.tsx:80
-#~ msgid "I'll suggest what to say next"
-#~ msgstr "我会给你推荐接下来可以说的话。"
-
-#: lib/onboarding-tours.tsx:83
-#~ msgid ""
-#~ "I'll suggest what you could say next, so just read it out loud. The more I "
-#~ "learn about you, the better my suggestions will get."
-#~ msgstr "我会提示你接下来可以怎么说，你照着念就好。我越了解你，给出的建议就会越自然、越贴切。"
-
-#: lib/onboarding-tours.tsx:23
-#~ msgid ""
-#~ "I'm here to help you communicate and learn a new language through real "
-#~ "conversations and practice."
-#~ msgstr "我会通过真实对话和练习，帮你更自如地使用一门新的语言。"
-
-#: lib/onboarding-tours.tsx:103
-#~ msgid ""
-#~ "If you say something that sounds a bit off, I'll let you know and help you "
-#~ "fix it."
-#~ msgstr "如果有哪句听起来不太自然，我会提醒你，并帮你换成更自然的说法。"
-
-#: lib/onboarding-tours.tsx:73
-#~ msgid ""
-#~ "If your grammar, pronunciation, or word choice is off, I'll flag it and "
-#~ "suggest a clearer, more natural option."
-#~ msgstr "如果语法、发音或用词不太恰当，我会提示并给出更清晰、更自然的说法。"
-
-#: components/bottom-panel.tsx:463
-#~ msgid "Italian"
-#~ msgstr "意大利语"
-
-#: components/waitlist-modal.tsx:295
-#~ msgid "Join Early Access"
-#~ msgstr "加入抢先体验"
-
-#: components/waitlist-modal.tsx:291
-#~ msgid "Joining..."
-#~ msgstr "正在加入..."
-
-#: components/settings.tsx:227
-#~ msgid "Language"
-#~ msgstr "语言"
-
-#: components/onboarding/onboarding-client.tsx:460
-#~ msgid "Make suggestions readable for me"
-#~ msgstr "用我更容易读懂的方式显示建议"
-
-#: components/settings.tsx:150
-#~ msgid "Microphone {0}"
-#~ msgstr "麦克风 {0}"
-
-#: components/waitlist-modal.tsx:91
-#~ msgid "Network error. Please check your connection and try again."
-#~ msgstr "网络错误。请检查您的连接后重试。"
-
-#: components/call-summary.tsx:626
-#~ msgid "No information saved yet"
-#~ msgstr "暂未保存任何信息"
-
-#: components/settings.tsx:205
-#~ msgid "No time limit (default)"
-#~ msgstr "不限时（默认）"
-
-#: lib/onboarding-tours.tsx:51
-#~ msgid ""
-#~ "Not sure what to say? Just type a few words in your language. I'll turn "
-#~ "them into a full sentence you can use."
-#~ msgstr ""
-
-#: lib/onboarding-tours.tsx:117
-#~ msgid "Now let's start your first real conversation!"
-#~ msgstr "现在，开始你的第一次真实对话吧！"
-
-#: lib/onboarding-tours.tsx:94
-#~ msgid "Now you're ready to have real conversations without fear or hesitation."
-#~ msgstr ""
-
-#: components/waitlist-modal.tsx:46
-#~ msgid "Please enter a valid email address"
-#~ msgstr "请输入有效的电子邮件地址"
-
-#: components/bottom-panel.tsx:464
-#~ msgid "Portuguese"
-#~ msgstr "葡萄牙语"
-
-#: components/waitlist-modal.tsx:216
-#~ msgid "Practice mode or live on Zoom calls"
-#~ msgstr "可在练习模式或 Zoom 实时会议中使用"
-
-#: components/waitlist-modal.tsx:170
-#~ msgid "Practice speaking. Get help in real calls. Remembers everything."
-#~ msgstr "先在这里练习开口，在真实会议中获得实时帮助，并保留完整对话记录。"
-
-#: components/settings.tsx:160
-#~ msgid "Pronunciation format"
-#~ msgstr "发音显示格式"
-
-#: lib/onboarding-tours.tsx:90
-#~ msgid "Quick translation"
-#~ msgstr "快速翻译"
-
-#: components/settings.tsx:125
-#~ msgid "Refresh"
-#~ msgstr "刷新"
-
-#: components/waitlist-modal.tsx:196
-#~ msgid "Remembers who you are, what you care about"
-#~ msgstr "记住你的偏好和关注点"
-
-#: components/start-call.tsx:1011
-#~ msgid "Retail & bargaining"
-#~ msgstr "购物与讲价"
-
-#: components/history/conversation-history.tsx:678
-#~ msgid "Select a conversation to view the transcript and AI feedback."
-#~ msgstr ""
-
-#: components/start-call.tsx:506
-#~ msgid "Select the language you want to practice"
-#~ msgstr "选择你想练习的语言"
-
-#: components/onboarding/onboarding-client.tsx:493
-#~ msgid "Show suggestions only"
-#~ msgstr "仅显示建议"
-
-#: components/settings.tsx:211
-#~ msgid "Suggestion duration"
-#~ msgstr "建议显示时长"
-
-#: app/[lang]/waitlist/success/page.tsx:66
-#~ msgid ""
-#~ "Thanks for joining. We’ll email you when more access is available. Sit "
-#~ "tight — it won’t be long."
-#~ msgstr "感谢加入。我们会在更多权限开放时通过电子邮件通知您。请稍安勿躁——很快就会有消息的。"
-
-#: lib/onboarding-tours.tsx:50
-#~ msgid "This is where I help and suggest what to say"
-#~ msgstr "我会在这里帮你，并提示该说什么。"
-
-#: lib/onboarding-tours.tsx:60
-#~ msgid "This is where I help you"
-#~ msgstr "我会在这里帮你。"
-
-#: components/bottom-panel.tsx:468
-#~ msgid "To {langName}..."
-#~ msgstr "切换为 {langName}…"
-
-#: components/bottom-panel.tsx:468
-#~ msgid "Translate to {langName}..."
-#~ msgstr "翻译成{langName}..."
-
-#: components/bottom-panel.tsx:337
-#: components/bottom-panel.tsx:790
-#~ msgid "Translation"
-#~ msgstr "翻译"
-
-#: components/history/conversation-history.tsx:164
-#~ msgid "Translation:"
-#~ msgstr ""
-
-#: components/start-call.tsx:993
-#~ msgid "Travel & Immigration"
-#~ msgstr "旅行与出入境"
-
-#: lib/onboarding-tours.tsx:143
-#~ msgid ""
-#~ "Type what you want to say in your language, or even just a few keywords. "
-#~ "I'll listen to the conversation and suggest the right sentence for you."
-#~ msgstr "你可以用自己的语言输入想说的话，哪怕只打几个关键词。我会根据对话内容帮你生成合适的句子。"
-
-#: components/waitlist-modal.tsx:246
-#~ msgid "Waitlist Email Captured"
-#~ msgstr "已成功登记至候补名单邮箱"
-
-#: components/waitlist-modal.tsx:54
-#~ msgid "Waitlist Submit Attempted"
-#~ msgstr "候补提交已尝试"
-
-#: components/waitlist-modal.tsx:83
-#: components/waitlist-modal.tsx:92
-#~ msgid "Waitlist Submit Failed"
-#~ msgstr "等待名单提交失败"
-
-#: components/waitlist-modal.tsx:79
-#~ msgid "Waitlist Submit Succeeded"
-#~ msgstr "加入候补名单成功提交"
-
-#: lib/onboarding-tours.tsx:93
-#~ msgid ""
-#~ "Want to say something but don't know the sentence? Type in your language or "
-#~ "a few keywords. I'll show the translation."
-#~ msgstr "想说点什么却不知道怎么表达？用你的语言输入，或写几个关键词。我会显示翻译。"
-
-#: components/history/conversation-history.tsx:74
-#~ msgid "We couldn’t load your history. Refresh and try again."
-#~ msgstr ""
-
-#: components/waitlist-modal.tsx:82
-#~ msgid "We had trouble adding you. Please try again later."
-#~ msgstr "我们无法添加您。请稍后重试。"
-
-#: components/waitlist-modal.tsx:302
-#~ msgid "We'll notify you when early access is ready. No spam, ever."
-#~ msgstr "抢先体验版本准备好后我们会通知你，绝不发送垃圾邮件。"
-
-#: components/onboarding/onboarding-client.tsx:439
-#~ msgid "We'll show how to read suggestions in your alphabet when helpful"
-#~ msgstr "在需要时，我们会用你熟悉的文字显示建议的读法。"
-
-#: components/waitlist-modal.tsx:213
-#~ msgid "Works in real calls"
-#~ msgstr "在真实会议中同样好用"
-
-#: lib/onboarding-tours.tsx:120
-#~ msgid "You can control how much I help"
-#~ msgstr "你可以自己决定我帮到什么程度。"
-
-#: lib/onboarding-tours.tsx:123
-#~ msgid ""
-#~ "You can turn my suggestions and feedback on, off, or keep it on auto. By "
-#~ "default, it's set to auto."
-#~ msgstr "你可以把我的建议和反馈设为开启、关闭或自动模式。默认是自动。"
-
-#: lib/onboarding-tours.tsx:91
-#~ msgid ""
-#~ "You'll get a report like this with your scores, feedback, and everything we "
-#~ "talked about. Track your progress over time!"
-#~ msgstr ""
-
-#: app/[lang]/waitlist/success/page.tsx:63
-#~ msgid "You’re on the list 🎉"
-#~ msgstr "您已在名单上 🎉"
-
-#: lib/onboarding-tours.tsx:114
-#~ msgid "You've completed the tour and learned how I work."
-#~ msgstr "你已经完成了引导，知道我怎么帮你了。"
-
-#: contexts/glass-context.tsx:1498
-#~ msgid "Your conversation is being saved and will appear in history shortly."
-#~ msgstr "您的对话正在保存，将很快出现在历史记录中。"
-
-#: app/[lang]/(auth)/verify-email/page.tsx:81
-#~ msgid "Your email ({email}) has been successfully verified."
-#~ msgstr "您的邮箱（{email}）已成功验证。"
-
-#: components/history/conversation-history.tsx:219
-#~ msgid "Your recorded conversations will appear here once a call ends."
-#~ msgstr "通话结束后，您录制的对话将显示在此处。"
+#: components/start-call.tsx:771
+#~ msgid "• Browser tab → Enable \"Share tab audio\""
+#~ msgstr "• 浏览器选项卡 → 启用“共享选项卡音频”"
+
+#: components/start-call.tsx:774
+#~ msgid "• Desktop app → Enable \"Share system audio\""
+#~ msgstr "• 桌面应用 → 启用“共享系统音频”"
+
+#: components/start-call.tsx:760
+#~ msgid "1. Join a Discord voice chat or online call"
+#~ msgstr "加入 Discord 语音聊天或在线通话"
+
+#: components/start-call.tsx:763
+#~ msgid "2. Click \"Start\" below"
+#~ msgstr "2. 击下方“开始”"
+
+#: components/start-call.tsx:767
+#~ msgid "3. Share your tab or screen with audio:"
+#~ msgstr "3. 共享您的标签页或屏幕，并包括音频："
+
+#: components/start-call.tsx:779
+#~ msgid "4. Start talking and let Glass assist you"
+#~ msgstr "4. 开始交流，让 Glass 协助你"
+
+#: components/start-call.tsx:721
+#~ msgid "Airport Check-in"
+#~ msgstr "机场值机"
+
+#: components/memory/memory-table.tsx:116
+#~ msgid "Are you sure you want to delete {0} memories?"
+#~ msgstr "您确定要删除{0}条记忆吗？"
+
+#: components/memory/memory-table.tsx:109
+#~ msgid "Are you sure you want to delete this memory?"
+#~ msgstr "您确定要删除此记忆吗？"
+
+#: components/start-call.tsx:741
+#~ msgid "Casual Chat"
+#~ msgstr "轻松聊天"
+
+#: components/start-call.tsx:510
+#~ msgid "Choose a scenario"
+#~ msgstr "选择一个练习场景"
+
+#: components/start-call.tsx:610
+#~ msgid "Custom"
+#~ msgstr "自定义"
+
+#: components/start-call.tsx:572
+#~ msgid "Custom Scenario"
+#~ msgstr "自定义场景"
+
+#: components/start-call.tsx:590
+#~ msgid "Describe the scenario you want to roleplay..."
+#~ msgstr "描述您想要进行角色扮演的场景..."
+
+#: components/start-call.tsx:649
+#~ msgid "Describe them (role, personality, background)..."
+#~ msgstr "描述他们（角色、性格、背景）…"
+
+#: components/start-call.tsx:575
+#~ msgid "Describe your own situation"
+#~ msgstr "描述你的实际情况"
+
+#: components/start-call.tsx:545
+#~ msgid "Everyday conversation"
+#~ msgstr "日常对话"
+
+#: components/start-call.tsx:756
+#~ msgid "Follow these steps:"
+#~ msgstr "请按照以下步骤操作："
+
+#: components/user-menu.tsx:133
+#~ msgid "Free minutes"
+#~ msgstr "免费通话分钟"
+
+#: components/start-call.tsx:731
+#~ msgid "Job Interview"
+#~ msgstr "求职面试"
+
+#: app/[lang]/(app)/memory/page.tsx:28
+#~ msgid "Memory system"
+#~ msgstr "内存系统"
+
+#: components/start-call.tsx:635
+#~ msgid "Name (e.g., Alex, Maria)..."
+#~ msgstr "名字（例如：Alex、Maria）…"
+
+#: components/start-call.tsx:546
+#~ msgid "Ordering food & drinks"
+#~ msgstr "点餐与饮品"
+
+#: components/start-call.tsx:746
+#~ msgid "Phone Call"
+#~ msgstr "电话沟通"
+
+#: components/start-call.tsx:547
+#~ msgid "Professional conversation"
+#~ msgstr "职场对话"
+
+#: components/start-call.tsx:726
+#~ msgid "Restaurant"
+#~ msgstr "餐厅"
+
+#: components/start-call.tsx:736
+#~ msgid "Shopping"
+#~ msgstr "购物"
+
+#: components/start-call.tsx:678
+#: components/start-call.tsx:795
+#~ msgid "Start"
+#~ msgstr "开始"
+
+#: components/start-call.tsx:548
+#~ msgid "Telephone etiquette"
+#~ msgstr "电话礼仪"
+
+#: components/start-call.tsx:405
+#~ msgid "Tutorial with AI"
+#~ msgstr "AI 引导教程"
+
+#: app/[lang]/error.tsx:30
+#~ msgid "View Documentation"
+#~ msgstr "查看文档"
+
+#: components/start-call.tsx:513
+#~ msgid "What would you like to roleplay?"
+#~ msgstr "您想扮演什么角色？"

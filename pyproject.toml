@@ -28,6 +28,7 @@ dependencies = [
     "email-validator>=2.0",
     "zep-cloud>=2.0",
     "bcrypt>=4.0",
+    "azure-storage-blob>=12.19",
 ]
 
 [tool.setuptools.packages.find]

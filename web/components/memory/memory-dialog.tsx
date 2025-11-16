@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Memory } from './columns';
+import { Trans } from '@lingui/react/macro';
+import { t } from '@lingui/core/macro';
 
 interface MemoryDialogProps {
   open: boolean;
@@ -48,16 +50,26 @@ export function MemoryDialog({ open, onClose, onSave, memory, isLoading, readOnl
         <form onSubmit={handleSubmit}>
           <DialogHeader className={readOnly ? 'pb-3' : ''}>
             <DialogTitle className={readOnly ? 'text-base' : ''}>
-              {readOnly ? 'Memory' : memory ? 'Edit Memory' : 'Add New Memory'}
+              {readOnly ? (
+                <Trans>Memory</Trans>
+              ) : memory ? (
+                <Trans>Edit memory</Trans>
+              ) : (
+                <Trans>Add new memory</Trans>
+              )}
             </DialogTitle>
           </DialogHeader>
 
           <div className={readOnly ? 'py-2' : 'grid gap-4 py-4'}>
             <div className={readOnly ? '' : 'grid gap-2'}>
-              {!readOnly && <Label htmlFor="value">What would you like to remember?</Label>}
+              {!readOnly && (
+                <Label htmlFor="value">
+                  <Trans>What would you like to remember?</Trans>
+                </Label>
+              )}
               <Textarea
                 id="value"
-                placeholder="e.g., I love hiking in the mountains, My favorite food is sushi, I'm learning Spanish..."
+                placeholder={t`e.g., I love hiking in the mountains, My favorite food is sushi, I'm learning Spanish...`}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 disabled={isLoading || readOnly}
@@ -67,7 +79,7 @@ export function MemoryDialog({ open, onClose, onSave, memory, isLoading, readOnl
               />
               {!readOnly && (
                 <p className="text-xs text-muted-foreground">
-                  AI will automatically organize and categorize this information
+                  <Trans>AI will automatically organize and categorize this information</Trans>
                 </p>
               )}
             </div>
@@ -76,15 +88,21 @@ export function MemoryDialog({ open, onClose, onSave, memory, isLoading, readOnl
           <DialogFooter className={readOnly ? 'pt-2' : ''}>
             {readOnly ? (
               <Button type="button" onClick={handleClose} size="sm">
-                Close
+                <Trans>Close</Trans>
               </Button>
             ) : (
               <>
                 <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
-                  Cancel
+                  <Trans>Cancel</Trans>
                 </Button>
                 <Button type="submit" disabled={isLoading || !value.trim()}>
-                  {isLoading ? 'Saving...' : memory ? 'Update' : 'Create'}
+                  {isLoading ? (
+                    <Trans>Saving...</Trans>
+                  ) : memory ? (
+                    <Trans>Update</Trans>
+                  ) : (
+                    <Trans>Create</Trans>
+                  )}
                 </Button>
               </>
             )}

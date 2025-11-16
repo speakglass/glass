@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAccountSession } from '@/contexts/account-session-context';
 import { createColumns, Memory } from './columns';
@@ -8,6 +8,19 @@ import { DataTable } from './data-table';
 import { fetchMemories, deleteMemory, updateMemory, createMemories } from '@/lib/account-api';
 import { toast } from 'sonner';
 import { MemoryDialog } from './memory-dialog';
+import { t } from '@lingui/core/macro';
+import { Trans } from '@lingui/react/macro';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Loader2 } from 'lucide-react';
 
 export function MemoryTable() {
   const { token } = useAccountSession();
@@ -17,6 +30,10 @@ export function MemoryTable() {
   const [isCreating, setIsCreating] = useState(false);
   const [viewingMemory, setViewingMemory] = useState<Memory | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [memoryToDelete, setMemoryToDelete] = useState<Memory | null>(null);
+  const [memoriesToDelete, setMemoriesToDelete] = useState<Memory[] | null>(null);
+  const deleteToastIdRef = useRef<string | number | null>(null);
+  const bulkDeleteToastIdRef = useRef<string | number | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['memories'],
@@ -32,12 +49,52 @@ export function MemoryTable() {
       if (!token) throw new Error('No access token');
       await deleteMemory(token, memoryId);
     },
+    onMutate: () => {
+      deleteToastIdRef.current = toast.loading(t`Deleting memory...`);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['memories'] });
-      toast.success('Memory deleted successfully');
+      toast.success(t`Memory deleted successfully`);
+      setMemoryToDelete(null);
     },
     onError: (error) => {
-      toast.error(`Failed to delete memory: ${error.message}`);
+      toast.error(t`Failed to delete memory: ${error.message}`);
+    },
+    onSettled: () => {
+      if (deleteToastIdRef.current !== null) {
+        toast.dismiss(deleteToastIdRef.current);
+        deleteToastIdRef.current = null;
+      }
+    },
+  });
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (memoryIds: string[]) => {
+      if (!token) throw new Error('No access token');
+      const { bulkDeleteMemories } = await import('@/lib/account-api');
+      return await bulkDeleteMemories(token, memoryIds);
+    },
+    onMutate: (memoryIds) => {
+      bulkDeleteToastIdRef.current = toast.loading(t`Deleting ${memoryIds.length} selected memories...`);
+    },
+    onSuccess: (result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['memories'] });
+      if (result.failed && result.failed.length > 0) {
+        toast.warning(
+          t`Deleted ${result.deleted} memories, but ${result.failed.length} could not be removed. Please retry later.`
+        );
+      } else {
+        toast.success(t`Deleted ${variables.length} memories`);
+      }
+      setMemoriesToDelete(null);
+    },
+    onError: (error) => {
+      toast.error(t`Failed to delete memories: ${error.message}`);
+    },
+    onSettled: () => {
+      if (bulkDeleteToastIdRef.current !== null) {
+        toast.dismiss(bulkDeleteToastIdRef.current);
+        bulkDeleteToastIdRef.current = null;
+      }
     },
   });
 
@@ -49,13 +106,13 @@ export function MemoryTable() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['memories'] });
-      toast.success('Memory created successfully');
+      toast.success(t`Memory created successfully`);
       setDialogOpen(false);
       setIsCreating(false);
       setEditingMemory(null);
     },
     onError: (error) => {
-      toast.error(`Failed to create memory: ${error.message}`);
+      toast.error(t`Failed to create memory: ${error.message}`);
     },
   });
 
@@ -66,12 +123,12 @@ export function MemoryTable() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['memories'] });
-      toast.success('Memory updated successfully');
+      toast.success(t`Memory updated successfully`);
       setDialogOpen(false);
       setEditingMemory(null);
     },
     onError: (error) => {
-      toast.error(`Failed to update memory: ${error.message}`);
+      toast.error(t`Failed to update memory: ${error.message}`);
     },
   });
 
@@ -104,32 +161,32 @@ export function MemoryTable() {
   };
 
   const handleDelete = (memory: Memory) => {
-    if (confirm(`Are you sure you want to delete this memory?`)) {
-      deleteMutation.mutate(memory.id);
-    }
+    setMemoryToDelete(memory);
   };
 
-  const handleBulkDelete = async (memories: Memory[]) => {
-    if (!token) return;
-    if (!confirm(`Are you sure you want to delete ${memories.length} memories?`)) return;
+  const handleBulkDelete = (memories: Memory[]) => {
+    if (memories.length === 0) return;
+    setMemoriesToDelete(memories);
+  };
 
-    try {
-      const { bulkDeleteMemories } = await import('@/lib/account-api');
-      await bulkDeleteMemories(
-        token,
-        memories.map((m) => m.id)
-      );
-      queryClient.invalidateQueries({ queryKey: ['memories'] });
-      toast.success(`Deleted ${memories.length} memories`);
-    } catch (error: any) {
-      toast.error(`Failed to delete memories: ${error.message}`);
-    }
+  const confirmSingleDelete = () => {
+    if (!memoryToDelete) return;
+    deleteMutation.mutate(memoryToDelete.id);
+  };
+
+  const confirmBulkDelete = () => {
+    if (!memoriesToDelete?.length) return;
+    bulkDeleteMutation.mutate(memoriesToDelete.map((m) => m.id));
   };
 
   const columns = createColumns(handleEdit, handleDelete);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center p-8">Loading memories...</div>;
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Trans>Loading memories...</Trans>
+      </div>
+    );
   }
 
   return (
@@ -165,6 +222,76 @@ export function MemoryTable() {
         memory={viewingMemory}
         readOnly
       />
+
+      <AlertDialog
+        open={!!memoryToDelete}
+        onOpenChange={(open) => {
+          if (!open && !deleteMutation.isPending) {
+            setMemoryToDelete(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Delete memory?</Trans>
+            </AlertDialogTitle>
+          <AlertDialogDescription>
+            <Trans>This will permanently remove the selected memory from your knowledge graph.</Trans>
+          </AlertDialogDescription>
+          {deleteMutation.isPending && (
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <Trans>Deleting...</Trans>
+            </p>
+          )}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSingleDelete} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Trans>Delete</Trans>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!memoriesToDelete}
+        onOpenChange={(open) => {
+          if (!open && !bulkDeleteMutation.isPending) {
+            setMemoriesToDelete(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Delete selected memories?</Trans>
+            </AlertDialogTitle>
+          <AlertDialogDescription>
+            {t`This action will permanently delete ${memoriesToDelete?.length ?? 0} selected memories. This cannot be undone.`}
+          </AlertDialogDescription>
+          {bulkDeleteMutation.isPending && (
+            <p className="text-sm text-muted-foreground flex items-center gap-2 mt-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <Trans>Deleting selected memories...</Trans>
+            </p>
+          )}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleteMutation.isPending}>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmBulkDelete} disabled={bulkDeleteMutation.isPending}>
+              {bulkDeleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Trans>Delete</Trans>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

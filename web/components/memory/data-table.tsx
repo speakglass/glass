@@ -40,6 +40,8 @@ import {
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { t, plural } from '@lingui/macro';
+import { Trans } from '@lingui/react/macro';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -87,13 +89,13 @@ export function DataTable<TData, TValue>({
   const handleDeleteSelected = () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
     if (selectedRows.length === 0) {
-      toast.error('No rows selected');
+      toast.error(t`No rows selected`);
       return;
     }
     if (onBulkDelete) {
       onBulkDelete(selectedRows.map((row) => row.original));
     } else {
-      toast.info(`Would delete ${selectedRows.length} memories`);
+      toast.info(t`Would delete ${selectedRows.length} memories`);
     }
   };
 
@@ -104,7 +106,7 @@ export function DataTable<TData, TValue>({
         <div className="flex items-center justify-between">
           <div className="flex flex-1 items-center gap-2">
             <Input
-              placeholder="Search memories..."
+              placeholder={t`Search memories...`}
               value={(table.getColumn('fact')?.getFilterValue() as string) ?? ''}
               onChange={(event) => table.getColumn('fact')?.setFilterValue(event.target.value)}
               className="h-9 w-[250px] lg:w-[400px]"
@@ -119,14 +121,14 @@ export function DataTable<TData, TValue>({
                 onClick={handleDeleteSelected}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete ({table.getFilteredSelectedRowModel().rows.length})
+                <Trans>Delete</Trans> ({table.getFilteredSelectedRowModel().rows.length})
               </Button>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9">
                   <LayoutGrid className="h-4 w-4" />
-                  Columns
+                  <Trans>Columns</Trans>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -151,7 +153,7 @@ export function DataTable<TData, TValue>({
             {onAddNew && (
               <Button size="sm" className="h-9" onClick={onAddNew}>
                 <Plus className="h-4 w-4" />
-                Add Memory
+                <Trans>Add memory</Trans>
               </Button>
             )}
           </div>
@@ -186,7 +188,7 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
+                  <Trans>No results.</Trans>
                 </TableCell>
               </TableRow>
             )}
@@ -199,15 +201,18 @@ export function DataTable<TData, TValue>({
         <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
           {totalCount !== undefined && (
             <>
-              {totalCount} {totalCount === 1 ? 'memory' : 'memories'} total •{' '}
+              {plural(totalCount, {
+                one: '# memory total • ',
+                other: '# memories total • ',
+              })}
             </>
           )}
-          {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s) selected
+          {t`${table.getFilteredSelectedRowModel().rows.length} of ${table.getFilteredRowModel().rows.length} rows selected`}
         </div>
         <div className="flex w-full items-center gap-8 lg:w-fit">
           <div className="hidden items-center gap-2 lg:flex">
             <Label htmlFor="rows-per-page" className="text-sm font-medium">
-              Rows per page
+              <Trans>Rows per page</Trans>
             </Label>
             <Select
               value={`${table.getState().pagination.pageSize}`}
@@ -228,7 +233,7 @@ export function DataTable<TData, TValue>({
             </Select>
           </div>
           <div className="flex w-fit items-center justify-center text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            {t`Page ${table.getState().pagination.pageIndex + 1} of ${table.getPageCount()}`}
           </div>
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
             <Button
@@ -237,7 +242,9 @@ export function DataTable<TData, TValue>({
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
             >
-              <span className="sr-only">Go to first page</span>
+              <span className="sr-only">
+                <Trans>Go to first page</Trans>
+              </span>
               <ChevronsLeft className="h-4 w-4" />
             </Button>
             <Button
@@ -247,7 +254,9 @@ export function DataTable<TData, TValue>({
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
             >
-              <span className="sr-only">Go to previous page</span>
+              <span className="sr-only">
+                <Trans>Go to previous page</Trans>
+              </span>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
@@ -257,7 +266,9 @@ export function DataTable<TData, TValue>({
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
             >
-              <span className="sr-only">Go to next page</span>
+              <span className="sr-only">
+                <Trans>Go to next page</Trans>
+              </span>
               <ChevronRight className="h-4 w-4" />
             </Button>
             <Button
@@ -267,7 +278,9 @@ export function DataTable<TData, TValue>({
               onClick={() => table.setPageIndex(table.getPageCount() - 1)}
               disabled={!table.getCanNextPage()}
             >
-              <span className="sr-only">Go to last page</span>
+              <span className="sr-only">
+                <Trans>Go to last page</Trans>
+              </span>
               <ChevronsRight className="h-4 w-4" />
             </Button>
           </div>

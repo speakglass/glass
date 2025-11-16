@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { Memory as MemoryType } from '@/lib/account-api';
+import { Trans } from '@lingui/react/macro';
+import { t } from '@lingui/core/macro';
 
 export type Memory = MemoryType;
 
@@ -29,7 +31,7 @@ export const createColumns = (
         <Checkbox
           checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
+          aria-label={t`Select all`}
         />
       </div>
     ),
@@ -38,7 +40,7 @@ export const createColumns = (
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
+          aria-label={t`Select row`}
         />
       </div>
     ),
@@ -51,7 +53,7 @@ export const createColumns = (
     header: ({ column }) => {
       return (
         <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')} className="-ml-4">
-          Created At
+          <Trans>Created at</Trans>
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -71,7 +73,7 @@ export const createColumns = (
   },
   {
     accessorKey: 'label',
-    header: 'Category',
+    header: () => <Trans>Category</Trans>,
     cell: ({ row }) => {
       const label = row.getValue('label') as string;
       return (
@@ -83,7 +85,7 @@ export const createColumns = (
   },
   {
     accessorKey: 'fact',
-    header: 'Memory',
+    header: () => <Trans>Memory</Trans>,
     cell: ({ row, table }) => {
       const fact = row.getValue('fact') as string;
       const meta = table.options.meta as { onViewMemory?: (memory: Memory) => void };
@@ -93,7 +95,7 @@ export const createColumns = (
           <p
             className="text-sm leading-relaxed line-clamp-3 cursor-pointer hover:text-foreground/80 transition-colors"
             onClick={() => meta?.onViewMemory?.(row.original)}
-            title="Click to view full content"
+            title={t`Click to view full content`}
           >
             {fact}
           </p>
@@ -103,13 +105,13 @@ export const createColumns = (
   },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: () => <Trans>Status</Trans>,
     cell: ({ row }) => {
       const status = row.getValue('status') as string;
       const statusConfig = {
-        active: { label: 'Active', variant: 'default' as const },
-        expired: { label: 'Expired', variant: 'secondary' as const },
-        invalid: { label: 'Invalid', variant: 'outline' as const },
+        active: { label: t`Active`, variant: 'default' as const },
+        expired: { label: t`Expired`, variant: 'secondary' as const },
+        invalid: { label: t`Invalid`, variant: 'outline' as const },
       };
       const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.active;
       return (
@@ -123,6 +125,8 @@ export const createColumns = (
     id: 'actions',
     cell: ({ row }) => {
       const memory = row.original;
+      const isExpired = memory.status === 'expired';
+      const disabledReason = isExpired ? t`Expired memories cannot be edited` : undefined;
 
       return (
         <DropdownMenu>
@@ -133,28 +137,39 @@ export const createColumns = (
               size="icon"
             >
               <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">Open menu</span>
+              <span className="sr-only">
+                <Trans>Open menu</Trans>
+              </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>
+              <Trans>Actions</Trans>
+            </DropdownMenuLabel>
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(memory.fact);
-                toast.success('Memory copied to clipboard');
+                toast.success(t`Memory copied to clipboard`);
               }}
             >
               <Copy className="mr-2 h-4 w-4" />
-              Copy
+              <Trans>Copy</Trans>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(memory)}>
+            <DropdownMenuItem
+              onClick={() => {
+                if (isExpired) return;
+                onEdit(memory);
+              }}
+              disabled={isExpired}
+              title={disabledReason}
+            >
               <Edit className="mr-2 h-4 w-4" />
-              Edit
+              <Trans>Edit</Trans>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onDelete(memory)}>
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete
+              <Trans>Delete</Trans>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

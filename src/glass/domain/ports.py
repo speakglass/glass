@@ -51,15 +51,6 @@ class MemoryPort(Protocol):
         """
         ...
 
-    async def add_extracted_memories(
-        self,
-        user_id: str,
-        session_id: str,
-        extracted_info: list[dict],
-    ) -> None:
-        """Add extracted information to memory."""
-        ...
-
     async def warm_user_cache(self, user_id: str) -> None:
         """Warm cache for faster retrieval."""
         ...
@@ -82,69 +73,57 @@ class ASRPort(Protocol):
 
 
 class LLMPort(Protocol):
-    # Core suggestion
-    async def suggest(
-        self,
-        *,
-        recent_conversation: Sequence[dict],
-        target_lang: str,
-        native_lang: str,
-        user_hint: str | None = None,
-        user_context: str | None = None,
-        thread_context: str | None = None,
-        length_mode: str = "auto",
-    ) -> dict | None: ...
+    """Unified LLM interface supporting flexible prompt formats."""
     
-    async def should_feedback(
-        self, 
-        recent_conversation: Sequence[dict], 
-        user_text: str, 
-        mode: str = "real"
-    ) -> bool: ...
+    async def call(
+        self,
+        prompt: str | list[dict] | None = None,
+        *,
+        messages: list[dict] | None = None,
+        system: str | None = None,
+        model: str | None = None,
+        temperature: float = 0.7,
+        max_tokens: int = 1000,
+        json_mode: bool = False,
+    ) -> str:
+        """Call LLM with flexible input options.
+        
+        Args:
+            prompt: Simple string prompt or list of messages
+            messages: Full message array [{"role": "user", "content": "..."}]
+            system: System prompt (prepended to messages)
+            model: Model name (uses adapter's default if None)
+            temperature: Sampling temperature 0-2
+            max_tokens: Max response tokens
+            json_mode: Force JSON response
+            
+        Returns:
+            Response text (empty string on error)
+        """
+        ...
+
+
+class TTSPort(Protocol):
+    """Text-to-Speech interface."""
     
-    async def generate_text(self, prompt: str, max_tokens: int = 2000, model: str | None = None) -> str: ...
-
-    # Translation
-    async def translate(self, text: str, source_lang: str, target_lang: str) -> str: ...
-
-    # Feedback
-    async def feedback(
+    async def synthesize_stream(
         self,
-        user_text: str,
-        lang: str,
-        target_lang: str | None = None,
-        native_lang: str | None = None,
-        mode: str = "real",
+        text: str,
         *,
-        recent_conversation: Sequence[dict] | None = None,
-        user_context: str | None = None,
-        thread_context: str | None = None,
-        last_suggestion: dict | None = None,
-    ) -> str: ...
-
-    # Practice mode response
-    async def generate_ai_response(
-        self,
-        user_text: str,
-        scenario: str | None,
-        *,
-        recent_conversation: Sequence[dict],
-        target_lang: str,
-        native_lang: str,
-        user_context: str | None = None,
-        thread_context: str | None = None,
-        recent_feedback: str | None = None,
-    ) -> str: ...
-
-    # Pronunciation (one-line)
-    async def generate_pronunciation(
-        self,
-        target_text: str,
-        *,
-        native_lang: str,
-        target_lang: str,
-        mode: str | None = None,
-    ) -> str: ...
+        voice_id: str | None = None,
+        language: str | None = None,
+    ) -> AsyncIterable[bytes]:
+        """Stream synthesized audio bytes.
+        
+        Args:
+            text: Text to synthesize
+            voice_id: Voice ID (uses default if None)
+            language: Language code for voice selection
+            
+        Yields:
+            Audio data chunks
+        """
+        ...
 
 
 class EventsPort(Protocol):

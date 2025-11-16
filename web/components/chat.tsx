@@ -109,6 +109,10 @@ export default function Chat() {
             feedback={conversationAnalysis.feedback}
             messages={conversationAnalysis.messages}
             feedbackItems={conversationAnalysis.feedbackItems}
+            participantSnapshot={conversationAnalysis.participantSnapshot}
+            durationSeconds={conversationAnalysis.durationSeconds}
+            learningLang={conversationAnalysis.learningLang}
+            nativeLang={conversationAnalysis.nativeLang}
             onClose={closeSummary}
             onStartNewCall={startNewCallWithContext}
           />

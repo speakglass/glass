@@ -1,13 +1,40 @@
 'use client';
 import { cn } from '@/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useMemo, useEffect } from 'react';
-import { X, Save, ChevronDown, ChevronUp, MessageSquare, Loader2 } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { X, Save, ChevronDown, ChevronUp, MessageSquare, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PartnerAvatar } from '@/components/partner-avatar';
 import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 import { useAccountSession } from '@/contexts/account-session-context';
-import { fetchConversationZepContext, ZepContextItem } from '@/lib/account-api';
+import {
+  fetchConversationZepContext,
+  fetchPartners,
+  reassignConversationPartner,
+  updatePartner,
+  uploadPartnerAvatar,
+  createPartner,
+  deletePartner,
+  type ConversationMessage,
+  type ConversationPartner,
+  type ZepContextItem,
+} from '@/lib/account-api';
+import { useLocale } from '@/hooks/use-locale';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface ConversationScores {
   fluency: number;
@@ -21,33 +48,85 @@ interface ExtractedInfo {
   editable: boolean;
 }
 
-interface Message {
-  speaker: string;
-  source: string;
-  text: string;
-  utterance_id?: string;
-  translation?: string;
-}
-
 interface FeedbackItem {
   utterance_id: string;
   text: string;
 }
 
+interface ParticipantSnapshot {
+  partner?: {
+    id?: string | null;
+    name?: string | null;
+    description?: string | null;
+    avatar_url?: string | null;
+  };
+  user?: {
+    id?: string | null;
+    name?: string | null;
+    email?: string | null;
+  };
+  session?: {
+    mode?: string | null;
+    learning_lang?: string | null;
+    native_lang?: string | null;
+  };
+}
+
 type ThreadContextItem = ZepContextItem;
+
+const LANGUAGE_NAMES_BY_LOCALE: Record<string, Record<string, string>> = {
+  en: { en: 'English', ko: 'Korean', ja: 'Japanese', zh: 'Chinese', es: 'Spanish', fr: 'French' },
+  ko: { en: '영어', ko: '한국어', ja: '일본어', zh: '중국어', es: '스페인어', fr: '프랑스어' },
+  ja: { en: '英語', ko: '韓国語', ja: '日本語', zh: '中国語', es: 'スペイン語', fr: 'フランス語' },
+  zh: { en: '英语', ko: '韩语', ja: '日语', zh: '中文', es: '西班牙语', fr: '法语' },
+  es: { en: 'Inglés', ko: 'Coreano', ja: 'Japonés', zh: 'Chino', es: 'Español', fr: 'Francés' },
+  fr: { en: 'Anglais', ko: 'Coréen', ja: 'Japonais', zh: 'Chinois', es: 'Espagnol', fr: 'Français' },
+};
+
+function getLanguageName(code: string | null | undefined, locale: string): string {
+  if (!code) return '—';
+  const normal = code.toLowerCase();
+  const localeNames = LANGUAGE_NAMES_BY_LOCALE[locale] || LANGUAGE_NAMES_BY_LOCALE.en;
+  return localeNames[normal] || code;
+}
+
+function formatDuration(seconds?: number | null): string {
+  if (seconds === null || seconds === undefined) return '—';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (mins === 0) return `${secs}s`;
+  return `${mins}m ${secs}s`;
+}
+
+const getMessageRole = (message: ConversationMessage): string =>
+  (message.role || message.speaker_role || '').toLowerCase();
+
+const getMessageParticipantId = (message: ConversationMessage): string => {
+  if (typeof message.partner_id === 'string' && message.partner_id) {
+    return message.partner_id.toLowerCase();
+  }
+  if (typeof message.speaker_id === 'string' && message.speaker_id) {
+    return message.speaker_id.toLowerCase();
+  }
+  return '';
+};
 
 interface CallSummaryProps {
   conversationId?: string; // DB conversation ID for fetching Zep memories
   scores: ConversationScores;
   extractedInfo?: ExtractedInfo[];
   feedback?: string;
-  messages?: Message[];
+  messages?: ConversationMessage[];
   feedbackItems?: FeedbackItem[];
   onClose: () => void;
   onStartNewCall: (contextInfo: ExtractedInfo[]) => void;
   memoryCountOverride?: number;
   conversationCountOverride?: number;
   initialShowMemory?: boolean; // For onboarding: pre-open Memory section
+  participantSnapshot?: ParticipantSnapshot | null;
+  durationSeconds?: number | null;
+  learningLang?: string | null;
+  nativeLang?: string | null;
 }
 
 const CallSummary = ({
@@ -62,14 +141,337 @@ const CallSummary = ({
   memoryCountOverride,
   conversationCountOverride,
   initialShowMemory = false,
+  participantSnapshot = null,
+  durationSeconds = null,
+  learningLang = null,
+  nativeLang = null,
 }: CallSummaryProps) => {
   const { token } = useAccountSession();
+  const locale = useLocale();
+  const [currentSnapshot, setCurrentSnapshot] = useState<ParticipantSnapshot | null>(participantSnapshot ?? null);
+  useEffect(() => {
+    setCurrentSnapshot(participantSnapshot ?? null);
+  }, [participantSnapshot]);
+  const partnerProfile = currentSnapshot?.partner;
+  const userProfile = currentSnapshot?.user;
+  const currentPartnerId = partnerProfile?.id ?? null;
   const [threadContextItems, setThreadContextItems] = useState<ThreadContextItem[]>([]);
   const [rawThreadContext, setRawThreadContext] = useState('');
   const [isLoadingThreadContext, setIsLoadingThreadContext] = useState(false);
   const [threadContextError, setThreadContextError] = useState<string | null>(null);
   const [showConversation, setShowConversation] = useState(false);
   const [showMemory, setShowMemory] = useState(initialShowMemory);
+  const [isPartnerManagerOpen, setIsPartnerManagerOpen] = useState(false);
+  const [partnerNameDraft, setPartnerNameDraft] = useState(partnerProfile?.name || '');
+  const [partnerDescriptionDraft, setPartnerDescriptionDraft] = useState(partnerProfile?.description || '');
+  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(partnerProfile?.id ?? null);
+  const [partnerSearch, setPartnerSearch] = useState('');
+  const [editingPartnerAvatarUrl, setEditingPartnerAvatarUrl] = useState<string | null>(
+    partnerProfile?.avatar_url || null
+  );
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const {
+    data: partnerOptions = [],
+    isLoading: isPartnerListLoading,
+    refetch: refetchPartners,
+  } = useQuery({
+    queryKey: ['call-summary-partners', learningLang, isPartnerManagerOpen],
+    queryFn: () => fetchPartners(token!, learningLang || undefined),
+    enabled: Boolean(token && isPartnerManagerOpen),
+    staleTime: 5 * 60 * 1000,
+  });
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  useEffect(() => {
+    if (isPartnerManagerOpen) {
+      setEditingPartnerId(partnerProfile?.id ?? null);
+      setPartnerNameDraft(partnerProfile?.name || '');
+      setPartnerDescriptionDraft(partnerProfile?.description || '');
+      setEditingPartnerAvatarUrl(partnerProfile?.avatar_url || null);
+      setPartnerSearch('');
+    }
+  }, [
+    isPartnerManagerOpen,
+    partnerProfile?.avatar_url,
+    partnerProfile?.description,
+    partnerProfile?.id,
+    partnerProfile?.name,
+  ]);
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    if (!token || !editingPartnerId) {
+      toast.error(t`Missing partner information`);
+      return;
+    }
+    if (!canManagePartner) {
+      toast.error(t`Roleplay conversations cannot change partner images`);
+      return;
+    }
+    setIsUploadingAvatar(true);
+    try {
+      const updated = await uploadPartnerAvatar(token, editingPartnerId, file);
+      setEditingPartnerAvatarUrl(updated.avatarUrl || null);
+      if (updated.id === currentPartnerId) {
+        setCurrentSnapshot((prev) => {
+          const next: ParticipantSnapshot = {
+            ...(prev || {}),
+            partner: {
+              ...(prev?.partner || {}),
+              id: updated.id,
+              name: updated.name,
+              description: updated.description,
+              avatar_url: updated.avatarUrl || null,
+            },
+          };
+          if (prev?.user) {
+            next.user = prev.user;
+          }
+          if (prev?.session) {
+            next.session = prev.session;
+          }
+          return next;
+        });
+      }
+      refetchPartners();
+      toast.success(t`Photo updated`);
+    } catch (error) {
+      console.error('[CallSummary] Failed to upload avatar', error);
+      toast.error(t`Failed to upload image`);
+    } finally {
+      setIsUploadingAvatar(false);
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
+  };
+
+  const renamePartnerMutation = useMutation({
+    mutationFn: async () => {
+      if (!token || !editingPartnerId) {
+        throw new Error(t`Missing partner information`);
+      }
+      const trimmedName = partnerNameDraft.trim();
+      if (!trimmedName) {
+        throw new Error(t`Partner name is required`);
+      }
+      return updatePartner(token, editingPartnerId, {
+        name: trimmedName,
+        description: partnerDescriptionDraft?.trim() || null,
+      });
+    },
+    onSuccess: (updated) => {
+      setEditingPartnerAvatarUrl(updated.avatarUrl || null);
+      if (updated.id === currentPartnerId) {
+        setCurrentSnapshot((prev) => {
+          const next: ParticipantSnapshot = {
+            ...(prev || {}),
+            partner: {
+              ...(prev?.partner || {}),
+              id: updated.id,
+              name: updated.name,
+              description: updated.description,
+              avatar_url: updated.avatarUrl || null,
+            },
+          };
+          if (prev?.user) {
+            next.user = prev.user;
+          }
+          if (prev?.session) {
+            next.session = prev.session;
+          }
+          return next;
+        });
+      }
+      refetchPartners();
+      toast.success(t`Partner updated`);
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : t`Failed to update partner`;
+      toast.error(message);
+    },
+  });
+  const createPartnerMutation = useMutation({
+    mutationFn: async (name: string) => {
+      if (!token) {
+        throw new Error(t`Missing authentication`);
+      }
+      const trimmed = name.trim();
+      if (!trimmed) {
+        throw new Error(t`Enter a name first`);
+      }
+      return createPartner(token, {
+        name: trimmed,
+        learningLang: learningLang || currentSnapshot?.session?.learning_lang || undefined,
+        nativeLang: nativeLang || currentSnapshot?.session?.native_lang || undefined,
+      });
+    },
+    onSuccess: (partner) => {
+      preparePartnerEdit({
+        id: partner.id,
+        name: partner.name,
+        description: partner.description || null,
+        avatarUrl: partner.avatarUrl || null,
+      });
+      setPartnerSearch('');
+      refetchPartners();
+      reassignPartnerMutation.mutate(partner.id);
+      toast.success(t`Partner created`);
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : t`Failed to create partner`;
+      toast.error(message);
+    },
+  });
+
+  const deletePartnerMutation = useMutation({
+    mutationFn: async () => {
+      if (!token || !editingPartnerId) {
+        throw new Error(t`Missing partner information`);
+      }
+      await deletePartner(token, editingPartnerId);
+      return editingPartnerId;
+    },
+    onSuccess: (deletedId) => {
+      if (deletedId === currentPartnerId) {
+        setCurrentSnapshot((prev) => {
+          if (!prev?.partner || prev.partner.id !== deletedId) {
+            return prev;
+          }
+          const next: ParticipantSnapshot = { ...prev };
+          delete next.partner;
+          return next;
+        });
+      }
+      refetchPartners();
+      setIsEditModalOpen(false);
+      setEditingPartnerId(null);
+      setPartnerNameDraft('');
+      setPartnerDescriptionDraft('');
+      setEditingPartnerAvatarUrl(null);
+      toast.success(t`Partner deleted`);
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : t`Failed to delete partner`;
+      toast.error(message);
+    },
+  });
+
+  const handleDeletePartner = () => {
+    if (!editingPartnerId || !canManagePartner || deletePartnerMutation.isPending) {
+      return;
+    }
+    if (!token) {
+      toast.error(t`Missing authentication`);
+      return;
+    }
+    const confirmed = window.confirm(t`Delete this partner? This cannot be undone.`);
+    if (!confirmed) {
+      return;
+    }
+    deletePartnerMutation.mutate();
+  };
+
+  const isPartnerActionPending = renamePartnerMutation.isPending || deletePartnerMutation.isPending;
+
+  const reassignPartnerMutation = useMutation({
+    mutationFn: async (targetPartnerId: string) => {
+      if (!token || !conversationId) {
+        throw new Error(t`Missing conversation`);
+      }
+      return reassignConversationPartner(token, conversationId, targetPartnerId);
+    },
+    onSuccess: (updated) => {
+      setCurrentSnapshot((updated.participantSnapshot as ParticipantSnapshot | null) ?? null);
+      setIsPartnerManagerOpen(false);
+      toast.success(t`Conversation partner assigned`);
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : t`Failed to assign partner`;
+      toast.error(message);
+    },
+  });
+
+  const participantDirectory = useMemo(() => {
+    const directory = new Map<
+      string,
+      {
+        name: string;
+        avatarUrl?: string;
+      }
+    >();
+    directory.set('glass', { name: t`Glass`, avatarUrl: '/glass-ai.png' });
+    directory.set('user', { name: userProfile?.name || t`You`, avatarUrl: undefined });
+    const partnerEntry = {
+      name: partnerProfile?.name || t`Partner`,
+      avatarUrl: partnerProfile?.avatar_url || undefined,
+    };
+    directory.set('partner', partnerEntry);
+    if (partnerProfile?.id && typeof partnerProfile.id === 'string') {
+      directory.set(partnerProfile.id.toLowerCase(), partnerEntry);
+    }
+    return directory;
+  }, [partnerProfile, userProfile]);
+
+  const sessionMode = (currentSnapshot?.session as { mode?: string } | undefined)?.mode?.toLowerCase();
+  const canManagePartner = sessionMode !== 'roleplay';
+  const preparePartnerEdit = (partner?: {
+    id?: string | null;
+    name?: string | null;
+    description?: string | null;
+    avatarUrl?: string | null;
+    avatar_url?: string | null;
+  }) => {
+    setEditingPartnerId(partner?.id ?? null);
+    setPartnerNameDraft(partner?.name || '');
+    setPartnerDescriptionDraft(partner?.description || '');
+    setEditingPartnerAvatarUrl(partner?.avatarUrl ?? partner?.avatar_url ?? null);
+  };
+  useEffect(() => {
+    if (!canManagePartner && isPartnerManagerOpen) {
+      setIsPartnerManagerOpen(false);
+    }
+  }, [canManagePartner, isPartnerManagerOpen]);
+
+  const availablePartners: ConversationPartner[] = useMemo(() => {
+    if (!partnerOptions?.length) return [];
+    return partnerOptions.filter(
+      (partner) => partner.id !== currentPartnerId && partner.kind === 'live_call'
+    );
+  }, [partnerOptions, currentPartnerId]);
+  const trimmedPartnerSearch = partnerSearch.trim();
+  const filteredPartners = useMemo(() => {
+    const query = trimmedPartnerSearch.toLowerCase();
+    if (!query) {
+      return availablePartners;
+    }
+    return availablePartners.filter((partner) => partner.name.toLowerCase().includes(query));
+  }, [availablePartners, trimmedPartnerSearch]);
+
+  const resolveParticipantInfo = (message: ConversationMessage) => {
+    const role = getMessageRole(message);
+    const participantId = getMessageParticipantId(message);
+    if (role === 'user') {
+      return participantDirectory.get('user')!;
+    }
+    if (role === 'assistant') {
+      return participantDirectory.get('glass')!;
+    }
+    if (participantId && participantDirectory.has(participantId)) {
+      return participantDirectory.get(participantId)!;
+    }
+    return participantDirectory.get('partner') || { name: t`Partner` };
+  };
+  const durationLabel =
+    typeof durationSeconds === 'number' && durationSeconds >= 0 ? formatDuration(durationSeconds) : null;
+  const languageLabel =
+    learningLang || nativeLang
+      ? `${getLanguageName(learningLang, locale)} ↔ ${getLanguageName(nativeLang, locale)}`
+      : null;
 
   // Create a map of utterance_id to feedback
   const feedbackMap = useMemo(() => {
@@ -189,7 +591,171 @@ const CallSummary = ({
     return segmentStartPercent + segmentWidthPercent * positionInSegment;
   };
 
+  const partnerChip = partnerProfile
+    ? canManagePartner && token ? (
+        <Popover open={isPartnerManagerOpen} onOpenChange={setIsPartnerManagerOpen} key="partner-chip">
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                'inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm transition',
+                'bg-transparent hover:bg-accent/40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40'
+              )}
+            >
+              <PartnerAvatar
+                className="h-7 w-7"
+                fallbackSize="md"
+                name={partnerProfile?.name}
+                src={partnerProfile?.avatar_url || undefined}
+              />
+              <span className="font-medium text-foreground">{partnerProfile?.name || t`Partner`}</span>
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 text-muted-foreground transition-transform',
+                  isPartnerManagerOpen && 'rotate-180'
+                )}
+              />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 max-w-[90vw] p-0" align="center" side="bottom" sideOffset={6}>
+            <div className="border-b border-border/30 px-3 py-2">
+              <Input
+                value={partnerSearch}
+                onChange={(event) => setPartnerSearch(event.target.value)}
+                placeholder={t`Search partners`}
+                className="h-8 text-xs"
+                disabled={!canManagePartner}
+              />
+            </div>
+            <div className="py-2">
+              <div className="px-3">
+                <div className="group relative flex items-center gap-2 rounded-md bg-accent/70 px-3 py-2 pr-16 text-sm">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <PartnerAvatar
+                      className="h-6 w-6"
+                      fallbackSize="sm"
+                      name={partnerProfile?.name}
+                      src={partnerProfile?.avatar_url || undefined}
+                    />
+                    <span className="font-medium text-foreground truncate">
+                      {partnerProfile?.name || t`Partner`}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      preparePartnerEdit(partnerProfile);
+                      setIsPartnerManagerOpen(false);
+                      setIsEditModalOpen(true);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-border/60 bg-card/80 px-2 py-1 text-xs font-medium text-foreground opacity-0 transition hover:bg-accent group-hover:opacity-100 cursor-pointer"
+                  >
+                    <Trans>Edit</Trans>
+                  </button>
+                </div>
+              </div>
+              <div className="px-3 pt-3 text-xs text-muted-foreground">
+                <Trans>Select a partner</Trans>
+              </div>
+              <div className="max-h-60 overflow-y-auto">
+                {isPartnerListLoading ? (
+                  <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <Trans>Loading partners…</Trans>
+                  </div>
+                ) : filteredPartners.length ? (
+                  <div className="px-2 pb-2 pt-1">
+                    {filteredPartners.map((partner) => (
+                      <div
+                        key={partner.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-disabled={reassignPartnerMutation.isPending}
+                        className="group relative flex w-full items-center gap-2 rounded-md px-3 py-1.5 pr-16 text-left text-sm transition hover:bg-accent/40 cursor-pointer"
+                        onClick={() => {
+                          if (!reassignPartnerMutation.isPending) {
+                            reassignPartnerMutation.mutate(partner.id);
+                          }
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            if (!reassignPartnerMutation.isPending) {
+                              reassignPartnerMutation.mutate(partner.id);
+                            }
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <PartnerAvatar
+                            className="h-6 w-6"
+                            fallbackSize="sm"
+                            name={partner.name}
+                            src={partner.avatarUrl || undefined}
+                          />
+                          <span className="truncate">{partner.name}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            preparePartnerEdit({
+                              id: partner.id,
+                              name: partner.name,
+                              description: partner.description || null,
+                              avatarUrl: partner.avatarUrl || null,
+                            });
+                            setIsPartnerManagerOpen(false);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-border/60 bg-card/80 px-2 py-1 text-xs font-medium text-foreground opacity-0 transition hover:bg-accent group-hover:opacity-100 cursor-pointer"
+                        >
+                          <Trans>Edit</Trans>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-3 pb-2 text-xs text-muted-foreground space-y-2">
+                    <p>
+                      <Trans>No matching partners.</Trans>
+                    </p>
+                    {trimmedPartnerSearch && (
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-left text-sm text-foreground transition hover:bg-accent cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                        onClick={() => createPartnerMutation.mutate(trimmedPartnerSearch)}
+                        disabled={createPartnerMutation.isPending}
+                      >
+                        {createPartnerMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Plus className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        <span className="truncate font-medium">{t`New ${trimmedPartnerSearch}`}</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      ) : (
+        <span className="inline-flex items-center gap-2 text-foreground">
+          <PartnerAvatar
+            className="h-7 w-7"
+            fallbackSize="md"
+            name={partnerProfile?.name}
+            src={partnerProfile?.avatar_url || undefined}
+          />
+          <span className="font-medium text-foreground">{partnerProfile?.name || t`Partner`}</span>
+        </span>
+      )
+    : null;
+
   return (
+    <>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -212,19 +778,40 @@ const CallSummary = ({
       >
         {/* Header */}
         <div className={'sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border/30 px-6 py-4'}>
-          <div id="glass-call-summary-header" className={'flex items-center justify-between'}>
-            <h2 className={'text-xl font-bold'}>
-              <Trans>Call Summary</Trans>
-            </h2>
-            <button
-              onClick={onClose}
-              className={
-                'text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-accent/50'
-              }
-              aria-label="Close"
-            >
-              <X className={'size-5'} />
-            </button>
+          <div className="space-y-3">
+            <div id="glass-call-summary-header" className={'flex items-center justify-between'}>
+              <h2 className={'text-xl font-bold'}>
+                <Trans>Call Summary</Trans>
+              </h2>
+              <button
+                onClick={onClose}
+                className={
+                  'text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-accent/50'
+                }
+                aria-label="Close"
+              >
+                <X className={'size-5'} />
+              </button>
+            </div>
+            {(durationLabel || languageLabel || partnerChip) && (
+              <div className="space-y-2 relative">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                  {durationLabel && <span>{durationLabel}</span>}
+                  {languageLabel && (
+                    <>
+                      <span className="text-muted-foreground/30">•</span>
+                      <span>{languageLabel}</span>
+                    </>
+                  )}
+                  {partnerChip && (
+                    <>
+                      <span className="text-muted-foreground/30">•</span>
+                      {partnerChip}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -532,9 +1119,10 @@ const CallSummary = ({
                 <div className={'inline-flex items-start gap-3 max-w-2xl'}>
                   {/* Glass AI Avatar */}
                   <div className={'shrink-0'}>
-                    <div className={'size-10 rounded-full overflow-hidden bg-card/80 border border-border/50'}>
-                      <img src="/glass-ai.png" alt="Glass AI" className={'w-full h-full object-cover'} />
-                    </div>
+                    <Avatar className="h-10 w-10 border border-border/50 bg-card/80">
+                      <AvatarImage className="h-full w-full object-cover" src="/glass-ai.png" alt="Glass AI" />
+                      <AvatarFallback>AI</AvatarFallback>
+                    </Avatar>
                   </div>
 
                   {/* Feedback Bubble */}
@@ -662,67 +1250,92 @@ const CallSummary = ({
                     }
                   >
                     {messages.length > 0 ? (
-                      messages
-                        .filter((msg) => msg.speaker !== 'glass') // Filter out Glass messages (shown as inline feedback)
-                        .map((msg, index) => {
-                          const messageFeedback = msg.utterance_id ? feedbackMap.get(msg.utterance_id) : null;
-                          const isUser = msg.speaker === 'user';
+                      messages.map((msg, index) => {
+                        const speakerRole = getMessageRole(msg);
+                        const isGlass = speakerRole === 'assistant';
+                        const isUser = speakerRole === 'user';
+                        const speakerInfo = resolveParticipantInfo(msg);
+                        if (isGlass && !msg.text) {
+                          return null;
+                        }
 
-                          // Find Glass feedback for this message from messages array
-                          const glassFeedbackFromMessages = messages.filter(
-                            (m) => m.speaker === 'glass' && m.utterance_id === msg.utterance_id
-                          );
+                        const messageFeedback = msg.utterance_id ? feedbackMap.get(msg.utterance_id) : null;
+                        const speakerName = speakerInfo.name;
+                        const avatarUrl = speakerInfo.avatarUrl;
 
-                          const displayName = isUser ? (
-                            <Trans>You</Trans>
-                          ) : msg.speaker === 'ai' ? (
-                            <Trans>Partner</Trans>
-                          ) : (
-                            <Trans>Partner</Trans>
-                          );
+                        const glassFeedbackFromMessages = messages.filter(
+                          (m) => getMessageRole(m) === 'assistant' && m.utterance_id === msg.utterance_id
+                        );
 
-                          return (
-                            <div key={index} className={'space-y-1.5'}>
-                              {/* Message */}
-                              <div className={cn('pb-2', isUser && 'flex flex-col items-end')}>
-                                <div className={'text-xs text-muted-foreground mb-0.5'}>{displayName}</div>
-                                <div
-                                  className={cn(
-                                    'text-sm',
-                                    isUser ? 'bg-primary/10 rounded-lg px-3 py-2 max-w-[80%]' : ''
-                                  )}
-                                >
-                                  {msg.text}
-                                  {msg.translation && (
-                                    <div className={'text-xs text-muted-foreground mt-1 italic'}>{msg.translation}</div>
-                                  )}
+                        return (
+                          <div
+                            key={index}
+                            className={cn('flex gap-3 py-2', (isUser || isGlass) && 'flex-row-reverse text-right')}
+                          >
+                            {!isUser && !isGlass && (
+                              <PartnerAvatar
+                                className="h-8 w-8"
+                                fallbackSize="md"
+                                name={speakerName || undefined}
+                                src={avatarUrl || undefined}
+                              />
+                            )}
+                            {isGlass && (
+                              <Avatar className="h-8 w-8 border border-emerald-200">
+                                <AvatarImage
+                                  className="h-full w-full object-cover"
+                                  src="/glass-ai.png"
+                                  alt="Glass AI"
+                                />
+                                <AvatarFallback>AI</AvatarFallback>
+                              </Avatar>
+                            )}
+                            <div className="space-y-1 max-w-[80%]">
+                              <div className="text-xs text-muted-foreground">{speakerName}</div>
+                              <div
+                                className={cn(
+                                  'rounded-2xl px-3 py-2 text-sm',
+                                  isUser
+                                    ? 'bg-primary/10 ml-auto'
+                                    : isGlass
+                                    ? 'bg-emerald-500/10 text-emerald-900 ml-auto'
+                                    : 'bg-muted/70'
+                                )}
+                              >
+                                {msg.text}
+                                {msg.translation && (
+                                  <div className={'text-xs text-muted-foreground mt-1 italic'}>{msg.translation}</div>
+                                )}
 
-                                  {/* Glass feedback inside user bubble */}
-                                  {isUser && glassFeedbackFromMessages.length > 0 && (
-                                    <div className={'mt-2 pt-2 border-t border-primary/20 space-y-1'}>
-                                      {glassFeedbackFromMessages.map((gf, gfIndex) => (
-                                        <div key={gfIndex} className={'text-xs text-sky-600 leading-relaxed'}>
-                                          {gf.text}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
+                                {/* Glass feedback inside user bubble */}
+                                {isUser && glassFeedbackFromMessages.length > 0 && (
+                                  <div className={'mt-2 pt-2 border-t border-primary/20 space-y-1 text-left'}>
+                                    {glassFeedbackFromMessages.map((gf, gfIndex) => (
+                                      <div key={gfIndex} className={'text-xs text-sky-600 leading-relaxed'}>
+                                        {gf.text}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
 
                               {/* Legacy Feedback for this message (from feedbackItems) */}
                               {messageFeedback && messageFeedback.length > 0 && (
-                                <div className={cn('ml-4 space-y-1', isUser && 'ml-0 flex flex-col items-end')}>
+                                <div
+                                  className={cn(
+                                    'space-y-1 text-xs text-sky-600 leading-relaxed',
+                                    isUser || isGlass ? 'text-right' : 'text-left'
+                                  )}
+                                >
                                   {messageFeedback.map((fb, fbIndex) => (
-                                    <div key={fbIndex} className={'text-xs text-sky-600 leading-relaxed'}>
-                                      {fb}
-                                    </div>
+                                    <div key={fbIndex}>{fb}</div>
                                   ))}
                                 </div>
                               )}
                             </div>
-                          );
-                        })
+                          </div>
+                        );
+                      })
                     ) : (
                       <div className={'text-center py-4 text-sm text-muted-foreground'}>
                         <Trans>No messages</Trans>
@@ -749,6 +1362,109 @@ const CallSummary = ({
         </div>
       </motion.div>
     </motion.div>
+    <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+      <DialogContent className="sm:max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle>
+            <Trans>Edit partner</Trans>
+          </DialogTitle>
+        </DialogHeader>
+        <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+        <div className="flex items-start gap-4">
+          <div className="flex flex-col items-center gap-1.5">
+            <button
+              type="button"
+              aria-label={t`Change partner photo`}
+              disabled={!editingPartnerId || isUploadingAvatar || !canManagePartner || deletePartnerMutation.isPending}
+              onClick={() => avatarInputRef.current?.click()}
+              className="group relative inline-flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-border/70 bg-muted/40 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+            >
+              <PartnerAvatar
+                className="pointer-events-none h-20 w-20"
+                fallbackSize="lg"
+                name={partnerNameDraft || undefined}
+                src={editingPartnerAvatarUrl || undefined}
+                alt={partnerNameDraft || t`Partner`}
+              />
+              <span
+                className={cn(
+                  'pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 transition group-hover:opacity-100',
+                  isUploadingAvatar && 'opacity-100'
+                )}
+              >
+                {isUploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trans>Edit</Trans>}
+              </span>
+            </button>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <Trans>Photo</Trans>
+            </span>
+          </div>
+          <div className="flex flex-1 flex-col gap-3">
+            <div className="space-y-1">
+              <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <Trans>Name</Trans>
+              </Label>
+              <Input
+                value={partnerNameDraft}
+                onChange={(event) => setPartnerNameDraft(event.target.value)}
+                placeholder={t`Enter a name`}
+                disabled={!editingPartnerId || !canManagePartner || isPartnerActionPending}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <Trans>Description</Trans>
+              </Label>
+              <Textarea
+                value={partnerDescriptionDraft}
+                onChange={(event) => setPartnerDescriptionDraft(event.target.value)}
+                placeholder={t`Add a short description`}
+                disabled={!editingPartnerId || !canManagePartner || isPartnerActionPending}
+                rows={3}
+              />
+            </div>
+          </div>
+        </div>
+        <DialogFooter className="gap-2 flex-col-reverse sm:flex-row sm:items-center sm:justify-between">
+          {canManagePartner && editingPartnerId ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDeletePartner}
+              disabled={isPartnerActionPending}
+              className="w-full sm:w-auto justify-center cursor-pointer disabled:cursor-not-allowed text-destructive border-destructive/40 hover:bg-destructive/10"
+            >
+              {deletePartnerMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+              <Trans>Delete partner</Trans>
+            </Button>
+          ) : (
+            <span />
+          )}
+          <div className="flex w-full sm:w-auto gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsEditModalOpen(false)}
+              disabled={isPartnerActionPending}
+              className="flex-1 cursor-pointer disabled:cursor-not-allowed"
+            >
+              <Trans>Close</Trans>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => renamePartnerMutation.mutate()}
+              disabled={!editingPartnerId || !canManagePartner || isPartnerActionPending || !partnerNameDraft.trim()}
+              className="flex-1 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {renamePartnerMutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              <Trans>Save</Trans>
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 

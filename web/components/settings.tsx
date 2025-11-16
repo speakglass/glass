@@ -7,7 +7,7 @@ import { useGlass } from '@/contexts/glass-context';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Trans } from '@lingui/react/macro';
 import { usePathname } from 'next/navigation';
-import { SUPPORTED_LANGUAGES, LOCALIZED_LANGUAGE_CODES } from '@/lib/supported-languages';
+import { LOCALIZED_LANGUAGE_CODES } from '@/lib/supported-languages';
 import { changeLanguage } from '@/utils/language';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -42,7 +42,6 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
   const voice = useGlass();
   const { settings, updateSettings } = voice;
   const [devices, setDevices] = useState<AudioDevice[]>([]);
-  const [currentLocale, setCurrentLocale] = useState('en');
   const pathname = usePathname();
   const { snapshot, token } = useAccountSession();
   const queryClient = useQueryClient();
@@ -54,27 +53,37 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
     settings.glassMode ?? false ? 'glass' : (theme as 'light' | 'dark') || 'light';
 
   useEffect(() => {
-    const pathSegments = pathname.split('/').filter(Boolean);
-    const locale = pathSegments[0];
-    if (LOCALIZED_LANGUAGE_CODES.includes(locale as any)) {
-      setCurrentLocale(locale);
-    }
-  }, [pathname]);
-
-  useEffect(() => {
     if (!open) return;
     enumerate();
   }, [open]);
 
   const enumerate = async () => {
     try {
+      // Request permission first to get actual device labels and IDs
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+
       const mediaDevices = await navigator.mediaDevices.enumerateDevices();
       const mapped: AudioDevice[] = mediaDevices.map((d) => ({
         deviceId: d.deviceId,
         label: d.label || '',
         kind: d.kind,
       }));
-      setDevices(mapped);
+
+      // Remove duplicates by deviceId and filter out 'default' to avoid conflict
+      const seen = new Set<string>();
+      const uniqueDevices = mapped.filter((d) => {
+        if (!d.deviceId || d.deviceId === 'default' || seen.has(d.deviceId)) return false;
+        seen.add(d.deviceId);
+        return true;
+      });
+
+      setDevices(uniqueDevices);
+
+      // If saved device is not in the list, reset to default
+      if (settings.micDeviceId && !uniqueDevices.some((d) => d.deviceId === settings.micDeviceId)) {
+        updateSettings({ micDeviceId: null });
+      }
     } catch (e) {
       // ignore
     }
@@ -91,11 +100,6 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
     }
     updateSettings({ glassMode: false });
     setTheme(mode);
-  };
-
-  const handleLanguageChange = (locale: string) => {
-    const newPath = changeLanguage(locale, pathname, LOCALIZED_LANGUAGE_CODES);
-    window.location.href = newPath;
   };
 
   const handleNativeLangChange = async (langCode: string) => {
@@ -116,6 +120,9 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
           },
         };
       });
+      // Change UI language to match native language
+      const newPath = changeLanguage(langCode, pathname, LOCALIZED_LANGUAGE_CODES);
+      window.location.href = newPath;
     } catch (error) {
       console.error('Failed to update native language:', error);
     }
@@ -275,29 +282,6 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
                     </span>
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* UI Language Selection */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="language" className="flex items-center gap-1.5 text-sm font-medium w-36 shrink-0">
-              <Languages className="size-3.5" />
-              <Trans>UI Language</Trans>
-            </Label>
-            <Select value={currentLocale} onValueChange={handleLanguageChange}>
-              <SelectTrigger id="language" className="h-8 w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LOCALIZED_LANGUAGE_CODES.map((locale) => {
-                  const language = SUPPORTED_LANGUAGES[locale];
-                  return (
-                    <SelectItem key={locale} value={locale}>
-                      {language.native_name}
-                    </SelectItem>
-                  );
-                })}
               </SelectContent>
             </Select>
           </div>

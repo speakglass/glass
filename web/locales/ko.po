@@ -29,19 +29,57 @@ msgid ""
 "to help you learn and speak any language."
 msgstr "Glass는 여러분이 어떤 언어든 말할 수 있도록 돕는 AI입니다. 최신 AI 기술을 활용하여 언어를 학습하고 말하는 데 도움을 줍니다."
 
-#: components/start-call.tsx:710
-msgid "• Browser tab → Enable \"Share tab audio\""
-msgstr "• 브라우저 탭 → \"탭의 오디오 공유\" 활성화"
+#: components/memory/data-table.tsx:210
+#. placeholder {0}: table.getFilteredSelectedRowModel().rows.length
+#. placeholder {1}: table.getFilteredRowModel().rows.length
+msgid "{0} of {1} rows selected"
+msgstr "총 {1}개 중 {0}개 행 선택됨"
 
-#: components/start-call.tsx:713
-msgid "• Desktop app → Enable \"Share system audio\""
-msgstr "• 데스크톱 앱 → \"시스템 오디오 공유\" 활성화"
+#: components/history/conversation-history.tsx:98
+msgid "{diffInDays, plural, one {# day ago} other {# days ago}}"
+msgstr "{diffInDays, plural, one {#일 전} other {#일 전}}"
 
-#: components/onboarding/onboarding-client.tsx:517
-#: components/onboarding/onboarding-client.tsx:615
-#: components/start-call.tsx:485
-#: components/start-call.tsx:605
-#: components/start-call.tsx:727
+#: components/history/conversation-history.tsx:90
+msgid "{diffInHours, plural, one {# hour ago} other {# hours ago}}"
+msgstr "{diffInHours, plural, one {#시간 전} other {#시간 전}}"
+
+#: components/history/conversation-history.tsx:82
+msgid "{diffInMinutes, plural, one {# min ago} other {# mins ago}}"
+msgstr "{diffInMinutes, plural, one {#분 전} other {#분 전}}"
+
+#: components/history/conversation-history.tsx:114
+msgid "{diffInMonths, plural, one {# month ago} other {# months ago}}"
+msgstr "{diffInMonths, plural, one {#개월 전} other {#개월 전}}"
+
+#: components/history/conversation-history.tsx:106
+msgid "{diffInWeeks, plural, one {# week ago} other {# weeks ago}}"
+msgstr "{diffInWeeks, plural, one {#주 전} other {#주 전}}"
+
+#: components/history/conversation-history.tsx:121
+msgid "{diffInYears, plural, one {# year ago} other {# years ago}}"
+msgstr "{diffInYears, plural, one {#년 전} other {#년 전}}"
+
+#: components/history/conversation-history.tsx:154
+msgid "{mins}m {secs}s"
+msgstr "{mins}분 {secs}초"
+
+#: components/history/conversation-history.tsx:153
+msgid "{secs}s"
+msgstr "{secs}초"
+
+#: components/history/conversation-history.tsx:995
+msgid "{totalConversations, plural, one {# conversation} other {# conversations}}"
+msgstr "{totalConversations, plural, one {#개의 대화} other {#개의 대화}}"
+
+#: components/memory/data-table.tsx:204
+msgid "{totalCount, plural, one {# memory total • } other {# memories total • }}"
+msgstr "{totalCount, plural, one {총 #개의 기억 • } other {총 #개의 기억 • }}"
+
+#: components/onboarding/onboarding-client.tsx:535
+#: components/onboarding/onboarding-client.tsx:633
+#: components/start-call.tsx:1027
+#: components/start-call.tsx:1206
+#: components/start-call.tsx:1331
 msgid "← Back"
 msgstr "← 뒤로"
 
@@ -49,26 +87,33 @@ msgstr "← 뒤로"
 msgid "← Back to Home"
 msgstr "← 홈으로 돌아가기"
 
-#: components/start-call.tsx:699
-msgid "1. Join a Discord voice chat or online call"
-msgstr "1. Discord 음성 채팅이나 온라인 통화에 참여하세요."
-
-#: components/start-call.tsx:702
-msgid "2. Click \"Start\" below"
-msgstr "2. 아래 \"시작\"을 클릭하세요."
-
-#: components/start-call.tsx:706
-msgid "3. Share your tab or screen with audio:"
-msgstr "3. 오디오와 함께 탭이나 화면을 공유하세요:"
-
-#: components/start-call.tsx:718
-msgid "4. Start talking and let Glass assist you"
-msgstr "4. 대화를 시작하고 Glass의 도움을 받아 보세요"
-
-#: components/call-summary.tsx:371
-#: components/history/conversation-history.tsx:803
+#: components/call-summary.tsx:958
+#: components/history/conversation-history.tsx:1384
 msgid "Accuracy"
 msgstr "정확도"
+
+#: components/memory/columns.tsx:147
+msgid "Actions"
+msgstr "작업"
+
+#: components/memory/columns.tsx:112
+msgid "Active"
+msgstr "활성화됨"
+
+#: components/call-summary.tsx:1421
+#: components/history/conversation-history.tsx:1756
+#: components/start-call.tsx:1462
+#: components/start-call.tsx:1557
+msgid "Add a short description"
+msgstr "간단한 설명 추가"
+
+#: components/memory/data-table.tsx:156
+msgid "Add memory"
+msgstr "메모리 추가"
+
+#: components/memory/memory-dialog.tsx:58
+msgid "Add new memory"
+msgstr "새로운 메모리 추가"
 
 #: lib/onboarding-tours.tsx:85
 msgid "After each conversation"
@@ -80,9 +125,14 @@ msgid ""
 "pronunciation, and vocabulary. So you keep improving naturally."
 msgstr "대화가 끝날 때마다 문법, 발음, 어휘에 대한 피드백을 드려요. 그래서 자연스럽게 계속 발전하실 수 있어요."
 
-#: components/start-call.tsx:660
-msgid "Airport Check-in"
-msgstr "공항 체크인"
+#: components/start-call.tsx:944
+#: components/start-call.tsx:1234
+msgid "AI Roleplay"
+msgstr "AI 롤플레이"
+
+#: components/memory/memory-dialog.tsx:82
+msgid "AI will automatically organize and categorize this information"
+msgstr "AI가 자동으로 이 정보를 정리하고 분류합니다"
 
 #: components/signup-form.tsx:252
 msgid "Already have an account? <0>Sign in</0>"
@@ -93,13 +143,27 @@ msgstr "이미 계정이 있으신가요? <0>로그인</0>"
 msgid "Always"
 msgstr "항상"
 
-#: app/[lang]/error.tsx:19
+#: app/[lang]/error.tsx:18
 msgid "An error occurred"
 msgstr "오류가 발생했습니다"
 
 #: components/chat.tsx:86
 msgid "Analyzing Conversation"
 msgstr "대화 분석 중"
+
+#: components/history/conversation-history.tsx:1680
+msgid ""
+"Are you sure you want to delete \"{selectedConversationName}\"? This action "
+"cannot be undone and will permanently remove this conversation from your "
+"history."
+msgstr ""
+"\"{selectedConversationName}\" 대화를 삭제하시겠습니까? 이 작업은 되돌릴 수 없으며, 대화 기록에서 영구적으로 "
+"삭제됩니다."
+
+#: components/start-call.tsx:1595
+#. placeholder {0}: partnerPendingDelete.name
+msgid "Are you sure you want to delete {0}? This action cannot be undone."
+msgstr "정말로 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
 #: components/signup-form.tsx:47
 msgid "At least one number"
@@ -109,11 +173,14 @@ msgstr "숫자 하나 이상"
 msgid "At least one special character"
 msgstr "특수 문자를 최소 한 개 포함하세요."
 
-#: contexts/glass-context.tsx:992
+#: contexts/glass-context.tsx:1021
 msgid "Authentication failed"
 msgstr "인증 실패"
 
-#: contexts/glass-context.tsx:700
+#: components/start-call.tsx:468
+#: components/start-call.tsx:542
+#: components/start-call.tsx:588
+#: contexts/glass-context.tsx:730
 msgid "Authentication token not available. Please refresh the page."
 msgstr "인증 토큰을 사용할 수 없습니다. 페이지를 새로고침해 주세요."
 
@@ -123,11 +190,11 @@ msgstr "인증 토큰을 사용할 수 없습니다. 페이지를 새로고침�
 msgid "Auto"
 msgstr "자동"
 
-#: components/onboarding/bottom-panel-demo.tsx:356
+#: components/onboarding/bottom-panel-demo.tsx:354
 msgid "Auto Response"
 msgstr "자동 응답"
 
-#: components/call-summary.tsx:149
+#: components/call-summary.tsx:551
 msgid "Average"
 msgstr "평균"
 
@@ -135,9 +202,21 @@ msgstr "평균"
 msgid "Back"
 msgstr "뒤로"
 
-#: components/call-summary.tsx:150
+#: components/start-call.tsx:732
+#: components/start-call.tsx:751
+#: components/start-call.tsx:770
+#: components/start-call.tsx:789
+#: components/start-call.tsx:809
+msgid "Back in Glass, press Start Call."
+msgstr "Glass로 돌아가서, 통화를 시작하려면 Start Call을 누르세요."
+
+#: components/call-summary.tsx:552
 msgid "Below Average"
 msgstr "평균 이하"
+
+#: components/user-menu.tsx:128
+msgid "Bonus minutes"
+msgstr "보너스 시간"
 
 #: components/login-form.tsx:161
 #: components/signup-form.tsx:265
@@ -146,14 +225,28 @@ msgid ""
 "<1>Privacy Policy</1>."
 msgstr "계속을 클릭하면, 저희의 <0>이용 약관</0>과 <1>개인정보 보호정책</1>에 동의하게 됩니다."
 
-#: components/call-summary.tsx:217
+#: components/call-summary.tsx:784
 msgid "Call Summary"
 msgstr "대화 요약"
 
-#: components/start-call.tsx:539
-#: components/start-call.tsx:680
-msgid "Casual Chat"
-msgstr "가벼운 대화"
+#: components/history/conversation-history.tsx:1685
+#: components/memory/memory-dialog.tsx:96
+#: components/memory/memory-table.tsx:251
+#: components/memory/memory-table.tsx:286
+#: components/start-call.tsx:1605
+msgid "Cancel"
+msgstr "취소"
+
+#: components/memory/columns.tsx:76
+msgid "Category"
+msgstr "카테고리"
+
+#: components/call-summary.tsx:1377
+#: components/history/conversation-history.tsx:1712
+#: components/start-call.tsx:1415
+#: components/start-call.tsx:1516
+msgid "Change partner photo"
+msgstr "파트너 사진 변경"
 
 #: components/forgot-password-form.tsx:53
 #: components/verify-email-sent-content.tsx:75
@@ -165,15 +258,31 @@ msgstr "이메일을 확인하세요"
 msgid "Chinese"
 msgstr "중국어"
 
-#: components/start-call.tsx:510
-msgid "Choose a scenario"
-msgstr "시나리오 선택"
+#: components/start-call.tsx:735
+msgid "Choose the Discord window (or desktop) and enable system audio."
+msgstr "Discord 창(또는 데스크톱)을 선택하고 시스템 오디오를 활성화하세요."
 
-#: components/onboarding/onboarding-client.tsx:484
+#: components/onboarding/onboarding-client.tsx:502
 msgid "Choose the language you want to practice speaking"
 msgstr "연습하고 싶은 언어를 선택하세요."
 
-#: components/start-call.tsx:381
+#: components/start-call.tsx:792
+msgid "Choose the Teams window (or desktop) and enable system audio."
+msgstr "Teams 창(또는 데스크탑)을 선택하고 시스템 오디오를 활성화하세요."
+
+#: components/start-call.tsx:754
+msgid "Choose the Zoom window (or desktop) and enable system audio."
+msgstr "Zoom 창(또는 데스크톱)을 선택하고 시스템 오디오를 활성화하세요."
+
+#: components/start-call.tsx:1052
+msgid "Choose who to call"
+msgstr "통화할 사람 선택"
+
+#: components/start-call.tsx:1275
+msgid "Choose your platform"
+msgstr "플랫폼을 선택하세요"
+
+#: components/start-call.tsx:923
 msgid "Choose your preferred mode"
 msgstr "선호하는 모드를 선택하세요"
 
@@ -181,16 +290,33 @@ msgstr "선호하는 모드를 선택하세요"
 msgid "Click the link in the email to verify your account and continue to Glass."
 msgstr "이메일의 링크를 클릭하여 계정을 인증하고 Glass를 계속 이용하세요."
 
-#: components/call-summary.tsx:742
+#: components/history/conversation-history.tsx:1067
+msgid "Click to edit"
+msgstr "클릭하여 편집하세요"
+
+#: components/memory/columns.tsx:98
+msgid "Click to view full content"
+msgstr "전체 내용을 보려면 클릭하세요"
+
+#: components/call-summary.tsx:1355
+#: components/call-summary.tsx:1452
+#: components/history/conversation-history.tsx:1787
+#: components/memory/memory-dialog.tsx:91
+#: components/start-call.tsx:1477
+#: components/start-call.tsx:1572
 msgid "Close"
 msgstr "닫기"
+
+#: components/memory/data-table.tsx:131
+msgid "Columns"
+msgstr "열"
 
 #: components/nav.tsx:86
 msgid "Community"
 msgstr "커뮤니티"
 
-#: components/call-summary.tsx:447
-#: components/history/conversation-history.tsx:860
+#: components/call-summary.tsx:1034
+#: components/history/conversation-history.tsx:1441
 msgid "Comprehensibility"
 msgstr "이해도"
 
@@ -198,30 +324,52 @@ msgstr "이해도"
 msgid "Confirm Password"
 msgstr "비밀번호 확인"
 
-#: components/start-call.tsx:758
-#: components/start-call.tsx:770
+#: components/start-call.tsx:1367
+#: components/start-call.tsx:1381
 msgid "Connecting..."
 msgstr "연결 중..."
 
+#: components/history/conversation-history.tsx:971
+msgid "Conversation"
+msgstr "대화"
+
+#: components/history/conversation-history.tsx:701
+msgid "Conversation deleted"
+msgstr "대화가 삭제되었습니다."
+
 #: app/[lang]/(app)/history/page.tsx:28
-#: components/user-menu.tsx:149
+#: components/user-menu.tsx:142
 msgid "Conversation history"
 msgstr "대화 내역"
 
-#: components/call-summary.tsx:643
-#: components/history/conversation-history.tsx:1000
+#: components/call-summary.tsx:1231
+#: components/history/conversation-history.tsx:1582
 msgid "Conversation History"
 msgstr "대화 기록"
 
-#: contexts/glass-context.tsx:1562
-#: contexts/glass-context.tsx:1614
-#: contexts/glass-context.tsx:1629
+#: components/call-summary.tsx:391
+#: components/history/conversation-history.tsx:545
+msgid "Conversation partner assigned"
+msgstr "대화 상대가 지정되었습니다"
+
+#: contexts/glass-context.tsx:1595
+#: contexts/glass-context.tsx:1651
+#: contexts/glass-context.tsx:1666
 msgid "Conversation saved"
 msgstr "대화가 저장되었습니다"
+
+#: components/memory/columns.tsx:156
+msgid "Copy"
+msgstr "복사"
 
 #: app/[lang]/failure/page.tsx:21
 msgid "Couldn’t connect"
 msgstr "연결할 수 없습니다."
+
+#: components/memory/memory-dialog.tsx:104
+#: components/start-call.tsx:1486
+msgid "Create"
+msgstr "생성하기"
 
 #: components/signup-form.tsx:249
 msgid "Create Account"
@@ -231,37 +379,151 @@ msgstr "계정 만들기"
 msgid "Create an account"
 msgstr "계정을 생성하세요"
 
+#: components/start-call.tsx:1395
+msgid "Create partner"
+msgstr "파트너 생성"
+
+#: components/start-call.tsx:1196
+msgid "Create your own conversation partner"
+msgstr "나만의 대화 상대 만들기"
+
+#: components/memory/columns.tsx:56
+msgid "Created at"
+msgstr "생성 일자"
+
 #: components/signup-form.tsx:249
 msgid "Creating account..."
 msgstr "계정을 생성하는 중..."
 
-#: components/start-call.tsx:572
-msgid "Custom Scenario"
-msgstr "나만의 상황 설정"
+#: components/start-call.tsx:1193
+msgid "Custom partner"
+msgstr "맞춤 파트너"
 
-#: components/settings.tsx:155
+#: components/start-call.tsx:575
+msgid "Custom partner ready"
+msgstr "맞춤 파트너 준비 완료"
+
+#: components/settings.tsx:162
 msgid "Customize your Glass experience"
-msgstr "Glass 경험을 나에게 맞게 설정하기"
+msgstr "Glass를 나에게 맞게 커스텀 설정하세요"
 
-#: components/settings.tsx:341
+#: components/user-menu.tsx:121
+msgid "Daily free minutes"
+msgstr "일일 무료 시간"
+
+#: components/settings.tsx:325
 msgid "Dark"
 msgstr "어두운"
 
-#: components/start-call.tsx:590
-msgid "Describe the scenario you want to practice..."
-msgstr "연습하고자 하는 상황을 설명해 주세요..."
+#: components/history/conversation-history.tsx:1268
+#: components/history/conversation-history.tsx:1694
+#: components/memory/columns.tsx:172
+#: components/memory/data-table.tsx:124
+#: components/memory/memory-table.tsx:255
+#: components/memory/memory-table.tsx:290
+#: components/start-call.tsx:1157
+#: components/start-call.tsx:1616
+msgid "Delete"
+msgstr "삭제"
 
-#: components/start-call.tsx:575
-msgid "Describe your own situation"
-msgstr "직접 상황을 입력해 주세요"
+#: components/history/conversation-history.tsx:1677
+msgid "Delete conversation"
+msgstr "대화 삭제"
 
-#: components/onboarding/onboarding-client.tsx:542
+#: components/memory/memory-table.tsx:237
+msgid "Delete memory?"
+msgstr "메모리를 삭제하시겠습니까?"
+
+#: components/call-summary.tsx:1439
+#: components/history/conversation-history.tsx:1774
+#: components/start-call.tsx:1591
+msgid "Delete partner"
+msgstr "파트너 삭제"
+
+#: components/memory/memory-table.tsx:272
+msgid "Delete selected memories?"
+msgstr "선택한 메모리를 삭제하시겠습니까?"
+
+#: components/call-summary.tsx:372
+#: components/history/conversation-history.tsx:492
+msgid "Delete this partner? This cannot be undone."
+msgstr "파트너를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다."
+
+#: components/memory/memory-table.tsx:86
+#. placeholder {0}: variables.length
+msgid "Deleted {0} memories"
+msgstr "{0}개의 추억이 삭제되었습니다"
+
+#: components/memory/memory-table.tsx:83
+#. placeholder {0}: result.deleted
+#. placeholder {1}: result.failed.length
+msgid "Deleted {0} memories, but {1} could not be removed. Please retry later."
+msgstr "{0}개의 메모리는 삭제되었지만, {1}개는 삭제할 수 없었습니다. 나중에 다시 시도해 주세요."
+
+#: components/memory/memory-table.tsx:77
+#. placeholder {0}: memoryIds.length
+msgid "Deleting {0} selected memories..."
+msgstr "선택한 {0}개의 메모리 삭제 중..."
+
+#: components/memory/memory-table.tsx:53
+msgid "Deleting memory..."
+msgstr "메모리 삭제 중..."
+
+#: components/memory/memory-table.tsx:280
+msgid "Deleting selected memories..."
+msgstr "선택한 메모리 삭제 중..."
+
+#: components/memory/memory-table.tsx:245
+msgid "Deleting..."
+msgstr "삭제 중..."
+
+#: components/call-summary.tsx:1416
+#: components/history/conversation-history.tsx:1751
+#: components/start-call.tsx:1454
+#: components/start-call.tsx:1552
+msgid "Description"
+msgstr "설명"
+
+#: components/onboarding/onboarding-client.tsx:560
 msgid "Do you want pronunciation help?"
 msgstr "발음 지원을 원하시나요?"
+
+#: app/[lang]/error.tsx:24
+msgid "Docs"
+msgstr "문서"
 
 #: components/login-form.tsx:148
 msgid "Don't have an account? <0>Sign up</0>"
 msgstr "계정이 없으신가요? <0>가입하기</0>"
+
+#: components/memory/memory-dialog.tsx:72
+msgid ""
+"e.g., I love hiking in the mountains, My favorite food is sushi, I'm "
+"learning Spanish..."
+msgstr "예를 들어, 저는 산에서 하이킹하는 것을 좋아해요, 제가 가장 좋아하는 음식은 스시예요, 저는 스페인어를 배우고 있어요..."
+
+#: components/call-summary.tsx:653
+#: components/call-summary.tsx:713
+#: components/call-summary.tsx:1395
+#: components/history/conversation-history.tsx:1151
+#: components/history/conversation-history.tsx:1211
+#: components/history/conversation-history.tsx:1730
+#: components/memory/columns.tsx:167
+#: components/start-call.tsx:1147
+#: components/start-call.tsx:1430
+#: components/start-call.tsx:1531
+msgid "Edit"
+msgstr "편집"
+
+#: components/memory/memory-dialog.tsx:56
+msgid "Edit memory"
+msgstr "메모리 편집"
+
+#: components/call-summary.tsx:1369
+#: components/history/conversation-history.tsx:1704
+#: components/start-call.tsx:1496
+msgid "Edit partner"
+msgstr "파트너 편집"
 
 #: components/forgot-password-form.tsx:94
 #: components/login-form.tsx:105
@@ -286,6 +548,23 @@ msgstr "곧 종료됩니다: 5분 이내 남았습니다"
 msgid "English"
 msgstr "영어"
 
+#: components/call-summary.tsx:1410
+#: components/history/conversation-history.tsx:1745
+#: components/start-call.tsx:1448
+#: components/start-call.tsx:1546
+msgid "Enter a name"
+msgstr "이름을 입력하세요"
+
+#: components/call-summary.tsx:305
+#: components/history/conversation-history.tsx:506
+msgid "Enter a name first"
+msgstr "이름을 먼저 입력하세요"
+
+#: components/start-call.tsx:548
+#: components/start-call.tsx:594
+msgid "Enter a name for your partner"
+msgstr "파트너의 이름을 입력하세요."
+
 #: components/forgot-password-form.tsx:86
 msgid "Enter your email address and we'll send you a reset link"
 msgstr "이메일 주소를 입력하시면 재설정 링크를 보내드리겠습니다."
@@ -294,17 +573,82 @@ msgstr "이메일 주소를 입력하시면 재설정 링크를 보내드리겠�
 msgid "Enter your new password below"
 msgstr "아래에 새로운 비밀번호를 입력하세요"
 
-#: components/start-call.tsx:545
-msgid "Everyday conversation"
-msgstr "일상 대화"
-
-#: components/call-summary.tsx:147
+#: components/call-summary.tsx:549
 msgid "Excellent"
 msgstr "훌륭함"
+
+#: components/memory/columns.tsx:113
+msgid "Expired"
+msgstr "만료됨"
+
+#: components/memory/columns.tsx:129
+msgid "Expired memories cannot be edited"
+msgstr "만료된 메모리는 수정할 수 없습니다."
+
+#: components/call-summary.tsx:394
+#: components/history/conversation-history.tsx:548
+msgid "Failed to assign partner"
+msgstr "파트너 할당 실패"
+
+#: components/memory/memory-table.tsx:115
+#. placeholder {0}: error.message
+msgid "Failed to create memory: {0}"
+msgstr "메모리 생성 실패: {0}"
+
+#: components/call-summary.tsx:326
+#: components/history/conversation-history.tsx:527
+msgid "Failed to create partner"
+msgstr "파트너 생성 실패"
+
+#: components/history/conversation-history.tsx:716
+msgid "Failed to delete conversation"
+msgstr "대화를 삭제하지 못했습니다"
+
+#: components/memory/memory-table.tsx:91
+#. placeholder {0}: error.message
+msgid "Failed to delete memories: {0}"
+msgstr "메모리를 삭제하는 데 실패했습니다: {0}"
+
+#: components/memory/memory-table.tsx:61
+#. placeholder {0}: error.message
+msgid "Failed to delete memory: {0}"
+msgstr "메모리 삭제 실패: {0}"
+
+#: components/call-summary.tsx:359
+#: components/history/conversation-history.tsx:480
+msgid "Failed to delete partner"
+msgstr "파트너 삭제에 실패했습니다."
+
+#: components/history/conversation-history.tsx:586
+msgid "Failed to load conversation detail. Please try again."
+msgstr "대화를 불러오지 못했습니다. 다시 시도해 주세요."
+
+#: components/history/conversation-history.tsx:736
+msgid "Failed to load conversations"
+msgstr "대화를 불러오는 데 실패했습니다"
 
 #: components/feedback.tsx:59
 msgid "Failed to submit feedback. Please try again."
 msgstr "피드백 제출에 실패했습니다. 다시 시도해 주세요."
+
+#: components/memory/memory-table.tsx:131
+#. placeholder {0}: error.message
+msgid "Failed to update memory: {0}"
+msgstr "메모리 업데이트에 실패했습니다: {0}"
+
+#: components/call-summary.tsx:294
+#: components/history/conversation-history.tsx:443
+msgid "Failed to update partner"
+msgstr "파트너를 업데이트하지 못했습니다."
+
+#: components/history/conversation-history.tsx:686
+msgid "Failed to update title"
+msgstr "제목 업데이트 실패"
+
+#: components/call-summary.tsx:244
+#: components/history/conversation-history.tsx:391
+msgid "Failed to upload image"
+msgstr "이미지 업로드 실패"
 
 #: components/bottom-panel.tsx:155
 #: components/bottom-panel.tsx:445
@@ -313,27 +657,19 @@ msgstr "피드백 제출에 실패했습니다. 다시 시도해 주세요."
 msgid "Feedback"
 msgstr "피드백"
 
-#: components/call-summary.tsx:588
+#: components/call-summary.tsx:1176
 msgid "Fetching thread context..."
 msgstr "스레드 컨텍스트 가져오는 중..."
 
-#: components/call-summary.tsx:290
-#: components/history/conversation-history.tsx:746
+#: components/call-summary.tsx:877
+#: components/history/conversation-history.tsx:1327
 msgid "Fluency"
 msgstr "유창함"
-
-#: components/start-call.tsx:695
-msgid "Follow these steps:"
-msgstr "아래 단계를 따라 진행해 주세요"
 
 #: components/forgot-password-form.tsx:83
 #: components/login-form.tsx:122
 msgid "Forgot your password?"
 msgstr "비밀번호를 잊으셨나요?"
-
-#: components/user-menu.tsx:128
-msgid "Free minutes"
-msgstr "무료 통화 시간"
 
 #: components/bottom-panel.tsx:230
 #: components/onboarding/bottom-panel-demo.tsx:106
@@ -349,24 +685,46 @@ msgid "Generating insights and feedback..."
 msgstr "인사이트 및 피드백 생성 중..."
 
 #: components/bottom-panel.tsx:383
-#: components/onboarding/bottom-panel-demo.tsx:300
+#: components/onboarding/bottom-panel-demo.tsx:298
 msgid "Get Suggestions"
 msgstr "추천 받기"
 
-#: components/settings.tsx:357
+#: components/start-call.tsx:1398
+msgid "Give your custom partner a name, description, and optional photo."
+msgstr "파트너에게 이름, 설명, 그리고 선택적으로 사진을 추가하세요."
+
+#: components/call-summary.tsx:407
+#: components/history/conversation-history.tsx:839
+#: components/settings.tsx:341
 msgid "Glass"
 msgstr "Glass"
 
-#: components/verify-email-form.tsx:140
+#: components/memory/data-table.tsx:246
+msgid "Go to first page"
+msgstr "첫 페이지로 이동"
+
+#: components/memory/data-table.tsx:282
+msgid "Go to last page"
+msgstr "마지막 페이지로 이동"
+
+#: components/verify-email-form.tsx:134
 #: components/verify-email-sent-content.tsx:116
 msgid "Go to Login"
 msgstr "로그인으로 이동"
 
-#: components/verify-email-form.tsx:140
+#: components/verify-email-form.tsx:134
 msgid "Go to Login Now"
 msgstr "지금 로그인하기"
 
-#: components/call-summary.tsx:148
+#: components/memory/data-table.tsx:270
+msgid "Go to next page"
+msgstr "다음 페이지로 이동"
+
+#: components/memory/data-table.tsx:258
+msgid "Go to previous page"
+msgstr "이전 페이지로 이동"
+
+#: components/call-summary.tsx:550
 msgid "Good"
 msgstr "좋음"
 
@@ -378,11 +736,11 @@ msgstr "Glass 개선에 도움을 주세요."
 msgid "Hey! I'm Glass."
 msgstr "안녕하세요! 저는 Glass예요."
 
-#: components/settings.tsx:211
+#: components/settings.tsx:218
 msgid "Hide messages"
-msgstr "메시지 숨기기"
+msgstr "자동 메시지 숨김"
 
-#: components/start-call.tsx:378
+#: components/start-call.tsx:920
 msgid "How would you like to use Glass?"
 msgstr "Glass를 어떻게 사용하시겠습니까?"
 
@@ -434,19 +792,42 @@ msgstr "<0>{email}</0>에 해당하는 계정이 존재하면, 곧 비밀번호 
 msgid "If you don't see the email, check your spam folder."
 msgstr "이메일이 보이지 않으면 스팸 메일함을 확인해 보세요."
 
+#: components/memory/columns.tsx:114
+msgid "Invalid"
+msgstr "잘못됨"
+
 #: components/bottom-panel.tsx:226
 #: components/onboarding/bottom-panel-demo.tsx:102
 msgid "Japanese"
 msgstr "일본어"
 
-#: components/start-call.tsx:541
-#: components/start-call.tsx:670
-msgid "Job Interview"
-msgstr "면접"
-
 #: app/[lang]/time-limit/page.tsx:40
 msgid "Join Community"
 msgstr "커뮤니티 참여하기"
+
+#: components/start-call.tsx:748
+msgid "Join or start your Zoom meeting."
+msgstr "Zoom 회의에 참여하거나 새로 시작하세요."
+
+#: components/start-call.tsx:718
+msgid "Join our <0>Discord voice channel</0> (or your own server)."
+msgstr "<0>Discord 음성 채널</0>에 참여하세요 (또는 사용자의 서버에 참여하세요)."
+
+#: components/start-call.tsx:806
+msgid "Join the call in your preferred platform."
+msgstr "선호하는 플랫폼에서 통화에 참여하세요."
+
+#: components/start-call.tsx:767
+msgid "Join the Google Meet room."
+msgstr "Google Meet 방에 참여하세요."
+
+#: components/start-call.tsx:786
+msgid "Join your Microsoft Teams meeting."
+msgstr "Microsoft Teams 회의에 참가하세요."
+
+#: components/history/conversation-history.tsx:77
+msgid "just now"
+msgstr "방금 전에"
 
 #: lib/onboarding-tours.tsx:51
 msgid ""
@@ -454,18 +835,26 @@ msgid ""
 "you can speak."
 msgstr "당신의 언어로 몇 단어만 입력하세요. 제가 말할 수 있는 완전한 문장으로 만들어 드릴게요."
 
+#: components/start-call.tsx:738
+#: components/start-call.tsx:757
+#: components/start-call.tsx:776
+#: components/start-call.tsx:795
+#: components/start-call.tsx:815
+msgid "Keep Glass open to get live help during your call."
+msgstr "통화 중 실시간 도움을 받으려면 Glass를 계속 실행하세요."
+
 #: components/bottom-panel.tsx:227
 #: components/onboarding/bottom-panel-demo.tsx:103
 msgid "Korean"
 msgstr "한국어"
 
-#: components/start-call.tsx:465
+#: components/start-call.tsx:1007
 msgid "Language Exchange • Calls"
 msgstr "언어 교환 • 모임"
 
-#: components/settings.tsx:263
+#: components/settings.tsx:270
 msgid "Learning language"
-msgstr "배우는 언어"
+msgstr "학습 언어"
 
 #: lib/onboarding-tours.tsx:20
 msgid "Let me show you how I'll help you."
@@ -479,11 +868,11 @@ msgstr "시작해볼까요! 🎉"
 msgid "Let's start your first conversation!"
 msgstr "이제 첫 대화를 시작해봐요!"
 
-#: components/settings.tsx:325
+#: components/settings.tsx:309
 msgid "Light"
 msgstr "라이트"
 
-#: components/onboarding/bottom-panel-demo.tsx:432
+#: components/onboarding/bottom-panel-demo.tsx:430
 msgid "Listening. Say anything when you're ready."
 msgstr "지금 듣고 있어요. 준비되면 편하게 말해보세요."
 
@@ -491,9 +880,27 @@ msgstr "지금 듣고 있어요. 준비되면 편하게 말해보세요."
 msgid "Listening… say anything when you're ready."
 msgstr "지금 듣고 있어요. 준비되면 편하게 말해보세요."
 
-#: components/history/conversation-history.tsx:465
+#: components/start-call.tsx:1004
+#: components/start-call.tsx:1234
+msgid "Live Call"
+msgstr "라이브 통화"
+
+#: components/history/conversation-history.tsx:873
 msgid "Loading history…"
 msgstr "히스토리 불러오는 중..."
+
+#: components/memory/memory-table.tsx:187
+msgid "Loading memories..."
+msgstr "추억 불러오는 중..."
+
+#: components/start-call.tsx:1062
+msgid "Loading partners..."
+msgstr "파트너 로딩 중..."
+
+#: components/call-summary.tsx:664
+#: components/history/conversation-history.tsx:1162
+msgid "Loading partners…"
+msgstr "파트너 불러오는 중..."
 
 #: components/login-form.tsx:145
 msgid "Logging in..."
@@ -519,77 +926,146 @@ msgstr "Google 계정 또는 이메일로 로그인하세요"
 msgid "Long"
 msgstr "길게"
 
-#: components/call-summary.tsx:151
+#: components/call-summary.tsx:553
 msgid "Low"
 msgstr "낮음"
 
-#: components/call-summary.tsx:560
-#: components/history/conversation-history.tsx:952
-#: components/user-menu.tsx:155
+#: app/[lang]/(app)/memory/page.tsx:28
+#: components/call-summary.tsx:1148
+#: components/history/conversation-history.tsx:1534
+#: components/memory/columns.tsx:88
+#: components/memory/memory-dialog.tsx:54
+#: components/user-menu.tsx:148
 msgid "Memory"
 msgstr "메모리"
 
-#: app/[lang]/(app)/memory/page.tsx:28
-msgid "Memory system"
-msgstr "메모리 시스템"
+#: components/memory/columns.tsx:152
+msgid "Memory copied to clipboard"
+msgstr "메모리가 클립보드에 복사되었습니다."
 
-#: components/settings.tsx:164
+#: components/memory/memory-table.tsx:109
+msgid "Memory created successfully"
+msgstr "메모리가 성공적으로 생성되었습니다."
+
+#: components/memory/memory-table.tsx:57
+msgid "Memory deleted successfully"
+msgstr "메모리가 성공적으로 삭제되었습니다"
+
+#: components/memory/memory-table.tsx:126
+msgid "Memory updated successfully"
+msgstr "메모리가 성공적으로 업데이트되었습니다."
+
+#: components/settings.tsx:171
 msgid "Microphone"
 msgstr "마이크"
+
+#: components/user-menu.tsx:183
+msgid "min"
+msgstr "최소"
 
 #: components/signup-form.tsx:43
 msgid "Minimum 8 characters"
 msgstr "최소 8자"
 
+#: components/call-summary.tsx:301
+#: components/call-summary.tsx:369
+#: components/history/conversation-history.tsx:489
+#: components/history/conversation-history.tsx:502
+msgid "Missing authentication"
+msgstr "인증 없음"
+
+#: components/call-summary.tsx:384
+#: components/history/conversation-history.tsx:534
+msgid "Missing conversation"
+msgstr "대화 누락됨"
+
+#: components/call-summary.tsx:208
+#: components/call-summary.tsx:256
+#: components/call-summary.tsx:334
+#: components/history/conversation-history.tsx:347
+#: components/history/conversation-history.tsx:402
+#: components/history/conversation-history.tsx:450
+msgid "Missing partner information"
+msgstr "파트너 정보 누락"
+
 #: components/reset-password-form.tsx:108
 msgid "Must be at least 8 characters long."
 msgstr "8자 이상이어야 합니다."
 
-#: components/settings.tsx:240
+#: components/call-summary.tsx:1405
+#: components/history/conversation-history.tsx:1740
+#: components/start-call.tsx:1440
+#: components/start-call.tsx:1541
+msgid "Name"
+msgstr "이름"
+
+#: components/settings.tsx:247
 msgid "Native language"
 msgstr "모국어"
 
-#: components/settings.tsx:198
+#: components/settings.tsx:205
 msgid "Native script"
 msgstr "원어 표기"
 
-#: components/settings.tsx:226
+#: components/settings.tsx:233
 msgid "Never"
-msgstr "결코"
+msgstr "없음"
+
+#: components/call-summary.tsx:735
+#: components/history/conversation-history.tsx:1233
+msgid "New {trimmedPartnerSearch}"
+msgstr "새로운 {trimmedPartnerSearch}"
 
 #: components/reset-password-form.tsx:87
 msgid "New Password"
 msgstr "새 비밀번호"
 
 #: components/onboarding/glass-onboarding-card.tsx:89
-#: components/onboarding/onboarding-client.tsx:467
-#: components/onboarding/onboarding-client.tsx:526
-#: components/start-call.tsx:494
+#: components/onboarding/onboarding-client.tsx:485
+#: components/onboarding/onboarding-client.tsx:544
+#: components/start-call.tsx:1036
 msgid "Next →"
 msgstr "다음 →"
 
-#: components/call-summary.tsx:623
+#: components/call-summary.tsx:1211
 msgid "No context available yet"
 msgstr "아직 관련 정보가 없습니다."
 
-#: components/history/conversation-history.tsx:525
+#: components/history/conversation-history.tsx:934
 msgid "No conversations found"
 msgstr "대화 내용이 없습니다"
 
-#: components/history/conversation-history.tsx:628
+#: components/history/conversation-history.tsx:1040
 msgid "No conversations found for \"{debouncedSearchQuery}\""
 msgstr "\"{debouncedSearchQuery}\"에 대한 대화가 없습니다"
 
-#: components/history/conversation-history.tsx:530
+#: components/history/conversation-history.tsx:939
 msgid "No conversations yet"
 msgstr "아직 대화가 없습니다"
 
-#: components/call-summary.tsx:728
-#: components/history/conversation-history.tsx:1046
+#: components/call-summary.tsx:721
+#: components/history/conversation-history.tsx:1219
+msgid "No matching partners."
+msgstr "일치하는 파트너가 없습니다."
+
+#: components/call-summary.tsx:1341
+#: components/history/conversation-history.tsx:1655
 msgid "No messages"
 msgstr "메시지 없음"
 
-#: components/onboarding/onboarding-client.tsx:595
+#: components/start-call.tsx:1066
+msgid "No partners available"
+msgstr "파트너를 찾을 수 없습니다."
+
+#: components/memory/data-table.tsx:191
+msgid "No results."
+msgstr "결과가 없습니다."
+
+#: components/memory/data-table.tsx:92
+msgid "No rows selected"
+msgstr "선택된 행 없음"
+
+#: components/onboarding/onboarding-client.tsx:613
 msgid "No, I'm fine"
 msgstr "아니요, 괜찮아요"
 
@@ -598,53 +1074,109 @@ msgstr "아니요, 괜찮아요"
 msgid "Off"
 msgstr "끄기"
 
+#: components/memory/columns.tsx:141
+msgid "Open menu"
+msgstr "메뉴 열기"
+
 #: components/login-form.tsx:99
 #: components/signup-form.tsx:170
 msgid "Or continue with"
 msgstr "또는 계속하기"
 
-#: components/start-call.tsx:546
-msgid "Ordering food & drinks"
-msgstr "음식 및 음료 주문하기"
-
-#: components/call-summary.tsx:240
-#: components/history/conversation-history.tsx:698
+#: components/call-summary.tsx:827
+#: components/history/conversation-history.tsx:1279
 msgid "Overall Score"
 msgstr "전체 점수"
 
-#: components/call-summary.tsx:679
-#: components/call-summary.tsx:681
-#: components/history/conversation-history.tsx:1023
-#: components/messages.tsx:111
-#: components/messages.tsx:160
+#: components/memory/data-table.tsx:236
+#. placeholder {0}: table.getState().pagination.pageIndex + 1
+#. placeholder {1}: table.getPageCount()
+msgid "Page {0} of {1}"
+msgstr "페이지 {0} / {1}"
+
+#: components/history/conversation-history.tsx:999
+#. placeholder {0}: page + 1
+msgid "Page {0} of {totalPages}"
+msgstr "{totalPages}페이지 중 {0}페이지"
+
+#: components/call-summary.tsx:410
+#: components/call-summary.tsx:467
+#: components/call-summary.tsx:611
+#: components/call-summary.tsx:641
+#: components/call-summary.tsx:752
+#: components/call-summary.tsx:1387
+#: components/history/conversation-history.tsx:842
+#: components/history/conversation-history.tsx:864
+#: components/history/conversation-history.tsx:1109
+#: components/history/conversation-history.tsx:1139
+#: components/history/conversation-history.tsx:1250
+#: components/history/conversation-history.tsx:1722
+#: components/messages.tsx:116
+#: components/messages.tsx:149
+#: components/start-call.tsx:1249
+#: components/start-call.tsx:1422
+#: components/start-call.tsx:1523
 msgid "Partner"
 msgstr "상대방"
+
+#: components/call-summary.tsx:323
+#: components/history/conversation-history.tsx:524
+msgid "Partner created"
+msgstr "파트너 생성됨"
+
+#: components/call-summary.tsx:356
+#: components/history/conversation-history.tsx:477
+#: components/start-call.tsx:648
+msgid "Partner deleted"
+msgstr "파트너가 삭제되었습니다."
+
+#: components/call-summary.tsx:260
+#: components/history/conversation-history.tsx:406
+msgid "Partner name is required"
+msgstr "파트너 이름은 필수입니다"
+
+#: components/call-summary.tsx:291
+#: components/history/conversation-history.tsx:440
+#: components/start-call.tsx:613
+msgid "Partner updated"
+msgstr "파트너가 업데이트되었습니다."
 
 #: components/login-form.tsx:119
 #: components/signup-form.tsx:201
 msgid "Password"
 msgstr "비밀번호"
 
-#: components/start-call.tsx:542
-#: components/start-call.tsx:685
-msgid "Phone Call"
-msgstr "전화 통화"
+#: components/call-summary.tsx:1399
+#: components/history/conversation-history.tsx:1734
+#: components/start-call.tsx:1434
+#: components/start-call.tsx:1535
+msgid "Photo"
+msgstr "사진"
+
+#: components/call-summary.tsx:241
+#: components/history/conversation-history.tsx:388
+msgid "Photo updated"
+msgstr "사진이 업데이트되었습니다."
+
+#: components/start-call.tsx:812
+msgid "Pick the window/tab for that platform and turn on system or tab audio."
+msgstr "해당 플랫폼의 창이나 탭을 선택한 후 시스템 또는 탭 오디오를 켜세요."
 
 #: components/feedback.tsx:31
 msgid "Please enter your feedback"
 msgstr "피드백을 입력해 주세요"
 
-#: contexts/glass-context.tsx:993
+#: contexts/glass-context.tsx:1022
 msgid "Please refresh the page and try again."
 msgstr "페이지를 새로고침한 후 다시 시도해 주세요."
 
-#: contexts/glass-context.tsx:808
+#: contexts/glass-context.tsx:837
 msgid ""
 "Please share your screen with audio from your call platform (Zoom, Google "
 "Meet, Teams)."
 msgstr "화상 통화 플랫폼(Zoom, Google Meet, Teams)에서 오디오와 함께 화면을 공유해 주세요."
 
-#: contexts/glass-context.tsx:692
+#: contexts/glass-context.tsx:722
 msgid "Please wait for session to load and try again."
 msgstr "세션이 로드될 때까지 기다렸다가 다시 시도해 주세요."
 
@@ -652,39 +1184,23 @@ msgstr "세션이 로드될 때까지 기다렸다가 다시 시도해 주세요
 msgid "Please wait while we verify your email address"
 msgstr "이메일 주소를 확인 중입니다. 잠시만 기다려 주세요."
 
-#: components/start-call.tsx:402
-msgid "Practice"
-msgstr "연습"
-
-#: components/start-call.tsx:633
-msgid "Practice Mode"
-msgstr "연습 모드"
+#: components/start-call.tsx:947
+msgid "Practice Conversations"
+msgstr "대화 연습"
 
 #: components/auth-gate.tsx:20
 msgid "Preparing your workspace…"
 msgstr "작업 공간을 준비하는 중…"
 
-#: components/start-call.tsx:547
-msgid "Professional conversation"
-msgstr "전문적인 대화"
-
-#: components/settings.tsx:187
+#: components/settings.tsx:194
 msgid "Pronunciation"
-msgstr "발음"
+msgstr "발음 표기"
 
-#: components/start-call.tsx:462
-msgid "Real Talk"
-msgstr "실전 대화"
-
-#: components/start-call.tsx:633
-msgid "Real Talk Mode"
-msgstr "실전 대화 모드"
-
-#: components/start-call.tsx:427
+#: components/start-call.tsx:969
 msgid "RECOMMENDED"
 msgstr "추천"
 
-#: components/verify-email-form.tsx:132
+#: components/verify-email-form.tsx:130
 msgid "Redirecting to login in {countdown} seconds..."
 msgstr "{countdown}초 후에 로그인 페이지로 이동합니다..."
 
@@ -716,12 +1232,8 @@ msgstr "비밀번호 재설정"
 msgid "Resetting..."
 msgstr "재설정 중..."
 
-#: components/start-call.tsx:540
-#: components/start-call.tsx:665
-msgid "Restaurant"
-msgstr "레스토랑"
-
-#: components/history/conversation-history.tsx:478
+#: app/[lang]/error.tsx:28
+#: components/history/conversation-history.tsx:886
 msgid "Retry"
 msgstr "다시 시도"
 
@@ -729,28 +1241,94 @@ msgstr "다시 시도"
 msgid "Return to login"
 msgstr "로그인 화면으로 돌아가기"
 
-#: components/settings.tsx:201
+#: components/call-summary.tsx:212
+#: components/history/conversation-history.tsx:355
+msgid "Roleplay conversations cannot change partner images"
+msgstr "롤플레잉 대화에서는 파트너 이미지를 변경할 수 없습니다."
+
+#: components/settings.tsx:208
 msgid "Romaji (Latin)"
 msgstr "로마자 (라틴어)"
 
-#: components/call-summary.tsx:746
+#: components/memory/data-table.tsx:215
+msgid "Rows per page"
+msgstr "페이지당 행 수"
+
+#: components/call-summary.tsx:1461
+#: components/history/conversation-history.tsx:1796
+#: components/start-call.tsx:1581
+msgid "Save"
+msgstr "저장"
+
+#: components/call-summary.tsx:1359
 msgid "Save Call"
 msgstr "통화 저장"
 
-#: components/start-call.tsx:648
-#: components/start-call.tsx:655
+#: components/memory/memory-dialog.tsx:100
+msgid "Saving..."
+msgstr "저장 중..."
+
+#: components/start-call.tsx:1261
 msgid "Scenario:"
 msgstr "시나리오:"
 
-#: contexts/glass-context.tsx:807
+#: contexts/glass-context.tsx:836
 msgid "Screen audio sharing required"
 msgstr "화면 오디오 공유 필요"
 
-#: components/history/conversation-history.tsx:630
+#: components/history/conversation-history.tsx:901
+msgid "Search conversations..."
+msgstr "대화를 검색하세요..."
+
+#: components/memory/data-table.tsx:109
+msgid "Search memories..."
+msgstr "추억 검색..."
+
+#: components/call-summary.tsx:625
+#: components/history/conversation-history.tsx:1123
+msgid "Search partners"
+msgstr "검색 파트너"
+
+#: components/history/conversation-history.tsx:351
+msgid "Select a conversation first"
+msgstr "먼저 대화를 선택하세요"
+
+#: components/start-call.tsx:682
+#: components/start-call.tsx:687
+#: components/start-call.tsx:1055
+msgid "Select a conversation partner"
+msgstr "대화 상대를 선택하세요"
+
+#: components/history/conversation-history.tsx:1042
 msgid "Select a conversation to view details"
 msgstr "대화를 선택하여 세부 정보를 확인하세요"
 
-#: components/onboarding/onboarding-client.tsx:438
+#: components/start-call.tsx:668
+msgid "Select a mode to continue"
+msgstr "모드를 선택하여 계속 진행하세요"
+
+#: components/call-summary.tsx:658
+#: components/history/conversation-history.tsx:1156
+msgid "Select a partner"
+msgstr "파트너 선택"
+
+#: components/start-call.tsx:1267
+msgid "Select a partner to see details."
+msgstr "파트너를 선택하여 세부 정보를 확인하세요."
+
+#: components/memory/columns.tsx:34
+msgid "Select all"
+msgstr "모두 선택하기"
+
+#: components/memory/columns.tsx:43
+msgid "Select row"
+msgstr "행 선택"
+
+#: components/start-call.tsx:773
+msgid "Select the Chrome tab with Meet, toggle Share tab audio, and confirm."
+msgstr "Meet가 열려 있는 Chrome 탭을 선택하고, '탭 오디오 공유'를 전환한 후 확인하세요."
+
+#: components/onboarding/onboarding-client.tsx:456
 msgid "Select the language you speak fluently"
 msgstr "유창하게 구사하는 언어를 선택하세요"
 
@@ -774,20 +1352,16 @@ msgstr "전송 중..."
 msgid "Sentence length"
 msgstr "문장 길이"
 
-#: components/settings.tsx:152
-#: components/user-menu.tsx:160
+#: components/settings.tsx:159
+#: components/user-menu.tsx:153
 msgid "Settings"
 msgstr "설정"
-
-#: components/start-call.tsx:675
-msgid "Shopping"
-msgstr "쇼핑"
 
 #: components/bottom-panel.tsx:245
 msgid "Short"
 msgstr "짧음"
 
-#: components/user-menu.tsx:169
+#: components/user-menu.tsx:162
 msgid "Sign out"
 msgstr "로그아웃"
 
@@ -820,22 +1394,23 @@ msgstr "스페인어"
 msgid "Star on GitHub"
 msgstr "GitHub에 Star 추가"
 
-#: components/start-call.tsx:617
-#: components/start-call.tsx:734
-msgid "Start"
-msgstr "시작"
-
-#: components/start-call.tsx:340
-#: components/start-call.tsx:357
+#: components/start-call.tsx:882
+#: components/start-call.tsx:899
+#: components/start-call.tsx:1218
+#: components/start-call.tsx:1343
 msgid "Start Call"
 msgstr "통화 시작"
 
-#: components/onboarding/onboarding-client.tsx:624
+#: components/onboarding/onboarding-client.tsx:642
 msgid "Start Tutorial"
 msgstr "튜토리얼 시작"
 
+#: components/memory/columns.tsx:108
+msgid "Status"
+msgstr "상태"
+
 #: components/bottom-panel.tsx:417
-#: components/onboarding/bottom-panel-demo.tsx:332
+#: components/onboarding/bottom-panel-demo.tsx:330
 msgid "Suggest"
 msgstr "제안하기"
 
@@ -844,64 +1419,101 @@ msgstr "제안하기"
 msgid "Suggested Answer"
 msgstr "추천 답변"
 
-#: components/settings.tsx:172
+#: components/settings.tsx:179
 msgid "System default"
 msgstr "시스템 기본 설정"
-
-#: components/start-call.tsx:548
-msgid "Telephone etiquette"
-msgstr "전화 예절"
 
 #: components/feedback.tsx:53
 msgid "Thank you for your feedback!"
 msgstr "의견을 보내주셔서 감사합니다!"
 
-#: components/verify-email-form.tsx:123
+#: components/verify-email-form.tsx:122
 msgid "The verification link is invalid or has expired."
 msgstr "인증 링크가 잘못되었거나 만료되었습니다."
 
-#: components/settings.tsx:309
+#: components/settings.tsx:293
 msgid "Theme"
 msgstr "테마"
 
-#: contexts/glass-context.tsx:945
+#: components/start-call.tsx:1599
+msgid "This action cannot be undone."
+msgstr "이 작업은 취소할 수 없습니다."
+
+#: components/memory/memory-table.tsx:275
+#. placeholder {0}: memoriesToDelete?.length ?? 0
+msgid ""
+"This action will permanently delete {0} selected memories. This cannot be "
+"undone."
+msgstr "이 작업을 수행하면 선택한 {0}개의 기억이 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다."
+
+#: components/history/conversation-history.tsx:867
+msgid "this conversation"
+msgstr "이 대화"
+
+#: components/memory/memory-table.tsx:240
+msgid "This will permanently remove the selected memory from your knowledge graph."
+msgstr "선택한 메모리를 지식 그래프에서 영구적으로 삭제합니다."
+
+#: components/history/conversation-history.tsx:682
+msgid "Title updated"
+msgstr "제목이 업데이트되었습니다"
+
+#: contexts/glass-context.tsx:974
 msgid "Trial session ended due to time limit."
 msgstr "시간 제한으로 체험 세션이 종료되었습니다."
 
-#: app/[lang]/error.tsx:34
 #: app/[lang]/failure/page.tsx:32
 msgid "Try again"
 msgstr "다시 시도하세요"
-
-#: components/start-call.tsx:405
-msgid "Tutorial with AI"
-msgstr "AI를 활용한 튜토리얼"
 
 #: components/bottom-panel.tsx:235
 #: components/onboarding/bottom-panel-demo.tsx:110
 msgid "Type what you want to say in {nativeLangName}"
 msgstr "{nativeLangName}로 말하고 싶은 내용을 입력하세요"
 
-#: components/settings.tsx:286
-msgid "UI Language"
-msgstr "UI 언어"
-
-#: contexts/glass-context.tsx:691
-#: contexts/glass-context.tsx:699
+#: contexts/glass-context.tsx:721
+#: contexts/glass-context.tsx:729
 msgid "Unable to connect"
 msgstr "연결할 수 없습니다."
 
-#: components/call-summary.tsx:111
+#: components/start-call.tsx:467
+msgid "Unable to create a partner"
+msgstr "파트너를 생성할 수 없습니다."
+
+#: components/start-call.tsx:651
+msgid "Unable to delete partner"
+msgstr "파트너를 삭제할 수 없습니다."
+
+#: components/call-summary.tsx:513
 msgid "Unable to load context from Zep."
 msgstr "Zep에서 컨텍스트를 불러올 수 없습니다."
 
-#: components/start-call.tsx:277
+#: components/start-call.tsx:541
+#: components/start-call.tsx:579
+#: components/start-call.tsx:587
+#: components/start-call.tsx:617
+msgid "Unable to save partner"
+msgstr "파트너를 저장할 수 없습니다."
+
+#: components/start-call.tsx:704
 msgid "Unable to start call"
 msgstr "통화를 시작할 수 없습니다."
 
-#: components/start-call.tsx:475
+#: components/start-call.tsx:1017
 msgid "Unavailable on mobile"
 msgstr "모바일에서는 사용할 수 없습니다"
+
+#: components/history/conversation-history.tsx:1069
+msgid "Untitled Conversation"
+msgstr "제목 없는 대화"
+
+#: components/memory/memory-dialog.tsx:102
+msgid "Update"
+msgstr "업데이트"
+
+#: components/start-call.tsx:1499
+msgid "Update your custom partner details."
+msgstr "파트너 정보를 업데이트하세요."
 
 #: components/verify-email-form.tsx:113
 msgid "Verification failed"
@@ -911,15 +1523,11 @@ msgstr "인증 실패"
 msgid "Verifying your email..."
 msgstr "이메일을 인증하는 중입니다..."
 
-#: app/[lang]/error.tsx:30
-msgid "View Documentation"
-msgstr "문서 보기"
-
 #: app/[lang]/time-limit/page.tsx:26
 msgid "Want to keep practicing?"
 msgstr "계속 연습해 볼까요?"
 
-#: components/history/conversation-history.tsx:474
+#: components/history/conversation-history.tsx:882
 msgid "We couldn't load your history. Refresh and try again."
 msgstr "히스토리를 불러올 수 없습니다. 새로고침 후 다시 시도해주세요."
 
@@ -929,7 +1537,7 @@ msgid ""
 "again."
 msgstr "세션을 시작하는 데 문제가 발생했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요."
 
-#: components/onboarding/onboarding-client.tsx:545
+#: components/onboarding/onboarding-client.tsx:563
 msgid "We'll show how to read sentences in your alphabet when helpful"
 msgstr "도움이 될 때 여러분의 알파벳으로 문장을 읽는 방법을 알려드리겠습니다."
 
@@ -946,26 +1554,31 @@ msgstr "다시 오신 것을 환영합니다"
 msgid "What do you want to say..."
 msgstr "무엇을 말하고 싶으신가요..."
 
-#: components/onboarding/onboarding-client.tsx:435
+#: components/onboarding/onboarding-client.tsx:453
 msgid "What is your native language?"
 msgstr "모국어가 무엇인가요?"
 
-#: components/start-call.tsx:513
-msgid "What would you like to practice?"
-msgstr "어떤 걸 연습해보고 싶으신가요?"
+#: components/memory/memory-dialog.tsx:67
+msgid "What would you like to remember?"
+msgstr "무엇을 기억하고 싶으신가요?"
 
-#: components/onboarding/onboarding-client.tsx:481
+#: components/onboarding/onboarding-client.tsx:499
 msgid "Which language do you want to learn?"
 msgstr "어떤 언어를 배우고 싶으신가요?"
 
-#: components/onboarding/onboarding-client.tsx:563
+#: components/memory/data-table.tsx:98
+#. placeholder {0}: selectedRows.length
+msgid "Would delete {0} memories"
+msgstr "{0}개의 메모리를 삭제하시겠습니까?"
+
+#: components/onboarding/onboarding-client.tsx:581
 msgid "Yes, show pronunciation"
 msgstr "네, 발음도 보여주세요"
 
-#: components/call-summary.tsx:677
-#: components/history/conversation-history.tsx:1023
-#: components/messages.tsx:111
-#: components/messages.tsx:160
+#: components/call-summary.tsx:408
+#: components/history/conversation-history.tsx:840
+#: components/messages.tsx:116
+#: components/messages.tsx:146
 msgid "You"
 msgstr "나"
 
@@ -977,13 +1590,13 @@ msgstr "준비 완료!"
 msgid "You're ready to have real conversations. No fear, no hesitation."
 msgstr "이제 실제 대화를 나눌 준비가 되셨어요. 두려움도, 망설임도 없이요."
 
-#: contexts/glass-context.tsx:953
+#: contexts/glass-context.tsx:982
 msgid "You've used your free time"
 msgstr "무료 사용 시간이 끝났습니다"
 
-#: contexts/glass-context.tsx:1563
-#: contexts/glass-context.tsx:1615
-#: contexts/glass-context.tsx:1630
+#: contexts/glass-context.tsx:1596
+#: contexts/glass-context.tsx:1652
+#: contexts/glass-context.tsx:1667
 msgid "Your conversation has been saved and is now available in History."
 msgstr "대화가 저장되었으며 이제 기록에서 확인할 수 있습니다."
 
@@ -1001,402 +1614,113 @@ msgstr "무료 사용 시간이 끝났습니다"
 
 #: app/[lang]/(app)/memory/page.tsx:31
 msgid "Your memories"
-msgstr "당신의 기억"
+msgstr "사용자 메모리 목록"
 
 #: app/[lang]/(app)/history/page.tsx:31
 msgid "Your saved calls"
 msgstr "저장된 통화"
 
-#: components/start-call.tsx:702
-#~ msgid "⚠️ Make sure to enable \"Share audio\""
-#~ msgstr "⚠️ \"음성 공유\"가 켜져 있는지 확인하세요."
-
-#: components/call-summary.tsx:719
-#~ msgid "✓ Successfully saved! Redirecting..."
-#~ msgstr "✓ 저장되었습니다! 곧 이동합니다..."
-
-#: components/start-call.tsx:690
-#~ msgid "1. Open your meeting (Zoom, Google Meet, or Teams)"
-#~ msgstr "1. 회의를 엽니다 (Zoom, Google Meet, 또는 Teams 사용)"
-
-#: components/settings.tsx:211
-#~ msgid "10 seconds"
-#~ msgstr "10초"
-
-#: components/settings.tsx:232
-#~ msgid "10 seconds (default)"
-#~ msgstr "기본 설정: 10초"
-
-#: components/settings.tsx:235
-#~ msgid "15 seconds"
-#~ msgstr "15초"
-
-#: components/settings.tsx:214
-#~ msgid "20 seconds"
-#~ msgstr "20초"
-
-#: components/start-call.tsx:696
-#~ msgid "3. Share your meeting tab"
-#~ msgstr "3. 회의 탭을 공유하세요."
-
-#: components/settings.tsx:217
-#~ msgid "30 seconds"
-#~ msgstr "30초"
-
-#: components/start-call.tsx:699
-#~ msgid "4. Make sure to enable \"Share audio\""
-#~ msgstr "4. \"오디오 공유\"가 켜져 있는지 확인하세요."
-
-#: components/settings.tsx:208
-#~ msgid "5 seconds"
-#~ msgstr "5초"
-
-#: components/settings.tsx:187
-#~ msgid "AI message duration"
-#~ msgstr "AI 메시지 표시 시간"
-
-#: lib/onboarding-tours.tsx:63
-#~ msgid ""
-#~ "As I listen to the conversation, everything I do to help you will appear "
-#~ "right here."
-#~ msgstr "대화를 들으면서 제안이나 피드백을 여기에 보여드릴게요."
-
-#: components/settings.tsx:250
-#~ msgid "Auto-detected from browser. Your selection will be saved and remembered."
-#~ msgstr "브라우저에서 자동 감지되었습니다. 선택한 내용은 저장되어 기억됩니다."
-
-#: app/[lang]/waitlist/success/page.tsx:77
-#~ msgid "Back to Home"
-#~ msgstr "홈으로 돌아가기"
-
-#: contexts/glass-context.tsx:1497
-#~ msgid "Call ended"
-#~ msgstr "통화 종료"
-
-#: components/start-call.tsx:503
-#~ msgid "Choose Your Languages"
-#~ msgstr "언어 선택"
-
-#: lib/onboarding-tours.tsx:110
-#~ msgid "Congrats! You're all set."
-#~ msgstr "축하합니다! 준비가 완료되었습니다."
-
-#: components/history/conversation-history.tsx:126
-#~ msgid "Duration:"
-#~ msgstr "시간:"
-
-#: components/waitlist-modal.tsx:232
-#~ msgid "Enter your email"
-#~ msgstr "이메일 주소를 입력하세요"
-
-#: components/bottom-panel.tsx:37
-#~ msgid "Follow-up Suggestion"
-#~ msgstr "후속 제안"
-
-#: components/bottom-panel.tsx:462
-#~ msgid "German"
-#~ msgstr "독일어"
-
-#: components/waitlist-modal.tsx:193
-#~ msgid "Gets smarter every time you speak"
-#~ msgstr "말할 때마다 더 똑똑해집니다"
-
-#: components/waitlist-modal.tsx:167
-#~ msgid "Glass AI helps you speak any language in the real world"
-#~ msgstr "Glass AI는 현실 세계에서 다양한 언어를 구사할 수 있도록 도와줍니다."
-
-#: lib/onboarding-tours.tsx:17
-#~ msgid "I help you communicate with anyone from day one."
-#~ msgstr "첫날부터 누구와도 대화할 수 있게 도와드려요."
-
-#: lib/onboarding-tours.tsx:51
-#~ msgid ""
-#~ "I keep track of everything we discuss. The more we talk, the better I "
-#~ "understand your context and help you naturally."
-#~ msgstr "대화 내용을 모두 기억해요. 대화를 나눌수록 맥락을 더 잘 이해하고 자연스럽게 도와드릴 수 있어요."
-
-#: lib/onboarding-tours.tsx:34
-#~ msgid "I listen to conversations and show you what they're saying in real time."
-#~ msgstr "상대방의 말을 듣고 무슨 말인지 실시간으로 알려드려요."
-
-#: lib/onboarding-tours.tsx:31
-#~ msgid "I listen to your conversation"
-#~ msgstr "대화를 듣고 있어요."
-
-#: lib/onboarding-tours.tsx:48
-#~ msgid "I remember everything"
-#~ msgstr "모든 것을 기억해요"
-
-#: components/start-call.tsx:543
-#~ msgid "I speak"
-#~ msgstr "사용하는 언어"
-
-#: components/start-call.tsx:514
-#~ msgid "I want to learn"
-#~ msgstr "배우고 싶은 언어"
-
-#: lib/onboarding-tours.tsx:70
-#~ msgid "I'll give you feedback"
-#~ msgstr "피드백을 드려요."
-
-#: lib/onboarding-tours.tsx:53
-#~ msgid ""
-#~ "I'll listen and help here. I'll suggest what to say next, so just say it. I "
-#~ "remember a bit from our chats to get better over time."
-#~ msgstr ""
-#~ "여기서 대화를 듣고 도와드릴게요. 다음에 무엇을 말하면 좋을지 제안할 테니 그대로 말해 보세요. 더 나아지도록 이전 대화를 조금 기억해 "
-#~ "둘게요."
-
-#: lib/onboarding-tours.tsx:34
-#~ msgid ""
-#~ "I'll listen to you and your partner, and translate what they say so you can "
-#~ "understand each other."
-#~ msgstr "두 분의 대화를 듣고, 서로 이해할 수 있게 번역해드릴게요."
-
-#: lib/onboarding-tours.tsx:80
-#~ msgid "I'll suggest what to say next"
-#~ msgstr "다음에 할 말을 제안해 드릴게요."
-
-#: lib/onboarding-tours.tsx:83
-#~ msgid ""
-#~ "I'll suggest what you could say next, so just read it out loud. The more I "
-#~ "learn about you, the better my suggestions will get."
-#~ msgstr ""
-#~ "다음에 뭐라고 말하면 좋을지 제가 제안해드릴게요. 그냥 소리 내서 따라 말해보세요. 대화를 나누면서 점점 더 잘 맞는 제안을 드릴 수 "
-#~ "있을 거예요."
-
-#: lib/onboarding-tours.tsx:23
-#~ msgid ""
-#~ "I'm here to help you communicate and learn a new language through real "
-#~ "conversations and practice."
-#~ msgstr "제가 실제 대화를 통해 자연스럽게 새로운 언어를 배우고 소통할 수 있도록 도와드릴게요."
-
-#: lib/onboarding-tours.tsx:103
-#~ msgid ""
-#~ "If you say something that sounds a bit off, I'll let you know and help you "
-#~ "fix it."
-#~ msgstr "조금 어색하게 들리는 표현이 있으면 알려드리고, 더 자연스럽게 말할 수 있게 도와드릴게요."
-
-#: lib/onboarding-tours.tsx:73
-#~ msgid ""
-#~ "If your grammar, pronunciation, or word choice is off, I'll flag it and "
-#~ "suggest a clearer, more natural option."
-#~ msgstr "문법이나 발음, 단어 선택이 어색하면 알려드리고 더 명확하고 자연스러운 표현을 제안해드릴게요."
-
-#: components/bottom-panel.tsx:463
-#~ msgid "Italian"
-#~ msgstr "이탈리아어"
-
-#: components/waitlist-modal.tsx:295
-#~ msgid "Join Early Access"
-#~ msgstr "얼리 액세스 참가하기"
-
-#: components/waitlist-modal.tsx:291
-#~ msgid "Joining..."
-#~ msgstr "참여 중..."
-
-#: components/settings.tsx:227
-#~ msgid "Language"
-#~ msgstr "언어"
-
-#: lib/onboarding-tours.tsx:20
-#~ msgid "Let me show you how."
-#~ msgstr "어떻게 도와드리는지 보여드릴게요."
-
-#: components/onboarding/onboarding-client.tsx:460
-#~ msgid "Make suggestions readable for me"
-#~ msgstr "제안을 읽기 쉽게 보여주세요"
-
-#: components/settings.tsx:150
-#~ msgid "Microphone {0}"
-#~ msgstr "마이크 {0}"
-
-#: components/waitlist-modal.tsx:91
-#~ msgid "Network error. Please check your connection and try again."
-#~ msgstr "네트워크 오류입니다. 연결 상태를 확인하고 다시 시도해 주세요."
-
-#: components/call-summary.tsx:626
-#~ msgid "No information saved yet"
-#~ msgstr "아직 저장된 정보가 없습니다"
-
-#: components/settings.tsx:205
-#~ msgid "No time limit (default)"
-#~ msgstr "시간 제한 없음 (기본값)"
-
-#: lib/onboarding-tours.tsx:51
-#~ msgid ""
-#~ "Not sure what to say? Type a few keywords in your language. Using what I "
-#~ "know from our conversation, I'll craft the perfect sentence for you."
-#~ msgstr "뭐라고 말할지 모르겠나요? 단어 몇 개만 입력하세요. 대화에서 알게 된 내용을 바탕으로 딱 맞는 문장을 만들어드릴게요."
-
-#: lib/onboarding-tours.tsx:117
-#~ msgid "Now let's start your first real conversation!"
-#~ msgstr "그럼, 진짜 대화를 한 번 시작해봐요!"
-
-#: components/waitlist-modal.tsx:46
-#~ msgid "Please enter a valid email address"
-#~ msgstr "유효한 이메일 주소를 입력하세요"
-
-#: components/bottom-panel.tsx:464
-#~ msgid "Portuguese"
-#~ msgstr "포르투갈어"
-
-#: components/waitlist-modal.tsx:216
-#~ msgid "Practice mode or live on Zoom calls"
-#~ msgstr "연습 모드 또는 Zoom 통화 라이브"
-
-#: components/waitlist-modal.tsx:170
-#~ msgid "Practice speaking. Get help in real calls. Remembers everything."
-#~ msgstr "말하기 연습하세요. 실제 통화에서도 도움을 받으세요. 모든 것을 기억합니다."
-
-#: components/settings.tsx:160
-#~ msgid "Pronunciation format"
-#~ msgstr "발음 형식"
-
-#: lib/onboarding-tours.tsx:90
-#~ msgid "Quick translation"
-#~ msgstr "빠른 번역"
-
-#: components/settings.tsx:125
-#~ msgid "Refresh"
-#~ msgstr "새로고침"
-
-#: components/waitlist-modal.tsx:196
-#~ msgid "Remembers who you are, what you care about"
-#~ msgstr "당신의 정체성과 관심사를 기억합니다."
-
-#: components/start-call.tsx:1011
-#~ msgid "Retail & bargaining"
-#~ msgstr "소매 및 흥정"
-
-#: components/history/conversation-history.tsx:678
-#~ msgid "Select a conversation to view the transcript and AI feedback."
-#~ msgstr "대화를 선택하여 전체 내용과 AI 피드백을 확인하세요."
-
-#: components/start-call.tsx:506
-#~ msgid "Select the language you want to practice"
-#~ msgstr "연습할 언어를 선택하세요"
-
-#: components/onboarding/onboarding-client.tsx:493
-#~ msgid "Show suggestions only"
-#~ msgstr "제안만 보여주세요"
-
-#: components/settings.tsx:211
-#~ msgid "Suggestion duration"
-#~ msgstr "제안 기간"
-
-#: app/[lang]/waitlist/success/page.tsx:66
-#~ msgid ""
-#~ "Thanks for joining. We’ll email you when more access is available. Sit "
-#~ "tight — it won’t be long."
-#~ msgstr "가입해 주셔서 감사합니다. 준비가 완료되면 빠르게 이메일을 보내드리겠습니다."
-
-#: lib/onboarding-tours.tsx:50
-#~ msgid "This is where I help and suggest what to say"
-#~ msgstr "여기서 도와드리고 무엇을 말하면 좋을지 제안해드려요."
-
-#: lib/onboarding-tours.tsx:60
-#~ msgid "This is where I help you"
-#~ msgstr "여기에서 도와드릴게요."
-
-#: components/bottom-panel.tsx:468
-#~ msgid "To {langName}..."
-#~ msgstr "{langName}로..."
-
-#: components/bottom-panel.tsx:468
-#~ msgid "Translate to {langName}..."
-#~ msgstr "{langName}로 번역하기..."
-
-#: components/bottom-panel.tsx:337
-#: components/bottom-panel.tsx:790
-#~ msgid "Translation"
-#~ msgstr "번역"
-
-#: components/history/conversation-history.tsx:164
-#~ msgid "Translation:"
-#~ msgstr "번역:"
-
-#: components/start-call.tsx:993
-#~ msgid "Travel & Immigration"
-#~ msgstr "여행 및 이민"
-
-#: lib/onboarding-tours.tsx:143
-#~ msgid ""
-#~ "Type what you want to say in your language, or even just a few keywords. "
-#~ "I'll listen to the conversation and suggest the right sentence for you."
-#~ msgstr "자신의 언어로 하고 싶은 말을 입력해 보세요. 키워드 몇 개만 써도 괜찮아요. 대화를 들으면서 가장 자연스러운 문장을 제안해 드릴게요."
-
-#: components/waitlist-modal.tsx:246
-#~ msgid "Waitlist Email Captured"
-#~ msgstr "대기자 명단 이메일 수신 완료"
-
-#: components/waitlist-modal.tsx:54
-#~ msgid "Waitlist Submit Attempted"
-#~ msgstr "대기자 명단 제출 시도됨"
-
-#: components/waitlist-modal.tsx:83
-#: components/waitlist-modal.tsx:92
-#~ msgid "Waitlist Submit Failed"
-#~ msgstr "대기자 명단 제출 실패"
-
-#: components/waitlist-modal.tsx:79
-#~ msgid "Waitlist Submit Succeeded"
-#~ msgstr "대기자 명단 제출 완료"
-
-#: lib/onboarding-tours.tsx:93
-#~ msgid ""
-#~ "Want to say something but don't know the sentence? Type in your language or "
-#~ "a few keywords. I'll show the translation."
-#~ msgstr "무엇인가 말하고 싶은데 어떻게 말해야 할지 모르겠나요? 사용하시는 언어로 입력하거나 키워드를 몇 개만 적어 보세요. 번역을 보여드릴게요."
-
-#: components/waitlist-modal.tsx:82
-#~ msgid "We had trouble adding you. Please try again later."
-#~ msgstr "추가하는 데 문제가 발생했습니다. 나중에 다시 시도해 주세요."
-
-#: components/waitlist-modal.tsx:302
-#~ msgid "We'll notify you when early access is ready. No spam, ever."
-#~ msgstr "얼리 액세스를 사용할 준비가 되면 알려드리겠습니다. 스팸은 절대 없습니다."
-
-#: components/onboarding/onboarding-client.tsx:439
-#~ msgid "We'll show how to read suggestions in your alphabet when helpful"
-#~ msgstr "한글로 제안된 문장의 발음을 표시해드릴게요."
-
-#: components/waitlist-modal.tsx:213
-#~ msgid "Works in real calls"
-#~ msgstr "실제 통화에서도 사용 가능"
-
-#: lib/onboarding-tours.tsx:120
-#~ msgid "You can control how much I help"
-#~ msgstr "제가 얼마나 도울지 직접 조절할 수 있어요."
-
-#: lib/onboarding-tours.tsx:123
-#~ msgid ""
-#~ "You can turn my suggestions and feedback on, off, or keep it on auto. By "
-#~ "default, it's set to auto."
-#~ msgstr "제안이나 피드백을 켜거나 끌 수 있고, 자동으로 설정해둘 수도 있어요. 기본 설정은 자동이에요."
-
-#: lib/onboarding-tours.tsx:91
-#~ msgid ""
-#~ "You'll get a report like this with your scores, feedback, and everything we "
-#~ "talked about. Track your progress over time!"
-#~ msgstr "이렇게 점수, 피드백, 대화 내용을 담은 리포트를 받으실 거예요. 시간이 지나면서 얼마나 발전했는지 확인하세요!"
-
-#: app/[lang]/waitlist/success/page.tsx:63
-#~ msgid "You’re on the list 🎉"
-#~ msgstr "목록에 등록되었습니다 🎉"
-
-#: lib/onboarding-tours.tsx:114
-#~ msgid "You've completed the tour and learned how I work."
-#~ msgstr "가이드를 마치고 제가 어떻게 작동하는지 배웠습니다."
-
-#: contexts/glass-context.tsx:1498
-#~ msgid "Your conversation is being saved and will appear in history shortly."
-#~ msgstr "대화가 저장 중이며 곧 기록에 나타납니다."
-
-#: app/[lang]/(auth)/verify-email/page.tsx:81
-#~ msgid "Your email ({email}) has been successfully verified."
-#~ msgstr "귀하의 이메일({email})이 성공적으로 인증되었습니다."
-
-#: components/history/conversation-history.tsx:219
-#~ msgid "Your recorded conversations will appear here once a call ends."
-#~ msgstr "통화가 끝나면 녹음된 대화가 여기에 표시됩니다."
+#: components/start-call.tsx:771
+#~ msgid "• Browser tab → Enable \"Share tab audio\""
+#~ msgstr "• 브라우저 탭 → \"탭의 오디오 공유\" 활성화"
+
+#: components/start-call.tsx:774
+#~ msgid "• Desktop app → Enable \"Share system audio\""
+#~ msgstr "• 데스크톱 앱 → \"시스템 오디오 공유\" 활성화"
+
+#: components/start-call.tsx:760
+#~ msgid "1. Join a Discord voice chat or online call"
+#~ msgstr "1. Discord 음성 채팅이나 온라인 통화에 참여하세요."
+
+#: components/start-call.tsx:763
+#~ msgid "2. Click \"Start\" below"
+#~ msgstr "2. 아래 \"시작\"을 클릭하세요."
+
+#: components/start-call.tsx:767
+#~ msgid "3. Share your tab or screen with audio:"
+#~ msgstr "3. 오디오와 함께 탭이나 화면을 공유하세요:"
+
+#: components/start-call.tsx:779
+#~ msgid "4. Start talking and let Glass assist you"
+#~ msgstr "4. 대화를 시작하고 Glass의 도움을 받아 보세요"
+
+#: components/start-call.tsx:721
+#~ msgid "Airport Check-in"
+#~ msgstr "공항 체크인"
+
+#: components/memory/memory-table.tsx:116
+#~ msgid "Are you sure you want to delete {0} memories?"
+#~ msgstr "정말로 {0}개의 추억을 삭제하시겠습니까?"
+
+#: components/memory/memory-table.tsx:109
+#~ msgid "Are you sure you want to delete this memory?"
+#~ msgstr "정말로 이 메모리를 삭제하시겠습니까?"
+
+#: components/start-call.tsx:741
+#~ msgid "Casual Chat"
+#~ msgstr "가벼운 대화"
+
+#: components/start-call.tsx:610
+#~ msgid "Custom"
+#~ msgstr "커스텀"
+
+#: components/start-call.tsx:649
+#~ msgid "Describe them (role, personality, background)..."
+#~ msgstr "설명해주세요 (역할, 성격, 배경)..."
+
+#: components/start-call.tsx:545
+#~ msgid "Everyday conversation"
+#~ msgstr "일상 대화"
+
+#: components/start-call.tsx:756
+#~ msgid "Follow these steps:"
+#~ msgstr "아래 단계를 따라 진행해 주세요"
+
+#: components/user-menu.tsx:133
+#~ msgid "Free minutes"
+#~ msgstr "무료 통화 시간"
+
+#: components/start-call.tsx:731
+#~ msgid "Job Interview"
+#~ msgstr "면접"
+
+#: app/[lang]/(app)/memory/page.tsx:28
+#~ msgid "Memory system"
+#~ msgstr "메모리"
+
+#: components/start-call.tsx:635
+#~ msgid "Name (e.g., Alex, Maria)..."
+#~ msgstr "이름 (예: Alex, Maria)..."
+
+#: components/start-call.tsx:546
+#~ msgid "Ordering food & drinks"
+#~ msgstr "음식 및 음료 주문하기"
+
+#: components/start-call.tsx:746
+#~ msgid "Phone Call"
+#~ msgstr "전화 통화"
+
+#: components/start-call.tsx:547
+#~ msgid "Professional conversation"
+#~ msgstr "전문적인 대화"
+
+#: components/start-call.tsx:726
+#~ msgid "Restaurant"
+#~ msgstr "레스토랑"
+
+#: components/start-call.tsx:736
+#~ msgid "Shopping"
+#~ msgstr "쇼핑"
+
+#: components/start-call.tsx:678
+#: components/start-call.tsx:795
+#~ msgid "Start"
+#~ msgstr "시작"
+
+#: components/start-call.tsx:548
+#~ msgid "Telephone etiquette"
+#~ msgstr "전화 예절"
+
+#: app/[lang]/error.tsx:30
+#~ msgid "View Documentation"
+#~ msgstr "문서 보기"

@@ -12,8 +12,9 @@ from .adapters.asr import build_asr_adapter
 from .adapters.websocket import NullEventsAdapter
 from .adapters.llm import build_llm_adapter
 from .adapters.memory import build_memory_adapter
+from .adapters.tts import build_tts_adapter
 from .config import Settings
-from .domain.pipeline import SessionPipeline
+from .domain.session import ConversationSession
 from .services.email import EmailService
 
 LOGGER = logging.getLogger(__name__)    
@@ -27,24 +28,27 @@ class SessionManager:
         asr_adapter,
         llm_adapter,
         memory_adapter,
+        tts_adapter=None,
         context_window_size: int = 5,
     ) -> None:
         self.asr_adapter = asr_adapter
         self.llm_adapter = llm_adapter
         self.memory_adapter = memory_adapter
+        self.tts_adapter = tts_adapter
         self.context_window_size = context_window_size
-        self._pipelines: dict[str, SessionPipeline] = {}
+        self._pipelines: dict[str, ConversationSession] = {}
         self._lock = asyncio.Lock()
 
-    async def get_or_create(self, session_id: str, events_port=None) -> SessionPipeline:
+    async def get_or_create(self, session_id: str, events_port=None) -> ConversationSession:
         async with self._lock:
             pipeline = self._pipelines.get(session_id)
             if pipeline is None:
-                pipeline = SessionPipeline(
+                pipeline = ConversationSession(
                     session_id,
                     asr=self.asr_adapter,
                     llm=self.llm_adapter,
                     memory=self.memory_adapter,
+                    tts=self.tts_adapter,
                     events=events_port or NullEventsAdapter(),
                     context_window_size=self.context_window_size,
                 )
@@ -53,6 +57,13 @@ class SessionManager:
                 if events_port is not None:
                     pipeline.attach_events(events_port)
             return pipeline
+
+    async def remove_pipeline(self, session_id: str) -> None:
+        """Dispose of a session pipeline to free memory after completion."""
+        async with self._lock:
+            pipeline = self._pipelines.pop(session_id, None)
+            if pipeline:
+                LOGGER.info("Disposed pipeline for session %s", session_id)
 
     @staticmethod
     def new_session_id() -> str:
@@ -64,11 +75,11 @@ class AppState:
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        # Enforce Redis when time budget is enabled
-        if settings.free_minutes_per_user is not None and not settings.redis_url:
+        # Enforce Redis when daily quota is enabled
+        if settings.daily_free_minutes is not None and not settings.redis_url:
             raise ValueError(
-                "GLASS_FREE_MINUTES_PER_USER is set but GLASS_REDIS_URL is not configured. "
-                "Please provide GLASS_REDIS_URL or set GLASS_FREE_MINUTES_PER_USER=None to disable the feature."
+                "GLASS_DAILY_FREE_MINUTES is set but GLASS_REDIS_URL is not configured. "
+                "Please provide GLASS_REDIS_URL or set GLASS_DAILY_FREE_MINUTES=None to disable the feature."
             )
         self._redis = None
         
@@ -116,19 +127,21 @@ class AppState:
                     error_detail = "URL parsing failed"
                 
                 LOGGER.error(f"❌ Redis connection failed ({error_detail}): {e}")
-                if settings.free_minutes_per_user is not None:
+                if settings.daily_free_minutes is not None:
                     raise RuntimeError(
-                        f"Redis required for time budget but connection failed: {e}\n"
+                        f"Redis required for daily quota but connection failed: {e}\n"
                         f"Connection details: {error_detail}\n"
                         f"Check: Redis URL, firewall, and port accessibility"
                     )
         asr_adapter = build_asr_adapter(settings)
         llm_adapter = build_llm_adapter(settings)
         memory_adapter = build_memory_adapter(settings)
+        tts_adapter = build_tts_adapter(settings)
         self.session_manager = SessionManager(
             asr_adapter=asr_adapter,
             llm_adapter=llm_adapter,
             memory_adapter=memory_adapter,
+            tts_adapter=tts_adapter,
             context_window_size=int(settings.context_window_size or 5),
         )
         # Email service for verification and password reset
@@ -159,10 +172,10 @@ class AppState:
             return True
         return False
 
-    # --------- Time budget (shared across sessions) ----------
-    def has_budget_store(self) -> bool:
-        """True if time budget is enabled and Redis is configured."""
-        return self.settings.free_minutes_per_user is not None and self._redis is not None
+    # --------- Daily quota tracking (shared across sessions) ----------
+    def has_quota_tracking(self) -> bool:
+        """True if daily quota tracking is enabled and Redis is configured."""
+        return self.settings.daily_free_minutes is not None and self._redis is not None
 
     # --------- Daily cumulative usage (resets every UTC midnight) ----------
     def _today_str_utc(self) -> str:
@@ -179,8 +192,8 @@ class AppState:
 
         Requires Redis when feature is enabled; uses in-proc fallback on transient errors.
         """
-        if not self.has_budget_store():
-            # With budget disabled, treat as 0 used so upstream returns full allowance
+        if not self.has_quota_tracking():
+            # With quota disabled, treat as 0 used (unlimited)
             return 0
         date_str = self._today_str_utc()
         key = f"glass:usage:{client_id}:{date_str}"
@@ -210,8 +223,8 @@ class AppState:
     async def incr_used_seconds(self, client_id: str, seconds: int = 1) -> int:
         """Increment seconds used today and return updated used total (UTC day)."""
         seconds = max(1, int(seconds))
-        if not self.has_budget_store():
-            # If budget disabled, do nothing and return 0 used
+        if not self.has_quota_tracking():
+            # If quota disabled, do nothing and return 0 used (unlimited)
             return 0
         date_str = self._today_str_utc()
         key = f"glass:usage:{client_id}:{date_str}"
@@ -238,11 +251,43 @@ class AppState:
             self._fallback_daily_usage[client_id] = (date_str, new_used)
             return new_used
 
-    async def get_remaining_seconds_quota(self, client_id: str) -> int:
-        """Return remaining seconds available today for this client (UTC day)."""
-        total = max(0, int(self.settings.free_minutes_per_user or 0) * 60)
+    async def get_remaining_seconds_quota(self, client_id: str, bonus_minutes: int | None = None) -> int:
+        """Return remaining seconds available today for this client.
+        
+        Logic:
+        - If daily_free_minutes is None: Return None (unlimited)
+        - Otherwise: Return daily remaining + bonus remaining
+        
+        Args:
+            client_id: User's client ID
+            bonus_minutes: User's bonus minutes from account (if any)
+        
+        Returns:
+            Remaining seconds, or a very large number if unlimited
+        """
+        if self.settings.daily_free_minutes is None:
+            # Unlimited usage
+            return 999999999  # Very large number to indicate unlimited
+        
+        # Calculate daily remaining
+        daily_total = max(0, int(self.settings.daily_free_minutes) * 60)
         used = await self.get_used_seconds_today(client_id)
-        return max(0, total - used)
+        daily_remaining = max(0, daily_total - used)
+        
+        # If still has daily quota, return it
+        if daily_remaining > 0:
+            return daily_remaining
+        
+        # Daily quota exhausted, check bonus
+        if bonus_minutes is not None and bonus_minutes > 0:
+            bonus_seconds = max(0, int(bonus_minutes) * 60)
+            # How much over daily quota?
+            over_daily = used - daily_total
+            bonus_remaining = max(0, bonus_seconds - over_daily)
+            return bonus_remaining
+        
+        # No quota left
+        return 0
 
     # --------- Session ownership ----------
     async def set_session_owner(self, session_id: str, user_id: str) -> None:

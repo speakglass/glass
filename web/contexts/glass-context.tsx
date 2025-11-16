@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { t } from '@lingui/core/macro';
 import { useAccountSession } from '@/contexts/account-session-context';
+import type { ConversationMessage } from '@/lib/account-api';
 
 export interface Message {
   type: 'user_message' | 'partner_message';
@@ -59,8 +60,20 @@ export interface VoiceSettings {
 
 export interface SessionConfig {
   languages: LanguageSettings;
-  mode: 'practice' | 'real';
-  scenario?: string; // For practice mode
+  mode: 'roleplay' | 'live_call';
+  partnerId?: string | null;
+  partner?: RoleplayPartnerProfile | null;
+}
+
+export interface RoleplayPartnerProfile {
+  id: string;
+  name: string;
+  description?: string | null;
+  avatarUrl?: string | null;
+  voiceId?: string | null;
+  learningLang?: string | null;
+  nativeLang?: string | null;
+  isSystem?: boolean;
 }
 
 export type StructuredSuggestion = {
@@ -108,25 +121,38 @@ export interface ExtractedInfo {
   editable: boolean;
 }
 
+type ParticipantSnapshot = {
+  partner?: {
+    id?: string | null;
+    name?: string | null;
+    avatar_url?: string | null;
+  };
+  user?: {
+    id?: string | null;
+    name?: string | null;
+    email?: string | null;
+  };
+};
+
 export interface ConversationAnalysis {
   sessionId: string;
   conversationId?: string; // DB conversation ID for fetching Zep memories
   scores: ConversationScores;
   extractedInfo: ExtractedInfo[];
   feedback: string;
-  messages: Array<{
-    speaker: string;
-    source: string;
-    text: string;
-    utterance_id?: string;
-    translation?: string;
-  }>;
+  messages: ConversationMessage[];
   feedbackItems: Array<{ utterance_id: string; text: string }>;
+  participantSnapshot?: ParticipantSnapshot | null;
+  durationSeconds?: number | null;
+  learningLang?: string | null;
+  nativeLang?: string | null;
 }
 
 interface GlassContextValue {
   status: VoiceStatus;
   messages: Message[];
+  sessionMode: 'roleplay' | 'live_call';
+  conversationPartner: RoleplayPartnerProfile | null;
   isMuted: boolean;
   micFft: number[];
   settings: VoiceSettings;
@@ -201,6 +227,8 @@ export function GlassProvider({
   }, [authToken, accountStatus]);
   const [status, setStatus] = useState<VoiceStatus>({ value: 'idle' });
   const [messages, setMessages] = useState<Message[]>([]);
+  const [sessionMode, setSessionMode] = useState<'roleplay' | 'live_call'>('live_call');
+  const [conversationPartner, setConversationPartner] = useState<RoleplayPartnerProfile | null>(null);
 
   // Debug: Log status changes
   useEffect(() => {
@@ -684,7 +712,9 @@ export function GlassProvider({
   // Connect to Glass API
   const connect = useCallback(
     async (config: SessionConfig) => {
-      const { languages, mode, scenario } = config;
+      const { languages, mode, partner, partnerId } = config;
+      setSessionMode(mode);
+      setConversationPartner(partner ?? null);
 
       // Check if account session is ready
       if (accountStatusRef.current !== 'ready') {
@@ -739,21 +769,20 @@ export function GlassProvider({
           autoGainControl: true,
         };
         if (currentSettings.micDeviceId) {
-          micConstraints.deviceId = {
-            exact: currentSettings.micDeviceId,
-          } as unknown as ConstrainDOMString;
+          // Use ideal instead of exact for better compatibility
+          micConstraints.deviceId = currentSettings.micDeviceId;
         }
         const micStream = await navigator.mediaDevices.getUserMedia({
           audio: micConstraints,
         });
         micStreamRef.current = micStream;
 
-        // Request screen share with audio (only for Real Talk mode)
+        // Request screen share with audio (only for Live Call mode)
         let systemStream: MediaStream | null = null;
         let screenShareSkipped = false;
         let screenShareError: string | null = null;
 
-        if (mode === 'real') {
+        if (mode === 'live_call') {
           try {
             systemStream = await navigator.mediaDevices.getDisplayMedia({
               audio: {
@@ -793,7 +822,7 @@ export function GlassProvider({
             }
           }
 
-          // If screen share was skipped in Real Talk mode, disconnect and show clear instructions
+          // If screen share was skipped in Live Call mode, disconnect and show clear instructions
           if (screenShareSkipped) {
             // Clean up microphone stream
             if (micStreamRef.current) {
@@ -812,8 +841,8 @@ export function GlassProvider({
             return;
           }
         } else {
-          // Practice mode: no screen share needed
-          console.log('Practice mode: skipping screen share');
+          // Roleplay mode: no screen share needed
+          console.log('Roleplay mode: skipping screen share');
         }
 
         // Setup audio context for FFT visualization
@@ -841,9 +870,9 @@ export function GlassProvider({
           native_lang: languages.nativeLang,
           mode: mode,
         });
-        // Pass scenario at connect time so backend greets with the correct context
-        if (scenario) {
-          params.set('scenario', scenario);
+        const initialPartnerId = partnerId || partner?.id || null;
+        if (initialPartnerId) {
+          params.set('partner_id', initialPartnerId);
         }
         params.set('auth_token', token);
         const ws = new WebSocket(`${wsUrl}/ws/audio-multi?${params.toString()}`);
@@ -903,7 +932,7 @@ export function GlassProvider({
               learning_lang: languages.learningLang,
               native_lang: languages.nativeLang,
               mode: mode,
-              scenario: scenario || null,
+              partner_id: partnerId || partner?.id || null,
             })
           );
 
@@ -1115,24 +1144,8 @@ export function GlassProvider({
           role = data.speaker === 'user' ? 'user' : 'partner';
         }
 
-        const isSpeechFinal = Boolean(data.speech_final);
-
         setMessages((prev) => {
           const next = [...prev];
-          if (isSpeechFinal) {
-            const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.partial);
-            if (idx >= 0) next.splice(idx, 1);
-
-            // Clear all suggestions when user's speech is final
-            if (role === 'user') {
-              setTimeout(() => {
-                setSuggestions([]);
-              }, 1000);
-            }
-
-            return next;
-          }
-
           const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.message.role === role);
           if (idx >= 0) {
             const existing = next[idx];
@@ -1171,7 +1184,8 @@ export function GlassProvider({
 
         // Auto-play TTS for AI responses when requested
         if (data.auto_tts && data.source === 'ai') {
-          requestTTSForAI(text);
+          const voiceId = data.voice_id; // Use voice_id from event if available
+          requestTTSForAI(text, voiceId);
         }
 
         // Determine role from source
@@ -1197,23 +1211,9 @@ export function GlassProvider({
           if (idx >= 0) {
             // Update existing message
             const existing = next[idx];
-            const prevText = (existing.message.content || '').trim();
-            const newText = (text || '').trim();
-
-            // If speech_final, replace to handle utterance boundary changes from ASR
-            let finalContent: string;
-            if (!isSpeechFinal && prevText) {
-              // Continuing utterance - merge with appropriate spacing
-              const needsSpace = !/[\.!?\u3002\uFF01\uFF1F]$/.test(prevText);
-              finalContent = needsSpace ? `${prevText} ${newText}` : `${prevText} ${newText}`;
-            } else {
-              // Speech final or first segment - use new text as-is
-              finalContent = newText;
-            }
-
             next[idx] = {
               ...existing,
-              message: { ...existing.message, content: finalContent },
+              message: { ...existing.message, content: text },
               translation: translation ?? existing.translation,
               partial: undefined,
               receivedAt: new Date(),
@@ -1380,12 +1380,32 @@ export function GlassProvider({
   const startAudioStreaming = useCallback((ws: WebSocket, micStream: MediaStream, systemStream: MediaStream | null) => {
     const audioContext = new AudioContext({ sampleRate: 16000 });
     streamingContextRef.current = audioContext;
+
+    // Check actual sample rate - browser may not support 16000Hz
+    const actualSampleRate = audioContext.sampleRate;
+    console.log(`Audio sample rate: requested=16000Hz, actual=${actualSampleRate}Hz`);
+
     const micSource = audioContext.createMediaStreamSource(micStream);
     const micProcessor = audioContext.createScriptProcessor(4096, 1, 1);
 
+    // Downsample if needed
+    const resampleRatio = actualSampleRate / 16000;
+    const needsResampling = resampleRatio !== 1;
+
     micProcessor.onaudioprocess = (e) => {
       if (ws.readyState === WebSocket.OPEN && !isMutedRef.current) {
-        const inputData = e.inputBuffer.getChannelData(0);
+        let inputData = e.inputBuffer.getChannelData(0);
+
+        // Simple downsampling if needed
+        if (needsResampling) {
+          const targetLength = Math.floor(inputData.length / resampleRatio);
+          const downsampled = new Float32Array(targetLength);
+          for (let i = 0; i < targetLength; i++) {
+            downsampled[i] = inputData[Math.floor(i * resampleRatio)];
+          }
+          inputData = downsampled;
+        }
+
         const pcm16 = convertFloat32ToPCM16(inputData);
         const payload = new Uint8Array(pcm16.length + 1);
         payload[0] = 0x01; // mic channel
@@ -1405,7 +1425,18 @@ export function GlassProvider({
 
       systemProcessor.onaudioprocess = (e) => {
         if (ws.readyState === WebSocket.OPEN) {
-          const inputData = e.inputBuffer.getChannelData(0);
+          let inputData = e.inputBuffer.getChannelData(0);
+
+          // Simple downsampling if needed
+          if (needsResampling) {
+            const targetLength = Math.floor(inputData.length / resampleRatio);
+            const downsampled = new Float32Array(targetLength);
+            for (let i = 0; i < targetLength; i++) {
+              downsampled[i] = inputData[Math.floor(i * resampleRatio)];
+            }
+            inputData = downsampled;
+          }
+
           const pcm16 = convertFloat32ToPCM16(inputData);
           const payload = new Uint8Array(pcm16.length + 1);
           payload[0] = 0x02; // system channel
@@ -1517,6 +1548,8 @@ export function GlassProvider({
     }
 
     setMicFft(new Array(24).fill(0));
+    setSessionMode('live_call');
+    setConversationPartner(null);
 
     // Backend auto-saves conversation when WebSocket disconnects
     // Set to analyzing state and poll for results
@@ -1592,8 +1625,12 @@ export function GlassProvider({
                 scores: (detail.scores as any) || { fluency: 0, accuracy: 0, comprehensibility: 0 },
                 extractedInfo: (detail.extractedInfo as any) || [],
                 feedback: detail.feedback || '',
-                messages: (detail.messages as any) || [],
+                messages: detail.messages || [],
                 feedbackItems: [], // Not stored in DB currently
+                participantSnapshot: (detail.participantSnapshot as ParticipantSnapshot | null) || null,
+                durationSeconds: detail.durationSeconds ?? null,
+                learningLang: detail.learningLang ?? null,
+                nativeLang: detail.nativeLang ?? null,
               };
 
               setConversationAnalysis(analysis);
@@ -1839,18 +1876,18 @@ export function GlassProvider({
   );
 
   // Request TTS for AI voice (auto-play)
-  const requestTTSForAI = useCallback((text: string) => {
+  const requestTTSForAI = useCallback((text: string, voiceId?: string) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       return;
     }
 
-    // Use AI voice ID (Male voice)
+    // Use provided voice_id or fallback to default AI voice (Male voice)
     ws.send(
       JSON.stringify({
         type: 'request_tts',
         text: text,
-        voice_id: 'iP95p4xoKVk53GoZ742B', // Male AI voice
+        voice_id: voiceId || 'iP95p4xoKVk53GoZ742B', // Use provided voice_id or default Male AI voice
         request_id: 'ai_' + Math.random().toString(36).substr(2, 9),
       })
     );
@@ -1894,6 +1931,8 @@ export function GlassProvider({
   const value: GlassContextValue = {
     status,
     messages,
+    sessionMode,
+    conversationPartner,
     isMuted,
     micFft,
     settings,

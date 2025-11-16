@@ -2,7 +2,7 @@
 import { cn } from '@/utils';
 import { useGlass, Message } from '@/contexts/glass-context';
 import { AnimatePresence, motion } from 'motion/react';
-import { ComponentRef, forwardRef, useState, useEffect, useCallback, useRef } from 'react';
+import { ComponentRef, forwardRef, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { Trans } from '@lingui/react/macro';
 
 type MockMessage = {
@@ -17,12 +17,17 @@ type MessagesProps = {
 
 const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(function Messages({ mockMessages }, ref) {
   const voice = useGlass();
-  const { messages } = voice;
+  const { messages, sessionMode, conversationPartner } = voice;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const isMockMode = !!mockMessages;
   const displayMessages = isMockMode ? mockMessages : messages;
   const lastMessageCountRef = useRef(displayMessages.length);
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [conversationPartner?.avatarUrl]);
 
   // Check if user is near the bottom of the scroll container
   const checkIfNearBottom = useCallback(() => {
@@ -130,16 +135,76 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
                     return a.receivedAt.getTime() - b.receivedAt.getTime();
                   })
                   .map((msg: Message) => {
-                    if (msg.type === 'user_message' || msg.type === 'partner_message') {
+                    if (msg.type !== 'user_message' && msg.type !== 'partner_message') {
+                      return null;
+                    }
+
+                    const isRoleplayPartnerMessage =
+                      !isMockMode && sessionMode === 'roleplay' && msg.type === 'partner_message';
+
+                    const partnerLabel: ReactNode = msg.message.role === 'user'
+                      ? <Trans>You</Trans>
+                      : isRoleplayPartnerMessage && conversationPartner?.name
+                        ? conversationPartner.name
+                        : <Trans>Partner</Trans>;
+
+                    const timestamp = msg.receivedAt.toLocaleTimeString(undefined, {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      second: undefined,
+                    });
+
+                    const messageContent = (
+                      <>
+                        <div className={'flex items-center justify-between pt-4 px-3'}>
+                          <div
+                            className={cn('text-xs capitalize font-medium leading-none opacity-50 tracking-tight')}
+                          >
+                            {partnerLabel}
+                          </div>
+                          <div
+                            className={cn('text-xs capitalize font-medium leading-none opacity-50 tracking-tight')}
+                          >
+                            {timestamp}
+                          </div>
+                        </div>
+                        <div className={'pb-3 px-3 space-y-2'}>
+                          <span className={'text-sm sm:text-base'}>
+                            {msg.partial
+                              ? `${msg.message.content ? msg.message.content + ' ' : ''}${msg.partial}`
+                              : msg.message.content}
+                          </span>
+                          {msg.translation && (
+                            <div className={'text-sm opacity-70 pt-1'}>
+                              <span>{msg.translation}</span>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    );
+
+                    if (isRoleplayPartnerMessage) {
+                      const partnerName = conversationPartner?.name || 'Partner';
+                      const showImage = conversationPartner?.avatarUrl && !avatarFailed;
+                      const avatarNode = showImage ? (
+                        <img
+                          src={conversationPartner!.avatarUrl!}
+                          alt={partnerName}
+                          className={'w-10 h-10 rounded-full object-cover border border-border/60 bg-muted'}
+                          onError={() => setAvatarFailed(true)}
+                        />
+                      ) : (
+                        <div
+                          className={'w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground'}
+                        >
+                          {partnerName.charAt(0).toUpperCase()}
+                        </div>
+                      );
+
                       return (
                         <motion.div
                           key={msg.utteranceId ?? `${msg.type}-${msg.message.role}-${msg.receivedAt.getTime()}`}
-                          className={cn(
-                            'w-[80%]',
-                            'bg-card',
-                            'border border-border rounded-xl',
-                            msg.type === 'user_message' ? 'ml-auto' : ''
-                          )}
+                          className={'flex items-start gap-3'}
                           initial={{
                             opacity: 0,
                             y: 10,
@@ -153,40 +218,39 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
                             y: 0,
                           }}
                         >
-                          <div className={'flex items-center justify-between pt-4 px-3'}>
-                            <div
-                              className={cn('text-xs capitalize font-medium leading-none opacity-50 tracking-tight')}
-                            >
-                              {msg.message.role === 'user' ? <Trans>You</Trans> : <Trans>Partner</Trans>}
-                            </div>
-                            <div
-                              className={cn('text-xs capitalize font-medium leading-none opacity-50 tracking-tight')}
-                            >
-                              {msg.receivedAt.toLocaleTimeString(undefined, {
-                                hour: 'numeric',
-                                minute: '2-digit',
-                                second: undefined,
-                              })}
-                            </div>
-                          </div>
-                          <div className={'pb-3 px-3 space-y-2'}>
-                            {/* Committed content + ephemeral partial (no animation) */}
-                            <span className={'text-sm sm:text-base'}>
-                              {msg.partial
-                                ? `${msg.message.content ? msg.message.content + ' ' : ''}${msg.partial}`
-                                : msg.message.content}
-                            </span>
-                            {msg.translation && (
-                              <div className={'text-sm opacity-70 pt-1'}>
-                                <span>{msg.translation}</span>
-                              </div>
-                            )}
+                          <div className={'flex-shrink-0'}>{avatarNode}</div>
+                          <div className={cn('bg-card border border-border rounded-xl flex-1 max-w-[80%]')}>
+                            {messageContent}
                           </div>
                         </motion.div>
                       );
                     }
 
-                    return null;
+                    return (
+                      <motion.div
+                        key={msg.utteranceId ?? `${msg.type}-${msg.message.role}-${msg.receivedAt.getTime()}`}
+                        className={cn(
+                          'w-[80%]',
+                          'bg-card',
+                          'border border-border rounded-xl',
+                          msg.type === 'user_message' ? 'ml-auto' : ''
+                        )}
+                        initial={{
+                          opacity: 0,
+                          y: 10,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                        }}
+                        exit={{
+                          opacity: 0,
+                          y: 0,
+                        }}
+                      >
+                        {messageContent}
+                      </motion.div>
+                    );
                   })}
           </AnimatePresence>
         </div>

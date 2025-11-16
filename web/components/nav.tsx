@@ -74,7 +74,7 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
         <Feedback />
         <Button
           onClick={() => {
-            window.open('https://discord.gg/VNkMmt8w', '_blank', 'noopener noreferrer');
+            window.open('https://discord.gg/GxJwcgnchM', '_blank', 'noopener noreferrer');
           }}
           variant={'default'}
           size={'sm'}

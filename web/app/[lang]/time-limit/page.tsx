@@ -29,7 +29,7 @@ export default async function TimeLimitPage({ params }: { params: Promise<{ lang
 
           {/* Discord Button */}
           <a
-            href="https://discord.gg/VNkMmt8w"
+            href="https://discord.gg/GxJwcgnchM"
             target="_blank"
             rel="noopener noreferrer"
             className={

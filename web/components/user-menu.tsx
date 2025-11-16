@@ -122,7 +122,6 @@ export function UserMenu({
                 remainingSeconds={usage?.dailyRemainingSeconds ?? 0}
                 totalSeconds={usage?.dailyTotalSeconds ?? undefined}
                 highlight={isUsingBonus ? 'bg-amber-500' : 'bg-primary'}
-                minLabel="min"
               />
               {hasBonusMinutes && (
                 <UsageBar
@@ -130,7 +129,6 @@ export function UserMenu({
                   remainingSeconds={usage?.bonusRemainingSeconds ?? 0}
                   totalSeconds={usage?.bonusTotalSeconds ?? undefined}
                   highlight="bg-purple-500"
-                  minLabel="min"
                 />
               )}
             </div>
@@ -174,10 +172,16 @@ type UsageBarProps = {
   remainingSeconds?: number | null;
   totalSeconds?: number | null;
   highlight?: string;
-  minLabel?: string;
+  minLabel?: ReactNode;
 };
 
-function UsageBar({ label, remainingSeconds, totalSeconds, highlight = 'bg-primary', minLabel = 'min' }: UsageBarProps) {
+function UsageBar({
+  label,
+  remainingSeconds,
+  totalSeconds,
+  highlight = 'bg-primary',
+  minLabel = <Trans>min</Trans>,
+}: UsageBarProps) {
   const rawRemaining = typeof remainingSeconds === 'number' ? Math.max(0, remainingSeconds) : 0;
   const rawTotal = typeof totalSeconds === 'number' && totalSeconds > 0 ? totalSeconds : null;
   const remainingMinutes = Math.max(0, Math.floor(rawRemaining / 60));
@@ -200,7 +204,10 @@ function UsageBar({ label, remainingSeconds, totalSeconds, highlight = 'bg-prima
         </span>
       </div>
       <div className="h-1 rounded-full bg-border/70 overflow-hidden">
-        <div className={cn('h-full rounded-full transition-all duration-300', highlight)} style={{ width: `${percent}%` }} />
+        <div
+          className={cn('h-full rounded-full transition-all duration-300', highlight)}
+          style={{ width: `${percent}%` }}
+        />
       </div>
     </div>
   );

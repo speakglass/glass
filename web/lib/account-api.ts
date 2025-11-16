@@ -1,6 +1,12 @@
 export interface Usage {
-  totalSeconds: number | null;
-  remainingSeconds: number | null;
+  // Daily quota (resets at UTC midnight)
+  dailyTotalSeconds: number | null; // null if unlimited
+  dailyRemainingSeconds: number | null; // null if unlimited
+  // Bonus quota (persists across days, used after daily is exhausted)
+  bonusTotalSeconds: number | null;
+  bonusRemainingSeconds: number | null;
+  // Combined remaining (for backward compatibility and simple display)
+  totalRemainingSeconds: number | null;
 }
 
 export interface UserProfile {
@@ -8,7 +14,7 @@ export interface UserProfile {
   email: string;
   name?: string | null;
   avatarUrl?: string | null;
-  trialMinutes?: number | null;
+  bonusMinutes?: number | null; // Extra minutes that can be used after daily quota
   createdAt: string;
   lastLoginAt?: string | null;
   learningLang?: string | null;
@@ -28,12 +34,43 @@ export interface ConversationSummary {
   learningLang?: string | null;
   nativeLang?: string | null;
   scores?: Record<string, unknown> | null;
+  partnerId?: string | null;
+  participantSnapshot?: Record<string, unknown> | null;
+}
+
+export interface ConversationMessage {
+  text: string;
+  source?: string | null;
+  utterance_id?: string | null;
+  translation?: string | null;
+  start?: number | null;
+  duration?: number | null;
+  event_type?: string | null;
+  role?: string | null;
+  partner_id?: string | null;
+  // Legacy fields kept for backward compatibility with historical data
+  speaker_role?: string | null;
+  speaker_id?: string | null;
 }
 
 export interface ConversationDetail extends ConversationSummary {
-  messages?: Array<Record<string, unknown>>;
+  messages?: ConversationMessage[];
   extractedInfo?: Array<Record<string, unknown>> | null;
   feedback?: string | null;
+}
+
+export interface ConversationPartner {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  avatarUrl?: string | null;
+  voiceId?: string | null;
+  learningLang?: string | null;
+  nativeLang?: string | null;
+  isSystem: boolean;
+  kind: 'roleplay' | 'live_call';
+  extraMetadata?: Record<string, unknown> | null;
 }
 
 export interface AccountSnapshot {
@@ -120,6 +157,8 @@ type ConversationSummaryApi = {
   learning_lang?: string | null;
   native_lang?: string | null;
   scores?: Record<string, unknown> | null;
+  partner_id?: string | null;
+  participant_snapshot?: Record<string, unknown> | null;
 };
 
 type ConversationDetailApi = ConversationSummaryApi & {
@@ -133,7 +172,7 @@ type UserApi = {
   email: string;
   name?: string | null;
   avatar_url?: string | null;
-  trial_minutes?: number | null;
+  bonus_minutes?: number | null;
   created_at: string;
   last_login_at?: string | null;
   learning_lang?: string | null;
@@ -143,14 +182,35 @@ type UserApi = {
 };
 
 type UsageApi = {
-  total_seconds: number | null;
-  remaining_seconds: number | null;
+  daily_total_seconds: number | null;
+  daily_remaining_seconds: number | null;
+  bonus_total_seconds: number | null;
+  bonus_remaining_seconds: number | null;
+  total_remaining_seconds: number | null;
 };
 
 interface AccountSnapshotApi {
   user: UserApi;
   usage: UsageApi;
   conversations?: ConversationSummaryApi[];
+}
+
+type PartnerApi = {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  avatar_url?: string | null;
+  voice_id?: string | null;
+  learning_lang?: string | null;
+  native_lang?: string | null;
+  is_system?: boolean;
+  kind?: 'roleplay' | 'live_call';
+  extra_metadata?: Record<string, unknown> | null;
+};
+
+interface PartnerListApi {
+  partners: PartnerApi[];
 }
 
 interface OnboardingStatusApi {
@@ -214,6 +274,8 @@ function mapSummary(data: ConversationSummaryApi): ConversationSummary {
     learningLang: data.learning_lang,
     nativeLang: data.native_lang,
     scores: data.scores,
+    partnerId: data.partner_id,
+    participantSnapshot: data.participant_snapshot || null,
   };
 }
 
@@ -221,9 +283,25 @@ function mapDetail(data: ConversationDetailApi): ConversationDetail {
   const summary = mapSummary(data);
   return {
     ...summary,
-    messages: data.messages,
+    messages: (data.messages as ConversationMessage[] | undefined) ?? [],
     extractedInfo: data.extracted_info,
     feedback: data.feedback,
+  };
+}
+
+function mapPartner(data: PartnerApi): ConversationPartner {
+  return {
+    id: data.id,
+    slug: data.slug,
+    name: data.name,
+    description: data.description,
+    avatarUrl: data.avatar_url || null,
+    voiceId: data.voice_id || null,
+    learningLang: data.learning_lang || null,
+    nativeLang: data.native_lang || null,
+    isSystem: Boolean(data.is_system),
+    kind: data.kind === 'live_call' ? 'live_call' : 'roleplay',
+    extraMetadata: data.extra_metadata || null,
   };
 }
 
@@ -233,7 +311,7 @@ function mapUser(data: UserApi): UserProfile {
     email: data.email,
     name: data.name,
     avatarUrl: data.avatar_url,
-    trialMinutes: data.trial_minutes,
+    bonusMinutes: data.bonus_minutes,
     createdAt: data.created_at,
     lastLoginAt: data.last_login_at,
     learningLang: data.learning_lang,
@@ -245,8 +323,11 @@ function mapUser(data: UserApi): UserProfile {
 
 function mapUsage(data: UsageApi): Usage {
   return {
-    totalSeconds: data.total_seconds,
-    remainingSeconds: data.remaining_seconds,
+    dailyTotalSeconds: data.daily_total_seconds,
+    dailyRemainingSeconds: data.daily_remaining_seconds,
+    bonusTotalSeconds: data.bonus_total_seconds,
+    bonusRemainingSeconds: data.bonus_remaining_seconds,
+    totalRemainingSeconds: data.total_remaining_seconds,
   };
 }
 
@@ -280,8 +361,14 @@ async function authedFetch<T>(path: string, token: string, init?: RequestInit): 
   const headers = new Headers(init?.headers || {});
   headers.set('Authorization', `Bearer ${token}`);
 
+  const isFormDataBody = typeof FormData !== 'undefined' && init?.body instanceof FormData;
+
   // Set Content-Type for POST/PUT/PATCH requests with body
-  if (init?.body && (init?.method === 'POST' || init?.method === 'PUT' || init?.method === 'PATCH')) {
+  if (
+    init?.body &&
+    (init?.method === 'POST' || init?.method === 'PUT' || init?.method === 'PATCH') &&
+    !isFormDataBody
+  ) {
     if (!headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json');
     }
@@ -339,6 +426,72 @@ export async function fetchAccountSnapshot(token: string): Promise<AccountSnapsh
   }
 }
 
+export interface PartnerCreateInput {
+  name: string;
+  description?: string | null;
+  learningLang?: string | null;
+  nativeLang?: string | null;
+  avatarUrl?: string | null;
+  voiceId?: string | null;
+}
+
+export async function fetchPartners(token: string, learningLang?: string | null): Promise<ConversationPartner[]> {
+  const query = learningLang ? `?learning_lang=${encodeURIComponent(learningLang)}` : '';
+  const data = await authedFetch<PartnerListApi>(`/partners${query}`, token);
+  return data.partners.map(mapPartner);
+}
+
+export async function createPartner(token: string, payload: PartnerCreateInput): Promise<ConversationPartner> {
+  const body = {
+    name: payload.name,
+    description: payload.description,
+    learning_lang: payload.learningLang,
+    native_lang: payload.nativeLang,
+    avatar_url: payload.avatarUrl,
+    voice_id: payload.voiceId,
+  };
+  const data = await authedFetch<PartnerApi>('/partners', token, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return mapPartner(data);
+}
+
+export interface PartnerUpdateInput {
+  name?: string;
+  description?: string | null;
+  learningLang?: string | null;
+  nativeLang?: string | null;
+  avatarUrl?: string | null;
+  voiceId?: string | null;
+}
+
+export async function updatePartner(
+  token: string,
+  partnerId: string,
+  payload: PartnerUpdateInput
+): Promise<ConversationPartner> {
+  const body: Record<string, unknown> = {};
+  if (payload.name !== undefined) body.name = payload.name;
+  if (payload.description !== undefined) body.description = payload.description;
+  if (payload.learningLang !== undefined) body.learning_lang = payload.learningLang;
+  if (payload.nativeLang !== undefined) body.native_lang = payload.nativeLang;
+  if (payload.avatarUrl !== undefined) body.avatar_url = payload.avatarUrl;
+  if (payload.voiceId !== undefined) body.voice_id = payload.voiceId;
+
+  const data = await authedFetch<PartnerApi>(`/partners/${partnerId}`, token, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+  return mapPartner(data);
+}
+
+export async function deletePartner(token: string, partnerId: string): Promise<void> {
+  await authedFetch<void>(`/partners/${partnerId}`, token, {
+    method: 'DELETE',
+  });
+}
+
 export interface ConversationListResponse {
   conversations: ConversationSummary[];
   total: number;
@@ -394,6 +547,28 @@ export async function deleteConversation(token: string, conversationId: string):
   await authedFetch<void>(`/conversations/${conversationId}`, token, {
     method: 'DELETE',
   });
+}
+
+export async function uploadPartnerAvatar(token: string, partnerId: string, file: File): Promise<ConversationPartner> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const data = await authedFetch<PartnerApi>(`/partners/${partnerId}/avatar`, token, {
+    method: 'POST',
+    body: formData,
+  });
+  return mapPartner(data);
+}
+
+export async function reassignConversationPartner(
+  token: string,
+  conversationId: string,
+  partnerId: string
+): Promise<ConversationSummary> {
+  const data = await authedFetch<ConversationSummaryApi>(`/conversations/${conversationId}/partner`, token, {
+    method: 'PATCH',
+    body: JSON.stringify({ partner_id: partnerId }),
+  });
+  return mapSummary(data);
 }
 
 export async function fetchConversationZepMemories(
@@ -487,7 +662,6 @@ export async function fetchMemories(
     offset?: number;
     status?: string;
     search?: string;
-    includeZepFacts?: boolean; // Include auto-generated Zep facts
   }
 ): Promise<MemoryListResponse> {
   const params = new URLSearchParams();
@@ -498,9 +672,6 @@ export async function fetchMemories(
   }
   if (options?.search) {
     params.set('search', options.search);
-  }
-  if (options?.includeZepFacts) {
-    params.set('include_zep_facts', 'true');
   }
 
   const data = await authedFetch<MemoryListResponseApi>(`/memories?${params.toString()}`, token);
@@ -551,8 +722,13 @@ export async function deleteMemory(token: string, memoryId: string): Promise<voi
   });
 }
 
-export async function bulkDeleteMemories(token: string, memoryIds: string[]): Promise<{ deleted: number }> {
-  return await authedFetch<{ deleted: number }>('/memories/bulk-delete', token, {
+export interface BulkDeleteMemoriesResponse {
+  deleted: number;
+  failed?: string[];
+}
+
+export async function bulkDeleteMemories(token: string, memoryIds: string[]): Promise<BulkDeleteMemoriesResponse> {
+  return await authedFetch<BulkDeleteMemoriesResponse>('/memories/bulk-delete', token, {
     method: 'POST',
     body: JSON.stringify({ memory_ids: memoryIds }),
   });

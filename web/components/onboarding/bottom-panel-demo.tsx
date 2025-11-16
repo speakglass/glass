@@ -221,7 +221,6 @@ export default function OnboardingBottomPanel({
                       'h-10 pl-9 pr-20 text-sm w-full bg-muted rounded-md border border-input flex items-center',
                       'text-foreground'
                     )}
-                    style={{ color: '#000000' }}
                   >
                     <Typewriter
                       onInit={(typewriter) => {
@@ -247,7 +246,6 @@ export default function OnboardingBottomPanel({
                     onKeyDown={handleHintKeyDown}
                     placeholder={getHintPlaceholder(isMobile)}
                     className={cn('h-10 pl-9 pr-20 text-sm placeholder:text-sm w-full bg-muted', 'text-foreground')}
-                    style={{ color: '#000000' }}
                     disabled
                   />
                 )}

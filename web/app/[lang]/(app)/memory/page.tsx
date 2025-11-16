@@ -25,7 +25,7 @@ export default async function MemoryPage({ params }: { params: Promise<{ lang: s
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground mb-1">
-                <Trans>Memory system</Trans>
+                <Trans>Memory</Trans>
               </p>
               <h1 className="text-3xl font-bold">
                 <Trans>Your memories</Trans>
@@ -47,6 +47,3 @@ export default async function MemoryPage({ params }: { params: Promise<{ lang: s
     </div>
   );
 }
-
-
-

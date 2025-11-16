@@ -10,6 +10,7 @@ import CallSummary from '@/components/call-summary';
 import { useGlass } from '@/contexts/glass-context';
 import { useAccountSession } from '@/contexts/account-session-context';
 import { Button } from '@/components/ui/button';
+import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 import { cn } from '@/utils';
 import { changeLanguage } from '@/utils/language';
@@ -21,6 +22,9 @@ import {
   SUGGESTION_PRONUNCIATIONS,
   FEEDBACK_EXPLANATIONS,
   FEEDBACK_PRONUNCIATIONS,
+  FEEDBACK_SUMMARIES,
+  FEEDBACK_TIPS,
+  FEEDBACK_ITEMS,
   LANGUAGES,
   normalizeLocale,
   getLocalizedText,
@@ -82,8 +86,8 @@ function OnboardingTour() {
     // Get user's first name
     const userName = snapshot?.user?.name?.split(' ')[0] || '';
 
-    // Create personalized feedback with user's name
-    let summaryNative = getLocalizedText(demoTemplate.feedbackSummaryKey, nativeLocale);
+    // Get language-pair-specific feedback
+    let summaryNative = FEEDBACK_SUMMARIES[learningLocale]?.[nativeLocale] || FEEDBACK_SUMMARIES.en?.en || '';
 
     // Add personalized greeting with user's name at the beginning
     if (userName) {
@@ -99,7 +103,7 @@ function OnboardingTour() {
     }
 
     const summaryCombined = summaryNative;
-    const feedbackItemNative = getLocalizedText(demoTemplate.feedbackItemKey, nativeLocale);
+    const feedbackItemNative = FEEDBACK_ITEMS[learningLocale]?.[nativeLocale] || FEEDBACK_ITEMS.en?.en || '';
     const partnerFollowUp =
       demoTemplate.conversation.find((entry) => entry.role === 'other' && entry !== partnerMessage) ??
       demoTemplate.conversation[2] ??
@@ -107,10 +111,25 @@ function OnboardingTour() {
 
     return {
       sessionId: 'onboarding-demo',
+      durationSeconds: 120,
+      learningLang: learningLocale,
+      nativeLang: nativeLocale,
       scores: {
         fluency: 75,
         accuracy: 82,
         comprehensibility: 78,
+      },
+      participantSnapshot: {
+        partner: {
+          id: 'partner-8f76e9b6-1b2c-4d5e-9f70-123456789abc',
+          name: partnerMessage.role === 'other' ? 'Emma' : 'Glass AI',
+          avatar_url: '/partners/emma.png',
+        },
+        user: {
+          id: 'user:onboarding',
+          name: snapshot?.user?.name || undefined,
+          email: snapshot?.user?.email || undefined,
+        },
       },
       extractedInfo: [
         { label: 'Topic', value: 'Daily activities and work', editable: true },
@@ -119,25 +138,24 @@ function OnboardingTour() {
       feedback: summaryCombined,
       messages: [
         {
-          speaker: 'partner',
-          source: 'other',
           text: partnerMessage.text,
           translation: getLocalizedText(partnerMessage.translationKey, nativeLocale),
           utterance_id: 'u1',
+          role: 'partner',
+          partner_id: 'partner-8f76e9b6-1b2c-4d5e-9f70-123456789abc',
         },
         {
-          speaker: 'user',
-          source: 'mic',
           text: userMessage.text,
           translation: getLocalizedText(userMessage.translationKey, nativeLocale),
           utterance_id: 'u2',
+          role: 'user',
         },
         {
-          speaker: 'partner',
-          source: 'other',
           text: partnerFollowUp.text,
           translation: getLocalizedText(partnerFollowUp.translationKey, nativeLocale),
           utterance_id: 'u3',
+          role: 'partner',
+          partner_id: 'partner-8f76e9b6-1b2c-4d5e-9f70-123456789abc',
         },
       ],
       feedbackItems: [
@@ -256,7 +274,7 @@ function OnboardingTour() {
 
   const mockFeedbackData = useMemo(() => {
     if (currentStep === 3) {
-      const translation = FEEDBACK_EXPLANATIONS[nativeLocale] ?? FEEDBACK_EXPLANATIONS.en;
+      const translation = FEEDBACK_EXPLANATIONS[learningLocale]?.[nativeLocale] ?? FEEDBACK_EXPLANATIONS.en?.en ?? '';
       const pronunciation = needsPronunciation ? FEEDBACK_PRONUNCIATIONS[learningLocale]?.[nativeLocale] : undefined;
       return {
         targetText: demoTemplate.feedbackBubble.targetText,

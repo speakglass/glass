@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -26,7 +26,8 @@ class AccountUser(Base):
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    trial_minutes: Mapped[int | None] = mapped_column(default=None)
+    # Bonus minutes: Extra usage allowance that can be used after daily free minutes are exhausted
+    bonus_minutes: Mapped[int | None] = mapped_column(default=None)
     # Email verification
     email_verified: Mapped[bool] = mapped_column(default=False)
     verification_token: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
@@ -51,6 +52,41 @@ class AccountUser(Base):
     conversations: Mapped[list["AccountConversation"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    partners: Mapped[list["ConversationPartner"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+
+
+class ConversationPartner(Base):
+    __tablename__ = "conversation_partners"
+
+    id: Mapped[str] = mapped_column(
+        String(64), primary_key=True, default=lambda: uuid.uuid4().hex
+    )
+    user_id: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("account_users.id", ondelete="CASCADE"),
+        nullable=True, index=True
+    )
+    slug: Mapped[str] = mapped_column(String(64), index=True)
+    learning_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    native_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    name: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    voice_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    extra_metadata: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON(none_as_null=True), nullable=True
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_system: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped["AccountUser"] = relationship(back_populates="partners")
 
 
 class AccountConversation(Base):
@@ -81,8 +117,16 @@ class AccountConversation(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+    partner_id: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("conversation_partners.id", ondelete="SET NULL"),
+        nullable=True, index=True
+    )
+    participant_snapshot: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON(none_as_null=True), nullable=True
+    )
 
     user: Mapped[AccountUser] = relationship(back_populates="conversations")
+    partner: Mapped["ConversationPartner"] = relationship()
 
 
 class PasswordResetToken(Base):

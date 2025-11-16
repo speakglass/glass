@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import json
 import logging
+from dataclasses import dataclass
 from typing import AsyncIterable, AsyncIterator
 from urllib.parse import urlencode
 
@@ -15,6 +16,57 @@ from websockets.exceptions import ConnectionClosed
 LOGGER = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class DeepgramLanguageConfig:
+    """Configuration for Deepgram language and model."""
+    
+    deepgram_code: str  # Deepgram language code (e.g., 'en', 'ko')
+    model: str  # 'nova-3' or 'nova-2'
+
+
+# Language mapping for supported languages
+# Maps app language codes to Deepgram configuration
+LANGUAGE_CONFIG: dict[str, DeepgramLanguageConfig] = {
+    "en": DeepgramLanguageConfig(
+        deepgram_code="en",
+        model="nova-3"
+    ),
+    "ko": DeepgramLanguageConfig(
+        deepgram_code="ko",
+        model="nova-2"
+    ),
+    "ja": DeepgramLanguageConfig(
+        deepgram_code="ja",
+        model="nova-3"
+    ),
+    "es": DeepgramLanguageConfig(
+        deepgram_code="es",
+        model="nova-3"
+    ),
+    "fr": DeepgramLanguageConfig(
+        deepgram_code="fr",
+        model="nova-3"
+    ),
+    "zh": DeepgramLanguageConfig(
+        deepgram_code="zh-CN",
+        model="nova-2"
+    ),
+}
+
+
+def _get_language_config(language_code: str) -> DeepgramLanguageConfig:
+    """
+    Get Deepgram configuration for a given language code.
+    
+    Args:
+        language_code: Language code (e.g., 'en', 'ko', 'ja')
+        
+    Returns:
+        DeepgramLanguageConfig with appropriate model and language code
+    """
+    return LANGUAGE_CONFIG.get(language_code, LANGUAGE_CONFIG["en"])
+
+
 class DeepgramASRAdapter:
     """Realtime ASR adapter backed by Deepgram's WebSocket API."""
 
@@ -22,7 +74,6 @@ class DeepgramASRAdapter:
         self,
         api_key: str,
         *,
-        model: str = "nova-3",
         language: str = "en",
         encoding: str = "linear16",
         sample_rate: int = 16000,
@@ -30,13 +81,13 @@ class DeepgramASRAdapter:
         interim_results: bool = True,
         utterance_end_ms: int | None = None,
         endpointing_ms: int | None = None,
+        vad_events: bool = True,
         endpoint: str = "wss://api.deepgram.com/v1/listen",
     ) -> None:
         if not api_key:
             msg = "Deepgram API key is required."
             raise ValueError(msg)
         self.api_key = api_key
-        self.model = model
         self.language = language
         self.encoding = encoding
         self.sample_rate = sample_rate
@@ -44,8 +95,8 @@ class DeepgramASRAdapter:
         self.interim_results = interim_results
         self.utterance_end_ms = utterance_end_ms
         self.endpointing_ms = endpointing_ms
+        self.vad_events = vad_events
         self.endpoint = endpoint.rstrip("/")
-        # Simple pass-through; no carryover accumulation
 
     async def stream(
         self,
@@ -54,11 +105,12 @@ class DeepgramASRAdapter:
         *,
         source: str | None = None,
         language: str | None = None,
-        model: str | None = None,
     ) -> AsyncIterator[dict]:
-        # Allow override of language and model per stream
-        stream_language = language or self.language
-        stream_model = model or self.model
+        # Resolve language configuration automatically
+        lang_code = language or self.language
+        config = _get_language_config(lang_code)
+        stream_language = config.deepgram_code
+        stream_model = config.model
         
         params = {
             "model": stream_model,
@@ -73,6 +125,7 @@ class DeepgramASRAdapter:
             params["utterance_end_ms"] = str(self.utterance_end_ms)
         if self.endpointing_ms is not None:
             params["endpointing"] = str(self.endpointing_ms)
+        params["vad_events"] = str(self.vad_events).lower()
         uri = f"{self.endpoint}?{urlencode(params)}"
         headers = {
             "Authorization": f"Token {self.api_key}",
@@ -86,7 +139,7 @@ class DeepgramASRAdapter:
             ping_timeout=20,
             max_size=2**20,
         ) as ws:
-            LOGGER.info(f"Deepgram connection opened for session {session_id}, source={source}, language={stream_language}, model={stream_model}")
+            LOGGER.info(f"Deepgram connection opened for session {session_id}, source={source}, language={lang_code} -> {stream_language}, model={stream_model}")
             
             # Create tasks for bidirectional communication
             async def send_audio():

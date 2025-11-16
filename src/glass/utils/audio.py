@@ -8,6 +8,8 @@ import logging
 from typing import AsyncIterator, Iterable
 import httpx
 
+from ..persistence.service import get_partner_by_id
+
 LOGGER = logging.getLogger(__name__)
 
 # Source identifiers for multiplexed audio streams
@@ -39,7 +41,27 @@ async def iter_websocket_audio(websocket) -> AsyncIterator[bytes]:
             break
 
 
-async def iter_multiplexed_audio(websocket, source_queues: dict[str, asyncio.Queue], pipeline=None) -> None:
+def _partner_to_profile(partner) -> dict:
+    return {
+        "id": partner.id,
+        "name": partner.name,
+        "description": partner.description,
+        "avatar_url": partner.avatar_url,
+        "voice_id": partner.voice_id,
+        "learning_lang": partner.learning_lang,
+        "native_lang": partner.native_lang,
+        "is_system": partner.user_id is None,
+    }
+
+
+async def iter_multiplexed_audio(
+    websocket,
+    source_queues: dict[str, asyncio.Queue],
+    pipeline=None,
+    *,
+    db=None,
+    user=None,
+) -> None:
     """Demultiplex audio: first byte is source ID (0x01=mic, 0x02=system)."""
     try:
         from ..config import get_settings
@@ -94,13 +116,24 @@ async def iter_multiplexed_audio(websocket, source_queues: dict[str, asyncio.Que
                         pipeline.set_feedback_mode(mode)
                         LOGGER.info(f"Feedback mode set to: {mode}")
                     elif msg_type == "session_config" and pipeline:
-                        # Set session configuration (languages, mode, scenario)
+                        # Set session configuration (languages, mode, partner)
                         learning_lang = data.get("learning_lang", "en")
                         native_lang = data.get("native_lang", "ko")
-                        mode = data.get("mode", "real")
-                        scenario = data.get("scenario", None)
-                        pipeline.set_session_config(learning_lang, native_lang, mode, scenario)
-                        LOGGER.info(f"Session config - learning: {learning_lang}, native: {native_lang}, mode: {mode}, scenario: {scenario}")
+                        mode = data.get("mode", "live_call")
+                        partner_profile = None
+                        partner_id = data.get("partner_id")
+                        if partner_id and db and user:
+                            partner = await get_partner_by_id(db, partner_id, user_id=user.user_id)
+                            if partner:
+                                partner_profile = _partner_to_profile(partner)
+                        if partner_profile is None:
+                            # Preserve existing partner assignment (e.g., live-call placeholder)
+                            partner_profile = getattr(pipeline, "partner_profile", None)
+                        pipeline.set_session_config(learning_lang, native_lang, mode, partner=partner_profile)
+                        LOGGER.info(
+                            f"Session config - learning: {learning_lang}, native: {native_lang}, "
+                            f"mode: {mode}, partner_id: {partner_id}"
+                        )
                     elif msg_type == "set_suggest_mode" and pipeline:
                         mode = data.get("mode", "auto")
                         pipeline.set_suggest_mode(mode)
@@ -120,12 +153,16 @@ async def iter_multiplexed_audio(websocket, source_queues: dict[str, asyncio.Que
                         request_id = data.get("request_id")
                         asyncio.create_task(_handle_suggestion_request(pipeline, text, request_id))
                     elif msg_type == "request_tts":
-                        # Stream TTS audio from ElevenLabs
+                        # Stream TTS audio via TTSProcessor
                         text = data.get("text", "")
                         voice_id = data.get("voice_id")
+                        language = data.get("language")
+                        source = data.get("source", "user")
                         request_id = data.get("request_id")
                         if text:
-                            asyncio.create_task(_handle_tts_request(websocket, text, voice_id, request_id))
+                            asyncio.create_task(_handle_tts_request(
+                                pipeline, websocket, text, voice_id, language, source, request_id
+                            ))
                 except (json.JSONDecodeError, KeyError):
                     pass
             
@@ -152,55 +189,40 @@ async def _handle_suggestion_request(pipeline, text: str = "", request_id: str |
         LOGGER.error(f"Failed to generate suggestion: {e}")
 
 
-async def _handle_tts_request(websocket, text: str, voice_id: str | None = None, request_id: str | None = None) -> None:
-    """Handle TTS request and stream audio back via WebSocket."""
+async def _handle_tts_request(
+    pipeline,
+    websocket,
+    text: str,
+    voice_id: str | None = None,
+    language: str | None = None,
+    source: str = "user",
+    request_id: str | None = None,
+) -> None:
+    """Handle TTS request via SpeechSynthesis and stream audio back."""
     try:
-        from ..config import get_settings
-        settings = get_settings()
-        
-        if not settings.elevenlabs_api_key:
-            LOGGER.warning("ElevenLabs API key not configured")
-            await websocket.send_json({"t": "tts_error", "error": "TTS not configured", "request_id": request_id})
+        if not pipeline.synthesis:
+            LOGGER.warning("TTS not configured")
+            await websocket.send_json({
+                "t": "tts_error",
+                "error": "TTS not configured",
+                "request_id": request_id
+            })
             return
         
-        voice = voice_id or settings.elevenlabs_voice_id
-        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice}/stream"
-        
-        headers = {
-            "xi-api-key": settings.elevenlabs_api_key,
-            "Content-Type": "application/json",
-        }
-        
-        payload = {
-            "text": text,
-            "model_id": settings.elevenlabs_model,
-            "voice_settings": {
-                "stability": 0.5,
-                "similarity_boost": 0.75,
-                "style": 0.0,
-                "use_speaker_boost": True,
-                "speed": 0.80  # 0.25-2.0, default 1.0 (0.80 = 20% slower)
-            }
-        }
-        
-        LOGGER.info(f"Requesting TTS for text: {text[:50]}...")
+        LOGGER.info(f"Processing TTS request: {text[:50]}...")
         
         # Send TTS start event
         await websocket.send_json({"t": "tts_start", "request_id": request_id})
         
-        # Stream audio chunks from ElevenLabs
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            async with client.stream("POST", url, headers=headers, json=payload) as response:
-                if response.status_code != 200:
-                    error_text = await response.aread()
-                    LOGGER.error(f"ElevenLabs API error: {response.status_code} - {error_text}")  # type: ignore[str-bytes-safe]
-                    await websocket.send_json({"t": "tts_error", "error": "TTS API error", "request_id": request_id})
-                    return
-                
-                async for chunk in response.aiter_bytes(chunk_size=4096):
-                    if chunk:
-                        # Send audio chunk as binary
-                        await websocket.send_bytes(chunk)
+        # Stream audio chunks via SpeechSynthesis
+        async for chunk in pipeline.synthesis.synthesize_stream(
+            text,
+            language=language,
+            source=source,
+            voice_id=voice_id,
+        ):
+            if chunk:
+                await websocket.send_bytes(chunk)
         
         # Send TTS end event
         await websocket.send_json({"t": "tts_end", "request_id": request_id})
@@ -209,7 +231,11 @@ async def _handle_tts_request(websocket, text: str, voice_id: str | None = None,
     except Exception as e:
         LOGGER.error(f"TTS request failed: {e}", exc_info=True)
         try:
-            await websocket.send_json({"t": "tts_error", "error": str(e), "request_id": request_id})
+            await websocket.send_json({
+                "t": "tts_error",
+                "error": str(e),
+                "request_id": request_id
+            })
         except Exception:
             pass
 

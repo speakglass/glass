@@ -29,19 +29,57 @@ msgid ""
 "to help you learn and speak any language."
 msgstr "Glassは、どんな言語でも話せるようにサポートするAIです。最新のAI技術を活用して、言語の学習と会話を支援します。"
 
-#: components/start-call.tsx:710
-msgid "• Browser tab → Enable \"Share tab audio\""
-msgstr "• ブラウザのタブ →「タブの音声を共有」を有効にする"
+#: components/memory/data-table.tsx:210
+#. placeholder {0}: table.getFilteredSelectedRowModel().rows.length
+#. placeholder {1}: table.getFilteredRowModel().rows.length
+msgid "{0} of {1} rows selected"
+msgstr "{1} 件中 {0} 件を選択済み"
 
-#: components/start-call.tsx:713
-msgid "• Desktop app → Enable \"Share system audio\""
-msgstr "• デスクトップアプリ → 「システムオーディオを共有」を有効にする"
+#: components/history/conversation-history.tsx:98
+msgid "{diffInDays, plural, one {# day ago} other {# days ago}}"
+msgstr "{diffInDays, plural, one {# 日前} other {# 日前}}"
 
-#: components/onboarding/onboarding-client.tsx:517
-#: components/onboarding/onboarding-client.tsx:615
-#: components/start-call.tsx:485
-#: components/start-call.tsx:605
-#: components/start-call.tsx:727
+#: components/history/conversation-history.tsx:90
+msgid "{diffInHours, plural, one {# hour ago} other {# hours ago}}"
+msgstr "{diffInHours, plural, one {#時間前} other {#時間前}}"
+
+#: components/history/conversation-history.tsx:82
+msgid "{diffInMinutes, plural, one {# min ago} other {# mins ago}}"
+msgstr "{diffInMinutes, plural, one {#分前} other {#分前}}"
+
+#: components/history/conversation-history.tsx:114
+msgid "{diffInMonths, plural, one {# month ago} other {# months ago}}"
+msgstr "{diffInMonths, plural, one {#か月前} other {#か月前}}"
+
+#: components/history/conversation-history.tsx:106
+msgid "{diffInWeeks, plural, one {# week ago} other {# weeks ago}}"
+msgstr "{diffInWeeks, plural, one {#週間前} other {#週間前}}"
+
+#: components/history/conversation-history.tsx:121
+msgid "{diffInYears, plural, one {# year ago} other {# years ago}}"
+msgstr "{diffInYears, plural, one {#年前} other {#年前}}"
+
+#: components/history/conversation-history.tsx:154
+msgid "{mins}m {secs}s"
+msgstr "{mins}分{secs}秒"
+
+#: components/history/conversation-history.tsx:153
+msgid "{secs}s"
+msgstr "{secs}秒"
+
+#: components/history/conversation-history.tsx:995
+msgid "{totalConversations, plural, one {# conversation} other {# conversations}}"
+msgstr "{totalConversations, plural, one {# 件の会話} other {# 件の会話}}"
+
+#: components/memory/data-table.tsx:204
+msgid "{totalCount, plural, one {# memory total • } other {# memories total • }}"
+msgstr "{totalCount, plural, one {メモリ合計#個 • } other {メモリ合計#個 • }}"
+
+#: components/onboarding/onboarding-client.tsx:535
+#: components/onboarding/onboarding-client.tsx:633
+#: components/start-call.tsx:1027
+#: components/start-call.tsx:1206
+#: components/start-call.tsx:1331
 msgid "← Back"
 msgstr "← 戻る"
 
@@ -49,26 +87,33 @@ msgstr "← 戻る"
 msgid "← Back to Home"
 msgstr "← ホームに戻る"
 
-#: components/start-call.tsx:699
-msgid "1. Join a Discord voice chat or online call"
-msgstr "1. Discordのボイスチャットやオンライン通話に参加する"
-
-#: components/start-call.tsx:702
-msgid "2. Click \"Start\" below"
-msgstr "2. 下の「開始」ボタンをクリックしてください"
-
-#: components/start-call.tsx:706
-msgid "3. Share your tab or screen with audio:"
-msgstr "3. 音声付きでタブまたは画面を共有する:"
-
-#: components/start-call.tsx:718
-msgid "4. Start talking and let Glass assist you"
-msgstr "4. 話し始めて、Glassにサポートしてもらいましょう"
-
-#: components/call-summary.tsx:371
-#: components/history/conversation-history.tsx:803
+#: components/call-summary.tsx:958
+#: components/history/conversation-history.tsx:1384
 msgid "Accuracy"
 msgstr "精度"
+
+#: components/memory/columns.tsx:147
+msgid "Actions"
+msgstr "アクション"
+
+#: components/memory/columns.tsx:112
+msgid "Active"
+msgstr "アクティブ"
+
+#: components/call-summary.tsx:1421
+#: components/history/conversation-history.tsx:1756
+#: components/start-call.tsx:1462
+#: components/start-call.tsx:1557
+msgid "Add a short description"
+msgstr "短い説明を追加"
+
+#: components/memory/data-table.tsx:156
+msgid "Add memory"
+msgstr "メモリを追加"
+
+#: components/memory/memory-dialog.tsx:58
+msgid "Add new memory"
+msgstr "新しいメモリを追加"
 
 #: lib/onboarding-tours.tsx:85
 msgid "After each conversation"
@@ -80,9 +125,14 @@ msgid ""
 "pronunciation, and vocabulary. So you keep improving naturally."
 msgstr "会話が終わるたびに、あなたの文法、発音、語彙についてフィードバックをお届けします。それにより、自然と上達していきます。"
 
-#: components/start-call.tsx:660
-msgid "Airport Check-in"
-msgstr "空港チェックイン"
+#: components/start-call.tsx:944
+#: components/start-call.tsx:1234
+msgid "AI Roleplay"
+msgstr "AIロールプレイ"
+
+#: components/memory/memory-dialog.tsx:82
+msgid "AI will automatically organize and categorize this information"
+msgstr "AIがこの情報を自動的に整理し、カテゴリ分けします。"
 
 #: components/signup-form.tsx:252
 msgid "Already have an account? <0>Sign in</0>"
@@ -93,13 +143,25 @@ msgstr "すでにアカウントをお持ちですか？<0>サインイン</0>"
 msgid "Always"
 msgstr "常に"
 
-#: app/[lang]/error.tsx:19
+#: app/[lang]/error.tsx:18
 msgid "An error occurred"
 msgstr "エラーが発生しました"
 
 #: components/chat.tsx:86
 msgid "Analyzing Conversation"
 msgstr "会話を分析中です"
+
+#: components/history/conversation-history.tsx:1680
+msgid ""
+"Are you sure you want to delete \"{selectedConversationName}\"? This action "
+"cannot be undone and will permanently remove this conversation from your "
+"history."
+msgstr "「{selectedConversationName}」を削除してもよろしいですか？この操作は元に戻せず、履歴からこの会話が完全に削除されます。"
+
+#: components/start-call.tsx:1595
+#. placeholder {0}: partnerPendingDelete.name
+msgid "Are you sure you want to delete {0}? This action cannot be undone."
+msgstr "本当に{0}を削除してもよろしいですか？この操作は元に戻せません。"
 
 #: components/signup-form.tsx:47
 msgid "At least one number"
@@ -109,11 +171,14 @@ msgstr "数字を1つ以上含めること"
 msgid "At least one special character"
 msgstr "少なくとも1つの特殊文字"
 
-#: contexts/glass-context.tsx:992
+#: contexts/glass-context.tsx:1021
 msgid "Authentication failed"
 msgstr "認証に失敗しました"
 
-#: contexts/glass-context.tsx:700
+#: components/start-call.tsx:468
+#: components/start-call.tsx:542
+#: components/start-call.tsx:588
+#: contexts/glass-context.tsx:730
 msgid "Authentication token not available. Please refresh the page."
 msgstr "認証トークンが利用できません。ページを更新してください。"
 
@@ -123,11 +188,11 @@ msgstr "認証トークンが利用できません。ページを更新してく
 msgid "Auto"
 msgstr "自動"
 
-#: components/onboarding/bottom-panel-demo.tsx:356
+#: components/onboarding/bottom-panel-demo.tsx:354
 msgid "Auto Response"
 msgstr "自動応答"
 
-#: components/call-summary.tsx:149
+#: components/call-summary.tsx:551
 msgid "Average"
 msgstr "平均"
 
@@ -135,9 +200,21 @@ msgstr "平均"
 msgid "Back"
 msgstr "戻る"
 
-#: components/call-summary.tsx:150
+#: components/start-call.tsx:732
+#: components/start-call.tsx:751
+#: components/start-call.tsx:770
+#: components/start-call.tsx:789
+#: components/start-call.tsx:809
+msgid "Back in Glass, press Start Call."
+msgstr "Glassに戻って、「通話を開始」を押してください。"
+
+#: components/call-summary.tsx:552
 msgid "Below Average"
 msgstr "平均以下"
+
+#: components/user-menu.tsx:128
+msgid "Bonus minutes"
+msgstr "ボーナス通話分"
 
 #: components/login-form.tsx:161
 #: components/signup-form.tsx:265
@@ -146,14 +223,28 @@ msgid ""
 "<1>Privacy Policy</1>."
 msgstr "「続行」をクリックすると、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意したものとみなされます。"
 
-#: components/call-summary.tsx:217
+#: components/call-summary.tsx:784
 msgid "Call Summary"
 msgstr "会話のまとめ"
 
-#: components/start-call.tsx:539
-#: components/start-call.tsx:680
-msgid "Casual Chat"
-msgstr "カジュアルな会話"
+#: components/history/conversation-history.tsx:1685
+#: components/memory/memory-dialog.tsx:96
+#: components/memory/memory-table.tsx:251
+#: components/memory/memory-table.tsx:286
+#: components/start-call.tsx:1605
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: components/memory/columns.tsx:76
+msgid "Category"
+msgstr "カテゴリー"
+
+#: components/call-summary.tsx:1377
+#: components/history/conversation-history.tsx:1712
+#: components/start-call.tsx:1415
+#: components/start-call.tsx:1516
+msgid "Change partner photo"
+msgstr "パートナーの写真を変更"
 
 #: components/forgot-password-form.tsx:53
 #: components/verify-email-sent-content.tsx:75
@@ -165,15 +256,31 @@ msgstr "メールを確認してください"
 msgid "Chinese"
 msgstr "中国語"
 
-#: components/start-call.tsx:510
-msgid "Choose a scenario"
-msgstr "シナリオを選択してください"
+#: components/start-call.tsx:735
+msgid "Choose the Discord window (or desktop) and enable system audio."
+msgstr "Discordのウィンドウ（またはデスクトップ）を選択し、システムオーディオを有効にしてください。"
 
-#: components/onboarding/onboarding-client.tsx:484
+#: components/onboarding/onboarding-client.tsx:502
 msgid "Choose the language you want to practice speaking"
 msgstr "話す練習をしたい言語を選んでください"
 
-#: components/start-call.tsx:381
+#: components/start-call.tsx:792
+msgid "Choose the Teams window (or desktop) and enable system audio."
+msgstr "Teams ウィンドウ（またはデスクトップ）を選択し、システムオーディオを有効にしてください。"
+
+#: components/start-call.tsx:754
+msgid "Choose the Zoom window (or desktop) and enable system audio."
+msgstr "Zoomウィンドウ（またはデスクトップ）を選択し、システムオーディオを有効にしてください。"
+
+#: components/start-call.tsx:1052
+msgid "Choose who to call"
+msgstr "通話する相手を選んでください"
+
+#: components/start-call.tsx:1275
+msgid "Choose your platform"
+msgstr "プラットフォームを選択してください"
+
+#: components/start-call.tsx:923
 msgid "Choose your preferred mode"
 msgstr "利用したいモードを選択してください"
 
@@ -181,16 +288,33 @@ msgstr "利用したいモードを選択してください"
 msgid "Click the link in the email to verify your account and continue to Glass."
 msgstr "メール内のリンクをクリックしてアカウントを確認し、Glassの利用を続けてください。"
 
-#: components/call-summary.tsx:742
+#: components/history/conversation-history.tsx:1067
+msgid "Click to edit"
+msgstr "クリックして編集"
+
+#: components/memory/columns.tsx:98
+msgid "Click to view full content"
+msgstr "クリックして全コンテンツを表示"
+
+#: components/call-summary.tsx:1355
+#: components/call-summary.tsx:1452
+#: components/history/conversation-history.tsx:1787
+#: components/memory/memory-dialog.tsx:91
+#: components/start-call.tsx:1477
+#: components/start-call.tsx:1572
 msgid "Close"
 msgstr "閉じる"
+
+#: components/memory/data-table.tsx:131
+msgid "Columns"
+msgstr "列"
 
 #: components/nav.tsx:86
 msgid "Community"
 msgstr "コミュニティ"
 
-#: components/call-summary.tsx:447
-#: components/history/conversation-history.tsx:860
+#: components/call-summary.tsx:1034
+#: components/history/conversation-history.tsx:1441
 msgid "Comprehensibility"
 msgstr "わかりやすさ"
 
@@ -198,30 +322,52 @@ msgstr "わかりやすさ"
 msgid "Confirm Password"
 msgstr "パスワードの確認"
 
-#: components/start-call.tsx:758
-#: components/start-call.tsx:770
+#: components/start-call.tsx:1367
+#: components/start-call.tsx:1381
 msgid "Connecting..."
 msgstr "接続中..."
 
+#: components/history/conversation-history.tsx:971
+msgid "Conversation"
+msgstr "会話"
+
+#: components/history/conversation-history.tsx:701
+msgid "Conversation deleted"
+msgstr "会話が削除されました"
+
 #: app/[lang]/(app)/history/page.tsx:28
-#: components/user-menu.tsx:149
+#: components/user-menu.tsx:142
 msgid "Conversation history"
 msgstr "会話履歴"
 
-#: components/call-summary.tsx:643
-#: components/history/conversation-history.tsx:1000
+#: components/call-summary.tsx:1231
+#: components/history/conversation-history.tsx:1582
 msgid "Conversation History"
 msgstr "会話履歴"
 
-#: contexts/glass-context.tsx:1562
-#: contexts/glass-context.tsx:1614
-#: contexts/glass-context.tsx:1629
+#: components/call-summary.tsx:391
+#: components/history/conversation-history.tsx:545
+msgid "Conversation partner assigned"
+msgstr "会話パートナーが割り当てられました"
+
+#: contexts/glass-context.tsx:1595
+#: contexts/glass-context.tsx:1651
+#: contexts/glass-context.tsx:1666
 msgid "Conversation saved"
 msgstr "会話が保存されました"
+
+#: components/memory/columns.tsx:156
+msgid "Copy"
+msgstr "コピー"
 
 #: app/[lang]/failure/page.tsx:21
 msgid "Couldn’t connect"
 msgstr "接続できませんでした"
+
+#: components/memory/memory-dialog.tsx:104
+#: components/start-call.tsx:1486
+msgid "Create"
+msgstr "作成"
 
 #: components/signup-form.tsx:249
 msgid "Create Account"
@@ -231,37 +377,151 @@ msgstr "アカウント作成"
 msgid "Create an account"
 msgstr "アカウントを作成"
 
+#: components/start-call.tsx:1395
+msgid "Create partner"
+msgstr "パートナーを作成"
+
+#: components/start-call.tsx:1196
+msgid "Create your own conversation partner"
+msgstr "あなた自身の会話パートナーを作成する"
+
+#: components/memory/columns.tsx:56
+msgid "Created at"
+msgstr "作成日時"
+
 #: components/signup-form.tsx:249
 msgid "Creating account..."
 msgstr "アカウントを作成しています..."
 
-#: components/start-call.tsx:572
-msgid "Custom Scenario"
-msgstr "カスタムシナリオ"
+#: components/start-call.tsx:1193
+msgid "Custom partner"
+msgstr "カスタムパートナー"
 
-#: components/settings.tsx:155
+#: components/start-call.tsx:575
+msgid "Custom partner ready"
+msgstr "カスタムパートナーの準備が整いました"
+
+#: components/settings.tsx:162
 msgid "Customize your Glass experience"
 msgstr "Glassの体験をカスタマイズする"
 
-#: components/settings.tsx:341
+#: components/user-menu.tsx:121
+msgid "Daily free minutes"
+msgstr "毎日の無料通話時間"
+
+#: components/settings.tsx:325
 msgid "Dark"
 msgstr "ダーク"
 
-#: components/start-call.tsx:590
-msgid "Describe the scenario you want to practice..."
-msgstr "練習したいシナリオを自由に入力してください..."
+#: components/history/conversation-history.tsx:1268
+#: components/history/conversation-history.tsx:1694
+#: components/memory/columns.tsx:172
+#: components/memory/data-table.tsx:124
+#: components/memory/memory-table.tsx:255
+#: components/memory/memory-table.tsx:290
+#: components/start-call.tsx:1157
+#: components/start-call.tsx:1616
+msgid "Delete"
+msgstr "削除"
 
-#: components/start-call.tsx:575
-msgid "Describe your own situation"
-msgstr "あなたの状況を教えてください。"
+#: components/history/conversation-history.tsx:1677
+msgid "Delete conversation"
+msgstr "会話を削除する"
 
-#: components/onboarding/onboarding-client.tsx:542
+#: components/memory/memory-table.tsx:237
+msgid "Delete memory?"
+msgstr "メモリを削除しますか？"
+
+#: components/call-summary.tsx:1439
+#: components/history/conversation-history.tsx:1774
+#: components/start-call.tsx:1591
+msgid "Delete partner"
+msgstr "パートナーを削除"
+
+#: components/memory/memory-table.tsx:272
+msgid "Delete selected memories?"
+msgstr "選択したメモリーを削除しますか？"
+
+#: components/call-summary.tsx:372
+#: components/history/conversation-history.tsx:492
+msgid "Delete this partner? This cannot be undone."
+msgstr "このパートナーを削除しますか？この操作は元に戻せません。"
+
+#: components/memory/memory-table.tsx:86
+#. placeholder {0}: variables.length
+msgid "Deleted {0} memories"
+msgstr "{0}件の思い出を削除しました"
+
+#: components/memory/memory-table.tsx:83
+#. placeholder {0}: result.deleted
+#. placeholder {1}: result.failed.length
+msgid "Deleted {0} memories, but {1} could not be removed. Please retry later."
+msgstr "{0}件のメモリーを削除しましたが、{1}件は削除できませんでした。後でもう一度お試しください。"
+
+#: components/memory/memory-table.tsx:77
+#. placeholder {0}: memoryIds.length
+msgid "Deleting {0} selected memories..."
+msgstr "{0}件の選択されたメモリーを削除しています..."
+
+#: components/memory/memory-table.tsx:53
+msgid "Deleting memory..."
+msgstr "メモリを削除しています…"
+
+#: components/memory/memory-table.tsx:280
+msgid "Deleting selected memories..."
+msgstr "選択したメモリーを削除しています..."
+
+#: components/memory/memory-table.tsx:245
+msgid "Deleting..."
+msgstr "削除中…"
+
+#: components/call-summary.tsx:1416
+#: components/history/conversation-history.tsx:1751
+#: components/start-call.tsx:1454
+#: components/start-call.tsx:1552
+msgid "Description"
+msgstr "説明"
+
+#: components/onboarding/onboarding-client.tsx:560
 msgid "Do you want pronunciation help?"
 msgstr "発音サポートを表示しますか？"
+
+#: app/[lang]/error.tsx:24
+msgid "Docs"
+msgstr "ドキュメント"
 
 #: components/login-form.tsx:148
 msgid "Don't have an account? <0>Sign up</0>"
 msgstr "アカウントをお持ちでないですか？<0>登録する</0>"
+
+#: components/memory/memory-dialog.tsx:72
+msgid ""
+"e.g., I love hiking in the mountains, My favorite food is sushi, I'm "
+"learning Spanish..."
+msgstr "例えば、山でのハイキングが好きです。好きな食べ物は寿司です。スペイン語を勉強しています。"
+
+#: components/call-summary.tsx:653
+#: components/call-summary.tsx:713
+#: components/call-summary.tsx:1395
+#: components/history/conversation-history.tsx:1151
+#: components/history/conversation-history.tsx:1211
+#: components/history/conversation-history.tsx:1730
+#: components/memory/columns.tsx:167
+#: components/start-call.tsx:1147
+#: components/start-call.tsx:1430
+#: components/start-call.tsx:1531
+msgid "Edit"
+msgstr "編集"
+
+#: components/memory/memory-dialog.tsx:56
+msgid "Edit memory"
+msgstr "メモリを編集"
+
+#: components/call-summary.tsx:1369
+#: components/history/conversation-history.tsx:1704
+#: components/start-call.tsx:1496
+msgid "Edit partner"
+msgstr "パートナーを編集"
 
 #: components/forgot-password-form.tsx:94
 #: components/login-form.tsx:105
@@ -286,6 +546,23 @@ msgstr "まもなく終了します（残り5分未満）"
 msgid "English"
 msgstr "英語"
 
+#: components/call-summary.tsx:1410
+#: components/history/conversation-history.tsx:1745
+#: components/start-call.tsx:1448
+#: components/start-call.tsx:1546
+msgid "Enter a name"
+msgstr "名前を入力してください"
+
+#: components/call-summary.tsx:305
+#: components/history/conversation-history.tsx:506
+msgid "Enter a name first"
+msgstr "最初に名前を入力してください"
+
+#: components/start-call.tsx:548
+#: components/start-call.tsx:594
+msgid "Enter a name for your partner"
+msgstr "パートナーの名前を入力してください"
+
 #: components/forgot-password-form.tsx:86
 msgid "Enter your email address and we'll send you a reset link"
 msgstr "メールアドレスを入力してください。リセットリンクをお送りします。"
@@ -294,17 +571,82 @@ msgstr "メールアドレスを入力してください。リセットリンク
 msgid "Enter your new password below"
 msgstr "新しいパスワードを入力してください"
 
-#: components/start-call.tsx:545
-msgid "Everyday conversation"
-msgstr "日常会話"
-
-#: components/call-summary.tsx:147
+#: components/call-summary.tsx:549
 msgid "Excellent"
 msgstr "とても良い"
+
+#: components/memory/columns.tsx:113
+msgid "Expired"
+msgstr "期限切れ"
+
+#: components/memory/columns.tsx:129
+msgid "Expired memories cannot be edited"
+msgstr "期限切れのメモリーは編集できません"
+
+#: components/call-summary.tsx:394
+#: components/history/conversation-history.tsx:548
+msgid "Failed to assign partner"
+msgstr "パートナーの割り当てに失敗しました"
+
+#: components/memory/memory-table.tsx:115
+#. placeholder {0}: error.message
+msgid "Failed to create memory: {0}"
+msgstr "メモリの作成に失敗しました: {0}"
+
+#: components/call-summary.tsx:326
+#: components/history/conversation-history.tsx:527
+msgid "Failed to create partner"
+msgstr "パートナーの作成に失敗しました"
+
+#: components/history/conversation-history.tsx:716
+msgid "Failed to delete conversation"
+msgstr "会話の削除に失敗しました"
+
+#: components/memory/memory-table.tsx:91
+#. placeholder {0}: error.message
+msgid "Failed to delete memories: {0}"
+msgstr "メモリーの削除に失敗しました: {0}"
+
+#: components/memory/memory-table.tsx:61
+#. placeholder {0}: error.message
+msgid "Failed to delete memory: {0}"
+msgstr "メモリの削除に失敗しました: {0}"
+
+#: components/call-summary.tsx:359
+#: components/history/conversation-history.tsx:480
+msgid "Failed to delete partner"
+msgstr "パートナーの削除に失敗しました"
+
+#: components/history/conversation-history.tsx:586
+msgid "Failed to load conversation detail. Please try again."
+msgstr "会話の詳細を読み込めませんでした。再度お試しください。"
+
+#: components/history/conversation-history.tsx:736
+msgid "Failed to load conversations"
+msgstr "会話の読み込みに失敗しました"
 
 #: components/feedback.tsx:59
 msgid "Failed to submit feedback. Please try again."
 msgstr "フィードバックの送信に失敗しました。もう一度お試しください。"
+
+#: components/memory/memory-table.tsx:131
+#. placeholder {0}: error.message
+msgid "Failed to update memory: {0}"
+msgstr "メモリの更新に失敗しました: {0}"
+
+#: components/call-summary.tsx:294
+#: components/history/conversation-history.tsx:443
+msgid "Failed to update partner"
+msgstr "パートナーの更新に失敗しました。"
+
+#: components/history/conversation-history.tsx:686
+msgid "Failed to update title"
+msgstr "タイトルの更新に失敗しました"
+
+#: components/call-summary.tsx:244
+#: components/history/conversation-history.tsx:391
+msgid "Failed to upload image"
+msgstr "画像のアップロードに失敗しました"
 
 #: components/bottom-panel.tsx:155
 #: components/bottom-panel.tsx:445
@@ -313,27 +655,19 @@ msgstr "フィードバックの送信に失敗しました。もう一度お試
 msgid "Feedback"
 msgstr "フィードバック"
 
-#: components/call-summary.tsx:588
+#: components/call-summary.tsx:1176
 msgid "Fetching thread context..."
 msgstr "スレッドコンテキストを取得中..."
 
-#: components/call-summary.tsx:290
-#: components/history/conversation-history.tsx:746
+#: components/call-summary.tsx:877
+#: components/history/conversation-history.tsx:1327
 msgid "Fluency"
 msgstr "流暢さ"
-
-#: components/start-call.tsx:695
-msgid "Follow these steps:"
-msgstr "以下の手順に従ってください。"
 
 #: components/forgot-password-form.tsx:83
 #: components/login-form.tsx:122
 msgid "Forgot your password?"
 msgstr "パスワードをお忘れですか？"
-
-#: components/user-menu.tsx:128
-msgid "Free minutes"
-msgstr "無料通話分"
 
 #: components/bottom-panel.tsx:230
 #: components/onboarding/bottom-panel-demo.tsx:106
@@ -349,24 +683,46 @@ msgid "Generating insights and feedback..."
 msgstr "インサイトとフィードバックを生成しています…"
 
 #: components/bottom-panel.tsx:383
-#: components/onboarding/bottom-panel-demo.tsx:300
+#: components/onboarding/bottom-panel-demo.tsx:298
 msgid "Get Suggestions"
 msgstr "提案を取得"
 
-#: components/settings.tsx:357
+#: components/start-call.tsx:1398
+msgid "Give your custom partner a name, description, and optional photo."
+msgstr "カスタムパートナーに名前、説明、必要に応じて写真を設定してください。"
+
+#: components/call-summary.tsx:407
+#: components/history/conversation-history.tsx:839
+#: components/settings.tsx:341
 msgid "Glass"
 msgstr "Glass"
 
-#: components/verify-email-form.tsx:140
+#: components/memory/data-table.tsx:246
+msgid "Go to first page"
+msgstr "最初のページへ移動"
+
+#: components/memory/data-table.tsx:282
+msgid "Go to last page"
+msgstr "最後のページへ移動"
+
+#: components/verify-email-form.tsx:134
 #: components/verify-email-sent-content.tsx:116
 msgid "Go to Login"
 msgstr "ログインへ移動"
 
-#: components/verify-email-form.tsx:140
+#: components/verify-email-form.tsx:134
 msgid "Go to Login Now"
 msgstr "今すぐログイン"
 
-#: components/call-summary.tsx:148
+#: components/memory/data-table.tsx:270
+msgid "Go to next page"
+msgstr "次のページへ進む"
+
+#: components/memory/data-table.tsx:258
+msgid "Go to previous page"
+msgstr "前のページに戻る"
+
+#: components/call-summary.tsx:550
 msgid "Good"
 msgstr "良い"
 
@@ -378,11 +734,11 @@ msgstr "Glassの改善にご協力ください"
 msgid "Hey! I'm Glass."
 msgstr "こんにちは！私はGlassです。"
 
-#: components/settings.tsx:211
+#: components/settings.tsx:218
 msgid "Hide messages"
 msgstr "メッセージを非表示"
 
-#: components/start-call.tsx:378
+#: components/start-call.tsx:920
 msgid "How would you like to use Glass?"
 msgstr "Glassをどのように使いたいですか？"
 
@@ -434,19 +790,42 @@ msgstr "<0>{email}</0>のアカウントが存在する場合、パスワード�
 msgid "If you don't see the email, check your spam folder."
 msgstr "メールが見つからない場合は、迷惑メールフォルダを確認してください。"
 
+#: components/memory/columns.tsx:114
+msgid "Invalid"
+msgstr "無効"
+
 #: components/bottom-panel.tsx:226
 #: components/onboarding/bottom-panel-demo.tsx:102
 msgid "Japanese"
 msgstr "日本語"
 
-#: components/start-call.tsx:541
-#: components/start-call.tsx:670
-msgid "Job Interview"
-msgstr "面接"
-
 #: app/[lang]/time-limit/page.tsx:40
 msgid "Join Community"
 msgstr "コミュニティに参加"
+
+#: components/start-call.tsx:748
+msgid "Join or start your Zoom meeting."
+msgstr "Zoomミーティングに参加するか、開始してください。"
+
+#: components/start-call.tsx:718
+msgid "Join our <0>Discord voice channel</0> (or your own server)."
+msgstr "私たちの<0>Discordボイスチャンネル</0>（または自分のサーバー）に参加してください。"
+
+#: components/start-call.tsx:806
+msgid "Join the call in your preferred platform."
+msgstr "お好きなプラットフォームで通話に参加してください。"
+
+#: components/start-call.tsx:767
+msgid "Join the Google Meet room."
+msgstr "Google Meetルームに参加してください。"
+
+#: components/start-call.tsx:786
+msgid "Join your Microsoft Teams meeting."
+msgstr "Microsoft Teams の会議に参加します。"
+
+#: components/history/conversation-history.tsx:77
+msgid "just now"
+msgstr "たった今"
 
 #: lib/onboarding-tours.tsx:51
 msgid ""
@@ -454,16 +833,24 @@ msgid ""
 "you can speak."
 msgstr "あなたの言語でいくつかの単語を入力するだけで、すぐに会話で使える完全な文章に変えてみせます。"
 
+#: components/start-call.tsx:738
+#: components/start-call.tsx:757
+#: components/start-call.tsx:776
+#: components/start-call.tsx:795
+#: components/start-call.tsx:815
+msgid "Keep Glass open to get live help during your call."
+msgstr "通話中にライブヘルプを受けるためには、Glassを開いたままにしてください。"
+
 #: components/bottom-panel.tsx:227
 #: components/onboarding/bottom-panel-demo.tsx:103
 msgid "Korean"
 msgstr "韓国語"
 
-#: components/start-call.tsx:465
+#: components/start-call.tsx:1007
 msgid "Language Exchange • Calls"
 msgstr "言語交換・ミーティング"
 
-#: components/settings.tsx:263
+#: components/settings.tsx:270
 msgid "Learning language"
 msgstr "学習言語"
 
@@ -479,11 +866,11 @@ msgstr "さあ、始めましょう！ 🎉"
 msgid "Let's start your first conversation!"
 msgstr "最初の会話を始めましょう！"
 
-#: components/settings.tsx:325
+#: components/settings.tsx:309
 msgid "Light"
 msgstr "ライト"
 
-#: components/onboarding/bottom-panel-demo.tsx:432
+#: components/onboarding/bottom-panel-demo.tsx:430
 msgid "Listening. Say anything when you're ready."
 msgstr "聞き取り中です。準備ができたら話しかけてください。"
 
@@ -491,9 +878,27 @@ msgstr "聞き取り中です。準備ができたら話しかけてください
 msgid "Listening… say anything when you're ready."
 msgstr "聞き取り中です。準備ができたら、何でも話してください。"
 
-#: components/history/conversation-history.tsx:465
+#: components/start-call.tsx:1004
+#: components/start-call.tsx:1234
+msgid "Live Call"
+msgstr "ライブ通話"
+
+#: components/history/conversation-history.tsx:873
 msgid "Loading history…"
 msgstr "履歴を読み込んでいます…"
+
+#: components/memory/memory-table.tsx:187
+msgid "Loading memories..."
+msgstr "メモリーを読み込み中…"
+
+#: components/start-call.tsx:1062
+msgid "Loading partners..."
+msgstr "パートナーを読み込み中..."
+
+#: components/call-summary.tsx:664
+#: components/history/conversation-history.tsx:1162
+msgid "Loading partners…"
+msgstr "パートナーを読み込み中…"
 
 #: components/login-form.tsx:145
 msgid "Logging in..."
@@ -519,77 +924,146 @@ msgstr "Googleアカウントまたはメールでログインする"
 msgid "Long"
 msgstr "長い"
 
-#: components/call-summary.tsx:151
+#: components/call-summary.tsx:553
 msgid "Low"
 msgstr "低い"
 
-#: components/call-summary.tsx:560
-#: components/history/conversation-history.tsx:952
-#: components/user-menu.tsx:155
+#: app/[lang]/(app)/memory/page.tsx:28
+#: components/call-summary.tsx:1148
+#: components/history/conversation-history.tsx:1534
+#: components/memory/columns.tsx:88
+#: components/memory/memory-dialog.tsx:54
+#: components/user-menu.tsx:148
 msgid "Memory"
 msgstr "メモリー"
 
-#: app/[lang]/(app)/memory/page.tsx:28
-msgid "Memory system"
-msgstr "メモリーシステム"
+#: components/memory/columns.tsx:152
+msgid "Memory copied to clipboard"
+msgstr "メモリがクリップボードにコピーされました"
 
-#: components/settings.tsx:164
+#: components/memory/memory-table.tsx:109
+msgid "Memory created successfully"
+msgstr "メモリが正常に作成されました"
+
+#: components/memory/memory-table.tsx:57
+msgid "Memory deleted successfully"
+msgstr "メモリが正常に削除されました"
+
+#: components/memory/memory-table.tsx:126
+msgid "Memory updated successfully"
+msgstr "メモリが正常に更新されました"
+
+#: components/settings.tsx:171
 msgid "Microphone"
 msgstr "マイク"
+
+#: components/user-menu.tsx:183
+msgid "min"
+msgstr "分"
 
 #: components/signup-form.tsx:43
 msgid "Minimum 8 characters"
 msgstr "8文字以上必須"
 
+#: components/call-summary.tsx:301
+#: components/call-summary.tsx:369
+#: components/history/conversation-history.tsx:489
+#: components/history/conversation-history.tsx:502
+msgid "Missing authentication"
+msgstr "認証がありません"
+
+#: components/call-summary.tsx:384
+#: components/history/conversation-history.tsx:534
+msgid "Missing conversation"
+msgstr "会話が見つかりません"
+
+#: components/call-summary.tsx:208
+#: components/call-summary.tsx:256
+#: components/call-summary.tsx:334
+#: components/history/conversation-history.tsx:347
+#: components/history/conversation-history.tsx:402
+#: components/history/conversation-history.tsx:450
+msgid "Missing partner information"
+msgstr "パートナー情報が不足しています"
+
 #: components/reset-password-form.tsx:108
 msgid "Must be at least 8 characters long."
 msgstr "8文字以上である必要があります。"
 
-#: components/settings.tsx:240
+#: components/call-summary.tsx:1405
+#: components/history/conversation-history.tsx:1740
+#: components/start-call.tsx:1440
+#: components/start-call.tsx:1541
+msgid "Name"
+msgstr "名前"
+
+#: components/settings.tsx:247
 msgid "Native language"
 msgstr "母国語"
 
-#: components/settings.tsx:198
+#: components/settings.tsx:205
 msgid "Native script"
 msgstr "元の文字"
 
-#: components/settings.tsx:226
+#: components/settings.tsx:233
 msgid "Never"
 msgstr "決して"
+
+#: components/call-summary.tsx:735
+#: components/history/conversation-history.tsx:1233
+msgid "New {trimmedPartnerSearch}"
+msgstr "新しい{trimmedPartnerSearch}"
 
 #: components/reset-password-form.tsx:87
 msgid "New Password"
 msgstr "新しいパスワード"
 
 #: components/onboarding/glass-onboarding-card.tsx:89
-#: components/onboarding/onboarding-client.tsx:467
-#: components/onboarding/onboarding-client.tsx:526
-#: components/start-call.tsx:494
+#: components/onboarding/onboarding-client.tsx:485
+#: components/onboarding/onboarding-client.tsx:544
+#: components/start-call.tsx:1036
 msgid "Next →"
 msgstr "次へ →"
 
-#: components/call-summary.tsx:623
+#: components/call-summary.tsx:1211
 msgid "No context available yet"
 msgstr "コンテクストはまだ利用できません。"
 
-#: components/history/conversation-history.tsx:525
+#: components/history/conversation-history.tsx:934
 msgid "No conversations found"
 msgstr "会話が見つかりませんでした"
 
-#: components/history/conversation-history.tsx:628
+#: components/history/conversation-history.tsx:1040
 msgid "No conversations found for \"{debouncedSearchQuery}\""
 msgstr "「{debouncedSearchQuery}」に該当する会話は見つかりませんでした。"
 
-#: components/history/conversation-history.tsx:530
+#: components/history/conversation-history.tsx:939
 msgid "No conversations yet"
 msgstr "まだ会話がありません"
 
-#: components/call-summary.tsx:728
-#: components/history/conversation-history.tsx:1046
+#: components/call-summary.tsx:721
+#: components/history/conversation-history.tsx:1219
+msgid "No matching partners."
+msgstr "一致するパートナーが見つかりません。"
+
+#: components/call-summary.tsx:1341
+#: components/history/conversation-history.tsx:1655
 msgid "No messages"
 msgstr "メッセージはありません"
 
-#: components/onboarding/onboarding-client.tsx:595
+#: components/start-call.tsx:1066
+msgid "No partners available"
+msgstr "パートナーが利用できません"
+
+#: components/memory/data-table.tsx:191
+msgid "No results."
+msgstr "結果が見つかりません。"
+
+#: components/memory/data-table.tsx:92
+msgid "No rows selected"
+msgstr "行が選択されていません"
+
+#: components/onboarding/onboarding-client.tsx:613
 msgid "No, I'm fine"
 msgstr "いいえ、大丈夫です"
 
@@ -598,53 +1072,109 @@ msgstr "いいえ、大丈夫です"
 msgid "Off"
 msgstr "オフ"
 
+#: components/memory/columns.tsx:141
+msgid "Open menu"
+msgstr "メニューを開く"
+
 #: components/login-form.tsx:99
 #: components/signup-form.tsx:170
 msgid "Or continue with"
 msgstr "または続ける"
 
-#: components/start-call.tsx:546
-msgid "Ordering food & drinks"
-msgstr "飲食の注文"
-
-#: components/call-summary.tsx:240
-#: components/history/conversation-history.tsx:698
+#: components/call-summary.tsx:827
+#: components/history/conversation-history.tsx:1279
 msgid "Overall Score"
 msgstr "総合スコア"
 
-#: components/call-summary.tsx:679
-#: components/call-summary.tsx:681
-#: components/history/conversation-history.tsx:1023
-#: components/messages.tsx:111
-#: components/messages.tsx:160
+#: components/memory/data-table.tsx:236
+#. placeholder {0}: table.getState().pagination.pageIndex + 1
+#. placeholder {1}: table.getPageCount()
+msgid "Page {0} of {1}"
+msgstr "ページ {0} / {1}"
+
+#: components/history/conversation-history.tsx:999
+#. placeholder {0}: page + 1
+msgid "Page {0} of {totalPages}"
+msgstr "{totalPages}ページ中{0}ページ目"
+
+#: components/call-summary.tsx:410
+#: components/call-summary.tsx:467
+#: components/call-summary.tsx:611
+#: components/call-summary.tsx:641
+#: components/call-summary.tsx:752
+#: components/call-summary.tsx:1387
+#: components/history/conversation-history.tsx:842
+#: components/history/conversation-history.tsx:864
+#: components/history/conversation-history.tsx:1109
+#: components/history/conversation-history.tsx:1139
+#: components/history/conversation-history.tsx:1250
+#: components/history/conversation-history.tsx:1722
+#: components/messages.tsx:116
+#: components/messages.tsx:149
+#: components/start-call.tsx:1249
+#: components/start-call.tsx:1422
+#: components/start-call.tsx:1523
 msgid "Partner"
 msgstr "相手"
+
+#: components/call-summary.tsx:323
+#: components/history/conversation-history.tsx:524
+msgid "Partner created"
+msgstr "パートナーが作成しました"
+
+#: components/call-summary.tsx:356
+#: components/history/conversation-history.tsx:477
+#: components/start-call.tsx:648
+msgid "Partner deleted"
+msgstr "パートナーが削除されました"
+
+#: components/call-summary.tsx:260
+#: components/history/conversation-history.tsx:406
+msgid "Partner name is required"
+msgstr "パートナー名は必須です"
+
+#: components/call-summary.tsx:291
+#: components/history/conversation-history.tsx:440
+#: components/start-call.tsx:613
+msgid "Partner updated"
+msgstr "パートナーが更新されました"
 
 #: components/login-form.tsx:119
 #: components/signup-form.tsx:201
 msgid "Password"
 msgstr "パスワード"
 
-#: components/start-call.tsx:542
-#: components/start-call.tsx:685
-msgid "Phone Call"
-msgstr "電話"
+#: components/call-summary.tsx:1399
+#: components/history/conversation-history.tsx:1734
+#: components/start-call.tsx:1434
+#: components/start-call.tsx:1535
+msgid "Photo"
+msgstr "写真"
+
+#: components/call-summary.tsx:241
+#: components/history/conversation-history.tsx:388
+msgid "Photo updated"
+msgstr "写真が更新されました"
+
+#: components/start-call.tsx:812
+msgid "Pick the window/tab for that platform and turn on system or tab audio."
+msgstr "そのプラットフォームのウィンドウまたはタブを選択し、システムまたはタブのオーディオをオンにしてください。"
 
 #: components/feedback.tsx:31
 msgid "Please enter your feedback"
 msgstr "フィードバックを入力してください"
 
-#: contexts/glass-context.tsx:993
+#: contexts/glass-context.tsx:1022
 msgid "Please refresh the page and try again."
 msgstr "ページを再読み込みして、もう一度お試しください。"
 
-#: contexts/glass-context.tsx:808
+#: contexts/glass-context.tsx:837
 msgid ""
 "Please share your screen with audio from your call platform (Zoom, Google "
 "Meet, Teams)."
 msgstr "Zoom、Google Meet、Teamsなどの通話プラットフォームからオーディオ付きで画面を共有してください。"
 
-#: contexts/glass-context.tsx:692
+#: contexts/glass-context.tsx:722
 msgid "Please wait for session to load and try again."
 msgstr "セッションの読み込みを待ってから、もう一度お試しください。"
 
@@ -652,39 +1182,23 @@ msgstr "セッションの読み込みを待ってから、もう一度お試し
 msgid "Please wait while we verify your email address"
 msgstr "メールアドレスを確認していますので、しばらくお待ちください"
 
-#: components/start-call.tsx:402
-msgid "Practice"
-msgstr "練習"
-
-#: components/start-call.tsx:633
-msgid "Practice Mode"
-msgstr "練習モード"
+#: components/start-call.tsx:947
+msgid "Practice Conversations"
+msgstr "会話練習"
 
 #: components/auth-gate.tsx:20
 msgid "Preparing your workspace…"
 msgstr "作業スペースを準備中…"
 
-#: components/start-call.tsx:547
-msgid "Professional conversation"
-msgstr "ビジネス会話"
-
-#: components/settings.tsx:187
+#: components/settings.tsx:194
 msgid "Pronunciation"
 msgstr "発音"
 
-#: components/start-call.tsx:462
-msgid "Real Talk"
-msgstr "リアルトーク"
-
-#: components/start-call.tsx:633
-msgid "Real Talk Mode"
-msgstr "リアルトークモード"
-
-#: components/start-call.tsx:427
+#: components/start-call.tsx:969
 msgid "RECOMMENDED"
 msgstr "おすすめ"
 
-#: components/verify-email-form.tsx:132
+#: components/verify-email-form.tsx:130
 msgid "Redirecting to login in {countdown} seconds..."
 msgstr "{countdown}秒後にログイン画面にリダイレクトします..."
 
@@ -716,12 +1230,8 @@ msgstr "パスワードをリセットしてください"
 msgid "Resetting..."
 msgstr "リセットしています..."
 
-#: components/start-call.tsx:540
-#: components/start-call.tsx:665
-msgid "Restaurant"
-msgstr "レストラン"
-
-#: components/history/conversation-history.tsx:478
+#: app/[lang]/error.tsx:28
+#: components/history/conversation-history.tsx:886
 msgid "Retry"
 msgstr "再試行"
 
@@ -729,28 +1239,94 @@ msgstr "再試行"
 msgid "Return to login"
 msgstr "ログイン画面に戻る"
 
-#: components/settings.tsx:201
+#: components/call-summary.tsx:212
+#: components/history/conversation-history.tsx:355
+msgid "Roleplay conversations cannot change partner images"
+msgstr "ロールプレイの会話では、相手の画像を変更できません。"
+
+#: components/settings.tsx:208
 msgid "Romaji (Latin)"
 msgstr "ローマ字（ラテン文字）"
 
-#: components/call-summary.tsx:746
+#: components/memory/data-table.tsx:215
+msgid "Rows per page"
+msgstr "1ページあたりの行数"
+
+#: components/call-summary.tsx:1461
+#: components/history/conversation-history.tsx:1796
+#: components/start-call.tsx:1581
+msgid "Save"
+msgstr "保存"
+
+#: components/call-summary.tsx:1359
 msgid "Save Call"
 msgstr "通話を保存"
 
-#: components/start-call.tsx:648
-#: components/start-call.tsx:655
+#: components/memory/memory-dialog.tsx:100
+msgid "Saving..."
+msgstr "保存中..."
+
+#: components/start-call.tsx:1261
 msgid "Scenario:"
 msgstr "シナリオ:"
 
-#: contexts/glass-context.tsx:807
+#: contexts/glass-context.tsx:836
 msgid "Screen audio sharing required"
 msgstr "画面と音声の共有が必要です"
 
-#: components/history/conversation-history.tsx:630
+#: components/history/conversation-history.tsx:901
+msgid "Search conversations..."
+msgstr "会話を検索..."
+
+#: components/memory/data-table.tsx:109
+msgid "Search memories..."
+msgstr "思い出を検索..."
+
+#: components/call-summary.tsx:625
+#: components/history/conversation-history.tsx:1123
+msgid "Search partners"
+msgstr "検索パートナー"
+
+#: components/history/conversation-history.tsx:351
+msgid "Select a conversation first"
+msgstr "まずは会話を選択してください"
+
+#: components/start-call.tsx:682
+#: components/start-call.tsx:687
+#: components/start-call.tsx:1055
+msgid "Select a conversation partner"
+msgstr "会話相手を選ぶ"
+
+#: components/history/conversation-history.tsx:1042
 msgid "Select a conversation to view details"
 msgstr "詳細を確認するには会話を選択してください"
 
-#: components/onboarding/onboarding-client.tsx:438
+#: components/start-call.tsx:668
+msgid "Select a mode to continue"
+msgstr "続行するモードを選択してください"
+
+#: components/call-summary.tsx:658
+#: components/history/conversation-history.tsx:1156
+msgid "Select a partner"
+msgstr "パートナーを選択"
+
+#: components/start-call.tsx:1267
+msgid "Select a partner to see details."
+msgstr "パートナーを選んで詳細を表示してください。"
+
+#: components/memory/columns.tsx:34
+msgid "Select all"
+msgstr "すべて選択"
+
+#: components/memory/columns.tsx:43
+msgid "Select row"
+msgstr "行を選択"
+
+#: components/start-call.tsx:773
+msgid "Select the Chrome tab with Meet, toggle Share tab audio, and confirm."
+msgstr "MeetのChromeタブを選択し、「タブの音声を共有」を切り替え、確認してください。"
+
+#: components/onboarding/onboarding-client.tsx:456
 msgid "Select the language you speak fluently"
 msgstr "流暢に話せる言語を選択してください"
 
@@ -774,20 +1350,16 @@ msgstr "送信中..."
 msgid "Sentence length"
 msgstr "文章の長さ"
 
-#: components/settings.tsx:152
-#: components/user-menu.tsx:160
+#: components/settings.tsx:159
+#: components/user-menu.tsx:153
 msgid "Settings"
 msgstr "設定"
-
-#: components/start-call.tsx:675
-msgid "Shopping"
-msgstr "ショッピング"
 
 #: components/bottom-panel.tsx:245
 msgid "Short"
 msgstr "短い"
 
-#: components/user-menu.tsx:169
+#: components/user-menu.tsx:162
 msgid "Sign out"
 msgstr "ログアウト"
 
@@ -820,22 +1392,23 @@ msgstr "スペイン語"
 msgid "Star on GitHub"
 msgstr "GitHubでStarを付ける"
 
-#: components/start-call.tsx:617
-#: components/start-call.tsx:734
-msgid "Start"
-msgstr "開始"
-
-#: components/start-call.tsx:340
-#: components/start-call.tsx:357
+#: components/start-call.tsx:882
+#: components/start-call.tsx:899
+#: components/start-call.tsx:1218
+#: components/start-call.tsx:1343
 msgid "Start Call"
 msgstr "通話を開始"
 
-#: components/onboarding/onboarding-client.tsx:624
+#: components/onboarding/onboarding-client.tsx:642
 msgid "Start Tutorial"
 msgstr "チュートリアルを開始する"
 
+#: components/memory/columns.tsx:108
+msgid "Status"
+msgstr "ステータス"
+
 #: components/bottom-panel.tsx:417
-#: components/onboarding/bottom-panel-demo.tsx:332
+#: components/onboarding/bottom-panel-demo.tsx:330
 msgid "Suggest"
 msgstr "提案"
 
@@ -844,64 +1417,101 @@ msgstr "提案"
 msgid "Suggested Answer"
 msgstr "おすすめの回答"
 
-#: components/settings.tsx:172
+#: components/settings.tsx:179
 msgid "System default"
 msgstr "システムデフォルト"
-
-#: components/start-call.tsx:548
-msgid "Telephone etiquette"
-msgstr "電話応対マナー"
 
 #: components/feedback.tsx:53
 msgid "Thank you for your feedback!"
 msgstr "ご意見いただきありがとうございます！"
 
-#: components/verify-email-form.tsx:123
+#: components/verify-email-form.tsx:122
 msgid "The verification link is invalid or has expired."
 msgstr "確認リンクが無効または期限切れです。"
 
-#: components/settings.tsx:309
+#: components/settings.tsx:293
 msgid "Theme"
 msgstr "テーマ"
 
-#: contexts/glass-context.tsx:945
+#: components/start-call.tsx:1599
+msgid "This action cannot be undone."
+msgstr "この操作は取り消せません。"
+
+#: components/memory/memory-table.tsx:275
+#. placeholder {0}: memoriesToDelete?.length ?? 0
+msgid ""
+"This action will permanently delete {0} selected memories. This cannot be "
+"undone."
+msgstr "この操作を行うと、選択された{0}件のメモリーが完全に削除されます。この操作は元に戻すことができません。"
+
+#: components/history/conversation-history.tsx:867
+msgid "this conversation"
+msgstr "この会話"
+
+#: components/memory/memory-table.tsx:240
+msgid "This will permanently remove the selected memory from your knowledge graph."
+msgstr "これにより、選択したメモリがナレッジグラフから永久に削除されます。"
+
+#: components/history/conversation-history.tsx:682
+msgid "Title updated"
+msgstr "タイトルが更新されました"
+
+#: contexts/glass-context.tsx:974
 msgid "Trial session ended due to time limit."
 msgstr "時間制限によりトライアルセッションが終了しました。"
 
-#: app/[lang]/error.tsx:34
 #: app/[lang]/failure/page.tsx:32
 msgid "Try again"
 msgstr "もう一度お試しください"
-
-#: components/start-call.tsx:405
-msgid "Tutorial with AI"
-msgstr "AIチュートリアル"
 
 #: components/bottom-panel.tsx:235
 #: components/onboarding/bottom-panel-demo.tsx:110
 msgid "Type what you want to say in {nativeLangName}"
 msgstr "{nativeLangName}で言いたいことを入力してください"
 
-#: components/settings.tsx:286
-msgid "UI Language"
-msgstr "UI言語"
-
-#: contexts/glass-context.tsx:691
-#: contexts/glass-context.tsx:699
+#: contexts/glass-context.tsx:721
+#: contexts/glass-context.tsx:729
 msgid "Unable to connect"
 msgstr "接続できませんでした。"
 
-#: components/call-summary.tsx:111
+#: components/start-call.tsx:467
+msgid "Unable to create a partner"
+msgstr "パートナーを作成できませんでした"
+
+#: components/start-call.tsx:651
+msgid "Unable to delete partner"
+msgstr "パートナーを削除できません"
+
+#: components/call-summary.tsx:513
 msgid "Unable to load context from Zep."
 msgstr "Zepからコンテキストを読み込めません。"
 
-#: components/start-call.tsx:277
+#: components/start-call.tsx:541
+#: components/start-call.tsx:579
+#: components/start-call.tsx:587
+#: components/start-call.tsx:617
+msgid "Unable to save partner"
+msgstr "パートナーを保存できません"
+
+#: components/start-call.tsx:704
 msgid "Unable to start call"
 msgstr "通話を開始できませんでした"
 
-#: components/start-call.tsx:475
+#: components/start-call.tsx:1017
 msgid "Unavailable on mobile"
 msgstr "モバイルでは利用できません"
+
+#: components/history/conversation-history.tsx:1069
+msgid "Untitled Conversation"
+msgstr "無題の会話"
+
+#: components/memory/memory-dialog.tsx:102
+msgid "Update"
+msgstr "更新"
+
+#: components/start-call.tsx:1499
+msgid "Update your custom partner details."
+msgstr "カスタムパートナー情報を更新してください。"
 
 #: components/verify-email-form.tsx:113
 msgid "Verification failed"
@@ -911,15 +1521,11 @@ msgstr "確認に失敗しました"
 msgid "Verifying your email..."
 msgstr "メールアドレスを確認しています…"
 
-#: app/[lang]/error.tsx:30
-msgid "View Documentation"
-msgstr "ドキュメントを見る"
-
 #: app/[lang]/time-limit/page.tsx:26
 msgid "Want to keep practicing?"
 msgstr "練習を続けますか？"
 
-#: components/history/conversation-history.tsx:474
+#: components/history/conversation-history.tsx:882
 msgid "We couldn't load your history. Refresh and try again."
 msgstr "履歴を読み込めませんでした。画面を更新して、もう一度お試しください。"
 
@@ -929,7 +1535,7 @@ msgid ""
 "again."
 msgstr "セッションを開始できませんでした。インターネット接続を確認して、もう一度お試しください。"
 
-#: components/onboarding/onboarding-client.tsx:545
+#: components/onboarding/onboarding-client.tsx:563
 msgid "We'll show how to read sentences in your alphabet when helpful"
 msgstr "必要に応じて、あなたのアルファベットで文の読み方をお見せします。"
 
@@ -946,26 +1552,31 @@ msgstr "お帰りなさい"
 msgid "What do you want to say..."
 msgstr "何を言いたいですか..."
 
-#: components/onboarding/onboarding-client.tsx:435
+#: components/onboarding/onboarding-client.tsx:453
 msgid "What is your native language?"
 msgstr "母国語は何ですか？"
 
-#: components/start-call.tsx:513
-msgid "What would you like to practice?"
-msgstr "どんな練習をしてみたいですか？"
+#: components/memory/memory-dialog.tsx:67
+msgid "What would you like to remember?"
+msgstr "どんなことを覚えておきたいですか？"
 
-#: components/onboarding/onboarding-client.tsx:481
+#: components/onboarding/onboarding-client.tsx:499
 msgid "Which language do you want to learn?"
 msgstr "どの言語を学びたいですか？"
 
-#: components/onboarding/onboarding-client.tsx:563
+#: components/memory/data-table.tsx:98
+#. placeholder {0}: selectedRows.length
+msgid "Would delete {0} memories"
+msgstr "{0}件のメモリーを削除します"
+
+#: components/onboarding/onboarding-client.tsx:581
 msgid "Yes, show pronunciation"
 msgstr "はい、発音を表示します"
 
-#: components/call-summary.tsx:677
-#: components/history/conversation-history.tsx:1023
-#: components/messages.tsx:111
-#: components/messages.tsx:160
+#: components/call-summary.tsx:408
+#: components/history/conversation-history.tsx:840
+#: components/messages.tsx:116
+#: components/messages.tsx:146
 msgid "You"
 msgstr "自分"
 
@@ -977,13 +1588,13 @@ msgstr "準備完了です！"
 msgid "You're ready to have real conversations. No fear, no hesitation."
 msgstr "本物の会話をする準備ができました。恐れることも、ためらうこともありません。"
 
-#: contexts/glass-context.tsx:953
+#: contexts/glass-context.tsx:982
 msgid "You've used your free time"
 msgstr "無料の時間を使い切りました"
 
-#: contexts/glass-context.tsx:1563
-#: contexts/glass-context.tsx:1615
-#: contexts/glass-context.tsx:1630
+#: contexts/glass-context.tsx:1596
+#: contexts/glass-context.tsx:1652
+#: contexts/glass-context.tsx:1667
 msgid "Your conversation has been saved and is now available in History."
 msgstr "ご利用の会話は保存され、履歴で利用可能になりました。"
 
@@ -1007,396 +1618,131 @@ msgstr "あなたの思い出"
 msgid "Your saved calls"
 msgstr "保存された通話"
 
-#: components/start-call.tsx:702
-#~ msgid "⚠️ Make sure to enable \"Share audio\""
-#~ msgstr "⚠️ 「オーディオ共有」がオンになっているか確認してください"
-
-#: components/call-summary.tsx:719
-#~ msgid "✓ Successfully saved! Redirecting..."
-#~ msgstr "✓ 保存しました。自動的に移動します..."
-
-#: components/start-call.tsx:690
-#~ msgid "1. Open your meeting (Zoom, Google Meet, or Teams)"
-#~ msgstr "1. Zoom、Google Meet、またはTeamsでミーティングを開いてください"
-
-#: components/settings.tsx:211
-#~ msgid "10 seconds"
-#~ msgstr "10秒"
-
-#: components/settings.tsx:232
-#~ msgid "10 seconds (default)"
-#~ msgstr "10秒（デフォルト）"
-
-#: components/settings.tsx:235
-#~ msgid "15 seconds"
-#~ msgstr "15秒"
-
-#: components/settings.tsx:214
-#~ msgid "20 seconds"
-#~ msgstr "20秒"
-
-#: components/start-call.tsx:696
-#~ msgid "3. Share your meeting tab"
-#~ msgstr "3. ミーティングのタブを共有してください"
-
-#: components/settings.tsx:217
-#~ msgid "30 seconds"
-#~ msgstr "30秒"
-
-#: components/start-call.tsx:699
-#~ msgid "4. Make sure to enable \"Share audio\""
-#~ msgstr "4. 「オーディオ共有」がオンになっているか確認してください"
-
-#: components/settings.tsx:208
-#~ msgid "5 seconds"
-#~ msgstr "5秒"
-
-#: lib/onboarding-tours.tsx:73
-#~ msgid ""
-#~ "After the conversation, I'll analyze your grammar, pronunciation, and "
-#~ "vocabulary—giving you personalized feedback to help you improve naturally."
-#~ msgstr ""
-
-#: components/settings.tsx:187
-#~ msgid "AI message duration"
-#~ msgstr "AIメッセージの表示時間"
-
-#: lib/onboarding-tours.tsx:63
-#~ msgid ""
-#~ "As I listen to the conversation, everything I do to help you will appear "
-#~ "right here."
-#~ msgstr "会話を聞いている間に、あなたをサポートするための私のすべての活動がここに表示されます。"
-
-#: components/settings.tsx:250
-#~ msgid "Auto-detected from browser. Your selection will be saved and remembered."
-#~ msgstr "ブラウザから自動検出しました。選択内容は保存され、次回以降も反映されます。"
-
-#: app/[lang]/waitlist/success/page.tsx:77
-#~ msgid "Back to Home"
-#~ msgstr "ホームに戻る"
-
-#: contexts/glass-context.tsx:1497
-#~ msgid "Call ended"
-#~ msgstr "通話終了"
-
-#: components/start-call.tsx:503
-#~ msgid "Choose Your Languages"
-#~ msgstr "言語を選択してください"
-
-#: lib/onboarding-tours.tsx:110
-#~ msgid "Congrats! You're all set."
-#~ msgstr "おめでとうございます！準備が整いました。"
-
-#: lib/onboarding-tours.tsx:53
-#~ msgid ""
-#~ "Don't know how to say something? Just type what you want to say in your "
-#~ "language, and I'll instantly translate it so you can speak with confidence."
-#~ msgstr ""
-
-#: components/history/conversation-history.tsx:126
-#~ msgid "Duration:"
-#~ msgstr ""
-
-#: components/waitlist-modal.tsx:232
-#~ msgid "Enter your email"
-#~ msgstr "メールアドレスを入力してください"
-
-#: components/bottom-panel.tsx:37
-#~ msgid "Follow-up Suggestion"
-#~ msgstr "フォローアップの提案"
-
-#: components/bottom-panel.tsx:462
-#~ msgid "German"
-#~ msgstr "ドイツ語"
-
-#: components/waitlist-modal.tsx:193
-#~ msgid "Gets smarter every time you speak"
-#~ msgstr "話すたびに賢くなっていきます"
-
-#: components/waitlist-modal.tsx:167
-#~ msgid "Glass AI helps you speak any language in the real world"
-#~ msgstr "Glass AIは、実生活でどんな言語でも話せるようにサポートします"
-
-#: lib/onboarding-tours.tsx:31
-#~ msgid "I listen to your conversation"
-#~ msgstr "あなたの会話を聞き取ります"
-
-#: lib/onboarding-tours.tsx:34
-#~ msgid ""
-#~ "I listen to your conversation in real-time and translate what they say, so "
-#~ "you never miss a word."
-#~ msgstr ""
-
-#: components/start-call.tsx:543
-#~ msgid "I speak"
-#~ msgstr "私は話します"
-
-#: components/start-call.tsx:514
-#~ msgid "I want to learn"
-#~ msgstr "話せる言語"
-
-#: lib/onboarding-tours.tsx:70
-#~ msgid "I'll give you feedback"
-#~ msgstr "フィードバックをお伝えします"
-
-#: lib/onboarding-tours.tsx:53
-#~ msgid ""
-#~ "I'll listen and help here. I'll suggest what to say next, so just say it. I "
-#~ "remember a bit from our chats to get better over time."
-#~ msgstr "ここで会話を聞いてサポートします。次に何を言えばいいか提案するので、そのまま話してください。これまでの会話を少し覚えて、だんだんと良くなっていきます。"
-
-#: lib/onboarding-tours.tsx:34
-#~ msgid ""
-#~ "I'll listen to you and your partner, and translate what they say so you can "
-#~ "understand each other."
-#~ msgstr "あなたとパートナーの会話を聞き取り、お互いの言葉を理解できるように翻訳します。"
-
-#: lib/onboarding-tours.tsx:80
-#~ msgid "I'll suggest what to say next"
-#~ msgstr "次に言うことを提案します"
-
-#: lib/onboarding-tours.tsx:83
-#~ msgid ""
-#~ "I'll suggest what you could say next, so just read it out loud. The more I "
-#~ "learn about you, the better my suggestions will get."
-#~ msgstr "次に言うと良いフレーズを提案しますので、そのまま声に出して読んでみてください。あなたのことを知るほど、提案もどんどん自然になります。"
-
-#: lib/onboarding-tours.tsx:23
-#~ msgid ""
-#~ "I'm here to help you communicate and learn a new language through real "
-#~ "conversations and practice."
-#~ msgstr "実際の会話や練習を通じて、新しい言語でスムーズに話せるようお手伝いします。"
-
-#: lib/onboarding-tours.tsx:103
-#~ msgid ""
-#~ "If you say something that sounds a bit off, I'll let you know and help you "
-#~ "fix it."
-#~ msgstr "少し不自然に聞こえる表現があれば、それを教えて自然な言い方に直せるようサポートします。"
-
-#: lib/onboarding-tours.tsx:73
-#~ msgid ""
-#~ "If your grammar, pronunciation, or word choice is off, I'll flag it and "
-#~ "suggest a clearer, more natural option."
-#~ msgstr "文法や発音、言い回しが不自然なときはお知らせして、よりわかりやすく自然な言い方を提案します。"
-
-#: components/bottom-panel.tsx:463
-#~ msgid "Italian"
-#~ msgstr "イタリア語"
-
-#: components/waitlist-modal.tsx:295
-#~ msgid "Join Early Access"
-#~ msgstr "早期アクセスに参加する"
-
-#: components/waitlist-modal.tsx:291
-#~ msgid "Joining..."
-#~ msgstr "参加中..."
-
-#: components/settings.tsx:227
-#~ msgid "Language"
-#~ msgstr "言語"
-
-#: components/onboarding/onboarding-client.tsx:460
-#~ msgid "Make suggestions readable for me"
-#~ msgstr "提案を読みやすく表示してください"
-
-#: components/settings.tsx:150
-#~ msgid "Microphone {0}"
-#~ msgstr "マイク {0}"
-
-#: components/waitlist-modal.tsx:91
-#~ msgid "Network error. Please check your connection and try again."
-#~ msgstr "ネットワークエラーです。接続を確認してからもう一度お試しください。"
-
-#: components/call-summary.tsx:626
-#~ msgid "No information saved yet"
-#~ msgstr "まだ情報は保存されていません"
-
-#: components/settings.tsx:205
-#~ msgid "No time limit (default)"
-#~ msgstr "時間制限なし（デフォルト）"
-
-#: lib/onboarding-tours.tsx:51
-#~ msgid ""
-#~ "Not sure what to say? Just type a few words in your language. I'll turn "
-#~ "them into a full sentence you can use."
-#~ msgstr ""
-
-#: lib/onboarding-tours.tsx:117
-#~ msgid "Now let's start your first real conversation!"
-#~ msgstr "それでは、最初の本当の会話を始めましょう！"
-
-#: lib/onboarding-tours.tsx:94
-#~ msgid "Now you're ready to have real conversations without fear or hesitation."
-#~ msgstr ""
-
-#: components/waitlist-modal.tsx:46
-#~ msgid "Please enter a valid email address"
-#~ msgstr "有効なメールアドレスを入力してください。"
-
-#: components/bottom-panel.tsx:464
-#~ msgid "Portuguese"
-#~ msgstr "ポルトガル語"
-
-#: components/waitlist-modal.tsx:216
-#~ msgid "Practice mode or live on Zoom calls"
-#~ msgstr "練習モードまたはZoomでのライブ通話"
-
-#: components/waitlist-modal.tsx:170
-#~ msgid "Practice speaking. Get help in real calls. Remembers everything."
-#~ msgstr "話す練習ができて、実際の会議でもサポートします。会話の内容もすべて記憶します。"
-
-#: components/settings.tsx:160
-#~ msgid "Pronunciation format"
-#~ msgstr "発音の表示形式"
-
-#: lib/onboarding-tours.tsx:90
-#~ msgid "Quick translation"
-#~ msgstr "クイック翻訳"
-
-#: components/settings.tsx:125
-#~ msgid "Refresh"
-#~ msgstr "更新"
-
-#: components/waitlist-modal.tsx:196
-#~ msgid "Remembers who you are, what you care about"
-#~ msgstr "あなたがどんな人で、何を大切にしているかを覚えます"
-
-#: components/start-call.tsx:1011
-#~ msgid "Retail & bargaining"
-#~ msgstr "買い物・値段交渉"
-
-#: components/history/conversation-history.tsx:678
-#~ msgid "Select a conversation to view the transcript and AI feedback."
-#~ msgstr ""
-
-#: components/start-call.tsx:506
-#~ msgid "Select the language you want to practice"
-#~ msgstr "練習したい言語を選んでください"
-
-#: components/onboarding/onboarding-client.tsx:493
-#~ msgid "Show suggestions only"
-#~ msgstr "提案のみ表示"
-
-#: components/settings.tsx:211
-#~ msgid "Suggestion duration"
-#~ msgstr "提案の表示時間"
-
-#: app/[lang]/waitlist/success/page.tsx:66
-#~ msgid ""
-#~ "Thanks for joining. We’ll email you when more access is available. Sit "
-#~ "tight — it won’t be long."
-#~ msgstr "ご参加いただきありがとうございます。アクセス可能になりましたらメールでお知らせしますので、しばらくお待ちください。まもなくご案内いたします。"
-
-#: lib/onboarding-tours.tsx:50
-#~ msgid "This is where I help and suggest what to say"
-#~ msgstr "ここで、何を言えばいいか提案してお手伝いします。"
-
-#: lib/onboarding-tours.tsx:60
-#~ msgid "This is where I help you"
-#~ msgstr "ここで私がお手伝いします"
-
-#: components/bottom-panel.tsx:468
-#~ msgid "To {langName}..."
-#~ msgstr "{langName}へ..."
-
-#: components/bottom-panel.tsx:468
-#~ msgid "Translate to {langName}..."
-#~ msgstr "{langName}に翻訳…"
-
-#: components/bottom-panel.tsx:337
-#: components/bottom-panel.tsx:790
-#~ msgid "Translation"
-#~ msgstr "翻訳"
-
-#: components/history/conversation-history.tsx:164
-#~ msgid "Translation:"
-#~ msgstr ""
-
-#: components/start-call.tsx:993
-#~ msgid "Travel & Immigration"
-#~ msgstr "旅行・入国手続き"
-
-#: lib/onboarding-tours.tsx:143
-#~ msgid ""
-#~ "Type what you want to say in your language, or even just a few keywords. "
-#~ "I'll listen to the conversation and suggest the right sentence for you."
-#~ msgstr "自分の言葉でメッセージを書いてみてください。キーワードだけでも大丈夫です。会話を聞いて、ぴったりの文を提案しますね。"
-
-#: components/waitlist-modal.tsx:246
-#~ msgid "Waitlist Email Captured"
-#~ msgstr "ウェイトリストへのメールアドレス登録完了"
-
-#: components/waitlist-modal.tsx:54
-#~ msgid "Waitlist Submit Attempted"
-#~ msgstr "ウェイリストの提出を試みました"
-
-#: components/waitlist-modal.tsx:83
-#: components/waitlist-modal.tsx:92
-#~ msgid "Waitlist Submit Failed"
-#~ msgstr "ウェイトリストの登録に失敗しました"
-
-#: components/waitlist-modal.tsx:79
-#~ msgid "Waitlist Submit Succeeded"
-#~ msgstr "ウェイリストの送信が完了しました。"
-
-#: lib/onboarding-tours.tsx:93
-#~ msgid ""
-#~ "Want to say something but don't know the sentence? Type in your language or "
-#~ "a few keywords. I'll show the translation."
-#~ msgstr "何か言いたいけど、どう言えばいいかわからない？ お使いの言語で書くか、いくつかキーワードを入力してください。翻訳を表示します。"
-
-#: components/history/conversation-history.tsx:74
-#~ msgid "We couldn’t load your history. Refresh and try again."
-#~ msgstr ""
-
-#: components/waitlist-modal.tsx:82
-#~ msgid "We had trouble adding you. Please try again later."
-#~ msgstr "追加できませんでした。時間を置いてもう一度お試しください。"
-
-#: components/waitlist-modal.tsx:302
-#~ msgid "We'll notify you when early access is ready. No spam, ever."
-#~ msgstr "早期アクセスの準備が整い次第お知らせします。スパムは一切送りません。"
-
-#: components/onboarding/onboarding-client.tsx:439
-#~ msgid "We'll show how to read suggestions in your alphabet when helpful"
-#~ msgstr "必要に応じて、あなたが使う文字で提案の読み方を表示します。"
-
-#: components/waitlist-modal.tsx:213
-#~ msgid "Works in real calls"
-#~ msgstr "実際の会議でも使えます"
-
-#: lib/onboarding-tours.tsx:120
-#~ msgid "You can control how much I help"
-#~ msgstr "どのくらいサポートするかを調整できます"
-
-#: lib/onboarding-tours.tsx:123
-#~ msgid ""
-#~ "You can turn my suggestions and feedback on, off, or keep it on auto. By "
-#~ "default, it's set to auto."
-#~ msgstr "提案やフィードバックはオン・オフ、または自動に切り替えられます。デフォルトでは自動に設定されています。"
-
-#: lib/onboarding-tours.tsx:91
-#~ msgid ""
-#~ "You'll get a report like this with your scores, feedback, and everything we "
-#~ "talked about. Track your progress over time!"
-#~ msgstr ""
-
-#: app/[lang]/waitlist/success/page.tsx:63
-#~ msgid "You’re on the list 🎉"
-#~ msgstr "リストに追加されました🎉"
-
-#: lib/onboarding-tours.tsx:114
-#~ msgid "You've completed the tour and learned how I work."
-#~ msgstr "ツアーが完了しました。これで私の使い方がわかりましたね。"
-
-#: contexts/glass-context.tsx:1498
-#~ msgid "Your conversation is being saved and will appear in history shortly."
-#~ msgstr "会話が保存されており、まもなく履歴に表示されます。"
-
-#: app/[lang]/(auth)/verify-email/page.tsx:81
-#~ msgid "Your email ({email}) has been successfully verified."
-#~ msgstr "あなたのメールアドレス（{email}）が確認されました。"
-
-#: components/history/conversation-history.tsx:219
-#~ msgid "Your recorded conversations will appear here once a call ends."
-#~ msgstr "通話が終了すると、録音された会話がここに表示されます。"
+#: components/start-call.tsx:771
+#~ msgid "• Browser tab → Enable \"Share tab audio\""
+#~ msgstr "• ブラウザのタブ →「タブの音声を共有」を有効にする"
+
+#: components/start-call.tsx:774
+#~ msgid "• Desktop app → Enable \"Share system audio\""
+#~ msgstr "• デスクトップアプリ → 「システムオーディオを共有」を有効にする"
+
+#: components/start-call.tsx:760
+#~ msgid "1. Join a Discord voice chat or online call"
+#~ msgstr "1. Discordのボイスチャットやオンライン通話に参加する"
+
+#: components/start-call.tsx:763
+#~ msgid "2. Click \"Start\" below"
+#~ msgstr "2. 下の「開始」ボタンをクリックしてください"
+
+#: components/start-call.tsx:767
+#~ msgid "3. Share your tab or screen with audio:"
+#~ msgstr "3. 音声付きでタブまたは画面を共有する:"
+
+#: components/start-call.tsx:779
+#~ msgid "4. Start talking and let Glass assist you"
+#~ msgstr "4. 話し始めて、Glassにサポートしてもらいましょう"
+
+#: components/start-call.tsx:721
+#~ msgid "Airport Check-in"
+#~ msgstr "空港チェックイン"
+
+#: components/memory/memory-table.tsx:116
+#~ msgid "Are you sure you want to delete {0} memories?"
+#~ msgstr "本当に{0}件のメモリーを削除してもよろしいですか？"
+
+#: components/memory/memory-table.tsx:109
+#~ msgid "Are you sure you want to delete this memory?"
+#~ msgstr "このメモリを削除してよろしいですか？"
+
+#: components/start-call.tsx:741
+#~ msgid "Casual Chat"
+#~ msgstr "カジュアルな会話"
+
+#: components/start-call.tsx:510
+#~ msgid "Choose a scenario"
+#~ msgstr "シナリオを選択してください"
+
+#: components/start-call.tsx:610
+#~ msgid "Custom"
+#~ msgstr "カスタム"
+
+#: components/start-call.tsx:572
+#~ msgid "Custom Scenario"
+#~ msgstr "カスタムシナリオ"
+
+#: components/start-call.tsx:590
+#~ msgid "Describe the scenario you want to roleplay..."
+#~ msgstr "ロールプレイしたいシナリオを詳しく説明してください…"
+
+#: components/start-call.tsx:649
+#~ msgid "Describe them (role, personality, background)..."
+#~ msgstr "彼らの役割や性格、背景を説明してください。"
+
+#: components/start-call.tsx:575
+#~ msgid "Describe your own situation"
+#~ msgstr "あなたの状況を教えてください。"
+
+#: components/start-call.tsx:545
+#~ msgid "Everyday conversation"
+#~ msgstr "日常会話"
+
+#: components/start-call.tsx:756
+#~ msgid "Follow these steps:"
+#~ msgstr "以下の手順に従ってください。"
+
+#: components/user-menu.tsx:133
+#~ msgid "Free minutes"
+#~ msgstr "無料通話分"
+
+#: components/start-call.tsx:731
+#~ msgid "Job Interview"
+#~ msgstr "面接"
+
+#: app/[lang]/(app)/memory/page.tsx:28
+#~ msgid "Memory system"
+#~ msgstr "メモリーシステム"
+
+#: components/start-call.tsx:635
+#~ msgid "Name (e.g., Alex, Maria)..."
+#~ msgstr "名前（例: Alex, Maria）..."
+
+#: components/start-call.tsx:546
+#~ msgid "Ordering food & drinks"
+#~ msgstr "飲食の注文"
+
+#: components/start-call.tsx:746
+#~ msgid "Phone Call"
+#~ msgstr "電話"
+
+#: components/start-call.tsx:547
+#~ msgid "Professional conversation"
+#~ msgstr "ビジネス会話"
+
+#: components/start-call.tsx:726
+#~ msgid "Restaurant"
+#~ msgstr "レストラン"
+
+#: components/start-call.tsx:736
+#~ msgid "Shopping"
+#~ msgstr "ショッピング"
+
+#: components/start-call.tsx:678
+#: components/start-call.tsx:795
+#~ msgid "Start"
+#~ msgstr "開始"
+
+#: components/start-call.tsx:548
+#~ msgid "Telephone etiquette"
+#~ msgstr "電話応対マナー"
+
+#: components/start-call.tsx:405
+#~ msgid "Tutorial with AI"
+#~ msgstr "AIチュートリアル"
+
+#: app/[lang]/error.tsx:30
+#~ msgid "View Documentation"
+#~ msgstr "ドキュメントを見る"
+
+#: components/start-call.tsx:513
+#~ msgid "What would you like to roleplay?"
+#~ msgstr "どんなロールプレイをしたいですか？"

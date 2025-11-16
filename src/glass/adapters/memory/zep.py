@@ -364,53 +364,6 @@ class ZepMemoryAdapter:
             "items": items,
         }
 
-    async def add_extracted_memories(
-        self,
-        user_id: str,
-        session_id: str,
-        extracted_info: list[dict],
-    ) -> None:
-        """DEPRECATED: Add extracted information to Zep's Knowledge Graph.
-        
-        NOTE: This method is deprecated. Zep automatically extracts facts and entities
-        from messages added via add_conversation_messages(). Only use this for manually
-        created memories (business data) that don't come from conversations.
-        
-        Args:
-            user_id: User ID to associate memories with
-            session_id: Session/thread ID for context (not used for manual memories)
-            extracted_info: List of extracted information dictionaries
-        """
-        import warnings
-        warnings.warn(
-            "add_extracted_memories is deprecated. Use graph.add() directly for business data, "
-            "or let Zep automatically extract from conversation messages.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        
-        for info in extracted_info:
-            label = info.get("label", "")
-            value = info.get("value", "")
-            
-            if not value:
-                continue
-            
-            try:
-                await self.client.graph.add(
-                    user_id=user_id,
-                    data=json.dumps({
-                        "type": label,
-                        "content": value,
-                        "source": "extracted",
-                    }),
-                    type="json",
-                )
-                
-                LOGGER.debug(f"Added memory to Zep: {label} - {value[:50]}...")
-            except Exception as e:
-                LOGGER.error(f"Failed to add extracted memory to Zep: {e}")
-
     async def ensure_user(
         self, 
         user_id: str, 
@@ -480,23 +433,23 @@ class ZepMemoryAdapter:
         thread_id: str,
         user_id: str,
         messages: list[dict],
-        user_name: str | None = None,
         session_start_time: float | None = None,
+        participants: dict[str, dict[str, Any]] | None = None,
     ) -> None:
         """Add conversation messages to Zep thread.
         
         Zep will automatically extract facts and entities from these messages
         to build the user's knowledge graph.
         
-        Including the user's real name and timestamps improves Zep's graph construction
+        Including participant metadata and timestamps improves Zep's graph construction
         and temporal understanding.
         
         Args:
             thread_id: Thread/session ID
             user_id: User ID
-            messages: List of message dicts with 'speaker', 'source', 'text' fields
-            user_name: Optional real user name (improves graph construction)
+            messages: List of message dicts containing text, source, and identity metadata
             session_start_time: Optional session start epoch time for timestamps
+            participants: Optional mapping of participant IDs to minimal metadata
         """
         if not messages:
             return
@@ -507,80 +460,88 @@ class ZepMemoryAdapter:
             
             # Convert to Zep format
             zep_messages = []
+            participant_map = participants or {}
+            user_participant = participant_map.get("user", {})
+            glass_participant = participant_map.get("glass", {})
+            default_partner = participant_map.get("partner", {})
+
             for idx, msg in enumerate(messages):
-                speaker = msg.get("speaker", "unknown")
-                source = msg.get("source", "unknown")
+                message_role = (msg.get("role") or "").lower()
+                partner_id = msg.get("partner_id")
+                if isinstance(partner_id, str):
+                    partner_id = partner_id.lower()
                 content = msg.get("text", "")
                 
                 if not content:
                     continue
                 
+                is_user_mic = message_role == "user"
+                is_glass = message_role == "assistant"
+                is_partner = message_role == "partner"
+                mode = (msg.get("mode") or "").lower()
+                is_ai_partner = is_partner and mode == "roleplay"
+                is_real_partner = is_partner and mode == "live_call"
+                
+                participant = None
+                if partner_id and partner_id in participant_map:
+                    participant = participant_map[partner_id]
+                elif is_partner:
+                    participant = default_partner
+                elif message_role == "user":
+                    participant = user_participant
+                elif is_glass:
+                    participant = glass_participant
+                
+                speaker_name = (participant or {}).get("name")
+
                 # Format Glass feedback content to clearly distinguish from conversation
-                if speaker == "glass":
-                    # Add prefix to make it clear this is feedback, not conversation
+                if is_glass:
                     if not content.startswith("["):
                         content = f"[Learning Feedback] {content}"
                 
-                # Determine role and name based on speaker and source
-                # Zep v3 supports two roles: "user" and "assistant"
-                # 
-                # Name mapping for clear memory extraction:
-                # - Practice mode: [User name] ↔ Partner (conversation practice) + Glass (learning feedback)
-                # - Real Talk mode: [User name] ↔ Partner (real conversation partner)
-                
-                is_user_mic = (
-                    source == "mic"
-                    or speaker == "user"
-                )
-                
+                # Determine role and name for Zep
+                zep_role = "assistant"
                 if is_user_mic:
-                    # Primary user speaking via microphone
-                    role = "user"
-                    # Zep v3 best practice: Use real user name for better entity extraction
-                    name = user_name or "User"
-                elif speaker == "ai":
-                    # Practice mode: AI simulating conversation partner
-                    role = "assistant"
-                    name = "Partner"  # Clear role: conversation practice partner
-                elif speaker == "glass":
-                    # Glass learning assistant providing feedback/suggestions
-                    # Clearly distinguish from conversation partner
-                    role = "assistant"
-                    name = "Learning Coach"  # Distinct from "Partner" (conversation)
-                elif speaker == "partner" or source == "system":
-                    # Real Talk mode: Real conversation partner via system audio
-                    # Use "assistant" role even though it's a real person, to distinguish from primary user
-                    # This ensures Zep extracts facts from the primary user, not the partner
-                    role = "assistant"
-                    name = "Partner"
+                    zep_role = "user"
+                    name = speaker_name or user_participant.get("name") or "You"
+                elif is_glass:
+                    name = speaker_name or glass_participant.get("name") or "Learning Coach"
+                elif is_partner or is_ai_partner:
+                    name = (
+                        speaker_name
+                        or (participant or {}).get("name")
+                        or default_partner.get("name")
+                        or "Partner"
+                    )
                 else:
-                    # Fallback for unknown speakers
-                    LOGGER.warning(f"Unknown speaker type: speaker={speaker}, source={source}, defaulting to Partner")
-                    role = "assistant"
-                    name = "Partner"
+                    name = speaker_name or default_partner.get("name") or "Partner"
                 
                 # Calculate timestamp for temporal understanding
                 # Zep docs: "Setting created_at is important for accurate temporal understanding"
                 created_at = None
-                if session_start_time and "start" in msg:
-                    # Message has relative timestamp from session start
-                    msg_epoch = session_start_time + msg["start"]
-                    created_at = datetime.fromtimestamp(msg_epoch, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+                timestamp = msg.get("timestamp")
+                if isinstance(timestamp, (int, float)):
+                    created_at = datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat().replace("+00:00", "Z")
                 elif session_start_time:
                     # Approximate timestamp based on message order
-                    # Assume 5 seconds between messages on average
                     msg_epoch = session_start_time + (idx * 5)
                     created_at = datetime.fromtimestamp(msg_epoch, tz=timezone.utc).isoformat().replace("+00:00", "Z")
                 
                 # Build metadata for better context understanding
                 metadata: dict[str, Any] = {}
+                if partner_id is not None:
+                    metadata["partner_id"] = partner_id
+                if message_role:
+                    metadata["role"] = message_role
+                if msg.get("language"):
+                    metadata["language"] = msg["language"]
                 
                 # Add role-specific metadata
                 if is_user_mic:
                     # User (learner) metadata
                     metadata["is_learner"] = True
                     metadata["learning_context"] = True
-                elif speaker == "glass":
+                elif is_glass:
                     # Glass (Learning Coach) metadata - distinguish from conversation
                     metadata["type"] = "feedback"
                     metadata["is_feedback"] = True
@@ -588,22 +549,22 @@ class ZepMemoryAdapter:
                     # Try to link to target utterance
                     if msg.get("utterance_id"):
                         metadata["target_utterance_id"] = msg["utterance_id"]
-                elif speaker == "ai":
-                    # AI Partner metadata
+                elif is_ai_partner:
                     metadata["is_ai_partner"] = True
-                    metadata["mode"] = "practice"
-                elif speaker == "partner" or source == "system":
-                    # Real conversation partner
+                    metadata["mode"] = "roleplay"
+                elif is_real_partner:
                     metadata["is_real_partner"] = True
-                    metadata["mode"] = "real"
+                    metadata["mode"] = "live_call"
                 
                 msg_kwargs = {
-                    "role": role,
+                    "role": zep_role,
                     "content": content,
                     "name": name,
                 }
                 if created_at:
                     msg_kwargs["created_at"] = created_at
+                if speaker_name:
+                    metadata["display_name"] = speaker_name
                 if metadata:
                     msg_kwargs["metadata"] = metadata
                 
@@ -612,15 +573,15 @@ class ZepMemoryAdapter:
                 
                 # Log message structure for debugging
                 LOGGER.debug(
-                    f"[Zep] Adding message - role={role}, name={name}, "
+                    f"[Zep] Adding message - role={zep_role}, name={name}, "
                     f"content_preview={content[:50]}..., metadata={metadata}"
                 )
             
             if zep_messages:
                 # Log message composition summary
-                user_count = sum(1 for m in zep_messages if m.role == "user")
-                partner_count = sum(1 for m in zep_messages if m.name == "Partner")
-                coach_count = sum(1 for m in zep_messages if m.name == "Learning Coach")
+                user_count = sum(1 for m in zep_messages if getattr(m, "role", "") == "user")
+                partner_count = sum(1 for m in zep_messages if getattr(m, "role", "") == "partner")
+                coach_count = sum(1 for m in zep_messages if getattr(m, "role", "") == "assistant")
                 LOGGER.info(
                     f"[Zep] Message composition - User: {user_count}, "
                     f"Partner: {partner_count}, Learning Coach: {coach_count}, "
