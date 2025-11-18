@@ -445,6 +445,29 @@ class ZepMemoryAdapter:
         _, payload = self._parse_node_payload(node)
         return payload
 
+    async def _edge_target_payload(self, edge: EntityEdge) -> dict[str, Any] | None:
+        """Load the payload for the ConversationFact node at the edge target."""
+        raw_target = getattr(edge, "target_node", None) or getattr(edge, "target", None)
+        if raw_target:
+            if isinstance(raw_target, EntityNode):
+                _, payload = self._parse_node_payload(raw_target)
+                return payload
+            if isinstance(raw_target, dict):
+                return dict(raw_target)
+        node_uuid = getattr(edge, "target_node_uuid", None)
+        if not node_uuid:
+            return None
+        node_client = getattr(self.client.graph, "node", None)
+        if not node_client:
+            return None
+        try:
+            node = await node_client.get(uuid_=node_uuid)
+        except Exception as exc:
+            LOGGER.debug("[Zep] Unable to load node %s: %s", node_uuid, exc)
+            return None
+        _, payload = self._parse_node_payload(node)
+        return payload
+
     async def get_user_facts_for_partner(
         self,
         *,
@@ -452,39 +475,55 @@ class ZepMemoryAdapter:
         partner_id_or_name: str,
         partner_uuid: str | None = None,
         limit: int = 50,
-    ) -> list[str]:
-        """Return user-owned facts that were observed with a specific partner."""
+    ) -> list[dict[str, Any]]:
+        """Return ConversationFact summaries tied to a partner via observed interactions."""
         partner_uuid = partner_uuid or await self._get_partner_node_uuid(
             user_id=user_id,
             partner_id_or_name=partner_id_or_name,
         )
         if not partner_uuid:
             return []
+
+        edge_types = ["INTERACTION_OBSERVED_FACT", "FACT_OBSERVED_IN"]
         try:
             search_results: GraphSearchResults = await self.client.graph.search(
                 user_id=user_id,
                 query="user fact",
                 scope="edges",
-                search_filters={"edge_types": ["FACT_OBSERVED_IN"]},
+                search_filters={"edge_types": edge_types},
                 bfs_origin_node_uuids=[partner_uuid],
-                limit=min(50, max(1, limit)),
+                limit=min(50, max(1, limit * 2)),
             )
         except Exception as exc:
-            LOGGER.debug(
-                "[Zep] Failed to fetch partner-specific user facts for %s/%s: %s", user_id, partner_id_or_name, exc
-            )
+            LOGGER.debug("[Zep] Failed to fetch user facts for %s/%s: %s", user_id, partner_id_or_name, exc)
             return []
-        user_facts: list[str] = []
+
+        fact_entries: list[dict[str, Any]] = []
         for edge in search_results.edges or []:
-            payload = await self._edge_source_payload(edge)
+            edge_name = getattr(edge, "name", "")
+            if edge_name == "INTERACTION_OBSERVED_FACT":
+                payload = await self._edge_target_payload(edge)
+            else:
+                payload = await self._edge_source_payload(edge)
             if not payload:
                 continue
             if (payload.get("subject_type") or "").lower() != "user":
                 continue
-            fact_text = payload.get("value") or getattr(edge, "fact", None) or getattr(edge, "content", None)
-            if fact_text:
-                user_facts.append(fact_text)
-        return user_facts
+            summary = (payload.get("value") or "").strip()
+            if not summary:
+                continue
+            fact_entries.append(
+                {
+                    "type": "ConversationFact",
+                    "summary": summary,
+                    "timestamp": payload.get("updated_at"),
+                    "node_id": payload.get("id"),
+                }
+            )
+            if len(fact_entries) >= limit:
+                break
+
+        return fact_entries
 
     async def get_interactions_with_partner(
         self,
@@ -494,7 +533,7 @@ class ZepMemoryAdapter:
         partner_uuid: str | None = None,
         limit: int = 20,
     ) -> list[dict[str, Any]]:
-        """Return Interaction nodes tied to a specific partner."""
+        """Return partner-linked Interaction nodes."""
         partner_uuid = partner_uuid or await self._get_partner_node_uuid(
             user_id=user_id,
             partner_id_or_name=partner_id_or_name,
@@ -513,20 +552,49 @@ class ZepMemoryAdapter:
         except Exception as exc:
             LOGGER.debug("[Zep] Failed to fetch interactions for %s/%s: %s", user_id, partner_id_or_name, exc)
             return []
+        def _clean_text(value: Any) -> str:
+            if not isinstance(value, str):
+                return ""
+            text = value.strip()
+            if not text or text.lower() == "none":
+                return ""
+            return text
+
+        def _clean_timestamp(value: Any) -> str | None:
+            text = _clean_text(value)
+            return text or None
+
         interactions: list[dict[str, Any]] = []
         for node in search_results.nodes or []:
-            _, payload = self._parse_node_payload(node)
+            node_id, payload = self._parse_node_payload(node)
             if not payload:
                 continue
-            interactions.append(
+            raw_summary = payload.get("interaction_summary") or payload.get("summary")
+            if (not raw_summary or _clean_text(raw_summary) == "") and hasattr(node, "summary"):
+                raw_summary = getattr(node, "summary", None)
+            summary = _clean_text(raw_summary) or "Interaction noted"
+            timestamp = (
+                _clean_timestamp(payload.get("ended_at"))
+                or _clean_timestamp(payload.get("started_at"))
+                or getattr(node, "created_at", None)
+            )
+
+            entry: dict[str, Any] = {
+                "node_id": node_id,
+                "type": "Interaction",
+                "summary": summary,
+                "timestamp": timestamp,
+            }
+            entry.update(
                 {
-                    "thread_id": payload.get("thread_id"),
-                    "language_code": payload.get("language_code"),
-                    "started_at": payload.get("started_at"),
-                    "ended_at": payload.get("ended_at"),
-                    "summary": payload.get("interaction_summary") or payload.get("summary"),
+                    "thread_id": _clean_text(payload.get("thread_id")) or None,
+                    "language_code": _clean_text(payload.get("language_code")) or None,
+                    "started_at": _clean_timestamp(payload.get("started_at")),
+                    "ended_at": _clean_timestamp(payload.get("ended_at")),
+                    "interaction_summary": summary,
                 }
             )
+            interactions.append(entry)
         return interactions
 
     async def _facts_for_interactions(
@@ -1404,7 +1472,7 @@ class ZepMemoryAdapter:
         partner_id: str,
         limit: int = 5,
     ) -> str:
-        """Return recent interaction snippets for a partner."""
+        """Return recent interaction/fact snippets for a partner with minimal queries."""
         if not user_id or not partner_id:
             return ""
 
@@ -1413,41 +1481,7 @@ class ZepMemoryAdapter:
             LOGGER.info("[Zep] No partner node for %s/%s", user_id, partner_id)
             return ""
 
-        context_lines: list[str] = []
-
-        partner_docs = await self._search_documents(
-            user_id=user_id,
-            label="Partner",
-            query=f"partner profile {partner_id}",
-            limit=5,
-        )
-        partner_doc = None
-        normalized_partner = str(partner_id).lower()
-        for doc in partner_docs:
-            pid = (doc.get("partner_id") or "").lower()
-            if pid == normalized_partner:
-                partner_doc = doc
-                break
-        if not partner_doc and partner_docs:
-            partner_doc = partner_docs[0]
-
-        if partner_doc:
-            display_name = partner_doc.get("display_name") or partner_id
-            relation = partner_doc.get("relation_to_user")
-            profile_bits = [str(display_name).strip()]
-            if relation:
-                profile_bits.append(f"Relation: {relation}")
-            context_lines.append("Partner Profile: " + " ".join(profile_bits).strip())
-
-        profile_task = asyncio.create_task(
-            self.get_partner_profile_facts(
-                user_id=user_id,
-                partner_id_or_name=partner_id,
-                partner_uuid=partner_uuid,
-                limit=limit,
-            )
-        )
-        user_fact_task = asyncio.create_task(
+        facts_task = asyncio.create_task(
             self.get_user_facts_for_partner(
                 user_id=user_id,
                 partner_id_or_name=partner_id,
@@ -1455,7 +1489,7 @@ class ZepMemoryAdapter:
                 limit=limit,
             )
         )
-        interaction_task = asyncio.create_task(
+        interactions_task = asyncio.create_task(
             self.get_interactions_with_partner(
                 user_id=user_id,
                 partner_id_or_name=partner_id,
@@ -1464,46 +1498,42 @@ class ZepMemoryAdapter:
             )
         )
 
-        partner_facts, user_partner_facts, interactions = await asyncio.gather(
-            profile_task,
-            user_fact_task,
-            interaction_task,
-        )
+        facts, interactions = await asyncio.gather(facts_task, interactions_task, return_exceptions=False)
 
-        for fact in partner_facts[:limit]:
-            context_lines.append(f"- {fact}")
-        for fact in user_partner_facts[:limit]:
-            context_lines.append(f"User Fact: {fact}")
+        combined: list[tuple[float, str]] = []
+        for entry in facts:
+            summary = entry.get("summary")
+            if not summary:
+                continue
+            timestamp = entry.get("timestamp")
+            stamp = timestamp.split("T")[0] if isinstance(timestamp, str) and timestamp else ""
+            line = f"- {stamp}: [Fact] {summary}" if stamp else f"- [Fact] {summary}"
+            combined.append((_parse_iso_to_epoch(timestamp), line))
 
-        interaction_lines: list[tuple[float, str]] = []
         for interaction in interactions:
-            summary = (
-                interaction.get("interaction_summary")
-                or interaction.get("summary")
-                or ""
-            ).strip() or "Interaction noted"
-            ended_at = interaction.get("ended_at") or interaction.get("started_at")
-            stamp = ended_at.split("T")[0] if isinstance(ended_at, str) and ended_at else ""
-            entry = f"- {stamp}: {summary}" if stamp else f"- {summary}"
-            interaction_lines.append((_parse_iso_to_epoch(ended_at), entry))
+            summary = interaction.get("summary") or "Interaction noted"
+            timestamp = interaction.get("timestamp") or interaction.get("ended_at") or interaction.get("started_at")
+            stamp = timestamp.split("T")[0] if isinstance(timestamp, str) and timestamp else ""
+            line = f"- {stamp}: [Interaction] {summary}" if stamp else f"- [Interaction] {summary}"
+            combined.append((_parse_iso_to_epoch(timestamp), line))
 
-        interaction_lines.sort(key=lambda item: item[0], reverse=True)
-        context_lines.extend(line for _, line in interaction_lines[:limit])
-        context_blob = "\n".join(context_lines).strip()
-
-        if context_blob:
-            preview = context_blob[:500].replace("\n", "\\n")
-            LOGGER.info(
-                "[Zep] Partner context for %s/%s (%d chars): %s%s",
-                user_id,
-                partner_id,
-                len(context_blob),
-                preview,
-                "..." if len(context_blob) > 500 else "",
-            )
-        else:
+        if not combined:
             LOGGER.info("[Zep] No partner context for %s/%s", user_id, partner_id)
+            return ""
 
+        combined.sort(key=lambda item: item[0], reverse=True)
+        context_lines = [line for _, line in combined[:limit]]
+        context_blob = "\n".join(context_lines)
+
+        preview = context_blob[:500].replace("\n", "\\n")
+        LOGGER.info(
+            "[Zep] Partner context for %s/%s (%d chars): %s%s",
+            user_id,
+            partner_id,
+            len(context_blob),
+            preview,
+            "..." if len(context_blob) > 500 else "",
+        )
         return context_blob
 
     async def add_conversation_messages(

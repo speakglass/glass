@@ -122,6 +122,10 @@ class FactObservedInEdge(EdgeModel):
     """Connect a ConversationFact to the Interaction where it was observed."""
 
 
+class InteractionObservedFactEdge(EdgeModel):
+    """Connect an Interaction node back to the ConversationFact it captured."""
+
+
 GLASS_ENTITY_DEFINITIONS = {
     "UserPersona": UserPersonaEntity,
     "Partner": PartnerEntity,
@@ -149,6 +153,10 @@ GLASS_EDGE_DEFINITIONS = {
     "FACT_OBSERVED_IN": (
         FactObservedInEdge,
         [EntityEdgeSourceTarget(source="ConversationFact", target="Interaction")],
+    ),
+    "INTERACTION_OBSERVED_FACT": (
+        InteractionObservedFactEdge,
+        [EntityEdgeSourceTarget(source="Interaction", target="ConversationFact")],
     ),
 }
 
@@ -189,4 +197,5 @@ __all__ = [
     "PartnerParticipatedInEdge",
     "PartnerHasProfileFactEdge",
     "FactObservedInEdge",
+    "InteractionObservedFactEdge",
 ]

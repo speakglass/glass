@@ -292,12 +292,24 @@ def build_conversation_fact_payload(
         _entity_key("interaction", interaction_thread_id) if interaction_thread_id else None
     )
     if interaction_ref or interaction_thread_id:
+        interaction_endpoint_for_target = _interaction_endpoint(
+            interaction_key=interaction_ref,
+            thread_id=interaction_thread_id,
+        )
         edges.append(
             GraphEdge(
                 name="FACT_OBSERVED_IN",
                 source=GraphEdgeEndpoint(label="ConversationFact", key=fact_entity_key),
-                target=_interaction_endpoint(interaction_key=interaction_ref, thread_id=interaction_thread_id),
+                target=interaction_endpoint_for_target,
                 fact=f"Fact observed in {interaction_thread_id or interaction_ref}",
+            )
+        )
+        edges.append(
+            GraphEdge(
+                name="INTERACTION_OBSERVED_FACT",
+                source=_interaction_endpoint(interaction_key=interaction_ref, thread_id=interaction_thread_id),
+                target=GraphEdgeEndpoint(label="ConversationFact", key=fact_entity_key),
+                fact=f"Interaction {interaction_thread_id or interaction_ref} observed fact",
             )
         )
 
