@@ -541,6 +541,75 @@ class LearningAssistant:
                 "feedback": f"Analysis failed: {str(e)}",
             }
 
+    async def generate_delayed_feedback(
+        self,
+        full_conversation: list[dict],
+        native_lang: str,
+        learning_lang: str,
+        *,
+        max_items: int = 3,
+        history_window: int = 30,
+    ) -> str | None:
+        """Produce post-session feedback focusing only on learner utterances."""
+        if not full_conversation:
+            return None
+
+        user_entries: list[tuple[str, str | None]] = []
+        for msg in full_conversation:
+            if not isinstance(msg, dict):
+                continue
+            role = (msg.get("role") or msg.get("speaker_role") or "").lower()
+            if role != "user":
+                continue
+            text = (msg.get("text") or "").strip()
+            if not text:
+                continue
+            translation_val = msg.get("translation")
+            translation: str | None = None
+            if isinstance(translation_val, str):
+                translation = translation_val.strip() or None
+            elif isinstance(translation_val, dict):
+                translation = (
+                    (translation_val.get("text") or translation_val.get("target_text") or "").strip() or None
+                )
+            user_entries.append((text, translation))
+
+        if not user_entries:
+            return None
+
+        sample_window = max(history_window, max_items)
+        recent_entries = user_entries[-sample_window:]
+        formatted_lines: list[str] = []
+        for idx, (text, translation) in enumerate(recent_entries, start=1):
+            snippet = text if len(text) <= 220 else f"{text[:217]}..."
+            line = f"{idx}. {snippet}"
+            if translation:
+                translated = translation if len(translation) <= 180 else f"{translation[:177]}..."
+                line += f"\n   Translation: {translated}"
+            formatted_lines.append(line)
+
+        prompt = prompts.build_delayed_feedback_prompt(
+            user_utterances="\n".join(formatted_lines),
+            learning_lang_name=lang_code_to_name(learning_lang),
+            native_lang_name=lang_code_to_name(native_lang),
+            max_items=max_items,
+        )
+
+        try:
+            response = await self.llm.call(
+                prompt=prompt,
+                temperature=0.4,
+                max_tokens=600,
+            )
+        except Exception as exc:
+            LOGGER.error(f"[Feedback] Delayed feedback generation failed: {exc}", exc_info=True)
+            return None
+
+        normalized = (response or "").strip()
+        if not normalized:
+            return None
+        return normalized
+
     async def _analyze_scores(
         self, transcript: str, feedback_summary: str, native_lang_name: str, learning_lang_name: str
     ) -> dict:

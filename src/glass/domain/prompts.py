@@ -594,6 +594,43 @@ def build_analysis_feedback_prompt(
     ).strip()
 
 
+def build_delayed_feedback_prompt(
+    *,
+    user_utterances: str,
+    learning_lang_name: str,
+    native_lang_name: str,
+    max_items: int = 3,
+) -> str:
+    """Build prompt for post-session feedback when real-time feedback was disabled."""
+    formatted = user_utterances.strip() or "(no learner utterances)"
+    return dedent(
+        f"""
+        You are reviewing a speaking practice where real-time corrections were disabled.
+        The learner's target language is {learning_lang_name}; their native language is {native_lang_name}.
+
+        Evaluate ONLY the learner's utterances listed below (chronological order):
+        {formatted}
+
+        Task:
+        - Identify up to {max_items} unclear, incorrect, or unnatural learner utterances worth correcting.
+        - Ignore partner speech and filler phrases that are already natural.
+        - Quote only the learner's own words when referencing an issue.
+
+        Respond in {native_lang_name} using this exact format (plain text, no JSON):
+        실시간 피드백이 꺼져 있어서 대신 핵심 교정을 정리했어요:
+
+        1) 🔍 "<short quote from the learner>"
+           - 문제: <brief explanation in {native_lang_name}>
+           - 자연스러운 표현: <corrected sentence in {learning_lang_name}>
+
+        2) …
+        (Continue numbering until you've listed the strongest issues, up to {max_items}. If there are fewer issues, include only the meaningful ones.)
+
+        Keep explanations friendly, specific, and concise.
+    """
+    ).strip()
+
+
 def build_memory_extraction_prompt(
     conversation_excerpt: str,
     native_lang_name: str,

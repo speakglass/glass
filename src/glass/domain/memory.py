@@ -452,24 +452,22 @@ class ConversationMemory:
             return ""
         partner_key = (partner_id or "").lower()
         summary_note = self._partner_summary_notes.get(partner_key)
-        # if not refresh:
-        #     cached = self._get_cached_partner_context(partner_id, limit)
-        #     if cached is not None:
-        #         if summary_note:
-        #             prefix = f"Recent Session Summary: {summary_note}"
-        #             if prefix not in cached:
-        #                 cached = f"{prefix}\n{cached}".strip()
-        #                 self._store_partner_context(partner_id, limit, cached)
-        #         return cached
+        if not refresh:
+            cached = self._get_cached_partner_context(partner_id, limit)
+            if cached is not None:
+                if summary_note:
+                    prefix = f"Recent Session Summary: {summary_note}"
+                    if prefix not in cached:
+                        cached = f"{prefix}\n{cached}".strip()
+                        self._store_partner_context(partner_id, limit, cached)
+                return cached
         try:
             context = await self.memory.get_partner_context(
                 user_id=self.user_id,
                 partner_id=partner_id,
                 limit=limit,
             )
-            print(f"[MEMORYMEMORY] Partner context: {context}")
         except Exception as exc:
-            print(f"[MEMORYMEMORY] Failed to fetch partner context: {exc}")
             LOGGER.debug("[MemoryProcessor] Failed to fetch partner context: %s", exc)
             return ""
         result = context or ""

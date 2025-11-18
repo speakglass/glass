@@ -378,8 +378,9 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
         LOGGER.info(f"[AutoSave] Starting auto-save for session {session_id}")
 
         # Collect messages with translations and timing (local operation, fast)
+        full_conversation = pipeline.memory.get_full_conversation()
         messages = []
-        for msg in pipeline.memory.get_full_conversation():
+        for msg in full_conversation:
             message_dict: dict[str, Any] = {}
             for key in (
                 "role",
@@ -413,6 +414,8 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
 
         # Run analysis and title generation in parallel
         native_lang = pipeline.assistant.native_lang
+        learning_lang_cfg = pipeline.assistant.learning_lang
+        native_lang_cfg = native_lang
         llm_adapter = pipeline.assistant.llm
 
         analysis_task = asyncio.create_task(pipeline.analyze_conversation())
@@ -448,6 +451,20 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
         else:
             title = title_result
 
+        assistant = getattr(pipeline, "assistant", None)
+        delayed_feedback: str | None = None
+        if assistant and getattr(assistant, "feedback_mode", "auto") == "off":
+            try:
+                delayed_feedback = await assistant.generate_delayed_feedback(
+                    full_conversation,
+                    native_lang=native_lang,
+                    learning_lang=learning_lang_cfg,
+                )
+            except Exception as exc:
+                LOGGER.warning("[AutoSave] Unable to build delayed feedback: %s", exc)
+        if delayed_feedback:
+            analysis["feedback"] = delayed_feedback
+
         # Save to database
         # Note: Memory extraction is now handled by Zep (no extracted_info field)
         participant_snapshot = pipeline.build_participant_snapshot()
@@ -476,9 +493,6 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
                     session_id,
                     exc,
                 )
-
-        learning_lang_cfg = pipeline.assistant.learning_lang
-        native_lang_cfg = pipeline.assistant.native_lang
 
         interaction_summary = None
         memory_insights: dict[str, Any] | None = None
