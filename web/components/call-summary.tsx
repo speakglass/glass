@@ -1,8 +1,8 @@
 'use client';
 import { cn } from '@/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { X, Save, ChevronDown, ChevronUp, MessageSquare, Loader2, Plus } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { X, Save, ChevronDown, ChevronUp, MessageSquare, Loader2, Edit3, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PartnerAvatar } from '@/components/partner-avatar';
@@ -10,17 +10,24 @@ import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 import { useAccountSession } from '@/contexts/account-session-context';
 import {
-  fetchConversationZepContext,
   fetchPartners,
   reassignConversationPartner,
   updatePartner,
   uploadPartnerAvatar,
   createPartner,
   deletePartner,
+  updateConversationMemoryInsights,
   type ConversationMessage,
   type ConversationPartner,
-  type ZepContextItem,
+  type MemoryInsights,
 } from '@/lib/account-api';
+import { getMessageRole, getMessageParticipantId } from '@/lib/conversation-utils';
+import {
+  formatConversationDuration,
+  getLanguageName,
+  getScoreIndicatorPosition,
+  getScoreLabel,
+} from '@/lib/conversation-display';
 import { useLocale } from '@/hooks/use-locale';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
@@ -28,6 +35,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ConversationMessagesList } from '@/components/conversation/conversation-messages-list';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +43,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { PartnerSearchEmptyState } from '@/components/partner-search-empty-state';
 
 interface ConversationScores {
   fluency: number;
@@ -72,47 +91,9 @@ interface ParticipantSnapshot {
   };
 }
 
-type ThreadContextItem = ZepContextItem;
-
-const LANGUAGE_NAMES_BY_LOCALE: Record<string, Record<string, string>> = {
-  en: { en: 'English', ko: 'Korean', ja: 'Japanese', zh: 'Chinese', es: 'Spanish', fr: 'French' },
-  ko: { en: '영어', ko: '한국어', ja: '일본어', zh: '중국어', es: '스페인어', fr: '프랑스어' },
-  ja: { en: '英語', ko: '韓国語', ja: '日本語', zh: '中国語', es: 'スペイン語', fr: 'フランス語' },
-  zh: { en: '英语', ko: '韩语', ja: '日语', zh: '中文', es: '西班牙语', fr: '法语' },
-  es: { en: 'Inglés', ko: 'Coreano', ja: 'Japonés', zh: 'Chino', es: 'Español', fr: 'Francés' },
-  fr: { en: 'Anglais', ko: 'Coréen', ja: 'Japonais', zh: 'Chinois', es: 'Espagnol', fr: 'Français' },
-};
-
-function getLanguageName(code: string | null | undefined, locale: string): string {
-  if (!code) return '—';
-  const normal = code.toLowerCase();
-  const localeNames = LANGUAGE_NAMES_BY_LOCALE[locale] || LANGUAGE_NAMES_BY_LOCALE.en;
-  return localeNames[normal] || code;
-}
-
-function formatDuration(seconds?: number | null): string {
-  if (seconds === null || seconds === undefined) return '—';
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  if (mins === 0) return `${secs}s`;
-  return `${mins}m ${secs}s`;
-}
-
-const getMessageRole = (message: ConversationMessage): string =>
-  (message.role || message.speaker_role || '').toLowerCase();
-
-const getMessageParticipantId = (message: ConversationMessage): string => {
-  if (typeof message.partner_id === 'string' && message.partner_id) {
-    return message.partner_id.toLowerCase();
-  }
-  if (typeof message.speaker_id === 'string' && message.speaker_id) {
-    return message.speaker_id.toLowerCase();
-  }
-  return '';
-};
-
 interface CallSummaryProps {
-  conversationId?: string; // DB conversation ID for fetching Zep memories
+  conversationId?: string; // DB conversation ID for fetching conversation memories
+  memoryInsights?: MemoryInsights | null;
   scores: ConversationScores;
   extractedInfo?: ExtractedInfo[];
   feedback?: string;
@@ -120,17 +101,35 @@ interface CallSummaryProps {
   feedbackItems?: FeedbackItem[];
   onClose: () => void;
   onStartNewCall: (contextInfo: ExtractedInfo[]) => void;
-  memoryCountOverride?: number;
   conversationCountOverride?: number;
-  initialShowMemory?: boolean; // For onboarding: pre-open Memory section
   participantSnapshot?: ParticipantSnapshot | null;
   durationSeconds?: number | null;
   learningLang?: string | null;
   nativeLang?: string | null;
 }
 
+type MemoryHighlightKey = 'user_insights' | 'partner_insights' | 'interaction_insights';
+
+interface MemoryDraft {
+  id: string;
+  type: MemoryHighlightKey;
+  text: string;
+}
+
+const INSIGHT_TYPES: MemoryHighlightKey[] = ['user_insights', 'partner_insights', 'interaction_insights'];
+
+const INSIGHT_LABELS: Record<MemoryHighlightKey, string> = {
+  user_insights: t`User`,
+  partner_insights: t`Partner`,
+  interaction_insights: t`Interaction`,
+};
+
+const generateDraftId = () =>
+  globalThis.crypto?.randomUUID?.() ?? `memory-${Math.random().toString(36).slice(2, 9)}`;
+
 const CallSummary = ({
   conversationId,
+  memoryInsights = null,
   scores,
   extractedInfo: initialInfo = [],
   feedback = '',
@@ -138,9 +137,7 @@ const CallSummary = ({
   feedbackItems = [],
   onClose,
   onStartNewCall,
-  memoryCountOverride,
   conversationCountOverride,
-  initialShowMemory = false,
   participantSnapshot = null,
   durationSeconds = null,
   learningLang = null,
@@ -155,12 +152,11 @@ const CallSummary = ({
   const partnerProfile = currentSnapshot?.partner;
   const userProfile = currentSnapshot?.user;
   const currentPartnerId = partnerProfile?.id ?? null;
-  const [threadContextItems, setThreadContextItems] = useState<ThreadContextItem[]>([]);
-  const [rawThreadContext, setRawThreadContext] = useState('');
-  const [isLoadingThreadContext, setIsLoadingThreadContext] = useState(false);
-  const [threadContextError, setThreadContextError] = useState<string | null>(null);
+  const [memoryDrafts, setMemoryDrafts] = useState<MemoryDraft[]>([]);
+  const [isSavingMemories, setIsSavingMemories] = useState(false);
+  const [showMemory, setShowMemory] = useState(false);
+  const [editingInsightId, setEditingInsightId] = useState<string | null>(null);
   const [showConversation, setShowConversation] = useState(false);
-  const [showMemory, setShowMemory] = useState(initialShowMemory);
   const [isPartnerManagerOpen, setIsPartnerManagerOpen] = useState(false);
   const [partnerNameDraft, setPartnerNameDraft] = useState(partnerProfile?.name || '');
   const [partnerDescriptionDraft, setPartnerDescriptionDraft] = useState(partnerProfile?.description || '');
@@ -170,6 +166,7 @@ const CallSummary = ({
     partnerProfile?.avatar_url || null
   );
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPartnerDeleteDialogOpen, setIsPartnerDeleteDialogOpen] = useState(false);
   const {
     data: partnerOptions = [],
     isLoading: isPartnerListLoading,
@@ -198,6 +195,48 @@ const CallSummary = ({
     partnerProfile?.id,
     partnerProfile?.name,
   ]);
+  useEffect(() => {
+    if (!isEditModalOpen) {
+      setIsPartnerDeleteDialogOpen(false);
+    }
+  }, [isEditModalOpen]);
+
+  useEffect(() => {
+    if (!memoryInsights) {
+      setMemoryDrafts([]);
+      return;
+    }
+
+    const drafts: MemoryDraft[] = [];
+    INSIGHT_TYPES.forEach((type) => {
+      const values = memoryInsights[type] ?? [];
+      values.forEach((value) => {
+        if (typeof value !== 'string') {
+          return;
+        }
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return;
+        }
+        drafts.push({
+          id: generateDraftId(),
+          type,
+          text: trimmed,
+        });
+      });
+    });
+    setMemoryDrafts(drafts);
+  }, [memoryInsights]);
+
+  const handleMemoryDraftChange = useCallback((id: string, text: string) => {
+    setMemoryDrafts((prev) =>
+      prev.map((draft) => (draft.id === id ? { ...draft, text } : draft))
+    );
+  }, []);
+
+  const handleRemoveMemoryDraft = useCallback((id: string) => {
+    setMemoryDrafts((prev) => prev.filter((draft) => draft.id !== id));
+  }, []);
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -369,10 +408,6 @@ const CallSummary = ({
       toast.error(t`Missing authentication`);
       return;
     }
-    const confirmed = window.confirm(t`Delete this partner? This cannot be undone.`);
-    if (!confirmed) {
-      return;
-    }
     deletePartnerMutation.mutate();
   };
 
@@ -467,7 +502,9 @@ const CallSummary = ({
     return participantDirectory.get('partner') || { name: t`Partner` };
   };
   const durationLabel =
-    typeof durationSeconds === 'number' && durationSeconds >= 0 ? formatDuration(durationSeconds) : null;
+    typeof durationSeconds === 'number' && durationSeconds >= 0
+      ? formatConversationDuration(durationSeconds)
+      : null;
   const languageLabel =
     learningLang || nativeLang
       ? `${getLanguageName(learningLang, locale)} ↔ ${getLanguageName(nativeLang, locale)}`
@@ -487,109 +524,78 @@ const CallSummary = ({
     return map;
   }, [feedbackItems]);
 
-  // Fetch Zep thread context when conversationId is available
-  useEffect(() => {
-    if (!conversationId || !token) {
-      setThreadContextItems([]);
-      setRawThreadContext('');
-      return;
+  const renderMessageFeedback = useCallback(
+    (message: ConversationMessage, context: { isUser: boolean; isGlass: boolean }) => {
+      const feedbackForMessage = message.utterance_id ? feedbackMap.get(message.utterance_id) : null;
+      if (!feedbackForMessage || feedbackForMessage.length === 0) {
+        return null;
+      }
+      return (
+        <div
+          className={cn(
+            'space-y-1 text-xs text-sky-600 leading-relaxed',
+            context.isUser || context.isGlass ? 'text-right' : 'text-left'
+          )}
+        >
+          {feedbackForMessage.map((fb, index) => (
+            <div key={`${message.utterance_id ?? 'feedback'}-${index}`}>{fb}</div>
+          ))}
+        </div>
+      );
+    },
+    [feedbackMap]
+  );
+
+  const buildMemoryInsightsPayload = useCallback((): MemoryInsights | null => {
+    const grouped: Record<MemoryHighlightKey, string[]> = {
+      user_insights: [],
+      partner_insights: [],
+      interaction_insights: [],
+    };
+
+    memoryDrafts.forEach((draft) => {
+      const trimmed = draft.text.trim();
+      if (!trimmed) {
+        return;
+      }
+      grouped[draft.type].push(trimmed);
+    });
+
+    const insights: MemoryInsights = {};
+    if (grouped.user_insights.length) {
+      insights.user_insights = grouped.user_insights.slice(0, 3);
+    }
+    if (grouped.partner_insights.length) {
+      insights.partner_insights = grouped.partner_insights.slice(0, 3);
+    }
+    if (grouped.interaction_insights.length) {
+      insights.interaction_insights = grouped.interaction_insights.slice(0, 3);
     }
 
-    let canceled = false;
-    setIsLoadingThreadContext(true);
-    setThreadContextError(null);
+    return (insights.user_insights || insights.partner_insights || insights.interaction_insights)
+      ? insights
+      : null;
+  }, [memoryDrafts]);
 
-    const fetchContext = async () => {
-      try {
-        const response = await fetchConversationZepContext(token, conversationId);
-        if (canceled) return;
-        setThreadContextItems(response.items || []);
-        setRawThreadContext(response.rawContext || '');
-      } catch (error) {
-        console.error('[CallSummary] Failed to fetch Zep thread context:', error);
-        if (!canceled) {
-          setThreadContextItems([]);
-          setRawThreadContext('');
-          setThreadContextError(t`Unable to load context from Zep.`);
-        }
-      } finally {
-        if (!canceled) {
-          setIsLoadingThreadContext(false);
+  const handleSaveCall = useCallback(async () => {
+    if (conversationId && token) {
+      const payload = buildMemoryInsightsPayload();
+      if (payload) {
+        setIsSavingMemories(true);
+        try {
+          await updateConversationMemoryInsights(token, conversationId, payload);
+        } catch (error) {
+          console.error('[CallSummary] Failed to save memory highlights:', error);
+          toast.error(t`Unable to save memory highlights right now.`);
+        } finally {
+          setIsSavingMemories(false);
         }
       }
-    };
-
-    fetchContext();
-
-    return () => {
-      canceled = true;
-    };
-  }, [conversationId, token]);
-
-  const handleSaveCall = () => {
-    onStartNewCall(initialInfo);
-  };
-
-  const contextBadgeClass = (type: ThreadContextItem['type']) => {
-    switch (type) {
-      case 'fact':
-        return 'bg-blue-500/10 text-blue-500 border-blue-500/30';
-      case 'entity':
-        return 'bg-purple-500/10 text-purple-500 border-purple-500/30';
-      case 'episode':
-        return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30';
-      default:
-        return 'bg-slate-500/10 text-slate-500 border-slate-500/30';
     }
-  };
+    onStartNewCall(initialInfo);
+  }, [conversationId, token, buildMemoryInsightsPayload, onStartNewCall, initialInfo]);
 
   const averageScore = Math.round((scores.fluency + scores.accuracy + scores.comprehensibility) / 3);
-
-  const getScoreLabel = (score: number): { text: string; color: string } => {
-    if (score >= 80) return { text: t`Excellent`, color: 'text-emerald-500' };
-    if (score >= 60) return { text: t`Good`, color: 'text-teal-500' };
-    if (score >= 40) return { text: t`Average`, color: 'text-amber-500' };
-    if (score >= 20) return { text: t`Below Average`, color: 'text-orange-500' };
-    return { text: t`Low`, color: 'text-red-500' };
-  };
-
-  // Calculate indicator position based on flex ratios
-  const getIndicatorPosition = (score: number): number => {
-    const flexRatios = [0.5, 1, 2, 1, 0.5]; // flex values for each segment
-    const totalFlex = flexRatios.reduce((sum, flex) => sum + flex, 0); // 5
-
-    // Determine which segment the score falls into
-    let segmentIndex = 0;
-    let segmentStart = 0;
-
-    if (score <= 20) {
-      segmentIndex = 0;
-      segmentStart = 0;
-    } else if (score <= 40) {
-      segmentIndex = 1;
-      segmentStart = 20;
-    } else if (score <= 60) {
-      segmentIndex = 2;
-      segmentStart = 40;
-    } else if (score <= 80) {
-      segmentIndex = 3;
-      segmentStart = 60;
-    } else {
-      segmentIndex = 4;
-      segmentStart = 80;
-    }
-
-    // Calculate the start position of this segment
-    const flexBeforeSegment = flexRatios.slice(0, segmentIndex).reduce((sum, flex) => sum + flex, 0);
-    const segmentStartPercent = (flexBeforeSegment / totalFlex) * 100;
-
-    // Calculate position within the segment
-    const segmentSize = 20; // each segment represents 20 points
-    const positionInSegment = (score - segmentStart) / segmentSize;
-    const segmentWidthPercent = (flexRatios[segmentIndex] / totalFlex) * 100;
-
-    return segmentStartPercent + segmentWidthPercent * positionInSegment;
-  };
 
   const partnerChip = partnerProfile
     ? canManagePartner && token ? (
@@ -716,26 +722,15 @@ const CallSummary = ({
                     ))}
                   </div>
                 ) : (
-                  <div className="px-3 pb-2 text-xs text-muted-foreground space-y-2">
-                    <p>
-                      <Trans>No matching partners.</Trans>
-                    </p>
-                    {trimmedPartnerSearch && (
-                      <button
-                        type="button"
-                        className="flex items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-left text-sm text-foreground transition hover:bg-accent cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                        onClick={() => createPartnerMutation.mutate(trimmedPartnerSearch)}
-                        disabled={createPartnerMutation.isPending}
-                      >
-                        {createPartnerMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                        ) : (
-                          <Plus className="h-4 w-4 text-muted-foreground" />
-                        )}
-                        <span className="truncate font-medium">{t`New ${trimmedPartnerSearch}`}</span>
-                      </button>
-                    )}
-                  </div>
+                  <PartnerSearchEmptyState
+                    searchTerm={trimmedPartnerSearch}
+                    isCreating={createPartnerMutation.isPending}
+                    onCreate={
+                      trimmedPartnerSearch
+                        ? () => createPartnerMutation.mutate(trimmedPartnerSearch)
+                        : undefined
+                    }
+                  />
                 )}
               </div>
             </div>
@@ -942,7 +937,7 @@ const CallSummary = ({
                     <motion.div
                       className={'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'}
                       style={{
-                        left: `${getIndicatorPosition(scores.fluency)}%`,
+                        left: `${getScoreIndicatorPosition(scores.fluency)}%`,
                       }}
                       initial={{ opacity: 0, scale: 0 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -1018,7 +1013,7 @@ const CallSummary = ({
                     <motion.div
                       className={'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'}
                       style={{
-                        left: `${getIndicatorPosition(scores.accuracy)}%`,
+                        left: `${getScoreIndicatorPosition(scores.accuracy)}%`,
                       }}
                       initial={{ opacity: 0, scale: 0 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -1102,7 +1097,7 @@ const CallSummary = ({
                     <motion.div
                       className={'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'}
                       style={{
-                        left: `${getIndicatorPosition(scores.comprehensibility)}%`,
+                        left: `${getScoreIndicatorPosition(scores.comprehensibility)}%`,
                       }}
                       initial={{ opacity: 0, scale: 0 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -1134,10 +1129,9 @@ const CallSummary = ({
             )}
           </div>
 
-          {/* Memory / Context */}
           <section id="glass-memory-section">
             <button
-              onClick={() => setShowMemory(!showMemory)}
+              onClick={() => setShowMemory((prev) => !prev)}
               className={
                 'w-full flex items-center justify-between bg-background/50 border border-border/30 rounded-lg p-3 hover:bg-accent/30 transition-colors'
               }
@@ -1147,13 +1141,7 @@ const CallSummary = ({
                 <span className={'text-sm font-semibold'}>
                   <Trans>Memory</Trans>
                 </span>
-                {isLoadingThreadContext ? (
-                  <Loader2 className={'size-3 animate-spin text-muted-foreground'} />
-                ) : (
-                  <span className={'text-xs text-muted-foreground'}>
-                    ({typeof memoryCountOverride === 'number' ? memoryCountOverride : threadContextItems.length})
-                  </span>
-                )}
+                <span className={'text-xs text-muted-foreground'}>({memoryDrafts.length})</span>
               </div>
               {showMemory ? <ChevronUp className={'size-4'} /> : <ChevronDown className={'size-4'} />}
             </button>
@@ -1171,44 +1159,64 @@ const CallSummary = ({
                       'mt-2 bg-background/50 border border-border/30 rounded-lg p-3 max-h-96 overflow-auto space-y-2'
                     }
                   >
-                    {isLoadingThreadContext ? (
-                      <div className={'text-center py-8 text-muted-foreground text-sm animate-pulse'}>
-                        <Trans>Fetching thread context...</Trans>
-                      </div>
-                    ) : threadContextItems.length > 0 ? (
-                      <div className={'space-y-2'}>
-                        {threadContextItems.map((item, index) => (
-                          <div
-                            key={`${item.type}-${item.label ?? 'item'}-${index}`}
-                            className={
-                              'flex items-start gap-3 rounded-xl border border-border/20 bg-background/60 px-3 py-2'
-                            }
-                          >
-                            <span
-                              className={cn(
-                                'px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0',
-                                contextBadgeClass(item.type)
-                              )}
-                            >
-                              {(item.label || item.type).charAt(0).toUpperCase() + (item.label || item.type).slice(1)}
-                            </span>
-                            <p className={'text-sm text-foreground leading-relaxed'}>{item.text}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : threadContextError ? (
-                      <div className={'text-center py-6 text-xs text-red-500'}>{threadContextError}</div>
-                    ) : rawThreadContext ? (
-                      <pre
-                        className={
-                          'text-xs font-mono whitespace-pre-wrap leading-relaxed text-muted-foreground bg-background/30 rounded-lg p-3'
-                        }
-                      >
-                        {rawThreadContext}
-                      </pre>
-                    ) : (
+                    {memoryDrafts.length === 0 ? (
                       <div className={'text-center py-6 text-xs text-muted-foreground'}>
-                        <Trans>No context available yet</Trans>
+                        <Trans>No insights available yet.</Trans>
+                      </div>
+                    ) : (
+                      <div className={'space-y-2'}>
+                        {memoryDrafts.map((draft) => {
+                          const isEditing = editingInsightId === draft.id;
+                          return (
+                            <div
+                              key={draft.id}
+                              className={
+                                'flex items-center gap-3 rounded-xl border border-border/20 bg-background/60 px-3 py-2'
+                              }
+                            >
+                              <span
+                                className={cn(
+                                  'px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0',
+                                  'bg-slate-500/10 text-slate-500'
+                                )}
+                              >
+                                {INSIGHT_LABELS[draft.type]}
+                              </span>
+                              {isEditing ? (
+                                <Input
+                                  value={draft.text}
+                                  onChange={(event) => handleMemoryDraftChange(draft.id, event.target.value)}
+                                  onBlur={() => setEditingInsightId(null)}
+                                  onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                      event.preventDefault();
+                                      setEditingInsightId(null);
+                                    }
+                                  }}
+                                  autoFocus
+                                  className="flex-1"
+                                  placeholder={t`Summarize this insight...`}
+                                />
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="flex-1 text-left text-sm text-foreground/80 leading-relaxed truncate cursor-pointer hover:text-foreground transition-colors"
+                                  onClick={() => setEditingInsightId(draft.id)}
+                                >
+                                  {draft.text || t`Click to edit...`}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className="rounded-full p-1.5 text-muted-foreground cursor-pointer transition hover:bg-muted/10 hover:text-foreground"
+                                onClick={() => handleRemoveMemoryDraft(draft.id)}
+                                aria-label={t`Remove insight`}
+                              >
+                                <Trash2 className="size-3" />
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1246,101 +1254,14 @@ const CallSummary = ({
                 >
                   <div
                     className={
-                      'mt-2 bg-background/50 border border-border/30 rounded-lg p-3 max-h-96 overflow-auto space-y-3'
+                      'mt-2 bg-background/50 border border-border/30 rounded-lg p-3 max-h-96 overflow-auto'
                     }
                   >
-                    {messages.length > 0 ? (
-                      messages.map((msg, index) => {
-                        const speakerRole = getMessageRole(msg);
-                        const isGlass = speakerRole === 'assistant';
-                        const isUser = speakerRole === 'user';
-                        const speakerInfo = resolveParticipantInfo(msg);
-                        if (isGlass && !msg.text) {
-                          return null;
-                        }
-
-                        const messageFeedback = msg.utterance_id ? feedbackMap.get(msg.utterance_id) : null;
-                        const speakerName = speakerInfo.name;
-                        const avatarUrl = speakerInfo.avatarUrl;
-
-                        const glassFeedbackFromMessages = messages.filter(
-                          (m) => getMessageRole(m) === 'assistant' && m.utterance_id === msg.utterance_id
-                        );
-
-                        return (
-                          <div
-                            key={index}
-                            className={cn('flex gap-3 py-2', (isUser || isGlass) && 'flex-row-reverse text-right')}
-                          >
-                            {!isUser && !isGlass && (
-                              <PartnerAvatar
-                                className="h-8 w-8"
-                                fallbackSize="md"
-                                name={speakerName || undefined}
-                                src={avatarUrl || undefined}
-                              />
-                            )}
-                            {isGlass && (
-                              <Avatar className="h-8 w-8 border border-emerald-200">
-                                <AvatarImage
-                                  className="h-full w-full object-cover"
-                                  src="/glass-ai.png"
-                                  alt="Glass AI"
-                                />
-                                <AvatarFallback>AI</AvatarFallback>
-                              </Avatar>
-                            )}
-                            <div className="space-y-1 max-w-[80%]">
-                              <div className="text-xs text-muted-foreground">{speakerName}</div>
-                              <div
-                                className={cn(
-                                  'rounded-2xl px-3 py-2 text-sm',
-                                  isUser
-                                    ? 'bg-primary/10 ml-auto'
-                                    : isGlass
-                                    ? 'bg-emerald-500/10 text-emerald-900 ml-auto'
-                                    : 'bg-muted/70'
-                                )}
-                              >
-                                {msg.text}
-                                {msg.translation && (
-                                  <div className={'text-xs text-muted-foreground mt-1 italic'}>{msg.translation}</div>
-                                )}
-
-                                {/* Glass feedback inside user bubble */}
-                                {isUser && glassFeedbackFromMessages.length > 0 && (
-                                  <div className={'mt-2 pt-2 border-t border-primary/20 space-y-1 text-left'}>
-                                    {glassFeedbackFromMessages.map((gf, gfIndex) => (
-                                      <div key={gfIndex} className={'text-xs text-sky-600 leading-relaxed'}>
-                                        {gf.text}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Legacy Feedback for this message (from feedbackItems) */}
-                              {messageFeedback && messageFeedback.length > 0 && (
-                                <div
-                                  className={cn(
-                                    'space-y-1 text-xs text-sky-600 leading-relaxed',
-                                    isUser || isGlass ? 'text-right' : 'text-left'
-                                  )}
-                                >
-                                  {messageFeedback.map((fb, fbIndex) => (
-                                    <div key={fbIndex}>{fb}</div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className={'text-center py-4 text-sm text-muted-foreground'}>
-                        <Trans>No messages</Trans>
-                      </div>
-                    )}
+                    <ConversationMessagesList
+                      messages={messages}
+                      resolveParticipantInfo={resolveParticipantInfo}
+                      renderMessageFooter={renderMessageFeedback}
+                    />
                   </div>
                 </motion.div>
               )}
@@ -1354,8 +1275,17 @@ const CallSummary = ({
             <Button variant="outline" onClick={onClose} size="sm" className={'flex-1'}>
               <Trans>Close</Trans>
             </Button>
-            <Button onClick={handleSaveCall} size="sm" className={'flex-1 bg-primary hover:bg-primary/90'}>
-              <Save className={'size-4 mr-2'} />
+            <Button
+              onClick={() => void handleSaveCall()}
+              size="sm"
+              className={'flex-1 bg-primary hover:bg-primary/90'}
+              disabled={isSavingMemories}
+            >
+              {isSavingMemories ? (
+                <Loader2 className={'size-4 mr-2 animate-spin text-muted-foreground'} />
+              ) : (
+                <Save className={'size-4 mr-2'} />
+              )}
               <Trans>Save Call</Trans>
             </Button>
           </div>
@@ -1431,7 +1361,7 @@ const CallSummary = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleDeletePartner}
+              onClick={() => setIsPartnerDeleteDialogOpen(true)}
               disabled={isPartnerActionPending}
               className="w-full sm:w-auto justify-center cursor-pointer disabled:cursor-not-allowed text-destructive border-destructive/40 hover:bg-destructive/10"
             >
@@ -1464,6 +1394,34 @@ const CallSummary = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <AlertDialog open={isPartnerDeleteDialogOpen} onOpenChange={setIsPartnerDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            <Trans>Delete partner?</Trans>
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            <Trans>This will permanently remove the partner and cannot be undone.</Trans>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPartnerActionPending}>
+            <Trans>Cancel</Trans>
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+              event.preventDefault();
+              handleDeletePartner();
+            }}
+            disabled={isPartnerActionPending}
+            className="bg-destructive text-white hover:bg-destructive/90"
+          >
+            {deletePartnerMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            <Trans>Delete</Trans>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 };

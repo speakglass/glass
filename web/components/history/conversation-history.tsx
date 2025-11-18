@@ -118,15 +118,11 @@ function formatRelativeTime(date: Date | string): string {
   });
 }
 
-const getMessageRole = (message: ConversationMessage): string =>
-  (message.role || message.speaker_role || '').toLowerCase();
+const getMessageRole = (message: ConversationMessage): string => (message.role || '').toLowerCase();
 
 const getMessageParticipantId = (message: ConversationMessage): string => {
   if (typeof message.partner_id === 'string' && message.partner_id) {
     return message.partner_id.toLowerCase();
-  }
-  if (typeof message.speaker_id === 'string' && message.speaker_id) {
-    return message.speaker_id.toLowerCase();
   }
   return '';
 };

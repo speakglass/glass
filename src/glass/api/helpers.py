@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any
 import json
 import logging
+from datetime import datetime
+from typing import Any
 
 from fastapi import HTTPException
 
 from ..auth.jwt import AuthenticatedUser
+from ..domain import prompts
+from ..domain.memory import ConversationInsights
 from ..persistence.db import AccountConversation, ConversationPartner
 from ..domain.ports import LLMPort
 
@@ -165,6 +167,131 @@ JSON:
     return None
 
 
+def _conversation_excerpt(
+    messages: list[dict[str, Any]],
+    *,
+    max_chars: int = 4000,
+    max_messages: int = 40,
+) -> str:
+    """Render a compact transcript for downstream memory prompts."""
+    if not messages:
+        return ""
+
+    def _label(msg: dict[str, Any]) -> str:
+        role = (msg.get("role") or "").lower()
+        if role == "user":
+            return "Learner"
+        if role == "assistant":
+            return "Glass"
+        if role == "partner":
+            return "Partner"
+        return "Other"
+
+    lines: list[str] = []
+    for msg in messages[-max_messages:]:
+        text = (msg.get("text") or "").strip()
+        if not text:
+            continue
+        lines.append(f"{_label(msg)}: {text}")
+
+    excerpt = "\n".join(lines)
+    if len(excerpt) <= max_chars:
+        return excerpt
+    return excerpt[-max_chars:]
+
+
+def _clean_text(value: Any, *, limit: int | None = None) -> str | None:
+    if not isinstance(value, str):
+        return None
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+    if limit and len(cleaned) > limit:
+        cleaned = cleaned[:limit].rstrip()
+    return cleaned
+
+
+def _normalize_highlight_list(data: Any, *, max_items: int, limit: int) -> list[str]:
+    if not isinstance(data, list):
+        return []
+    highlights: list[str] = []
+    for entry in data:
+        text = _clean_text(entry, limit=limit)
+        if text:
+            highlights.append(text)
+        if len(highlights) >= max_items:
+            break
+    return highlights
+
+
+def _normalize_conversation_insights(payload: dict[str, Any]) -> ConversationInsights | None:
+    user_insights = _normalize_highlight_list(payload.get("user_insights"), max_items=3, limit=200)
+    partner_insights = _normalize_highlight_list(payload.get("partner_insights"), max_items=3, limit=200)
+    interaction_insights = _normalize_highlight_list(payload.get("interaction_insights"), max_items=3, limit=200)
+
+    if not any([user_insights, partner_insights, interaction_insights]):
+        return None
+
+    insights: ConversationInsights = {}
+    if user_insights:
+        insights["user_insights"] = user_insights
+    if partner_insights:
+        insights["partner_insights"] = partner_insights
+    if interaction_insights:
+        insights["interaction_insights"] = interaction_insights
+    return insights
+
+
+async def extract_conversation_memories_with_llm(
+    llm_adapter: LLMPort | None,
+    messages: list[dict[str, Any]],
+    learning_lang: str | None,
+    native_lang: str | None,
+    partner_label: str | None = None,
+) -> ConversationInsights | None:
+    """Use LLM to extract durable memories from a finished conversation."""
+    if not llm_adapter or not messages:
+        return None
+
+    excerpt = _conversation_excerpt(messages)
+    if not excerpt:
+        return None
+
+    native_name = native_lang or "unknown"
+    system_prompt, user_prompt = prompts.build_memory_extraction_prompt(
+        conversation_excerpt=excerpt,
+        native_lang_name=native_name,
+    )
+    if partner_label:
+        user_prompt += f"\nPartner reference: {partner_label}\n"
+
+    try:
+        response = await llm_adapter.call(
+            prompt=user_prompt,
+            system=system_prompt,
+            temperature=0.1,
+            max_tokens=900,
+            json_mode=True,
+        )
+    except Exception as exc:
+        LOGGER.debug("[MemoryExtraction] LLM call failed: %s", exc)
+        return None
+
+    if not response:
+        return None
+
+    try:
+        data = json.loads(response)
+    except Exception as exc:
+        LOGGER.debug("[MemoryExtraction] Failed to parse JSON: %s", exc)
+        return None
+
+    if not isinstance(data, dict):
+        return None
+
+    return _normalize_conversation_insights(data)
+
+
 def derive_conversation_title(
     extracted_info: list[dict[str, Any]] | None,
     started_at: datetime | None,
@@ -233,12 +360,16 @@ def serialize_detail(
     convo: AccountConversation,
     *,
     partner: ConversationPartner | None = None,
+    memory_thread_id: str | None = None,
+    memory_insights: ConversationInsights | None = None,
 ) -> dict[str, Any]:
     base = serialize_summary(convo, partner=partner)
-    base.update(
-        {
-            "messages": convo.messages,
-            "feedback": convo.feedback,
-        }
-    )
+    payload: dict[str, Any] = {
+        "messages": convo.messages,
+        "feedback": convo.feedback,
+        "memory_thread_id": memory_thread_id,
+    }
+    if memory_insights is not None:
+        payload["memory_insights"] = memory_insights
+    base.update(payload)
     return base

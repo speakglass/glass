@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { t } from '@lingui/core/macro';
 import { useAccountSession } from '@/contexts/account-session-context';
 import type { ConversationMessage } from '@/lib/account-api';
+import type { LearningLevel } from '@/types/learning-level';
+import { isLearningLevel } from '@/types/learning-level';
 
 export interface Message {
   type: 'user_message' | 'partner_message';
@@ -38,6 +40,7 @@ export interface VoiceStatus {
 export type FeedbackMode = 'always' | 'auto' | 'off';
 export type SuggestMode = 'always' | 'auto' | 'off';
 export type SuggestionLengthMode = 'auto' | 'short' | 'long';
+type MicRestartReason = 'settings_change' | 'device_change' | 'track_ended' | 'manual';
 
 export interface LanguageSettings {
   learningLang: string; // Language user wants to learn
@@ -51,7 +54,7 @@ export interface VoiceSettings {
   suggestMode?: SuggestMode;
   suggestionLengthMode?: SuggestionLengthMode;
   countryCode?: string; // ISO country code
-  proficiency?: 'cant_read' | 'can_read';
+  languageLevel?: LearningLevel;
   pronunciationMode?: 'native' | 'romaji';
   aiMessageDurationSec?: number | null; // null = no time limit
   glassMode?: boolean;
@@ -218,7 +221,7 @@ export function GlassProvider({
   onError?: (error: Error) => void;
 }) {
   const router = useRouter();
-  const { token: authToken, status: accountStatus } = useAccountSession();
+  const { token: authToken, status: accountStatus, snapshot } = useAccountSession();
   const authTokenRef = useRef<string | null>(null);
   const accountStatusRef = useRef<string>('idle');
   useEffect(() => {
@@ -263,7 +266,7 @@ export function GlassProvider({
         suggestMode: 'off',
         suggestionLengthMode: 'auto',
         countryCode: undefined,
-        proficiency: undefined,
+        languageLevel: undefined,
         pronunciationMode: 'native',
         aiMessageDurationSec: null,
         glassMode: false,
@@ -283,7 +286,7 @@ export function GlassProvider({
           suggestMode: parsed.suggestMode || 'off',
           suggestionLengthMode: parsed.suggestionLengthMode || 'auto',
           countryCode: parsed.countryCode,
-          proficiency: parsed.proficiency,
+          languageLevel: isLearningLevel(parsed.languageLevel) ? parsed.languageLevel : undefined,
           pronunciationMode: parsed.pronunciationMode || 'native',
           aiMessageDurationSec: parsed.aiMessageDurationSec ?? null,
           glassMode: parsed.glassMode ?? false,
@@ -298,13 +301,14 @@ export function GlassProvider({
       suggestMode: 'off',
       suggestionLengthMode: 'auto',
       countryCode: undefined,
-      proficiency: undefined,
+      languageLevel: undefined,
       pronunciationMode: 'native',
       aiMessageDurationSec: null,
       glassMode: false,
       showManualSuggestButtons: false,
     };
   });
+  const profileLanguageLevel = snapshot?.user?.languageLevel ?? null;
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
   const [feedbacks, setFeedbacks] = useState<AIFeedback[]>([]);
@@ -606,15 +610,28 @@ export function GlassProvider({
   const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isIntentionalDisconnectRef = useRef<boolean>(false);
   const messagesRef = useRef<Message[]>([]);
+  const micTrackCleanupRef = useRef<(() => void) | null>(null);
+  const shouldAutoRecoverMicRef = useRef(false);
+  const isRestartingMicRef = useRef(false);
+  const micPreferenceRef = useRef<string | null>(settings.micDeviceId ?? null);
+  const previousMicSettingRef = useRef<string | null>(settings.micDeviceId ?? null);
+  const restartMicStreamRef = useRef<((targetDeviceId?: string | null, reason?: MicRestartReason) => void) | null>(null);
 
   // Keep messagesRef in sync with messages state
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
 
+  useEffect(() => {
+    micPreferenceRef.current = settings.micDeviceId ?? null;
+  }, [settings.micDeviceId]);
+
   const updateSettings = useCallback((partial: Partial<VoiceSettings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...partial };
+      if (partial.languageLevel !== undefined) {
+        next.languageLevel = isLearningLevel(partial.languageLevel) ? partial.languageLevel : undefined;
+      }
       try {
         if (typeof window !== 'undefined') {
           window.localStorage.setItem('glass:settings', JSON.stringify(next));
@@ -623,6 +640,12 @@ export function GlassProvider({
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    if (!isLearningLevel(profileLanguageLevel)) return;
+    if (settings.languageLevel === profileLanguageLevel) return;
+    updateSettings({ languageLevel: profileLanguageLevel });
+  }, [profileLanguageLevel, settings.languageLevel, updateSettings]);
 
   const updateFeedbackMode = useCallback(
     (mode: FeedbackMode) => {
@@ -709,6 +732,85 @@ export function GlassProvider({
     animationFrameRef.current = requestAnimationFrame(updateFFT);
   }, []);
 
+  const acquireMicStream = useCallback(
+    async (preferredDeviceId?: string | null) => {
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices) {
+        throw new Error('Media devices API not available');
+      }
+
+      const buildConstraints = (deviceId?: string | null): MediaTrackConstraints => {
+        const constraints: MediaTrackConstraints = {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        };
+        if (deviceId) {
+          constraints.deviceId = { ideal: deviceId } as ConstrainDOMString;
+        }
+        return constraints;
+      };
+
+      const tryAcquire = (deviceId?: string | null) => navigator.mediaDevices.getUserMedia({ audio: buildConstraints(deviceId) });
+
+      try {
+        const stream = await tryAcquire(preferredDeviceId ?? null);
+        const deviceId =
+          stream.getAudioTracks()[0]?.getSettings()?.deviceId || preferredDeviceId || null;
+        return { stream, deviceId };
+      } catch (error: any) {
+        if (preferredDeviceId) {
+          console.warn('[GlassContext] Preferred microphone unavailable, falling back to default input', error);
+          try {
+            const fallbackStream = await tryAcquire(null);
+            const fallbackDeviceId = fallbackStream.getAudioTracks()[0]?.getSettings()?.deviceId || null;
+            updateSettings({ micDeviceId: null });
+            micPreferenceRef.current = null;
+            try {
+              toast.info(t`Microphone changed`, {
+                description: t`Selected mic is unavailable. Using the system default instead.`,
+                duration: 4500,
+              });
+            } catch {}
+            return { stream: fallbackStream, deviceId: fallbackDeviceId };
+          } catch (fallbackError) {
+            throw fallbackError;
+          }
+        }
+        throw error;
+      }
+    },
+    [updateSettings]
+  );
+
+  const rebuildMicAnalyser = useCallback(
+    (stream: MediaStream) => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+
+      if (audioContextRef.current) {
+        try {
+          audioContextRef.current.close();
+        } catch {}
+        audioContextRef.current = null;
+      }
+
+      const audioContext = new AudioContext({ sampleRate: 16000 });
+      audioContextRef.current = audioContext;
+
+      const micSource = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.8;
+      micSource.connect(analyser);
+      analyserRef.current = analyser;
+
+      updateFFT();
+    },
+    [updateFFT]
+  );
+
   // Connect to Glass API
   const connect = useCallback(
     async (config: SessionConfig) => {
@@ -763,19 +865,10 @@ export function GlassProvider({
         sessionIdRef.current = generateSessionId();
 
         // Request microphone access with selected device if provided
-        const micConstraints: MediaTrackConstraints = {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        };
-        if (currentSettings.micDeviceId) {
-          // Use ideal instead of exact for better compatibility
-          micConstraints.deviceId = currentSettings.micDeviceId;
-        }
-        const micStream = await navigator.mediaDevices.getUserMedia({
-          audio: micConstraints,
-        });
+        const { stream: micStream } = await acquireMicStream(currentSettings.micDeviceId);
         micStreamRef.current = micStream;
+        shouldAutoRecoverMicRef.current = true;
+        attachMicTrackMonitor(micStream);
 
         // Request screen share with audio (only for Live Call mode)
         let systemStream: MediaStream | null = null;
@@ -824,6 +917,8 @@ export function GlassProvider({
 
           // If screen share was skipped in Live Call mode, disconnect and show clear instructions
           if (screenShareSkipped) {
+            shouldAutoRecoverMicRef.current = false;
+            detachMicTrackMonitor();
             // Clean up microphone stream
             if (micStreamRef.current) {
               micStreamRef.current.getTracks().forEach((track) => track.stop());
@@ -846,18 +941,7 @@ export function GlassProvider({
         }
 
         // Setup audio context for FFT visualization
-        const audioContext = new AudioContext({ sampleRate: 16000 });
-        audioContextRef.current = audioContext;
-
-        const micSource = audioContext.createMediaStreamSource(micStream);
-        const analyser = audioContext.createAnalyser();
-        analyser.fftSize = 512;
-        analyser.smoothingTimeConstant = 0.8;
-        micSource.connect(analyser);
-        analyserRef.current = analyser;
-
-        // Start FFT animation
-        updateFFT();
+        rebuildMicAnalyser(micStream);
 
         // Connect WebSocket to Glass API with language parameters
         // Auto-convert HTTP URL to WebSocket URL (http→ws, https→wss)
@@ -936,11 +1020,11 @@ export function GlassProvider({
             })
           );
 
-          // Send user profile (country, proficiency) so backend can tailor suggestions
+          // Send user profile (country, level) so backend can tailor suggestions
           ws.send(
             JSON.stringify({
               type: 'set_profile',
-              proficiency: currentSettings.proficiency || null,
+              language_level: currentSettings.languageLevel || null,
               pronunciation_mode: currentSettings.pronunciationMode || 'native',
             })
           );
@@ -1053,6 +1137,8 @@ export function GlassProvider({
         console.error('Failed to connect:', error);
         setStatus({ value: 'disconnected' });
         hasWsErrorRef.current = true;
+        shouldAutoRecoverMicRef.current = false;
+        detachMicTrackMonitor();
         onError?.(error as Error);
         try {
           router.push('/failure');
@@ -1063,7 +1149,7 @@ export function GlassProvider({
         throw error;
       }
     },
-    [generateSessionId, updateFFT, onError]
+    [generateSessionId, updateFFT, onError, acquireMicStream, rebuildMicAnalyser]
   );
 
   // Handle TTS audio chunks
@@ -1451,6 +1537,133 @@ export function GlassProvider({
     }
   }, []);
 
+  const restartMicStream = useCallback(
+    async (targetDeviceId?: string | null, reason: MicRestartReason = 'manual') => {
+      if (isRestartingMicRef.current) {
+        return;
+      }
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        return;
+      }
+
+      isRestartingMicRef.current = true;
+      const preferredDeviceId =
+        typeof targetDeviceId === 'undefined' ? micPreferenceRef.current : targetDeviceId;
+
+      try {
+        console.log(`[GlassContext] Restarting microphone stream (reason=${reason})`);
+        const { stream: newMicStream } = await acquireMicStream(preferredDeviceId ?? null);
+        shouldAutoRecoverMicRef.current = true;
+
+        detachMicTrackMonitor();
+        if (micStreamRef.current) {
+          micStreamRef.current.getTracks().forEach((track) => track.stop());
+        }
+        micStreamRef.current = newMicStream;
+        attachMicTrackMonitor(newMicStream);
+
+        rebuildMicAnalyser(newMicStream);
+
+        processorNodesRef.current.forEach((processor) => {
+          try {
+            processor.disconnect();
+          } catch {}
+        });
+        processorNodesRef.current = [];
+        if (streamingContextRef.current) {
+          try {
+            streamingContextRef.current.close();
+          } catch {}
+          streamingContextRef.current = null;
+        }
+
+        startAudioStreaming(ws, newMicStream, systemStreamRef.current);
+      } catch (err) {
+        console.error('[GlassContext] Failed to restart microphone stream', err);
+        toast.error(t`Unable to access microphone`, {
+          description: t`Please re-enable microphone permissions or choose another input device.`,
+        });
+      } finally {
+        isRestartingMicRef.current = false;
+      }
+    },
+    [acquireMicStream, rebuildMicAnalyser, startAudioStreaming]
+  );
+
+  restartMicStreamRef.current = restartMicStream;
+
+  useEffect(() => {
+    const nextPreference = settings.micDeviceId ?? null;
+    if (previousMicSettingRef.current === nextPreference) {
+      return;
+    }
+    previousMicSettingRef.current = nextPreference;
+    if (status.value !== 'connected') {
+      return;
+    }
+    restartMicStream(nextPreference, 'settings_change');
+  }, [settings.micDeviceId, status.value, restartMicStream]);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices) {
+      return;
+    }
+
+    const handleDeviceChange = () => {
+      if (!shouldAutoRecoverMicRef.current || status.value !== 'connected') {
+        return;
+      }
+      const track = micStreamRef.current?.getAudioTracks()[0];
+      if (track && track.readyState === 'live') {
+        return;
+      }
+      restartMicStream(micPreferenceRef.current ?? null, 'device_change');
+    };
+
+    if (typeof navigator.mediaDevices.addEventListener === 'function') {
+      navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
+      return () => {
+        navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
+      };
+    }
+
+    const previousHandler = navigator.mediaDevices.ondevicechange;
+    navigator.mediaDevices.ondevicechange = (event: Event) => {
+      previousHandler?.call(navigator.mediaDevices, event);
+      handleDeviceChange();
+    };
+
+    return () => {
+      navigator.mediaDevices.ondevicechange = previousHandler;
+    };
+  }, [restartMicStream, status.value]);
+
+  function detachMicTrackMonitor() {
+    if (micTrackCleanupRef.current) {
+      micTrackCleanupRef.current();
+      micTrackCleanupRef.current = null;
+    }
+  }
+
+  function attachMicTrackMonitor(stream: MediaStream) {
+    detachMicTrackMonitor();
+    const track = stream.getAudioTracks()[0];
+    if (!track) return;
+
+    const handleTrackEnded = () => {
+      if (!shouldAutoRecoverMicRef.current) return;
+      const restart = restartMicStreamRef.current;
+      if (!restart) return;
+      restart(micPreferenceRef.current ?? null, 'track_ended');
+    };
+
+    track.addEventListener('ended', handleTrackEnded);
+    micTrackCleanupRef.current = () => {
+      track.removeEventListener('ended', handleTrackEnded);
+    };
+  }
+
   // Convert Float32 to PCM16
   const convertFloat32ToPCM16 = (float32Array: Float32Array): Uint8Array => {
     const pcm16 = new Int16Array(float32Array.length);
@@ -1488,6 +1701,8 @@ export function GlassProvider({
     // Mark this as an intentional disconnect
     isIntentionalDisconnectRef.current = true;
     console.log('[GlassContext] Set isIntentionalDisconnectRef = true');
+    shouldAutoRecoverMicRef.current = false;
+    detachMicTrackMonitor();
 
     // Stop elapsed timer
     if (localTickRef.current) {

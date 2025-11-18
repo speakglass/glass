@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+
+import asyncio
+import logging
+import re
 from datetime import datetime
 from typing import Any, Literal
-import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from ..auth.jwt import AuthenticatedUser, require_authenticated_user
+from ..domain.memory import ConversationInsights
 from ..persistence.service import (
     count_conversations,
     delete_conversation,
@@ -18,7 +22,12 @@ from ..persistence.service import (
     reassign_conversation_partner,
     update_conversation_title,
 )
-from .helpers import client_id_for_user, serialize_detail, serialize_summary
+from .helpers import (
+    client_id_for_user,
+    serialize_detail,
+    serialize_summary,
+    extract_conversation_memories_with_llm,
+)
 
 router = APIRouter()
 LOGGER = logging.getLogger(__name__)
@@ -33,29 +42,213 @@ async def _partners_for_conversations(
     return await get_partners_by_ids(db, user_id=user_id, partner_ids=partner_ids)
 
 
-def _build_participants(snapshot: dict[str, Any] | None, user: AuthenticatedUser | None) -> dict[str, dict[str, Any]]:
-    participants: dict[str, dict[str, Any]] = {
-        "glass": {"id": "glass", "name": "Glass"},
+
+def _normalize_partner_id(partner_id: str | None) -> str | None:
+    if partner_id is None:
+        return None
+    if not isinstance(partner_id, str):
+        return None
+    normalized = partner_id.strip().lower()
+    return normalized or None
+
+
+def _extract_partner_identifier(snapshot: dict[str, Any] | None, fallback_partner_id: str | None) -> str | None:
+    if isinstance(snapshot, dict):
+        partner_entry = snapshot.get("partner")
+        if isinstance(partner_entry, dict):
+            partner_id = partner_entry.get("id")
+            normalized = _normalize_partner_id(partner_id)
+            if normalized:
+                return normalized
+    return _normalize_partner_id(fallback_partner_id)
+
+
+def _memory_thread_id(conversation, user_id: str) -> str:
+    """Reconstruct the memory thread identifier used when the session ran."""
+    session_id = getattr(conversation, "session_id", None)
+    session_str = str(session_id or "").strip()
+    if not session_str:
+        raise ValueError("Conversation is missing session_id")
+
+    snapshot = getattr(conversation, "participant_snapshot", None)
+    partner_identifier = _extract_partner_identifier(snapshot, getattr(conversation, "partner_id", None))
+    if not partner_identifier:
+        partner_identifier = f"partner:{session_str}".lower()
+
+    return f"user:{user_id}:partner:{partner_identifier}:session:{session_str}"
+
+
+def _normalize_node_label(text: str | None, fallback: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9 ]+", " ", (text or "").strip())
+    normalized = cleaned.strip()[:50]
+    return normalized if normalized else fallback[:50]
+
+
+def _short_partner_id(partner_id: str | None) -> str | None:
+    normalized = _normalize_partner_id(partner_id)
+    if not normalized:
+        return None
+    return normalized[:8]
+
+
+def _short_user_id(user_id: str | None) -> str | None:
+    if not user_id:
+        return None
+    text = str(user_id).strip()
+    if not text:
+        return None
+    return text[:8]
+
+
+def _split_name(full_name: str | None) -> tuple[str | None, str | None]:
+    if not full_name:
+        return None, None
+    parts = full_name.strip().split()
+    if not parts:
+        return None, None
+    first = parts[0]
+    last = " ".join(parts[1:]) if len(parts) > 1 else None
+    return first, last
+
+
+def _conversation_partner_display_name(convo: Any) -> str:
+    snapshot = getattr(convo, "participant_snapshot", None) or {}
+    partner = snapshot.get("partner") or {}
+    name = partner.get("name") or getattr(convo, "partner_id", None)
+    base_label = _normalize_node_label(name, "Partner")
+    partner_id = partner.get("id") or getattr(convo, "partner_id", None)
+    suffix = _short_partner_id(partner_id)
+    if suffix:
+        return _normalize_node_label(f"{base_label}-{suffix}", base_label)
+    return base_label
+
+
+def _safe_person_node(name: str | None, fallback: str | None = None, unique_id: str | None = None) -> str:
+    label_source = name or fallback or unique_id or ""
+    base = _normalize_node_label(label_source, unique_id or fallback or "Person")
+    suffix = _short_user_id(unique_id)
+    if not suffix:
+        return base
+    return _normalize_node_label(f"{base}-{suffix}", base)
+
+
+async def _ensure_graph_user(memory_adapter, user: AuthenticatedUser) -> None:
+    try:
+        first_name, last_name = _split_name(user.name)
+        await memory_adapter.ensure_user(
+            user_id=user.user_id,
+            email=user.email,
+            first_name=first_name,
+            last_name=last_name,
+        )
+    except Exception as exc:
+        LOGGER.warning("[Conversations] Failed to ensure user in graph: %s", exc)
+
+
+def _build_profile_attributes(
+    *,
+    role: Literal["user", "partner"],
+    text: str,
+    user_node: str,
+    partner_node: str,
+    interaction_node: str,
+    partner_id: str | None,
+    thread_id: str | None,
+) -> dict[str, Any]:
+    return {
+        "label": "UserProfileFact",
+        "value": text,
+        "role": role,
+        "user_node": user_node,
+        "partner_node": partner_node,
+        "interaction_node": interaction_node,
+        "partner_id": partner_id,
+        "source_thread_id": thread_id,
+        "fact_role": role,
     }
-    user_entry = (snapshot or {}).get("user") or {}
-    user_id = user_entry.get("id") or (user.user_id if user else None)
-    participants["user"] = {
-        "id": (str(user_id).lower() if isinstance(user_id, str) else user_id),
-        "name": user_entry.get("name") or (user.name if user and user.name else "You"),
-    }
-    partner_entry = (snapshot or {}).get("partner")
-    if partner_entry:
-        partner_id = str(partner_entry.get("id") or "").lower()
-        partner_profile = {
-            "id": partner_id or None,
-            "name": partner_entry.get("name") or "Partner",
-        }
-        if partner_id:
-            participants[partner_id] = partner_profile
-        participants.setdefault("partner", partner_profile)
-    else:
-        participants.setdefault("partner", {"name": "Partner"})
-    return participants
+
+
+async def _persist_insights_as_documents(
+    memory_adapter,
+    user: AuthenticatedUser,
+    convo: Any,
+    insights: dict[str, Any],
+    *,
+    thread_id: str | None,
+) -> None:
+    if not insights:
+        return
+    await _ensure_graph_user(memory_adapter, user)
+    user_id = user.user_id
+    user_node = _safe_person_node(user.name or user.email or user_id, user_id, user_id)
+    partner_node = _conversation_partner_display_name(convo)
+    interaction_node = _normalize_node_label(f"{user_node}-with-{partner_node}", "Interaction")
+
+    for text in insights.get("user_insights") or []:
+        fact = (text or "").strip()
+        if not fact:
+            continue
+        await _add_memory_document(
+            memory_adapter,
+            user_id,
+            label="UserProfileFact",
+            attributes=_build_profile_attributes(
+                role="user",
+                text=fact,
+                user_node=user_node,
+                partner_node=partner_node,
+                interaction_node=interaction_node,
+                partner_id=convo.partner_id,
+                thread_id=thread_id,
+            ),
+            thread_id=thread_id,
+        )
+
+    for text in insights.get("partner_insights") or []:
+        fact = (text or "").strip()
+        if not fact:
+            continue
+        await _add_memory_document(
+            memory_adapter,
+            user_id,
+            label="UserProfileFact",
+            attributes=_build_profile_attributes(
+                role="partner",
+                text=fact,
+                user_node=user_node,
+                partner_node=partner_node,
+                interaction_node=interaction_node,
+                partner_id=convo.partner_id,
+                thread_id=thread_id,
+            ),
+            thread_id=thread_id,
+        )
+
+    interaction_entries = [
+        entry.strip()
+        for entry in (insights.get("interaction_insights") or [])
+        if isinstance(entry, str) and entry.strip()
+    ]
+    if thread_id and interaction_entries:
+        await _add_memory_document(
+            memory_adapter,
+            user_id,
+            label="Interaction",
+            attributes={
+                "thread_id": thread_id,
+                "interaction_summary": interaction_entries[0],
+                "topics": [entry for entry in interaction_entries[1:]],
+                "user_node": user_node,
+                "partner_node": partner_node,
+                "interaction_node": interaction_node,
+            },
+            thread_id=thread_id,
+        )
+
+    try:
+        memory_adapter.invalidate_user_cache(user_id)
+    except Exception as exc:
+        LOGGER.debug("[Conversations] Unable to invalidate user cache: %s", exc)
 
 
 class UsageResponse(BaseModel):
@@ -79,7 +272,7 @@ class UserResponse(BaseModel):
     last_login_at: datetime | None
     learning_lang: str | None = None
     native_lang: str | None = None
-    proficiency: str | None = None
+    language_level: str | None = None
     email_verified: bool = False
 
 
@@ -101,6 +294,8 @@ class ConversationSummary(BaseModel):
 class ConversationDetail(ConversationSummary):
     messages: list[dict[str, Any]] | None
     feedback: str | None
+    memory_thread_id: str | None = None
+    memory_insights: ConversationInsights | None = None
 
 
 class AccountSnapshot(BaseModel):
@@ -169,7 +364,7 @@ async def account_snapshot_endpoint(
                 last_login_at=account_user.last_login_at,
                 learning_lang=account_user.learning_lang,
                 native_lang=account_user.native_lang,
-                proficiency=account_user.proficiency,
+                language_level=account_user.language_level,
                 email_verified=account_user.email_verified,
             ),
             usage=UsageResponse(
@@ -257,11 +452,23 @@ async def conversation_detail_endpoint(
         partner = (await get_partners_by_ids(db, user_id=user.user_id, partner_ids=[convo.partner_id])).get(
             convo.partner_id
         )
-    return ConversationDetail(**serialize_detail(convo, partner=partner))
+    try:
+        memory_thread_id = _memory_thread_id(convo, user.user_id)
+    except ValueError:
+        memory_thread_id = None
+    return ConversationDetail(
+        **serialize_detail(
+            convo,
+            partner=partner,
+            memory_thread_id=memory_thread_id,
+            memory_insights=convo.memory_insights,
+        )
+    )
 
 
 class UpdateConversationRequest(BaseModel):
-    title: str
+    title: str | None = None
+    memory_insights: ConversationInsights | None = None
 
 
 class UpdateConversationPartnerRequest(BaseModel):
@@ -282,6 +489,7 @@ async def update_conversation_endpoint(
         user_id=user.user_id,
         conversation_id=conversation_id,
         title=update_data.title,
+        memory_insights=update_data.memory_insights,
     )
     if convo is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -290,6 +498,41 @@ async def update_conversation_endpoint(
         partner = (await get_partners_by_ids(db, user_id=user.user_id, partner_ids=[convo.partner_id])).get(
             convo.partner_id
         )
+
+    insights_to_persist = update_data.memory_insights
+    session_manager = request.app.state.app_state.session_manager
+    memory_adapter = getattr(session_manager, "memory_adapter", None)
+    if memory_adapter and insights_to_persist:
+        try:
+            thread_id = _memory_thread_id(convo, user.user_id)
+        except ValueError as exc:
+            LOGGER.debug("[Conversations] Missing thread id for insights persistence: %s", exc)
+        else:
+            try:
+                await memory_adapter.ensure_thread(thread_id, user.user_id)
+                await memory_adapter.persist_conversation_insights(
+                    user_id=user.user_id,
+                    thread_id=thread_id,
+                    insights=insights_to_persist,
+                    partner_id=convo.partner_id,
+                    language_code=convo.learning_lang,
+                    started_at=convo.started_at.timestamp() if convo.started_at else None,
+                    ended_at=convo.ended_at.timestamp() if convo.ended_at else None,
+                )
+                await _persist_insights_as_documents(
+                    memory_adapter,
+                    user,
+                    convo,
+                    insights_to_persist,
+                    thread_id=thread_id,
+                )
+            except Exception as exc:
+                LOGGER.warning(
+                    "[Conversations] Failed to persist updated insights for %s: %s",
+                    thread_id,
+                    exc,
+                )
+
     return ConversationSummary(**serialize_summary(convo, partner=partner))
 
 
@@ -316,31 +559,48 @@ async def update_conversation_partner_endpoint(
     if convo is None or partner is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
-    memory_adapter = getattr(request.app.state.app_state.session_manager, "memory_adapter", None)
-    if memory_adapter and convo.messages:
+    session_manager = request.app.state.app_state.session_manager
+    memory_adapter = getattr(session_manager, "memory_adapter", None)
+    llm_adapter = getattr(session_manager, "llm_adapter", None)
+    if memory_adapter and llm_adapter and convo.messages:
         new_thread_id = f"user:{user.user_id}:partner:{partner.id}"
-        participants = _build_participants(convo.participant_snapshot, user)
         started_epoch = convo.started_at.timestamp() if convo.started_at else None
+        ended_epoch = convo.ended_at.timestamp() if convo.ended_at else None
         try:
-            await memory_adapter.ensure_thread(new_thread_id, user.user_id)
-            await memory_adapter.add_conversation_messages(
-                thread_id=new_thread_id,
-                user_id=user.user_id,
-                messages=convo.messages,
-                session_start_time=started_epoch,
-                participants=participants,
+            insights = await extract_conversation_memories_with_llm(
+                llm_adapter,
+                convo.messages,
+                convo.learning_lang,
+                convo.native_lang,
+                partner.name,
             )
         except Exception as exc:
-            LOGGER.warning(
-                "[Conversations] Failed to sync reassigned partner thread %s: %s",
-                new_thread_id,
-                exc,
-            )
+            insights = None
+            LOGGER.debug("[Conversations] Memory extraction skipped for reassignment: %s", exc)
+
+        if insights:
+            try:
+                await memory_adapter.ensure_thread(new_thread_id, user.user_id)
+                await memory_adapter.persist_conversation_insights(
+                    user_id=user.user_id,
+                    thread_id=new_thread_id,
+                    insights=insights,
+                    partner_id=partner.id,
+                    language_code=convo.learning_lang,
+                    started_at=started_epoch,
+                    ended_at=ended_epoch,
+                )
+            except Exception as exc:
+                LOGGER.warning(
+                    "[Conversations] Failed to persist reassigned memories thread=%s: %s",
+                    new_thread_id,
+                    exc,
+                )
 
     return ConversationSummary(**serialize_summary(convo, partner=partner))
 
 
-@router.delete("/conversations/{conversation_id}", status_code=204)
+@router.delete("/conversations/{conversation_id}", status_code=200)
 async def delete_conversation_endpoint(
     request: Request,
     conversation_id: str,
@@ -357,48 +617,49 @@ async def delete_conversation_endpoint(
         raise HTTPException(status_code=404, detail="Conversation not found")
 
 
-class ZepMemoryItem(BaseModel):
-    """Zep memory fact from Knowledge Graph."""
-    id: str  # Zep edge UUID
+class ConversationMemoryItem(BaseModel):
+    """Memory fact extracted from the conversation."""
+    id: str  # Edge UUID
     label: str
     value: str  # fact text
-    editable: bool = False  # Zep facts are read-only
+    editable: bool = False  # Facts returned here are read-only
 
 
-class ZepMemoriesResponse(BaseModel):
-    """Zep memories for a conversation."""
-    memories: list[ZepMemoryItem]
-    processing: bool  # True if Zep is still processing
+class ConversationMemoriesResponse(BaseModel):
+    """Memories associated with a conversation."""
+    memories: list[ConversationMemoryItem]
+    processing: bool  # True if extraction is still running
 
 
-class ZepContextRange(BaseModel):
+class ConversationContextRange(BaseModel):
     start: str | None = None
     end: str | None = None
 
 
-class ZepContextItem(BaseModel):
+class ConversationContextItem(BaseModel):
     type: Literal["fact", "entity", "episode", "unknown"]
     text: str
     label: str | None = None
-    range: ZepContextRange | None = None
+    range: ConversationContextRange | None = None
 
 
-class ZepThreadContextResponse(BaseModel):
-    """Thread context string returned by Zep."""
-    items: list[ZepContextItem]
+class ConversationThreadContextResponse(BaseModel):
+    """Thread context string returned by the memory backend."""
+    items: list[ConversationContextItem]
     raw_context: str | None = None
 
 
-@router.get("/conversations/{conversation_id}/zep-memories", response_model=ZepMemoriesResponse)
-async def get_conversation_zep_memories(
+@router.get("/conversations/{conversation_id}/memories", response_model=ConversationMemoriesResponse)
+async def get_conversation_memories(
     request: Request,
     conversation_id: str,
     user: AuthenticatedUser = Depends(require_authenticated_user),
-) -> ZepMemoriesResponse:
-    """Get Zep-extracted memories for a conversation.
+    thread_id: str | None = Query(default=None, description="Optional override for the memory thread identifier"),
+) -> ConversationMemoriesResponse:
+    """Get extracted memories for a conversation.
     
-    This endpoint fetches facts from Zep's Knowledge Graph that were
-    extracted from this specific conversation (thread).
+    This endpoint fetches facts from the memory backend's knowledge graph
+    that were extracted from this specific conversation (thread).
     """
     import logging
     
@@ -414,118 +675,86 @@ async def get_conversation_zep_memories(
     if convo is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
-    # 2. Get Zep memory adapter
+    # 2. Get memory adapter
     app_state = request.app.state.app_state
-    memory_adapter = app_state.session_manager.memory_adapter
-    
-    # 3. Query Zep for facts from this thread
-    # Use session_id as thread_id (they're the same)
-    
-    def _edge_matches_thread(edge, target_thread_id: str) -> bool:
-        candidates = [
-            getattr(edge, "thread_id", None),
-            getattr(edge, "thread_uuid", None),
-            getattr(edge, "thread", None),
-        ]
-        metadata = getattr(edge, "metadata", None)
-        if isinstance(metadata, dict):
-            candidates.append(metadata.get("thread_id"))
-            candidates.append(metadata.get("thread"))
-        target = (target_thread_id or "").lower()
-        for candidate in candidates:
-            if candidate and str(candidate).lower() == target:
-                return True
-        # If Zep does not return thread metadata, keep the edge only when candidate info is missing.
-        return not any(candidates)
+    session_manager = getattr(app_state, "session_manager", None)
+    memory_adapter = getattr(session_manager, "memory_adapter", None)
+    if memory_adapter is None:
+        logger.warning("[ConversationMemories] Memory adapter missing")
+        raise HTTPException(status_code=503, detail="Memory adapter unavailable")
 
-    thread_id = convo.session_id
-
-    try:
-        # Check if thread episodes are still being processed by Zep
-        # Per Zep docs: Use graph.episode.list() to get episodes for a thread
-        processing = False
+    if thread_id:
+        effective_thread_id = thread_id
+    else:
         try:
-            # Get recent episodes for this thread/user
-            # Note: Zep's graph.episode.list filters by user_id, not thread_id
-            # We'll check all recent user episodes and see if any are unprocessed
-            episodes = await memory_adapter.client.graph.episode.list(
-                user_id=user.user_id,
-                limit=10,  # Check recent episodes
-            )
-            
-            # Check if any episodes are still processing
-            for episode in episodes:
-                episode_thread = getattr(episode, "thread_id", None) or getattr(episode, "thread_uuid", None)
-                if episode_thread and episode_thread != thread_id:
-                    continue
-                if hasattr(episode, 'processed') and not episode.processed:
-                    # At least one episode is still processing
-                    processing = True
-                    logger.info(f"[ZepMemories] Episode {episode.uuid_} still processing")
-                    break
-        except Exception as e:
-            logger.warning(f"[ZepMemories] Failed to check episode status: {e}")
-            # Fallback to time-based heuristic
-            if convo.ended_at:
-                from datetime import timezone
-                time_since_end = (datetime.now(timezone.utc) - convo.ended_at).total_seconds()
-                processing = time_since_end < 10
-        
-        # If still processing, return early with empty memories
-        if processing:
-            logger.info(f"[ZepMemories] Zep still processing for conversation {conversation_id}")
-            return ZepMemoriesResponse(
-                memories=[],
-                processing=True,
-            )
-        
-        # Search for facts from this specific conversation
-        edges = await memory_adapter.client.graph.search(
-            user_id=user.user_id,
-            query="facts and information from recent conversation",
-            scope="edges",
-            limit=50,
+            effective_thread_id = _memory_thread_id(convo, user.user_id)
+        except ValueError as exc:
+            logger.error("[ConversationMemories] Failed to derive thread id: %s", exc)
+            raise HTTPException(status_code=500, detail="Conversation metadata incomplete") from exc
+
+    # 3. Ask the adapter for facts tied to this thread
+    try:
+        status_task = asyncio.create_task(
+            memory_adapter._refresh_pending_episodes(user_id=user.user_id, thread_id=effective_thread_id)
         )
-        
-        memories = []
-        if edges and edges.edges:
-            for edge in edges.edges:
-                if not hasattr(edge, 'fact') or not edge.fact:
-                    continue
-                
-                if not _edge_matches_thread(edge, thread_id):
-                    continue
-                
-                memories.append(ZepMemoryItem(
-                    id=edge.uuid_,
-                    label="AI-extracted",  # Could parse from edge.name
-                    value=edge.fact,
-                    editable=False,
-                ))
-        
-        logger.info(f"[ZepMemories] Found {len(memories)} memories for conversation {conversation_id}")
-        
-        return ZepMemoriesResponse(
+        raw_memories, processing = await memory_adapter.list_conversation_memories(
+            user_id=user.user_id,
+            thread_id=effective_thread_id,
+            conversation_end=convo.ended_at,
+        )
+
+        memories = [
+            ConversationMemoryItem(
+                id=item.get("id", ""),
+                label=item.get("label", "Memory"),
+                value=item.get("value", ""),
+                editable=False,
+            )
+            for item in raw_memories
+            if item.get("id") and item.get("value")
+        ]
+
+        pending_flag = session_manager.is_memory_pending(effective_thread_id) if session_manager else False
+        try:
+            episode_processing = await status_task
+        except Exception as status_exc:
+            LOGGER.debug("[ConversationMemories] Episode status poll failed: %s", status_exc)
+            episode_processing = False
+        combined_processing = processing or pending_flag or episode_processing
+        logger.info(
+            "[ConversationMemories] thread=%s user=%s memories=%d processing=%s",
+            effective_thread_id,
+            user.user_id,
+            len(memories),
+            combined_processing,
+        )
+
+        return ConversationMemoriesResponse(
             memories=memories,
-            processing=False,
+            processing=combined_processing,
         )
     
     except Exception as e:
-        logger.error(f"[ZepMemories] Failed to fetch Zep memories: {e}", exc_info=True)
+        if 'status_task' in locals() and not status_task.done():
+            try:
+                await status_task
+            except Exception:
+                pass
+        logger.error(f"[ConversationMemories] Failed to fetch memories: {e}", exc_info=True)
         # Return empty result on error (non-critical)
-        return ZepMemoriesResponse(
+        return ConversationMemoriesResponse(
             memories=[],
             processing=False,
         )
 
 
-@router.get("/conversations/{conversation_id}/zep-context", response_model=ZepThreadContextResponse)
-async def get_conversation_zep_context(
+@router.get("/conversations/{conversation_id}/context", response_model=ConversationThreadContextResponse)
+async def get_conversation_context(
     request: Request,
     conversation_id: str,
     user: AuthenticatedUser = Depends(require_authenticated_user),
-) -> ZepThreadContextResponse:
-    """Return the summarized thread context from Zep for this conversation."""
+) -> ConversationThreadContextResponse:
+    """Return the summarized thread context for this conversation."""
     import logging
 
     logger = logging.getLogger(__name__)
@@ -550,19 +779,19 @@ async def get_conversation_zep_context(
         normalized_items = []
         for item in items:
             normalized_items.append(
-                ZepContextItem(
+                ConversationContextItem(
                     type=item.get("type") or "unknown",
                     text=item.get("text") or "",
                     label=item.get("label"),
-                    range=ZepContextRange(**item["range"]) if item.get("range") else None,
+                    range=ConversationContextRange(**item["range"]) if item.get("range") else None,
                 )
             )
-        return ZepThreadContextResponse(
+        return ConversationThreadContextResponse(
             items=normalized_items,
             raw_context=raw_context or None,
         )
     except HTTPException:
         raise
     except Exception as exc:
-        logger.error(f"[ZepContext] Failed for conversation {conversation_id}: {exc}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to fetch Zep context") from exc
+        logger.error(f"[ConversationContext] Failed for conversation {conversation_id}: {exc}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to fetch conversation context") from exc
