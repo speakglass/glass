@@ -572,9 +572,7 @@ const CallSummary = ({
       insights.interaction_insights = grouped.interaction_insights.slice(0, 3);
     }
 
-    return (insights.user_insights || insights.partner_insights || insights.interaction_insights)
-      ? insights
-      : null;
+    return (insights.user_insights || insights.partner_insights || insights.interaction_insights) ? insights : null;
   }, [memoryDrafts]);
 
   const handleSaveCall = useCallback(async () => {

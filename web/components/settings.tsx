@@ -6,6 +6,7 @@ import { useTheme } from 'next-themes';
 import { useGlass } from '@/contexts/glass-context';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Trans } from '@lingui/react/macro';
+import { t } from '@lingui/core/macro';
 import { usePathname } from 'next/navigation';
 import { LOCALIZED_LANGUAGE_CODES } from '@/lib/supported-languages';
 import { changeLanguage } from '@/utils/language';
@@ -16,6 +17,8 @@ import { Button } from '@/components/ui/button';
 import { useAccountSession } from '@/contexts/account-session-context';
 import { updateLanguageSettings } from '@/lib/account-api';
 import { useQueryClient } from '@tanstack/react-query';
+import type { LearningLevel } from '@/types/learning-level';
+import { isLearningLevel } from '@/types/learning-level';
 
 interface AudioDevice {
   deviceId: string;
@@ -35,6 +38,14 @@ const LEARNING_LANGUAGES = [
   { code: 'zh', name: '中文', flag: '🇨🇳' },
   { code: 'es', name: 'Español', flag: '🇪🇸' },
   { code: 'fr', name: 'Français', flag: '🇫🇷' },
+];
+
+const LANGUAGE_LEVEL_OPTIONS: { value: LearningLevel; label: string }[] = [
+  { value: 'zero', label: t`Zero` },
+  { value: 'beginner', label: t`Beginner` },
+  { value: 'elementary', label: t`Elementary` },
+  { value: 'intermediate', label: t`Intermediate` },
+  { value: 'advanced', label: t`Advanced` },
 ];
 
 export default function Settings({ open, onOpenChange }: SettingsProps) {
@@ -148,6 +159,29 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
       });
     } catch (error) {
       console.error('Failed to update learning language:', error);
+    }
+  };
+
+  const handleLanguageLevelChange = async (level: string) => {
+    if (!token || !isLearningLevel(level)) return;
+    try {
+      const result = await updateLanguageSettings(token, { languageLevel: level });
+      const resolvedLevel = result.languageLevel ?? level;
+      queryClient.setQueryData(['accountSession'], (old: any) => {
+        if (!old?.snapshot) return old;
+        return {
+          ...old,
+          snapshot: {
+            ...old.snapshot,
+            user: {
+              ...old.snapshot.user,
+              languageLevel: resolvedLevel,
+            },
+          },
+        };
+      });
+    } catch (error) {
+      console.error('Failed to update language level:', error);
     }
   };
 
@@ -280,6 +314,26 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
                       <span>{lang.flag}</span>
                       <span>{lang.name}</span>
                     </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Language Level Selection */}
+          <div className="flex items-center justify-between">
+            <Label htmlFor="language-level" className="flex items-center gap-1.5 text-sm font-medium w-36 shrink-0">
+              <Clock className="size-3.5" />
+              <Trans>Language level</Trans>
+            </Label>
+            <Select value={snapshot?.user?.languageLevel || ''} onValueChange={handleLanguageLevelChange}>
+              <SelectTrigger id="language-level" className="h-8 w-48">
+                <SelectValue placeholder="Select level" />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGE_LEVEL_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>

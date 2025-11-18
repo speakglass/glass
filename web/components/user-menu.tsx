@@ -3,7 +3,7 @@
 import { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
-import { LogOut, History, Settings as SettingsIcon, Brain } from 'lucide-react';
+import { LogOut, History, Settings as SettingsIcon, Brain, BookOpen, ArrowUpRight } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
 import { useQuery } from '@tanstack/react-query';
 import Settings from './settings';
@@ -151,6 +151,15 @@ export function UserMenu({
             <DropdownMenuItem onClick={() => setSettingsOpen(true)} className="cursor-pointer">
               <SettingsIcon />
               <Trans>Settings</Trans>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <a href="https://docs.speakglass.com" target="_blank" rel="noopener noreferrer" className="flex items-center">
+                <BookOpen />
+                <span className="flex-1">
+                  <Trans>Documentation</Trans>
+                </span>
+                <ArrowUpRight className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
+              </a>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />

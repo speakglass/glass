@@ -2,7 +2,7 @@
   "name": "glass",
   "version": "0.1.0",
   "private": true,
-  "description": "Glass - AI-powered voice assistant",
+  "description": "Glass - Your AI Prompter for Language Learning",
   "scripts": {
     "prepare": "husky install",
     "commitlint": "commitlint --edit"
@@ -14,4 +14,3 @@
   },
   "packageManager": "pnpm@10.20.0"
 }
-

@@ -4,13 +4,14 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from ..auth.jwt import AuthenticatedUser, require_authenticated_user
+from ..adapters.memory.schema import build_conversation_fact_payload, build_interaction_payload
 from ..domain.memory import ConversationInsights
 from ..persistence.service import (
     count_conversations,
@@ -78,28 +79,6 @@ def _memory_thread_id(conversation, user_id: str) -> str:
     return f"user:{user_id}:partner:{partner_identifier}:session:{session_str}"
 
 
-def _normalize_node_label(text: str | None, fallback: str) -> str:
-    cleaned = re.sub(r"[^A-Za-z0-9 ]+", " ", (text or "").strip())
-    normalized = cleaned.strip()[:50]
-    return normalized if normalized else fallback[:50]
-
-
-def _short_partner_id(partner_id: str | None) -> str | None:
-    normalized = _normalize_partner_id(partner_id)
-    if not normalized:
-        return None
-    return normalized[:8]
-
-
-def _short_user_id(user_id: str | None) -> str | None:
-    if not user_id:
-        return None
-    text = str(user_id).strip()
-    if not text:
-        return None
-    return text[:8]
-
-
 def _split_name(full_name: str | None) -> tuple[str | None, str | None]:
     if not full_name:
         return None, None
@@ -109,27 +88,6 @@ def _split_name(full_name: str | None) -> tuple[str | None, str | None]:
     first = parts[0]
     last = " ".join(parts[1:]) if len(parts) > 1 else None
     return first, last
-
-
-def _conversation_partner_display_name(convo: Any) -> str:
-    snapshot = getattr(convo, "participant_snapshot", None) or {}
-    partner = snapshot.get("partner") or {}
-    name = partner.get("name") or getattr(convo, "partner_id", None)
-    base_label = _normalize_node_label(name, "Partner")
-    partner_id = partner.get("id") or getattr(convo, "partner_id", None)
-    suffix = _short_partner_id(partner_id)
-    if suffix:
-        return _normalize_node_label(f"{base_label}-{suffix}", base_label)
-    return base_label
-
-
-def _safe_person_node(name: str | None, fallback: str | None = None, unique_id: str | None = None) -> str:
-    label_source = name or fallback or unique_id or ""
-    base = _normalize_node_label(label_source, unique_id or fallback or "Person")
-    suffix = _short_user_id(unique_id)
-    if not suffix:
-        return base
-    return _normalize_node_label(f"{base}-{suffix}", base)
 
 
 async def _ensure_graph_user(memory_adapter, user: AuthenticatedUser) -> None:
@@ -145,27 +103,21 @@ async def _ensure_graph_user(memory_adapter, user: AuthenticatedUser) -> None:
         LOGGER.warning("[Conversations] Failed to ensure user in graph: %s", exc)
 
 
-def _build_profile_attributes(
+async def _add_memory_document(
+    memory_adapter,
+    user_id: str,
     *,
-    role: Literal["user", "partner"],
-    text: str,
-    user_node: str,
-    partner_node: str,
-    interaction_node: str,
-    partner_id: str | None,
+    payload,
     thread_id: str | None,
-) -> dict[str, Any]:
-    return {
-        "label": "UserProfileFact",
-        "value": text,
-        "role": role,
-        "user_node": user_node,
-        "partner_node": partner_node,
-        "interaction_node": interaction_node,
-        "partner_id": partner_id,
-        "source_thread_id": thread_id,
-        "fact_role": role,
-    }
+) -> str | None:
+    add_doc = getattr(memory_adapter, "add_graph_document", None)
+    if not callable(add_doc):
+        return None
+    try:
+        return await add_doc(user_id=user_id, payload=payload, thread_id=thread_id)
+    except Exception as exc:
+        LOGGER.warning("[Conversations] Failed to add document for %s: %s", user_id, exc)
+        return None
 
 
 async def _persist_insights_as_documents(
@@ -180,49 +132,45 @@ async def _persist_insights_as_documents(
         return
     await _ensure_graph_user(memory_adapter, user)
     user_id = user.user_id
-    user_node = _safe_person_node(user.name or user.email or user_id, user_id, user_id)
-    partner_node = _conversation_partner_display_name(convo)
-    interaction_node = _normalize_node_label(f"{user_node}-with-{partner_node}", "Interaction")
+    thread_lower = thread_id.strip().lower() if isinstance(thread_id, str) else None
+    interaction_key = f"interaction:{thread_lower}" if thread_lower else None
+
+    payloads: list[Any] = []
+    now = datetime.now(timezone.utc)
 
     for text in insights.get("user_insights") or []:
         fact = (text or "").strip()
         if not fact:
             continue
-        await _add_memory_document(
-            memory_adapter,
-            user_id,
-            label="UserProfileFact",
-            attributes=_build_profile_attributes(
-                role="user",
-                text=fact,
-                user_node=user_node,
-                partner_node=partner_node,
-                interaction_node=interaction_node,
-                partner_id=convo.partner_id,
-                thread_id=thread_id,
-            ),
-            thread_id=thread_id,
+        payload = build_conversation_fact_payload(
+            value=fact,
+            subject_type="user",
+            subject_id=user_id,
+            category="user_conversation",
+            updated_at=now,
+            interaction_thread_id=thread_id,
+            interaction_key=interaction_key,
         )
+        if payload.entities or payload.edges:
+            payloads.append(payload)
 
-    for text in insights.get("partner_insights") or []:
-        fact = (text or "").strip()
-        if not fact:
-            continue
-        await _add_memory_document(
-            memory_adapter,
-            user_id,
-            label="UserProfileFact",
-            attributes=_build_profile_attributes(
-                role="partner",
-                text=fact,
-                user_node=user_node,
-                partner_node=partner_node,
-                interaction_node=interaction_node,
-                partner_id=convo.partner_id,
-                thread_id=thread_id,
-            ),
-            thread_id=thread_id,
-        )
+    partner_identifier = _normalize_partner_id(getattr(convo, "partner_id", None))
+    if partner_identifier:
+        for text in insights.get("partner_insights") or []:
+            fact = (text or "").strip()
+            if not fact:
+                continue
+            payload = build_conversation_fact_payload(
+                value=fact,
+                subject_type="partner",
+                subject_id=partner_identifier,
+                category="partner_conversation",
+                updated_at=now,
+                interaction_thread_id=thread_id,
+                interaction_key=interaction_key,
+            )
+            if payload.entities or payload.edges:
+                payloads.append(payload)
 
     interaction_entries = [
         entry.strip()
@@ -230,18 +178,22 @@ async def _persist_insights_as_documents(
         if isinstance(entry, str) and entry.strip()
     ]
     if thread_id and interaction_entries:
+        interaction_payload = build_interaction_payload(
+            user_id=user_id,
+            thread_id=thread_id,
+            language_code=getattr(convo, "learning_lang", None),
+            summary=interaction_entries[0],
+            topics=[entry for entry in interaction_entries[1:]],
+            partner_id=partner_identifier,
+        )
+        if interaction_payload.entities or interaction_payload.edges:
+            payloads.append(interaction_payload)
+
+    for payload in payloads:
         await _add_memory_document(
             memory_adapter,
             user_id,
-            label="Interaction",
-            attributes={
-                "thread_id": thread_id,
-                "interaction_summary": interaction_entries[0],
-                "topics": [entry for entry in interaction_entries[1:]],
-                "user_node": user_node,
-                "partner_node": partner_node,
-                "interaction_node": interaction_node,
-            },
+            payload=payload,
             thread_id=thread_id,
         )
 
@@ -703,16 +655,22 @@ async def get_conversation_memories(
             conversation_end=convo.ended_at,
         )
 
-        memories = [
-            ConversationMemoryItem(
-                id=item.get("id", ""),
-                label=item.get("label", "Memory"),
-                value=item.get("value", ""),
-                editable=False,
+        memories = []
+        for item in raw_memories:
+            item_id = item.get("id")
+            value = item.get("value")
+            if not item_id or not value:
+                continue
+            role = (item.get("role") or "").lower()
+            label = "Partner Fact" if role == "partner" else "User Fact"
+            memories.append(
+                ConversationMemoryItem(
+                    id=item_id,
+                    label=label,
+                    value=value,
+                    editable=False,
+                )
             )
-            for item in raw_memories
-            if item.get("id") and item.get("value")
-        ]
 
         pending_flag = session_manager.is_memory_pending(effective_thread_id) if session_manager else False
         try:

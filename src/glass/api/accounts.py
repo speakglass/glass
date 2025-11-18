@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from ..auth.jwt import AuthenticatedUser, require_authenticated_user
 from ..persistence.service import (
@@ -17,6 +17,18 @@ from ..persistence.service import (
     verify_reset_token,
 )
 from ..auth.passwords import hash_password, verify_password
+
+LEARNING_LEVELS = {"zero", "beginner", "elementary", "intermediate", "advanced"}
+
+
+def _validate_learning_level(value: str | None) -> str:
+    if value is None:
+        raise ValueError("Learning level is required")
+    normalized = value.strip().lower()
+    if normalized not in LEARNING_LEVELS:
+        raise ValueError(f"Invalid learning level: {value}")
+    return normalized
+
 
 router = APIRouter()
 
@@ -436,7 +448,12 @@ async def get_onboarding_status(
 class CompleteOnboardingRequest(BaseModel):
     learning_lang: str
     native_lang: str
-    proficiency: str  # 'cant_read' or 'can_read'
+    language_level: str  # zero, beginner, elementary, intermediate, or advanced
+
+    @field_validator("language_level")
+    @classmethod
+    def validate_level(cls, value: str) -> str:
+        return _validate_learning_level(value)
 
 
 class CompleteOnboardingResponse(BaseModel):
@@ -459,7 +476,7 @@ async def complete_onboarding(
             user.user_id,
             learning_lang=payload.learning_lang,
             native_lang=payload.native_lang,
-            proficiency=payload.proficiency,
+            language_level=payload.language_level,
         )
         return CompleteOnboardingResponse(
             success=True,
@@ -473,14 +490,21 @@ async def complete_onboarding(
 class UpdateLanguageSettingsRequest(BaseModel):
     learning_lang: str | None = None
     native_lang: str | None = None
-    proficiency: str | None = None
+    language_level: str | None = None
+
+    @field_validator("language_level", mode="before")
+    @classmethod
+    def validate_optional_level(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        return _validate_learning_level(value)
 
 
 class UpdateLanguageSettingsResponse(BaseModel):
     success: bool
     learning_lang: str | None
     native_lang: str | None
-    proficiency: str | None
+    language_level: str | None
 
 
 @router.patch("/accounts/me/languages", response_model=UpdateLanguageSettingsResponse)
@@ -504,8 +528,8 @@ async def update_language_settings(
                 account_user.learning_lang = payload.learning_lang
             if payload.native_lang is not None:
                 account_user.native_lang = payload.native_lang
-            if payload.proficiency is not None:
-                account_user.proficiency = payload.proficiency
+            if payload.language_level is not None:
+                account_user.language_level = payload.language_level
             
             session.add(account_user)
             await session.commit()
@@ -515,8 +539,7 @@ async def update_language_settings(
             success=True,
             learning_lang=account_user.learning_lang,
             native_lang=account_user.native_lang,
-            proficiency=account_user.proficiency,
+            language_level=account_user.language_level,
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-

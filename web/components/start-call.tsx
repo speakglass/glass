@@ -20,6 +20,9 @@ import {
   updatePartner,
   deletePartner,
 } from '@/lib/account-api';
+import { PartnerVoiceSelector } from '@/components/partner-voice-selector';
+import { ROLEPLAY_VOICE_OPTIONS } from '@/lib/roleplay-voices';
+import { useVoicePreviewPlayer } from '@/hooks/use-voice-preview';
 import DiscordLogo from './logos/discord';
 import { PartnerAvatar } from '@/components/partner-avatar';
 import {
@@ -206,6 +209,8 @@ const LIVE_CALL_PLATFORM_OPTIONS: LiveCallPlatformOption[] = [
   },
 ];
 
+const DEFAULT_ROLEPLAY_VOICE_ID = ROLEPLAY_VOICE_OPTIONS[0]?.id ?? '';
+
 // Get example for language pair, fallback to Japanese->English if not found
 const getLanguageExample = (learningLang: string, nativeLang: string): ExamplePhrase | undefined => {
   return LANGUAGE_EXAMPLES[learningLang]?.[nativeLang] || LANGUAGE_EXAMPLES['ja']?.['en'];
@@ -214,6 +219,7 @@ const getLanguageExample = (learningLang: string, nativeLang: string): ExamplePh
 export default function StartCall() {
   const { status, connect, updateSettings, settings } = useGlass();
   const { onboardingStatus, snapshot, token } = useAccountSession();
+  const { playPreview, stopPreview, loadingVoiceId, playingVoiceId } = useVoicePreviewPlayer(token);
   const router = useRouter();
   const pathname = usePathname();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -227,27 +233,15 @@ export default function StartCall() {
   });
   const currentLearningLang = languages.learningLang || snapshot?.user.learningLang || 'en';
   const [selectedMode, setSelectedMode] = useState<'roleplay' | 'live_call' | null>(null);
-  const [selectedScenario, setSelectedScenario] = useState<string>('');
-  const [customScenario, setCustomScenario] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('glass_custom_scenario') || '';
-    }
-    return '';
-  });
-  const [customName, setCustomName] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('glass_custom_name') || '';
-    }
-    return '';
-  });
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] = useState(false);
   const [createPartnerNameDraft, setCreatePartnerNameDraft] = useState<string>('');
   const [createPartnerDescriptionDraft, setCreatePartnerDescriptionDraft] = useState<string>('');
   const [createPartnerAvatarPreview, setCreatePartnerAvatarPreview] = useState<string | null>(null);
   const [createPartnerAvatarFile, setCreatePartnerAvatarFile] = useState<File | null>(null);
+  const [createPartnerVoiceId, setCreatePartnerVoiceId] = useState<string>(DEFAULT_ROLEPLAY_VOICE_ID);
   const createPartnerAvatarInputRef = useRef<HTMLInputElement>(null);
   const [isSavingCreatePartner, setIsSavingCreatePartner] = useState(false);
-  const [previousScenarioBeforeCreate, setPreviousScenarioBeforeCreate] = useState<string>('');
 
   const [isEditPartnerModalOpen, setIsEditPartnerModalOpen] = useState(false);
   const [partnerToEdit, setPartnerToEdit] = useState<ConversationPartner | null>(null);
@@ -255,24 +249,13 @@ export default function StartCall() {
   const [editPartnerDescriptionDraft, setEditPartnerDescriptionDraft] = useState<string>('');
   const [editPartnerAvatarPreview, setEditPartnerAvatarPreview] = useState<string | null>(null);
   const [editPartnerAvatarFile, setEditPartnerAvatarFile] = useState<File | null>(null);
+  const [editPartnerVoiceId, setEditPartnerVoiceId] = useState<string>(DEFAULT_ROLEPLAY_VOICE_ID);
   const editPartnerAvatarInputRef = useRef<HTMLInputElement>(null);
   const [isSavingEditPartner, setIsSavingEditPartner] = useState(false);
 
   const [isDeletePartnerDialogOpen, setIsDeletePartnerDialogOpen] = useState(false);
   const [partnerPendingDelete, setPartnerPendingDelete] = useState<ConversationPartner | null>(null);
   const [isDeletingPartner, setIsDeletingPartner] = useState(false);
-  const persistCustomName = useCallback((value: string) => {
-    setCustomName(value);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('glass_custom_name', value);
-    }
-  }, []);
-  const persistCustomScenario = useCallback((value: string) => {
-    setCustomScenario(value);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('glass_custom_scenario', value);
-    }
-  }, []);
   const clearCreatePartnerAvatarPreview = useCallback(() => {
     setCreatePartnerAvatarFile(null);
     setCreatePartnerAvatarPreview((previous) => {
@@ -298,9 +281,6 @@ export default function StartCall() {
       editPartnerAvatarInputRef.current.value = '';
     }
   }, []);
-  const [proficiency, setProficiency] = useState<'cant_read' | 'can_read' | undefined>(
-    (settings.proficiency as 'cant_read' | 'can_read' | undefined) || undefined
-  );
   const [selectedPlatform, setSelectedPlatform] = useState<LiveCallPlatform>('discord');
 
   const isConnecting = status.value === 'connecting' || step === 'connecting';
@@ -317,9 +297,41 @@ export default function StartCall() {
     staleTime: 60 * 1000,
   });
   const partnersLoading = partnersQueryEnabled ? partnersQueryLoading || partnersFetching : true;
-  const roleplayContacts: ConversationPartner[] = (partnersData ?? []).filter((partner) => partner.kind === 'roleplay');
-  const selectedRoleplayPartner = roleplayContacts.find((partner) => partner.id === selectedScenario);
+  const roleplayPartners: ConversationPartner[] = (partnersData ?? []).filter((partner) => partner.kind === 'roleplay');
+  const selectedRoleplayPartner = roleplayPartners.find((partner) => partner.id === selectedPartnerId);
   const [hoveredPartner, setHoveredPartner] = useState<ConversationPartner | null>(null);
+  const partnerListRef = useRef<HTMLDivElement | null>(null);
+  const [showPartnerListGradient, setShowPartnerListGradient] = useState(false);
+  const updatePartnerListGradient = useCallback(() => {
+    const el = partnerListRef.current;
+    if (!el) {
+      setShowPartnerListGradient(false);
+      return;
+    }
+
+    const canScroll = el.scrollHeight > el.clientHeight + 1;
+    if (!canScroll) {
+      setShowPartnerListGradient(false);
+      return;
+    }
+
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 12;
+    setShowPartnerListGradient(!atBottom);
+  }, []);
+  useEffect(() => {
+    const el = partnerListRef.current;
+    if (!el) {
+      setShowPartnerListGradient(false);
+      return;
+    }
+
+    updatePartnerListGradient();
+    const handleScroll = () => updatePartnerListGradient();
+    el.addEventListener('scroll', handleScroll);
+    return () => {
+      el.removeEventListener('scroll', handleScroll);
+    };
+  }, [roleplayPartners, partnersLoading, updatePartnerListGradient]);
 
   // Removed: Auto-start language selection moved to onboarding flow
 
@@ -366,13 +378,6 @@ export default function StartCall() {
       : 'text-muted-foreground hover:text-foreground text-sm transition-colors';
   };
 
-  // Sync proficiency from settings
-  useEffect(() => {
-    if (settings.proficiency) {
-      setProficiency(settings.proficiency as 'cant_read' | 'can_read');
-    }
-  }, [settings.proficiency]);
-
   useEffect(() => {
     return () => {
       if (createPartnerAvatarPreview && createPartnerAvatarPreview.startsWith('blob:')) {
@@ -391,20 +396,19 @@ export default function StartCall() {
 
   useEffect(() => {
     if (
-      selectedScenario &&
-      selectedScenario !== 'custom' &&
-      roleplayContacts.length > 0 &&
-      !roleplayContacts.some((contact) => contact.id === selectedScenario)
+      selectedPartnerId &&
+      roleplayPartners.length > 0 &&
+      !roleplayPartners.some((partner) => partner.id === selectedPartnerId)
     ) {
-      setSelectedScenario('');
+      setSelectedPartnerId('');
     }
-  }, [roleplayContacts, selectedScenario]);
+  }, [roleplayPartners, selectedPartnerId]);
 
   useEffect(() => {
-    if (!selectedScenario && roleplayContacts.length > 0) {
-      setSelectedScenario(roleplayContacts[0].id);
+    if (!selectedPartnerId && roleplayPartners.length > 0) {
+      setSelectedPartnerId(roleplayPartners[0].id);
     }
-  }, [roleplayContacts, selectedScenario]);
+  }, [roleplayPartners, selectedPartnerId]);
 
   // Sync languages from user profile when snapshot loads
   useEffect(() => {
@@ -433,9 +437,7 @@ export default function StartCall() {
         });
       }
       setSelectedMode(null);
-      setSelectedScenario('');
-      setCustomScenario('');
-      // Keep proficiency from settings, don't reset it
+      setSelectedPartnerId('');
     }
   }, [status.value, snapshot]);
 
@@ -462,6 +464,24 @@ export default function StartCall() {
     }
   };
 
+  const handleVoicePreview = useCallback(
+    async (voiceId: string, sampleText: string) => {
+      try {
+        const fallbackText =
+          sampleText && sampleText.trim().length > 0
+            ? sampleText
+            : "Hi! I'm your Glass roleplay partner. Let's practice together.";
+        await playPreview({ voiceId, sampleText: fallbackText });
+      } catch (error) {
+        console.error('[StartCall] Voice preview failed', error);
+        toast.error(t`Unable to play preview`, {
+          description: error instanceof Error ? error.message : undefined,
+        });
+      }
+    },
+    [playPreview]
+  );
+
   const openCreatePartnerModal = () => {
     if (!token) {
       toast.error(t`Unable to create a partner`, {
@@ -469,12 +489,11 @@ export default function StartCall() {
       });
       return;
     }
-    setPreviousScenarioBeforeCreate(selectedScenario);
-    setSelectedScenario('custom');
-    setCreatePartnerNameDraft(customName);
-    setCreatePartnerDescriptionDraft(customScenario);
+    setCreatePartnerNameDraft('');
+    setCreatePartnerDescriptionDraft('');
     clearCreatePartnerAvatarPreview();
-    setCreatePartnerAvatarPreview(null);
+    setCreatePartnerVoiceId(DEFAULT_ROLEPLAY_VOICE_ID);
+    stopPreview();
     setIsCreatePartnerModalOpen(true);
   };
 
@@ -487,15 +506,17 @@ export default function StartCall() {
     setEditPartnerDescriptionDraft(partner.description || '');
     clearEditPartnerAvatarPreview();
     setEditPartnerAvatarPreview(partner.avatarUrl || null);
+    setEditPartnerVoiceId(partner.voiceId || DEFAULT_ROLEPLAY_VOICE_ID);
+    stopPreview();
     setIsEditPartnerModalOpen(true);
   };
 
   const handleCloseCreatePartnerModal = () => {
     setIsCreatePartnerModalOpen(false);
     setIsSavingCreatePartner(false);
-    setSelectedScenario((prev) => (prev === 'custom' ? previousScenarioBeforeCreate : prev));
     clearCreatePartnerAvatarPreview();
-    setCreatePartnerAvatarFile(null);
+    setCreatePartnerVoiceId(DEFAULT_ROLEPLAY_VOICE_ID);
+    stopPreview();
   };
 
   const handleCloseEditPartnerModal = () => {
@@ -504,6 +525,8 @@ export default function StartCall() {
     setIsSavingEditPartner(false);
     clearEditPartnerAvatarPreview();
     setEditPartnerAvatarFile(null);
+    setEditPartnerVoiceId(DEFAULT_ROLEPLAY_VOICE_ID);
+    stopPreview();
   };
 
   const handleCreateAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -555,6 +578,7 @@ export default function StartCall() {
         description: createPartnerDescriptionDraft.trim() || undefined,
         learningLang: currentLearningLang,
         nativeLang: languages.nativeLang || undefined,
+        voiceId: createPartnerVoiceId || undefined,
       });
       if (createPartnerAvatarFile) {
         partner = await uploadPartnerAvatar(token, partner.id, createPartnerAvatarFile);
@@ -569,9 +593,7 @@ export default function StartCall() {
           return [partner, ...existing];
         }
       );
-      setSelectedScenario(partner.id);
-      persistCustomName(partner.name || '');
-      persistCustomScenario(partner.description || '');
+      setSelectedPartnerId(partner.id);
       toast.success(t`Custom partner ready`);
       handleCloseCreatePartnerModal();
     } catch (error) {
@@ -599,6 +621,7 @@ export default function StartCall() {
       let partner = await updatePartner(token, partnerToEdit.id, {
         name: trimmedName,
         description: editPartnerDescriptionDraft.trim() || null,
+        voiceId: editPartnerVoiceId || null,
       });
       if (editPartnerAvatarFile) {
         partner = await uploadPartnerAvatar(token, partner.id, editPartnerAvatarFile);
@@ -607,8 +630,8 @@ export default function StartCall() {
         ['partners', token, currentLearningLang],
         (previous) => (previous || []).map((item) => (item.id === partner.id ? partner : item))
       );
-      if (selectedScenario === partner.id) {
-        setSelectedScenario(partner.id);
+      if (selectedPartnerId === partner.id) {
+        setSelectedPartnerId(partner.id);
       }
       toast.success(t`Partner updated`);
       handleCloseEditPartnerModal();
@@ -642,8 +665,8 @@ export default function StartCall() {
         ['partners', token, currentLearningLang],
         (previous) => (previous || []).filter((item) => item.id !== partnerPendingDelete.id)
       );
-      if (selectedScenario === partnerPendingDelete.id) {
-        setSelectedScenario('');
+      if (selectedPartnerId === partnerPendingDelete.id) {
+        setSelectedPartnerId('');
       }
       toast.success(t`Partner deleted`);
     } catch (error) {
@@ -655,12 +678,8 @@ export default function StartCall() {
     }
   };
 
-  const handleScenarioSelect = (scenario: string) => {
-    if (scenario === 'custom') {
-      openCreatePartnerModal();
-      return;
-    }
-    setSelectedScenario((prev) => (prev === scenario ? '' : scenario));
+  const handlePartnerSelect = (partnerId: string) => {
+    setSelectedPartnerId(partnerId);
   };
 
   const handleStartCall = async () => {
@@ -669,20 +688,15 @@ export default function StartCall() {
       return;
     }
 
-    let selectedPartnerId: string | null =
-      selectedMode === 'roleplay' && selectedScenario && selectedScenario !== 'custom'
-        ? selectedScenario
-        : selectedMode === 'roleplay'
-        ? null
-        : null;
+    const partnerIdForSession = selectedMode === 'roleplay' ? selectedPartnerId : null;
     let partnerForSession: ConversationPartner | null = null;
 
     if (selectedMode === 'roleplay') {
-      if (!selectedPartnerId) {
+      if (!partnerIdForSession) {
         toast.error(t`Select a conversation partner`);
         return;
       }
-      partnerForSession = roleplayContacts.find((contact) => contact.id === selectedPartnerId) || null;
+      partnerForSession = roleplayPartners.find((partner) => partner.id === partnerIdForSession) || null;
       if (!partnerForSession) {
         toast.error(t`Select a conversation partner`);
         return;
@@ -692,7 +706,7 @@ export default function StartCall() {
     const config: SessionConfig = {
       languages,
       mode: selectedMode,
-      partnerId: partnerForSession?.id || selectedPartnerId || null,
+      partnerId: partnerForSession?.id || partnerIdForSession || null,
       partner: partnerForSession,
     };
 
@@ -1039,7 +1053,7 @@ export default function StartCall() {
               </motion.div>
             )}
 
-            {/* Scenario Selection (Roleplay Mode Only) */}
+            {/* Partner Selection (Roleplay Mode Only) */}
             {step === 'scenario' && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -1055,50 +1069,53 @@ export default function StartCall() {
                     <Trans>Select a conversation partner</Trans>
                   </p>
                 </div>
-
-                <div className={'flex flex-col gap-2 w-full max-w-md mx-auto'}>
+                <div className="relative w-full max-w-md mx-auto">
+                  <div
+                    ref={partnerListRef}
+                    className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto pr-1 pb-3 sm:pr-2"
+                  >
                   {partnersLoading ? (
                     <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
                       <Trans>Loading partners...</Trans>
                     </div>
-                  ) : roleplayContacts.length === 0 ? (
+                  ) : roleplayPartners.length === 0 ? (
                     <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
                       <Trans>No partners available</Trans>
                     </div>
                   ) : (
-                    roleplayContacts.map((contact) => (
+                    roleplayPartners.map((partner) => (
                       <div
-                        key={contact.id}
+                        key={partner.id}
                         role="button"
                         tabIndex={0}
-                        onClick={() => handleScenarioSelect(contact.id)}
+                        onClick={() => handlePartnerSelect(partner.id)}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault();
-                            handleScenarioSelect(contact.id);
+                            handlePartnerSelect(partner.id);
                           }
                         }}
-                        onMouseEnter={() => setHoveredPartner(contact)}
+                        onMouseEnter={() => setHoveredPartner(partner)}
                         onMouseLeave={() => setHoveredPartner(null)}
                         className={cn(
                           'group px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
                           getCardClass(),
                           'hover:scale-[1.01]',
-                          selectedScenario === contact.id &&
+                          selectedPartnerId === partner.id &&
                             (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent/50 border-foreground/30')
                         )}
                       >
                         <div className="relative flex items-center gap-3">
-                          {contact.avatarUrl && (
+                          {partner.avatarUrl && (
                             <div
                               className={cn(
                                 'hidden sm:block absolute -left-48 top-1/2 -translate-y-1/2 w-40 h-40 rounded-[36px] overflow-hidden shadow-2xl border pointer-events-none transition-all duration-200',
-                                hoveredPartner?.id === contact.id
+                                hoveredPartner?.id === partner.id
                                   ? 'opacity-100 translate-x-0'
                                   : 'opacity-0 -translate-x-3'
                               )}
                             >
-                              <img src={contact.avatarUrl} alt={contact.name} className="w-full h-full object-cover" />
+                              <img src={partner.avatarUrl} alt={partner.name} className="w-full h-full object-cover" />
                             </div>
                           )}
                           <PartnerAvatar
@@ -1110,18 +1127,18 @@ export default function StartCall() {
                             )}
                             fallbackClassName={glassMode ? 'bg-transparent text-white/80' : undefined}
                             fallbackSize="md"
-                            name={contact.name}
-                            src={contact.avatarUrl || undefined}
-                            alt={contact.name}
+                            name={partner.name}
+                            src={partner.avatarUrl || undefined}
+                            alt={partner.name}
                           />
                           <div className={'flex-1 min-w-0 flex items-start gap-2'}>
                             <div className="flex-1 min-w-0">
                               <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
-                                {contact.name}
+                                {partner.name}
                               </div>
-                              <div className={`${getTextClass('muted')} text-xs truncate`}>{contact.description}</div>
+                              <div className={`${getTextClass('muted')} text-xs truncate`}>{partner.description}</div>
                             </div>
-                          {contact.isSystem === false && (
+                          {partner.isSystem === false && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <button
@@ -1141,7 +1158,7 @@ export default function StartCall() {
                                     onClick={(event) => {
                                       event.preventDefault();
                                       event.stopPropagation();
-                                      openEditPartnerModal(contact);
+                                      openEditPartnerModal(partner);
                                     }}
                                   >
                                     <Trans>Edit</Trans>
@@ -1151,7 +1168,7 @@ export default function StartCall() {
                                     onClick={(event) => {
                                       event.preventDefault();
                                       event.stopPropagation();
-                                      openDeletePartnerDialog(contact);
+                                      openDeletePartnerDialog(partner);
                                     }}
                                   >
                                     <Trans>Delete</Trans>
@@ -1165,16 +1182,14 @@ export default function StartCall() {
                     ))
                   )}
 
-                  {/* Custom Contact */}
+                  {/* Custom Partner */}
                   <div className={'w-full'}>
                     <button
-                      onClick={() => handleScenarioSelect('custom')}
+                      onClick={openCreatePartnerModal}
                       className={cn(
                         'w-full px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
                         getCardClass(),
-                        'hover:scale-[1.01]',
-                        selectedScenario === 'custom' &&
-                          (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent/50 border-foreground/30')
+                        'hover:scale-[1.01]'
                       )}
                     >
                       <div className={'flex items-center gap-3'}>
@@ -1199,19 +1214,22 @@ export default function StartCall() {
                       </div>
                     </button>
                   </div>
+                  </div>
+                  {showPartnerListGradient && (
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-card/90 via-card/70 to-transparent" />
+                  )}
                 </div>
-
                 <div className={'flex justify-between items-center w-full'}>
                   <button onClick={() => setStep('mode')} className={cn(getBackButtonClass(), 'cursor-pointer')}>
                     <Trans>← Back</Trans>
                   </button>
                   <Button
                     onClick={handleStartCall}
-                    disabled={!selectedScenario || selectedScenario === 'custom'}
+                    disabled={!selectedPartnerId}
                     variant="default"
                     className={cn(
                       'cursor-pointer rounded-full px-6 py-2 sm:px-7 sm:py-2.5 inline-flex items-center gap-1.5 font-semibold tracking-tight text-white bg-emerald-500 hover:bg-emerald-600',
-                      (!selectedScenario || selectedScenario === 'custom') && 'opacity-50 cursor-not-allowed'
+                      !selectedPartnerId && 'opacity-50 cursor-not-allowed'
                     )}
                   >
                     <Phone className="size-4 opacity-80" strokeWidth={2.25} />
@@ -1254,13 +1272,6 @@ export default function StartCall() {
                               {selectedRoleplayPartner.description}
                             </p>
                           )}
-                        </div>
-                      ) : selectedScenario === 'custom' && customScenario ? (
-                        <div>
-                          <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>
-                            <Trans>Scenario:</Trans>
-                          </p>
-                          <p className={'text-sm'}>{customScenario}</p>
                         </div>
                       ) : (
                         <p className={`${getTextClass('muted')} text-sm`}>
@@ -1333,10 +1344,10 @@ export default function StartCall() {
                   <Button
                     variant="default"
                     onClick={handleStartCall}
-                    disabled={!selectedScenario || selectedScenario === 'custom'}
+                    disabled={!selectedPartnerId}
                     className={cn(
                       'cursor-pointer rounded-full px-6 py-2 sm:px-7 sm:py-2.5 inline-flex items-center gap-1.5 font-semibold tracking-tight text-white bg-emerald-500 hover:bg-emerald-600',
-                      (!selectedScenario || selectedScenario === 'custom') && 'opacity-50 cursor-not-allowed'
+                      !selectedPartnerId && 'opacity-50 cursor-not-allowed'
                     )}
                   >
                     <Phone className="size-4 opacity-80" strokeWidth={2.25} />
@@ -1443,7 +1454,6 @@ export default function StartCall() {
                   value={createPartnerNameDraft}
                   onChange={(event) => {
                     setCreatePartnerNameDraft(event.target.value);
-                    persistCustomName(event.target.value);
                   }}
                   placeholder={t`Enter a name`}
                   disabled={isSavingCreatePartner}
@@ -1457,13 +1467,20 @@ export default function StartCall() {
                   value={createPartnerDescriptionDraft}
                   onChange={(event) => {
                     setCreatePartnerDescriptionDraft(event.target.value);
-                    persistCustomScenario(event.target.value);
                   }}
                   placeholder={t`Add a short description`}
                   disabled={isSavingCreatePartner}
                   rows={3}
                 />
               </div>
+              <PartnerVoiceSelector
+                selectedVoiceId={createPartnerVoiceId || DEFAULT_ROLEPLAY_VOICE_ID}
+                onSelect={setCreatePartnerVoiceId}
+                onPreview={handleVoicePreview}
+                loadingVoiceId={loadingVoiceId}
+                playingVoiceId={playingVoiceId}
+                disabled={isSavingCreatePartner}
+              />
             </div>
           </div>
           <DialogFooter className="gap-2">
@@ -1559,6 +1576,14 @@ export default function StartCall() {
                   rows={3}
                 />
               </div>
+              <PartnerVoiceSelector
+                selectedVoiceId={editPartnerVoiceId || DEFAULT_ROLEPLAY_VOICE_ID}
+                onSelect={setEditPartnerVoiceId}
+                onPreview={handleVoicePreview}
+                loadingVoiceId={loadingVoiceId}
+                playingVoiceId={playingVoiceId}
+                disabled={isSavingEditPartner}
+              />
             </div>
           </div>
           <DialogFooter className="gap-2">

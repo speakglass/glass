@@ -1,3 +1,6 @@
+import type { LearningLevel } from '@/types/learning-level';
+import { isLearningLevel } from '@/types/learning-level';
+
 export interface Usage {
   // Daily quota (resets at UTC midnight)
   dailyTotalSeconds: number | null; // null if unlimited
@@ -19,7 +22,7 @@ export interface UserProfile {
   lastLoginAt?: string | null;
   learningLang?: string | null;
   nativeLang?: string | null;
-  proficiency?: string | null;
+  languageLevel?: LearningLevel | null;
   emailVerified: boolean;
 }
 
@@ -48,15 +51,20 @@ export interface ConversationMessage {
   event_type?: string | null;
   role?: string | null;
   partner_id?: string | null;
-  // Legacy fields kept for backward compatibility with historical data
-  speaker_role?: string | null;
-  speaker_id?: string | null;
 }
 
 export interface ConversationDetail extends ConversationSummary {
   messages?: ConversationMessage[];
   extractedInfo?: Array<Record<string, unknown>> | null;
   feedback?: string | null;
+  memoryThreadId?: string | null;
+  memoryInsights?: MemoryInsights | null;
+}
+
+export interface MemoryInsights {
+  user_insights?: string[];
+  partner_insights?: string[];
+  interaction_insights?: string[];
 }
 
 export interface ConversationPartner {
@@ -86,7 +94,7 @@ export interface OnboardingStatus {
 
 export interface Memory {
   id: string;
-  name: string | null; // Edge name/type from Zep (e.g., "LIKES", "KNOWS")
+  name: string | null; // Edge name/type from the memory graph (e.g., "LIKES", "KNOWS")
   fact: string; // The actual fact text
   createdAt: Date | null;
   validAt: Date | null;
@@ -104,36 +112,41 @@ export interface MemoryListResponse {
   offset: number;
 }
 
-export interface ZepMemory {
-  id: string; // Zep edge UUID
+export interface ConversationMemory {
+  id: string; // Edge UUID
   label: string;
   value: string;
   editable: boolean;
 }
 
-export interface ZepMemoriesResponse {
-  memories: ZepMemory[];
-  processing: boolean; // True if Zep is still processing
+export interface ConversationMemoriesResponse {
+  memories: ConversationMemory[];
+  processing: boolean; // True if extraction is still processing
 }
 
-export interface ZepContextRange {
+export interface ConversationContextRange {
   start?: string | null;
   end?: string | null;
 }
 
-export interface ZepContextItem {
+export interface ConversationContextItem {
   type: 'fact' | 'entity' | 'episode' | 'unknown';
   label?: string | null;
   text: string;
-  range?: ZepContextRange | null;
+  range?: ConversationContextRange | null;
 }
 
-export interface ZepContextResponse {
-  items: ZepContextItem[];
+export interface VoicePreviewResponse {
+  audioBase64: string;
+  mimeType: string;
+}
+
+export interface ConversationContextResponse {
+  items: ConversationContextItem[];
   rawContext?: string | null;
 }
 
-interface ZepContextResponseApi {
+interface ConversationContextResponseApi {
   items: {
     type: string;
     label?: string | null;
@@ -144,6 +157,11 @@ interface ZepContextResponseApi {
     } | null;
   }[];
   raw_context?: string | null;
+}
+
+interface VoicePreviewResponseApi {
+  audio_base64: string;
+  mime_type?: string | null;
 }
 
 type ConversationSummaryApi = {
@@ -165,6 +183,8 @@ type ConversationDetailApi = ConversationSummaryApi & {
   messages?: Array<Record<string, unknown>>;
   extracted_info?: Array<Record<string, unknown>> | null;
   feedback?: string | null;
+  memory_thread_id?: string | null;
+  memory_insights?: MemoryInsights | null;
 };
 
 type UserApi = {
@@ -177,7 +197,7 @@ type UserApi = {
   last_login_at?: string | null;
   learning_lang?: string | null;
   native_lang?: string | null;
-  proficiency?: string | null;
+  language_level?: string | null;
   email_verified: boolean;
 };
 
@@ -286,6 +306,8 @@ function mapDetail(data: ConversationDetailApi): ConversationDetail {
     messages: (data.messages as ConversationMessage[] | undefined) ?? [],
     extractedInfo: data.extracted_info,
     feedback: data.feedback,
+    memoryThreadId: data.memory_thread_id ?? null,
+    memoryInsights: data.memory_insights ?? null,
   };
 }
 
@@ -316,7 +338,7 @@ function mapUser(data: UserApi): UserProfile {
     lastLoginAt: data.last_login_at,
     learningLang: data.learning_lang,
     nativeLang: data.native_lang,
-    proficiency: data.proficiency,
+    languageLevel: isLearningLevel(data.language_level) ? data.language_level : null,
     emailVerified: data.email_verified,
   };
 }
@@ -335,7 +357,7 @@ function mapMemory(data: MemoryApi): Memory {
   // Format label from edge name
   const label = data.name ? data.name.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) : 'Memory';
 
-  // Compute status from Zep fields
+  // Compute status from backend fields
   let status: 'active' | 'expired' | 'invalid' = 'active';
   if (data.expired_at) {
     status = 'expired';
@@ -492,6 +514,24 @@ export async function deletePartner(token: string, partnerId: string): Promise<v
   });
 }
 
+export async function fetchVoicePreview(
+  token: string,
+  payload: { voiceId: string; sampleText?: string }
+): Promise<VoicePreviewResponse> {
+  const body = {
+    voice_id: payload.voiceId,
+    sample_text: payload.sampleText,
+  };
+  const data = await authedFetch<VoicePreviewResponseApi>('/voices/preview', token, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return {
+    audioBase64: data.audio_base64,
+    mimeType: data.mime_type || 'audio/mpeg',
+  };
+}
+
 export interface ConversationListResponse {
   conversations: ConversationSummary[];
   total: number;
@@ -543,6 +583,17 @@ export async function updateConversationTitle(
   return mapSummary(data);
 }
 
+export async function updateConversationMemoryInsights(
+  token: string,
+  conversationId: string,
+  memoryInsights: MemoryInsights
+): Promise<void> {
+  await authedFetch<ConversationSummaryApi>(`/conversations/${conversationId}`, token, {
+    method: 'PATCH',
+    body: JSON.stringify({ memory_insights: memoryInsights }),
+  });
+}
+
 export async function deleteConversation(token: string, conversationId: string): Promise<void> {
   await authedFetch<void>(`/conversations/${conversationId}`, token, {
     method: 'DELETE',
@@ -571,19 +622,29 @@ export async function reassignConversationPartner(
   return mapSummary(data);
 }
 
-export async function fetchConversationZepMemories(
+export async function fetchConversationMemories(
   token: string,
-  conversationId: string
-): Promise<ZepMemoriesResponse> {
-  return await authedFetch<ZepMemoriesResponse>(`/conversations/${conversationId}/zep-memories`, token);
+  conversationId: string,
+  options?: { threadId?: string | null }
+): Promise<ConversationMemoriesResponse> {
+  const params = new URLSearchParams();
+  if (options?.threadId) {
+    params.set('thread_id', options.threadId);
+  }
+  const query = params.toString();
+  const url = `/conversations/${conversationId}/memories${query ? `?${query}` : ''}`;
+  return await authedFetch<ConversationMemoriesResponse>(url, token);
 }
 
-export async function fetchConversationZepContext(token: string, conversationId: string): Promise<ZepContextResponse> {
-  const data = await authedFetch<ZepContextResponseApi>(`/conversations/${conversationId}/zep-context`, token);
+export async function fetchConversationContext(
+  token: string,
+  conversationId: string
+): Promise<ConversationContextResponse> {
+  const data = await authedFetch<ConversationContextResponseApi>(`/conversations/${conversationId}/context`, token);
   return {
     items:
       data.items?.map((item) => ({
-        type: (item.type as ZepContextItem['type']) || 'unknown',
+        type: (item.type as ConversationContextItem['type']) || 'unknown',
         label: item.label,
         text: item.text,
         range: item.range,
@@ -605,7 +666,7 @@ export async function completeOnboarding(
   settings: {
     learningLang: string;
     nativeLang: string;
-    proficiency: string;
+    languageLevel: LearningLevel;
   }
 ): Promise<OnboardingStatus> {
   const data = await authedFetch<CompleteOnboardingResponseApi>('/accounts/me/onboarding/complete', token, {
@@ -613,7 +674,7 @@ export async function completeOnboarding(
     body: JSON.stringify({
       learning_lang: settings.learningLang,
       native_lang: settings.nativeLang,
-      proficiency: settings.proficiency,
+      language_level: settings.languageLevel,
     }),
   });
   return {
@@ -626,7 +687,7 @@ interface UpdateLanguageSettingsResponseApi {
   success: boolean;
   learning_lang: string | null;
   native_lang: string | null;
-  proficiency: string | null;
+  language_level: string | null;
 }
 
 export async function updateLanguageSettings(
@@ -634,13 +695,13 @@ export async function updateLanguageSettings(
   settings: {
     learningLang?: string;
     nativeLang?: string;
-    proficiency?: string;
+    languageLevel?: LearningLevel;
   }
-): Promise<{ learningLang?: string | null; nativeLang?: string | null; proficiency?: string | null }> {
+): Promise<{ learningLang?: string | null; nativeLang?: string | null; languageLevel?: LearningLevel | null }> {
   const body: Record<string, string> = {};
   if (settings.learningLang !== undefined) body.learning_lang = settings.learningLang;
   if (settings.nativeLang !== undefined) body.native_lang = settings.nativeLang;
-  if (settings.proficiency !== undefined) body.proficiency = settings.proficiency;
+  if (settings.languageLevel !== undefined) body.language_level = settings.languageLevel;
 
   const data = await authedFetch<UpdateLanguageSettingsResponseApi>('/accounts/me/languages', token, {
     method: 'PATCH',
@@ -649,7 +710,7 @@ export async function updateLanguageSettings(
   return {
     learningLang: data.learning_lang,
     nativeLang: data.native_lang,
-    proficiency: data.proficiency,
+    languageLevel: isLearningLevel(data.language_level) ? data.language_level : null,
   };
 }
 

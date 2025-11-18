@@ -5,10 +5,12 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
-from typing import TYPE_CHECKING, AsyncIterable, Callable, Any
+from typing import TYPE_CHECKING, AsyncIterable, Callable, Any, Optional
 
 if TYPE_CHECKING:
     from .ports import ASRPort
+
+from .entities import EventType
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,18 +36,29 @@ class SpeechRecognition:
         self._active_utterance_id: dict[str, str] = {}
         # Store the most recent finalized payload per source until speech completion
         self._pending_transcripts: dict[str, dict[str, Any]] = {}
-        # Keep reference to last completed utterance to enrich UtteranceEnd events
-        self._last_completed_utterance_id: dict[str, str] = {}
+        # Track last partial transcript per source in case we need to finalize early
+        self._last_partial_payload: dict[str, dict[str, Any]] = {}
+        self._audio_cursor = 0.0
+
+    def advance_audio_cursor(self, samples: int, sample_rate: int = 16000) -> None:
+        if samples <= 0:
+            return
+        self._audio_cursor += samples / float(sample_rate)
+
+    def advance_audio_cursor_from_chunk(self, chunk: bytes, sample_rate: int = 16000) -> None:
+        if not chunk:
+            return
+        samples = len(chunk) // 2
+        self.advance_audio_cursor(samples, sample_rate)
 
     async def process_stream(
-        self, 
-        queue: asyncio.Queue, 
-        *, 
-        source: str, 
+        self,
+        queue: asyncio.Queue,
+        *,
+        source: str,
         language: str | None = None,
         event_type_transcript,
         event_type_partial,
-        event_type_utterance_end,
     ) -> None:
         """Process audio stream and emit transcription events."""
         async def queue_iter():
@@ -59,50 +72,44 @@ class SpeechRecognition:
             LOGGER.debug("Finalizing transcript for %s (%s)", source, reason)
             pending = self._pending_transcripts.pop(source, None)
             if not pending:
+                pending = self._last_partial_payload.pop(source, None)
+            if not pending:
                 return
             text = (pending.get("text") or "").strip()
             if not text:
                 return
 
             payload = dict(pending)
-            if not payload.get("speech_final"):
+            payload["__completion_reason"] = reason
+            already_final = bool(payload.get("speech_final"))
+            if not already_final:
                 payload["speech_final"] = True
-                await self._emit(event_type_transcript, payload, source=source)
-            utterance_id = payload.get("utterance_id")
-            if utterance_id:
-                self._last_completed_utterance_id[source] = utterance_id
+            formatted = self._format_transcript_payload(payload)
+            if not already_final:
+                await self._emit(event_type_transcript, formatted, source=source)
             await self._handle_transcript(
                 text=text,
                 lang=payload.get("lang", "en"),
                 source=source,
-                utterance_id=utterance_id,
+                utterance_id=payload.get("utterance_id"),
                 start=payload.get("start"),
                 duration=payload.get("duration"),
                 speech_final=True,
             )
             self._active_utterance_id.pop(source, None)
+            self._last_partial_payload.pop(source, None)
+            await self._emit_utterance_completed(formatted, source=source)
 
-        async for chunk in self.asr.stream(  # type: ignore[attr-defined]
-            self.session_id,
-            queue_iter(),
-            source=source,
-            language=language,
-        ):
+        stream = self.asr.stream(  # type: ignore[attr-defined]
+            self.session_id, queue_iter(), source=source, language=language
+        )
+        async for chunk in stream:
             chunk_source = chunk.get("source") or source
             event_name = chunk.get("event")
 
             # Utterance end - just emit and cleanup
             if event_name == "utterance_end":
-                utterance_id = self._active_utterance_id.get(chunk_source) or self._last_completed_utterance_id.get(
-                    chunk_source
-                )
                 await finalize_pending(chunk_source, reason="utterance_end")
-                payload = {k: v for k, v in chunk.items() if k in {"last_word_end", "channel"}}
-                if utterance_id:
-                    payload["utterance_id"] = utterance_id
-                await self._emit(event_type_utterance_end, payload, source=chunk_source)
-                if utterance_id and self._last_completed_utterance_id.get(chunk_source) == utterance_id:
-                    self._last_completed_utterance_id.pop(chunk_source, None)
                 self._active_utterance_id.pop(chunk_source, None)
                 continue
 
@@ -121,12 +128,16 @@ class SpeechRecognition:
 
                 text = (chunk.get("partial") or "").strip()
                 if text:
-                    partial_payload = {"text": text, "utterance_id": utterance_id}
+                    partial_payload: dict[str, Any] = {"text": text, "utterance_id": utterance_id}
                     if chunk.get("start") is not None:
                         partial_payload["start"] = chunk["start"]
                     if chunk.get("duration") is not None:
                         partial_payload["duration"] = chunk["duration"]
-                    await self._emit(event_type_partial, partial_payload, source=chunk_source)
+                    if chunk.get("lang"):
+                        partial_payload["lang"] = chunk["lang"]
+                    formatted = self._format_transcript_payload(partial_payload)
+                    await self._emit(event_type_partial, formatted, source=chunk_source)
+                    self._last_partial_payload[chunk_source] = partial_payload
                 continue
 
             # Final transcript
@@ -148,12 +159,16 @@ class SpeechRecognition:
                     "is_final": chunk.get("is_final", True),
                     "speech_final": chunk.get("speech_final", False),
                 }
+                if "auto_tts" in chunk:
+                    payload["auto_tts"] = chunk.get("auto_tts")
                 if chunk.get("lang"):
                     payload["lang"] = chunk["lang"]
                 if chunk.get("start") is not None:
                     payload["start"] = chunk["start"]
                 if chunk.get("duration") is not None:
                     payload["duration"] = chunk["duration"]
+                if chunk.get("words") is not None:
+                    payload["words"] = chunk.get("words")
                 existing = self._pending_transcripts.get(chunk_source)
                 if existing and existing.get("utterance_id") != utterance_id:
                     await finalize_pending(chunk_source, reason="utterance_switch")
@@ -170,19 +185,94 @@ class SpeechRecognition:
                         payload["lang"] = existing["lang"]
 
                 # Emit transcript update for UI
-                await self._emit(event_type_transcript, payload, source=chunk_source)
+                formatted = self._format_transcript_payload(payload)
+                await self._emit(event_type_transcript, formatted, source=chunk_source)
 
                 # Track pending transcript until speech completion
                 self._pending_transcripts[chunk_source] = payload
+                # Once a final arrives, partial cache is no longer needed
+                self._last_partial_payload.pop(chunk_source, None)
                 if payload.get("speech_final"):
                     await finalize_pending(chunk_source, reason="speech_final")
                 continue
 
+    async def _emit_utterance_completed(self, formatted: dict[str, Any], *, source: str | None = None) -> None:
+        payload = {
+            "utterance_id": formatted.get("utterance_id"),
+            "text": formatted.get("text"),
+            "start": formatted.get("start"),
+            "end": formatted.get("end"),
+            "duration": formatted.get("duration"),
+            "audio_cursor": formatted.get("audio_cursor"),
+            "latency_ms": formatted.get("latency_ms"),
+            "completed_by": formatted.get("completed_by"),
+            "lang": formatted.get("lang"),
+        }
+        await self._emit(EventType.UTTERANCE_COMPLETED, payload, source=source)
+
+    def _format_transcript_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
+        start = self._to_float(payload.get("start"))
+        duration = self._to_float(payload.get("duration"))
+        end = self._to_float(payload.get("end"))
+        if end is None and start is not None and duration is not None:
+            end = start + duration
+        if duration is None and start is not None and end is not None:
+            duration = max(end - start, 0.0)
+        text = (payload.get("text") or "").strip()
+        completion_reason = payload.get("__completion_reason")
+        if not completion_reason:
+            if payload.get("speech_final"):
+                completion_reason = "speech_final"
+            elif payload.get("is_final"):
+                completion_reason = "is_final"
+        event_payload: dict[str, Any] = {
+            "text": text,
+            "utterance_id": payload.get("utterance_id"),
+            "start": start,
+            "end": end,
+            "duration": duration,
+            "audio_cursor": self._audio_cursor,
+            "latency_ms": self._estimate_latency(end),
+            "lang": payload.get("lang"),
+            "speech_final": payload.get("speech_final"),
+            "is_final": payload.get("is_final"),
+        }
+        if completion_reason:
+            event_payload["completed_by"] = completion_reason
+        if "auto_tts" in payload:
+            event_payload["auto_tts"] = payload.get("auto_tts")
+        return event_payload
+
+    def _estimate_latency(self, end_time: float | None) -> int | None:
+        if end_time is None:
+            return None
+        latency = int((self._audio_cursor - end_time) * 1000)
+        return latency if latency >= 0 else 0
+
     @staticmethod
-    async def broadcast_audio(audio_iter: AsyncIterable[bytes], queues: list[asyncio.Queue]) -> None:
+    def _to_float(value: Any) -> float | None:
+        if isinstance(value, (int, float)):
+            return float(value)
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    async def broadcast_audio(
+        audio_iter: AsyncIterable[bytes],
+        queues: list[asyncio.Queue],
+        *,
+        on_chunk: Optional[Callable[[bytes], None]] = None,
+    ) -> None:
         """Broadcast audio to multiple queues."""
         try:
             async for chunk in audio_iter:
+                if on_chunk:
+                    try:
+                        on_chunk(chunk)
+                    except Exception:
+                        LOGGER.debug("on_chunk callback failed", exc_info=True)
                 for queue in queues:
                     await queue.put(chunk)
         finally:

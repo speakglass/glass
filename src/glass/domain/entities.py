@@ -11,14 +11,17 @@ from ..utils.time import utc_now
 
 class EventType(str, Enum):
     """Event types for session communication."""
-    AUDIO_CHUNK = "audio_chunk"
-    PARTIAL_TRANSCRIPT = "partial_transcript"
-    TRANSCRIPT = "transcript"
+
+    # Public realtime transcript events
+    TRANSCRIPT_INTERIM = "transcript_interim"
+    TRANSCRIPT_FINAL = "transcript_final"
+    UTTERANCE_COMPLETED = "utterance_completed"
+
+    # Product events
     TRANSLATION = "translation"
     FEEDBACK = "feedback"
     SUGGESTION = "suggestion"
     ERROR = "error"
-    UTTERANCE_END = "utterance_end"
 
 
 @dataclass(slots=True)

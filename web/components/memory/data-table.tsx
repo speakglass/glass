@@ -40,7 +40,7 @@ import {
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { t, plural } from '@lingui/macro';
+import { t } from '@lingui/macro';
 import { Trans } from '@lingui/react/macro';
 
 interface DataTableProps<TData, TValue> {
@@ -48,8 +48,10 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   onBulkDelete?: (items: TData[]) => void;
   onAddNew?: () => void;
-  totalCount?: number;
   meta?: any;
+  footerNote?: React.ReactNode;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -57,8 +59,10 @@ export function DataTable<TData, TValue>({
   data,
   onBulkDelete,
   onAddNew,
-  totalCount,
   meta,
+  footerNote,
+  searchValue,
+  onSearchChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -107,8 +111,18 @@ export function DataTable<TData, TValue>({
           <div className="flex flex-1 items-center gap-2">
             <Input
               placeholder={t`Search memories...`}
-              value={(table.getColumn('fact')?.getFilterValue() as string) ?? ''}
-              onChange={(event) => table.getColumn('fact')?.setFilterValue(event.target.value)}
+              value={
+                typeof searchValue === 'string'
+                  ? searchValue
+                  : ((table.getColumn('fact')?.getFilterValue() as string) ?? '')
+              }
+              onChange={(event) => {
+                if (onSearchChange) {
+                  onSearchChange(event.target.value);
+                } else {
+                  table.getColumn('fact')?.setFilterValue(event.target.value);
+                }
+              }}
               className="h-9 w-[250px] lg:w-[400px]"
             />
           </div>
@@ -199,15 +213,7 @@ export function DataTable<TData, TValue>({
       {/* Pagination */}
       <div className="flex items-center justify-between px-4">
         <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-          {totalCount !== undefined && (
-            <>
-              {plural(totalCount, {
-                one: '# memory total • ',
-                other: '# memories total • ',
-              })}
-            </>
-          )}
-          {t`${table.getFilteredSelectedRowModel().rows.length} of ${table.getFilteredRowModel().rows.length} rows selected`}
+          {footerNote ?? t`${table.getFilteredSelectedRowModel().rows.length} of ${table.getFilteredRowModel().rows.length} rows selected`}
         </div>
         <div className="flex w-full items-center gap-8 lg:w-fit">
           <div className="hidden items-center gap-2 lg:flex">

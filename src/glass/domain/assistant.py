@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Iterable
 
 from . import prompts
 from ..utils.language import lang_code_to_name
@@ -13,6 +13,9 @@ if TYPE_CHECKING:
     from .ports import LLMPort
 
 LOGGER = logging.getLogger(__name__)
+
+RecentConversationEntry = dict[str, Any] | str
+RecentConversation = Iterable[RecentConversationEntry] | str | None
 
 
 class LearningAssistant:
@@ -29,17 +32,17 @@ class LearningAssistant:
         self.llm = llm
         self._emit = emit_callback
         self._llm_gate = llm_gate
-        
+
         # Configuration
         self.feedback_mode: str = "auto"
         self.suggest_mode: str = "auto"
         self.suggest_length_mode: str = "auto"  # 'auto', 'short' (1 sentence), 'long' (4 sentences)
         self.learning_lang: str = "en"
         self.native_lang: str = "ko"
-        self.proficiency: str | None = None
+        self.language_level: str | None = None
         self.pronunciation_mode: str | None = None
         self.mode: str = "live_call"
-        
+
         # State
         self._translations: dict[str, str] = {}
         self._suggested_for: set[str] = set()
@@ -47,29 +50,27 @@ class LearningAssistant:
         self._last_suggestion: dict | None = None  # Most recent suggestion (for comparison with next user utterance)
 
     async def do_translation(
-        self, 
-        text: str, 
-        utterance_id: str, 
-        source_lang: str, 
-        source: str, 
+        self,
+        text: str,
+        utterance_id: str,
+        source_lang: str,
+        source: str,
         is_user: bool,
         event_type_translation,
     ) -> None:
         """Translate text and emit translation event."""
         try:
             # Determine target language
-            if self.mode in ('roleplay', 'live_call'):
+            if self.mode in ("roleplay", "live_call"):
                 target_lang = lang_code_to_name(self.native_lang)
             else:
                 target_lang = lang_code_to_name(self.learning_lang if is_user else self.native_lang)
-            
+
             LOGGER.info(f"[Translation] Starting for utterance {utterance_id}")
-            
+
             try:
                 # Build translation prompt
-                system_prompt, user_prompt = prompts.build_translation_prompt(
-                    text, source_lang, target_lang
-                )
+                system_prompt, user_prompt = prompts.build_translation_prompt(text, source_lang, target_lang)
                 # Call LLM (uses adapter's default model)
                 translation = await self.llm.call(
                     prompt=user_prompt,
@@ -78,7 +79,7 @@ class LearningAssistant:
                 )
             except Exception:
                 translation = f"[Translation: {text}]"
-            
+
             if translation:
                 self._translations[utterance_id] = translation
                 await self._emit(
@@ -96,53 +97,64 @@ class LearningAssistant:
             LOGGER.error(f"[Translation] Failed for {utterance_id}: {e}", exc_info=True)
 
     async def process_utterance(
-        self, 
-        text: str, 
-        utterance_id: str, 
-        source_lang: str, 
-        source: str, 
+        self,
+        text: str,
+        utterance_id: str,
+        source_lang: str,
+        source: str,
         is_user: bool,
         event_type_translation,
         event_type_feedback,
         event_type_suggestion,
         *,
-        recent_conversation: list[dict],
+        recent_conversation: RecentConversation,
         user_context: str = "",
         thread_context: str = "",
+        language_feedback_context: str = "",
+        profile_facts: list[dict[str, str]] | None = None,
+        last_partner_message: str | None = None,
     ) -> None:
         """Process utterance: translation, feedback, and suggestions."""
         tasks = []
-        
+
         # 1. Translation (always)
-        tasks.append(asyncio.create_task(
-            self.do_translation(text, utterance_id, source_lang, source, is_user, event_type_translation)
-        ))
-        
-        # 2. Feedback (user only, if enabled)
-        if is_user and self.feedback_mode != 'off':
-            tasks.append(asyncio.create_task(
-                self.emit_feedback(
-                    text,
-                    utterance_id,
-                    source,
-                    event_type_feedback,
-                    recent_conversation=recent_conversation,
-                    thread_context=thread_context,
+        tasks.append(
+            asyncio.create_task(
+                self.do_translation(text, utterance_id, source_lang, source, is_user, event_type_translation)
+            )
+        )
+
+        print(f"thread_context: {thread_context}")
+        print(f"language_feedback_context: {language_feedback_context}")
+
+        feedback_thread_context = self._merge_context_blocks(thread_context, language_feedback_context)
+        if is_user and self.feedback_mode != "off":
+            tasks.append(
+                asyncio.create_task(
+                    self.emit_feedback(
+                        text,
+                        utterance_id,
+                        source,
+                        event_type_feedback,
+                        recent_conversation=recent_conversation,
+                        thread_context=feedback_thread_context,
+                    )
                 )
-            ))
-        
-        # 3. Suggestion (if enabled, for partner messages in live_call mode)
-        if self.suggest_mode != 'off' and not is_user and source != 'ai':
-                tasks.append(asyncio.create_task(
+            )
+
+        if self.suggest_mode != "off" and not is_user and source != "ai":
+            tasks.append(
+                asyncio.create_task(
                     self.emit_suggestion(
                         utterance_id=utterance_id,
                         event_type=event_type_suggestion,
-                    recent_conversation=recent_conversation,
-                    user_context=user_context,
-                    thread_context=thread_context,
+                        recent_conversation=recent_conversation,
+                        profile_facts=profile_facts,
+                        last_partner_message=last_partner_message,
                     )
-                ))
-        
+                )
+            )
+
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -153,15 +165,15 @@ class LearningAssistant:
         source: str,
         event_type_feedback,
         *,
-        recent_conversation: list[dict],
+        recent_conversation: RecentConversation,
         thread_context: str = "",
     ) -> None:
         """Emit feedback for a user utterance."""
         try:
             LOGGER.info(f"[Feedback] Starting for utterance {utterance_id}")
-            
+
             # Lightweight gating: skip expensive feedback call if not needed in auto mode
-            if self.feedback_mode == 'auto':
+            if self.feedback_mode == "auto":
                 should_fb = await self._should_emit_feedback_auto(
                     text=text,
                     recent_conversation=recent_conversation,
@@ -169,9 +181,9 @@ class LearningAssistant:
                 if not should_fb:
                     LOGGER.info(f"[Feedback] Gated off by should_feedback for {utterance_id}")
                     return
-            
+
             # Generate feedback (with last suggestion if available)
-            recent_conv_texts = [msg.get("text", "") for msg in recent_conversation]
+            recent_conv_texts = self._recent_conversation_texts(recent_conversation)
             system_prompt, user_prompt = prompts.build_feedback_prompt(
                 user_text=text,
                 target_lang=lang_code_to_name(self.learning_lang),
@@ -187,51 +199,61 @@ class LearningAssistant:
                 max_tokens=500,
                 json_mode=True,
             )
-            
+
             # Clear last suggestion after use (one-time comparison)
             if self._last_suggestion:
                 LOGGER.debug(f"[Feedback] Used suggestion: {self._last_suggestion.get('target_text', '')[:30]}")
                 self._last_suggestion = None
-            
+
             # Normalize NONE/empty for Always mode
             normalized = (feedback_text or "").strip()
             LOGGER.debug(f"[Feedback] Raw response: {normalized[:100]}")
-            
-            if self.feedback_mode == 'always':
-                if not normalized or normalized.upper() == "NONE":
-                    feedback_text = self._default_affirmation(self.native_lang)
-                    normalized = feedback_text.strip()
-                    LOGGER.info(f"[Feedback] Using default affirmation: {feedback_text}")
-            
+
             # Parse structured JSON if present
             display_text = None
             structured_payload: dict | None = None
+            parsed_error_type: str | None = None
+            is_none_error = False
             try:
                 import json as _json
                 import re
-                
+
                 # Extract JSON from markdown code blocks if present (```json ... ```)
                 json_text = normalized
-                json_match = re.search(r'```(?:json)?\s*\n?([\s\S]*?)\n?```', normalized)
+                json_match = re.search(r"```(?:json)?\s*\n?([\s\S]*?)\n?```", normalized)
                 if json_match:
                     json_text = json_match.group(1).strip()
                     LOGGER.debug("[Feedback] Extracted JSON from code block")
-                
+
                 parsed = _json.loads(json_text)
                 if isinstance(parsed, dict):
-                    reason = str(parsed.get('reason_native') or '').strip()
-                    suggestion = str(parsed.get('suggestion_target') or '').strip()
-                    
-                    LOGGER.debug(f"[Feedback] Parsed JSON - reason: {reason[:50] if reason else 'None'}, suggestion: {suggestion[:50] if suggestion else 'None'}")
-                    
-                    # Build display text
-                    if suggestion:
-                        display_text = f"{reason} → {suggestion}" if reason else suggestion
-                        structured_payload = {"target_text": suggestion}
+                    reason = str(parsed.get("reason_native") or "").strip()
+                    target_text = str(parsed.get("target_text") or "").strip()
+                    parsed_error_type = str(parsed.get("error_type") or "").strip().lower() or None
+                    is_none_error = parsed_error_type == "none"
+
+                    LOGGER.debug(
+                        "[Feedback] Parsed JSON - type=%s, reason=%s, suggestion=%s",
+                        parsed_error_type or "unknown",
+                        reason[:50] if reason else "None",
+                        target_text[:50] if target_text else "None",
+                    )
+
+                    if not is_none_error:
+                        if target_text:
+                            display_text = f"{reason} → {target_text}" if reason else target_text
+                        elif reason:
+                            display_text = reason
+                        payload: dict[str, Any] = {}
+                        if target_text:
+                            payload["target_text"] = target_text
                         if reason:
-                            structured_payload["reason_native"] = reason
-                    else:
-                        display_text = reason or ''
+                            payload["reason_native"] = reason
+                        if parsed_error_type:
+                            payload["error_type"] = parsed_error_type
+                        if payload:
+                            payload.setdefault("language_code", self.learning_lang or self.default_lang)
+                            structured_payload = payload
             except Exception as e:
                 # Not JSON; keep as-is
                 LOGGER.debug(f"[Feedback] Not JSON or parse failed: {str(e)}")
@@ -239,18 +261,33 @@ class LearningAssistant:
 
             if display_text:
                 feedback_text = display_text
+                normalized = feedback_text.strip()
+
+            if self.feedback_mode == "always" and (not normalized or normalized.upper() == "NONE" or is_none_error):
+                feedback_text = self._default_affirmation(self.native_lang)
+                normalized = feedback_text.strip()
+                structured_payload = None
+                LOGGER.info(f"[Feedback] Using default affirmation: {feedback_text}")
 
             # Ensure pronunciation for feedback corrections if needed
             if structured_payload and structured_payload.get("target_text"):
                 structured_payload = await self._ensure_pronunciation(structured_payload)
+                # Preserve explicit error type for downstream consumers
+                if parsed_error_type:
+                    structured_payload.setdefault("error_type", parsed_error_type)
+                structured_payload.setdefault("language_code", self.learning_lang or self.default_lang)
+            elif parsed_error_type and structured_payload:
+                structured_payload.setdefault("error_type", parsed_error_type)
 
             # Emit based on mode
             should_emit = bool(normalized) and (
-                self.feedback_mode == 'always' or self.feedback_mode == 'auto'
+                self.feedback_mode == "always" or (self.feedback_mode == "auto" and not is_none_error)
             )
-            
-            LOGGER.info(f"[Feedback] Decision - should_emit: {should_emit}, normalized: '{normalized[:50]}...', mode: {self.feedback_mode}")
-            
+
+            LOGGER.info(
+                f"[Feedback] Decision - should_emit: {should_emit}, normalized: '{normalized[:50]}...', mode: {self.feedback_mode}"
+            )
+
             if should_emit:
                 feedback_data: dict[str, Any] = {
                     "utterance_id": utterance_id,
@@ -271,16 +308,14 @@ class LearningAssistant:
     async def _should_emit_feedback_auto(
         self,
         text: str,
-        recent_conversation: list[dict],
+        recent_conversation: RecentConversation,
     ) -> bool:
         """Decide whether to emit feedback in auto mode."""
         fallback = self._feedback_heuristic(text)
         try:
+            recent_conv_texts = self._recent_conversation_texts(recent_conversation)
             async with self._llm_gate:
-                gate_prompt = prompts.build_feedback_gate_prompt(
-                    text,
-                    [msg.get("text", "") for msg in recent_conversation],
-                )
+                gate_prompt = prompts.build_feedback_gate_prompt(text, recent_conv_texts)
                 response = await self.llm.call(
                     prompt=gate_prompt,
                     temperature=0.3,
@@ -301,6 +336,25 @@ class LearningAssistant:
         return fallback
 
     @staticmethod
+    def _recent_conversation_texts(recent_conversation: RecentConversation) -> list[str]:
+        """Normalize recent conversation data into plain text snippets."""
+        if recent_conversation is None:
+            return []
+        if isinstance(recent_conversation, str):
+            entries = recent_conversation.splitlines()
+        else:
+            entries = recent_conversation
+        texts: list[str] = []
+        for entry in entries:
+            if isinstance(entry, dict):
+                text = (entry.get("text") or "").strip()
+            else:
+                text = str(entry).strip()
+            if text:
+                texts.append(text)
+        return texts
+
+    @staticmethod
     def _feedback_heuristic(text: str) -> bool:
         """Simple heuristic to decide if feedback is likely needed."""
         words = (text or "").strip().split()
@@ -314,10 +368,10 @@ class LearningAssistant:
         utterance_id: str | None,
         event_type,
         *,
-        recent_conversation: list[dict],
-        user_context: str = "",
-        thread_context: str = "",
+        recent_conversation: RecentConversation,
         user_hint: str | None = None,
+        profile_facts: list[dict[str, str]] | None = None,
+        last_partner_message: str | None = None,
     ) -> None:
         """Emit a suggestion for what to say next."""
         try:
@@ -336,14 +390,14 @@ class LearningAssistant:
             result: dict | None = None
             try:
                 async with self._llm_gate:
-                    recent_conv_texts = [msg.get("text", "") for msg in recent_conversation]
+                    recent_conv_texts = self._recent_conversation_texts(recent_conversation)
                     system_prompt, user_prompt = prompts.build_suggestion_prompt(
                         target_lang=target_lang_name,
                         native_lang=native_lang_name,
                         user_hint=user_hint,
                         recent_conversation=recent_conv_texts,
-                        user_context=user_context,
-                        thread_context=thread_context,
+                        profile_facts=profile_facts,
+                        last_partner_message=last_partner_message,
                         length_mode=self.suggest_length_mode,
                     )
                     response = await self.llm.call(
@@ -355,6 +409,7 @@ class LearningAssistant:
                     )
                     # Parse JSON response
                     import json
+
                     result = json.loads(response) if response else None
             except Exception as e:
                 LOGGER.error(f"[Suggestion] Failed: {e}", exc_info=True)
@@ -365,12 +420,12 @@ class LearningAssistant:
                 return
 
             if result and result.get("target_text"):
-                # Ensure pronunciation if user needs it (proficiency == 'cant_read')
+                # Ensure pronunciation if the learner requested pronunciation support
                 suggestion_obj = await self._ensure_pronunciation(result)
-                
+
                 # Store as last suggestion for next feedback comparison
                 self._last_suggestion = suggestion_obj.copy()
-                
+
                 # Emit as Glass learning assistant for memory tracking
                 await self._emit(
                     event_type,
@@ -386,14 +441,14 @@ class LearningAssistant:
             LOGGER.error(f"[Suggestion] Failed: {e}", exc_info=True)
 
     async def analyze_conversation(
-        self, 
-        full_conversation: list[dict], 
+        self,
+        full_conversation: list[dict],
         all_feedback: list[dict],
         native_lang: str,
         learning_lang: str,
     ) -> dict:
         """Analyze conversation and return scores and feedback using parallel LLM calls.
-        
+
         Note: Memory extraction is handled by Zep, not by our LLM.
         This method only evaluates conversation quality (scores + feedback).
         """
@@ -402,87 +457,79 @@ class LearningAssistant:
                 "scores": {"fluency": 0, "accuracy": 0, "comprehensibility": 0},
                 "overall_feedback": "No conversation data to analyze.",
             }
-        
+
         def _is_user_message(message: dict) -> bool:
-            role = (
-                message.get("role")
-                or message.get("speaker_role")
-                or ""
-            ).lower()
+            role = (message.get("role") or message.get("speaker_role") or "").lower()
             source = (message.get("source") or "").lower()
             return role == "user" or source == "mic" or source.startswith("mic")
-        
+
         # Check if there are any user utterances
         has_user_utterances = any(_is_user_message(msg) for msg in full_conversation)
-        
+
         # Build transcript
         def _speaker_label(message: dict) -> str:
-            role = (
-                message.get("role")
-                or message.get("speaker_role")
-                or ""
-            ).lower()
-            speaker_id = (
-                message.get("partner_id")
-                or message.get("speaker_id")
-                or ""
-            ).lower()
+            role = (message.get("role") or message.get("speaker_role") or "").lower()
+            partner_id = (message.get("partner_id") or "").lower()
             if role == "user":
                 return "You"
-            if role == "assistant" or speaker_id == "glass":
+            if role == "assistant" or partner_id == "glass":
                 return "Glass"
             if role == "partner":
                 return "Partner"
             return "Partner"
-        
+
         transcript_lines = []
         for msg in full_conversation:
             speaker_label = _speaker_label(msg)
             text = msg.get("text", "")
             transcript_lines.append(f"{speaker_label}: {text}")
         transcript = "\n".join(transcript_lines)
-        
+
         # Build feedback summary
         feedback_summary = ""
         if all_feedback:
             feedback_lines = [f"- {fb.get('text', '')}" for fb in all_feedback]
             feedback_summary = "\n".join(feedback_lines)
-        
+
         native_lang_name = lang_code_to_name(native_lang)
         learning_lang_name = lang_code_to_name(learning_lang)
-        
+
         # If no user utterances, return early with appropriate message
         if not has_user_utterances:
             no_utterance_messages = {
-                'ko': "사용자 발화가 없어 평가할 수 없어요. 다음에는 대화에 참여해보세요!",
-                'en': "No user utterances to evaluate. Try speaking next time!",
-                'ja': "ユーザーの発話がないため評価できません。次回は会話に参加してみてください！",
-                'zh': "没有用户发言，无法评估。下次试着参与对话吧！",
-                'es': "No hay expresiones de usuario para evaluar. ¡Intenta hablar la próxima vez!",
-                'fr': "Aucune parole d'utilisateur à évaluer. Essayez de parler la prochaine fois !",
+                "ko": "사용자 발화가 없어 평가할 수 없어요. 다음에는 대화에 참여해보세요!",
+                "en": "No user utterances to evaluate. Try speaking next time!",
+                "ja": "ユーザーの発話がないため評価できません。次回は会話に参加してみてください！",
+                "zh": "没有用户发言，无法评估。下次试着参与对话吧！",
+                "es": "No hay expresiones de usuario para evaluar. ¡Intenta hablar la próxima vez!",
+                "fr": "Aucune parole d'utilisateur à évaluer. Essayez de parler la prochaine fois !",
             }
-            feedback_msg = no_utterance_messages.get(native_lang, no_utterance_messages['en'])
-            
+            feedback_msg = no_utterance_messages.get(native_lang, no_utterance_messages["en"])
+
             LOGGER.info("[Analysis] No user utterances found, returning default message")
             return {
                 "scores": {"fluency": 0, "accuracy": 0, "comprehensibility": 0},
                 "feedback": feedback_msg,
             }
-        
+
         # Run two parallel LLM calls: scores + feedback
         # Memory extraction removed - Zep handles this automatically
         tasks = [
             self._analyze_scores(transcript, feedback_summary, native_lang_name, learning_lang_name),
             self._analyze_feedback(transcript, feedback_summary, native_lang_name, learning_lang_name),
         ]
-        
+
         try:
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            
+
             # Combine results
-            scores = results[0] if not isinstance(results[0], Exception) else {"fluency": 0, "accuracy": 0, "comprehensibility": 0}
+            scores = (
+                results[0]
+                if not isinstance(results[0], Exception)
+                else {"fluency": 0, "accuracy": 0, "comprehensibility": 0}
+            )
             feedback = results[1] if not isinstance(results[1], Exception) else "Analysis incomplete"
-            
+
             return {
                 "scores": scores,
                 "feedback": feedback,
@@ -493,11 +540,13 @@ class LearningAssistant:
                 "scores": {"fluency": 0, "accuracy": 0, "comprehensibility": 0},
                 "feedback": f"Analysis failed: {str(e)}",
             }
-    
-    async def _analyze_scores(self, transcript: str, feedback_summary: str, native_lang_name: str, learning_lang_name: str) -> dict:
+
+    async def _analyze_scores(
+        self, transcript: str, feedback_summary: str, native_lang_name: str, learning_lang_name: str
+    ) -> dict:
         """Analyze and score the conversation."""
         prompt = prompts.build_analysis_scores_prompt(transcript, feedback_summary, learning_lang_name)
-        
+
         try:
             response = await self.llm.call(
                 prompt=prompt,
@@ -506,18 +555,23 @@ class LearningAssistant:
             )
             import json
             import re
-            json_match = re.search(r'\{[\s\S]*?\}', response)
+
+            json_match = re.search(r"\{[\s\S]*?\}", response)
             if json_match:
                 return json.loads(json_match.group())
             return {"fluency": 70, "accuracy": 75, "comprehensibility": 80}
         except Exception as e:
             LOGGER.error(f"Failed to analyze scores: {e}", exc_info=True)
             return {"fluency": 0, "accuracy": 0, "comprehensibility": 0}
-    
-    async def _analyze_feedback(self, transcript: str, feedback_summary: str, native_lang_name: str, learning_lang_name: str) -> str:
+
+    async def _analyze_feedback(
+        self, transcript: str, feedback_summary: str, native_lang_name: str, learning_lang_name: str
+    ) -> str:
         """Generate overall feedback for the conversation."""
-        prompt = prompts.build_analysis_feedback_prompt(transcript, feedback_summary, learning_lang_name, native_lang_name)
-        
+        prompt = prompts.build_analysis_feedback_prompt(
+            transcript, feedback_summary, learning_lang_name, native_lang_name
+        )
+
         try:
             response = await self.llm.call(
                 prompt=prompt,
@@ -543,21 +597,24 @@ class LearningAssistant:
     def _get_language_params(self) -> tuple[str, str, str | None]:
         target_lang_name = lang_code_to_name(self.learning_lang)
         native_lang_name = lang_code_to_name(self.native_lang)
-        require_pronunciation = self.proficiency == 'cant_read'
+        pron_levels = {"zero", "beginner", "elementary"}
+        proficiency_level = (self.language_level or "").lower()
+        require_pronunciation = proficiency_level in pron_levels
         pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
         return target_lang_name, native_lang_name, pronunciation_mode
+
+    @staticmethod
+    def _merge_context_blocks(*blocks: str) -> str:
+        parts = [block.strip() for block in blocks if block and block.strip()]
+        return "\n\n".join(parts)
 
     async def _ensure_pronunciation(self, out: dict) -> dict:
         """Ensure pronunciation is attached when required."""
         try:
             target_lang_name, native_lang_name, pronunciation_mode = self._get_language_params()
-            LOGGER.debug(f"[Pronunciation] Check - proficiency={self.proficiency}, mode={pronunciation_mode}")
-            
-            if (
-                pronunciation_mode
-                and isinstance(out, dict)
-                and out.get("target_text")
-            ):
+            LOGGER.debug(f"[Pronunciation] Check - level={self.language_level}, mode={pronunciation_mode}")
+
+            if pronunciation_mode and isinstance(out, dict) and out.get("target_text"):
                 # If pronunciation missing, fetch it
                 if not out.get("pronunciation"):
                     LOGGER.info(f"[Pronunciation] Generating for: {out['target_text'][:50]}...")
@@ -592,18 +649,17 @@ class LearningAssistant:
             LOGGER.error(f"[Pronunciation] Unexpected error: {e}", exc_info=True)
         return out
 
-
     @staticmethod
     def _default_affirmation(lang_code: str) -> str:
         """Return a short, encouraging default feedback in the user's native language.
-        Used when feedback_mode is 'always' but the model indicates no feedback (e.g., "NONE").
+        Used when feedback_mode is 'always' but the model indicates no feedback (e.g., error_type 'none').
         """
         messages = {
-            'ko': "좋아요! 지금처럼 말해도 자연스러워요.",
-            'en': "Great! That sounded natural as is.",
-            'ja': "いいですね！今の表現で自然です。",
-            'zh': "很好！这样说很自然。",
-            'es': "¡Genial! Suena natural tal como está.",
-            'fr': "Super ! C’est naturel comme ça.",
+            "ko": "좋아요! 지금처럼 말해도 자연스러워요.",
+            "en": "Great! That sounded natural as is.",
+            "ja": "いいですね！今の表現で自然です。",
+            "zh": "很好！这样说很自然。",
+            "es": "¡Genial! Suena natural tal como está.",
+            "fr": "Super ! C’est naturel comme ça.",
         }
         return messages.get(lang_code, "Great! That sounded natural as is.")

@@ -47,7 +47,7 @@ class AccountUser(Base):
     # User language preferences
     learning_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
     native_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    proficiency: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    language_level: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
     conversations: Mapped[list["AccountConversation"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
@@ -111,6 +111,9 @@ class AccountConversation(Base):
     )
     learning_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
     native_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    memory_insights: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON(none_as_null=True), nullable=True
+    )
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     duration_seconds: Mapped[int | None] = mapped_column(nullable=True)

@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 from typing import AsyncIterator, Iterable
+from collections import deque
 import httpx
 
 from ..persistence.service import get_partner_by_id
@@ -53,7 +54,6 @@ def _partner_to_profile(partner) -> dict:
         "is_system": partner.user_id is None,
     }
 
-
 async def iter_multiplexed_audio(
     websocket,
     source_queues: dict[str, asyncio.Queue],
@@ -61,6 +61,7 @@ async def iter_multiplexed_audio(
     *,
     db=None,
     user=None,
+    allow_system_audio: bool = True,
 ) -> None:
     """Demultiplex audio: first byte is source ID (0x01=mic, 0x02=system)."""
     try:
@@ -68,6 +69,7 @@ async def iter_multiplexed_audio(
         max_bytes = int(get_settings().ws_max_message_bytes)
     except Exception:
         max_bytes = 131072
+    pending_chunk_meta: deque[str] = deque()
     try:
         while True:
             message = await websocket.receive()
@@ -82,15 +84,25 @@ async def iter_multiplexed_audio(
                     except Exception:
                         pass
                     break
+
+                if pending_chunk_meta:
+                    source_name = pending_chunk_meta.popleft()
+                    queue = source_queues.get(source_name)
+                    if queue:
+                        await queue.put(data)
+                    continue
+
                 if len(data) < 2:
                     continue
                 
                 source_id = data[0]
                 audio_data = data[1:]
-                
                 if source_id == SOURCE_MICROPHONE:
                     source_name = "mic"
                 elif source_id == SOURCE_SYSTEM:
+                    if not allow_system_audio:
+                        LOGGER.debug("Dropping system audio frame (session mode disabled system capture)")
+                        continue
                     source_name = "system"
                 else:
                     LOGGER.debug(f"Unknown source ID: {source_id}")
@@ -110,6 +122,17 @@ async def iter_multiplexed_audio(
                     
                     if msg_type == "ping":
                         await websocket.send_json({"type": "pong"})
+                    elif msg_type == "client_init":
+                        # No-op for now; could store sample rate/encoding if needed
+                        LOGGER.info(
+                            "Client init: session=%s rate=%s encoding=%s",
+                            data.get("session_id"),
+                            data.get("sample_rate"),
+                            data.get("encoding"),
+                        )
+                    elif msg_type == "audio_chunk":
+                        source_name = data.get("source") or "mic"
+                        pending_chunk_meta.append(source_name)
                     elif msg_type == "set_feedback_mode" and pipeline:
                         # Set feedback mode for the session
                         mode = data.get("mode", "auto")
@@ -129,7 +152,7 @@ async def iter_multiplexed_audio(
                         if partner_profile is None:
                             # Preserve existing partner assignment (e.g., live-call placeholder)
                             partner_profile = getattr(pipeline, "partner_profile", None)
-                        pipeline.set_session_config(learning_lang, native_lang, mode, partner=partner_profile)
+                        await pipeline.set_session_config(learning_lang, native_lang, mode, partner=partner_profile)
                         LOGGER.info(
                             f"Session config - learning: {learning_lang}, native: {native_lang}, "
                             f"mode: {mode}, partner_id: {partner_id}"
@@ -143,10 +166,12 @@ async def iter_multiplexed_audio(
                         pipeline.set_suggest_length_mode(mode)
                         LOGGER.info(f"Suggest length mode set to: {mode}")
                     elif msg_type == "set_profile" and pipeline:
-                        proficiency = data.get("proficiency")
+                        language_level = data.get("language_level")
                         pronunciation_mode = data.get("pronunciation_mode")
-                        pipeline.set_user_profile(proficiency=proficiency, pronunciation_mode=pronunciation_mode)
-                        LOGGER.info(f"Profile set - proficiency: {proficiency}, pronunciation_mode: {pronunciation_mode}")
+                        pipeline.set_user_profile(language_level=language_level, pronunciation_mode=pronunciation_mode)
+                        LOGGER.info(
+                            f"Profile set - language_level: {language_level}, pronunciation_mode: {pronunciation_mode}"
+                        )
                     elif msg_type == "request_suggestion" and pipeline:
                         # Generate suggestion (with or without hint)
                         text = data.get("text", "")  # Empty = auto suggestion, non-empty = with hint

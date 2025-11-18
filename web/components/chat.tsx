@@ -110,6 +110,7 @@ export default function Chat() {
             messages={conversationAnalysis.messages}
             feedbackItems={conversationAnalysis.feedbackItems}
             participantSnapshot={conversationAnalysis.participantSnapshot}
+            memoryInsights={conversationAnalysis.memoryInsights ?? null}
             durationSeconds={conversationAnalysis.durationSeconds}
             learningLang={conversationAnalysis.learningLang}
             nativeLang={conversationAnalysis.nativeLang}

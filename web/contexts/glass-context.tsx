@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { t } from '@lingui/core/macro';
 import { useAccountSession } from '@/contexts/account-session-context';
-import type { ConversationMessage } from '@/lib/account-api';
+import type { ConversationMessage, MemoryInsights } from '@/lib/account-api';
 import type { LearningLevel } from '@/types/learning-level';
 import { isLearningLevel } from '@/types/learning-level';
 
@@ -23,6 +23,7 @@ export interface Message {
     target_text?: string;
     pronunciation?: string;
     text?: string; // legacy/plain feedback
+    error_type?: string;
   };
   // Ephemeral live text for ongoing utterance (partial transcript)
   partial?: string;
@@ -31,6 +32,9 @@ export interface Message {
   // Deepgram timing information
   start?: number; // Start time in seconds
   duration?: number; // Duration in seconds
+  end?: number; // End timestamp in seconds
+  latencyMs?: number; // Latency in milliseconds
+  completedBy?: string;
 }
 
 export interface VoiceStatus {
@@ -41,6 +45,13 @@ export type FeedbackMode = 'always' | 'auto' | 'off';
 export type SuggestMode = 'always' | 'auto' | 'off';
 export type SuggestionLengthMode = 'auto' | 'short' | 'long';
 type MicRestartReason = 'settings_change' | 'device_change' | 'track_ended' | 'manual';
+
+type BufferedAudioPacket = {
+  packet: ArrayBuffer;
+  samples: number;
+  cursor: number;
+  source: 'mic' | 'system';
+};
 
 export interface LanguageSettings {
   learningLang: string; // Language user wants to learn
@@ -101,6 +112,7 @@ export type AIFeedback = {
   target_text?: string;
   pronunciation?: string;
   reason_native?: string;
+  error_type?: string;
   timestamp: number;
 };
 
@@ -149,6 +161,8 @@ export interface ConversationAnalysis {
   durationSeconds?: number | null;
   learningLang?: string | null;
   nativeLang?: string | null;
+  memoryThreadId?: string | null;
+  memoryInsights?: MemoryInsights | null;
 }
 
 interface GlassContextValue {
@@ -346,6 +360,11 @@ export function GlassProvider({
   const addFeedback = useCallback((payload: any) => {
     const id = Math.random().toString(36).substr(2, 9);
     const timestamp = Date.now();
+    const errorType =
+      typeof payload?.error_type === 'string' ? String(payload.error_type) : undefined;
+    if (errorType && errorType.toLowerCase() === 'none') {
+      return;
+    }
     const feedback: AIFeedback =
       typeof payload === 'object' && payload !== null
         ? {
@@ -354,6 +373,7 @@ export function GlassProvider({
             target_text: typeof payload.target_text === 'string' ? payload.target_text : undefined,
             pronunciation: typeof payload.pronunciation === 'string' ? payload.pronunciation : undefined,
             reason_native: typeof payload.reason_native === 'string' ? payload.reason_native : undefined,
+            error_type: errorType,
             timestamp,
           }
         : { id, text: String(payload || ''), timestamp };
@@ -599,7 +619,10 @@ export function GlassProvider({
 
   const wsRef = useRef<WebSocket | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
+  const micAudioCursorRef = useRef(0);
+  const systemAudioCursorRef = useRef(0);
   const systemStreamRef = useRef<MediaStream | null>(null);
+  const screenShareTrackCleanupRef = useRef<(() => void) | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamingContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -615,7 +638,10 @@ export function GlassProvider({
   const isRestartingMicRef = useRef(false);
   const micPreferenceRef = useRef<string | null>(settings.micDeviceId ?? null);
   const previousMicSettingRef = useRef<string | null>(settings.micDeviceId ?? null);
-  const restartMicStreamRef = useRef<((targetDeviceId?: string | null, reason?: MicRestartReason) => void) | null>(null);
+  const restartMicStreamRef = useRef<((targetDeviceId?: string | null, reason?: MicRestartReason) => void) | null>(
+    null
+  );
+  const disconnectRef = useRef<(() => Promise<void>) | null>(null);
 
   // Keep messagesRef in sync with messages state
   useEffect(() => {
@@ -750,12 +776,12 @@ export function GlassProvider({
         return constraints;
       };
 
-      const tryAcquire = (deviceId?: string | null) => navigator.mediaDevices.getUserMedia({ audio: buildConstraints(deviceId) });
+      const tryAcquire = (deviceId?: string | null) =>
+        navigator.mediaDevices.getUserMedia({ audio: buildConstraints(deviceId) });
 
       try {
         const stream = await tryAcquire(preferredDeviceId ?? null);
-        const deviceId =
-          stream.getAudioTracks()[0]?.getSettings()?.deviceId || preferredDeviceId || null;
+        const deviceId = stream.getAudioTracks()[0]?.getSettings()?.deviceId || preferredDeviceId || null;
         return { stream, deviceId };
       } catch (error: any) {
         if (preferredDeviceId) {
@@ -809,6 +835,107 @@ export function GlassProvider({
       updateFFT();
     },
     [updateFFT]
+  );
+
+  const transmitAudioChunk = useCallback((entry: BufferedAudioPacket, ws: WebSocket) => {
+    const duration = entry.samples / 16000;
+    ws.send(
+      JSON.stringify({
+        type: 'audio_chunk',
+        cursor: entry.cursor,
+        duration,
+        sample_rate: 16000,
+        encoding: 'pcm16',
+        source: entry.source,
+      })
+    );
+    ws.send(entry.packet);
+  }, []);
+
+  // Stream audio to WebSocket (continuous streaming; Deepgram handles VAD)
+  const startAudioStreaming = useCallback(
+    (ws: WebSocket, micStream: MediaStream, systemStream: MediaStream | null) => {
+      const audioContext = new AudioContext({ sampleRate: 16000 });
+      streamingContextRef.current = audioContext;
+
+      const actualSampleRate = audioContext.sampleRate;
+      const micSource = audioContext.createMediaStreamSource(micStream);
+      const micProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+      const resampleRatio = actualSampleRate / 16000;
+      const needsResampling = resampleRatio !== 1;
+
+      micProcessor.onaudioprocess = (e) => {
+        if (ws.readyState === WebSocket.OPEN && !isMutedRef.current) {
+          let inputData = e.inputBuffer.getChannelData(0);
+          if (needsResampling) {
+            const targetLength = Math.floor(inputData.length / resampleRatio);
+            const downsampled = new Float32Array(targetLength);
+            for (let i = 0; i < targetLength; i++) {
+              downsampled[i] = inputData[Math.floor(i * resampleRatio)];
+            }
+            inputData = downsampled;
+          }
+          const pcm16 = convertFloat32ToPCM16(inputData);
+          const sampleCount = pcm16.length / 2;
+          const startCursor = micAudioCursorRef.current;
+          const durationSeconds = sampleCount / 16000;
+          micAudioCursorRef.current = startCursor + durationSeconds;
+          const payload = new Uint8Array(pcm16.length);
+          payload.set(pcm16);
+          const entry: BufferedAudioPacket = {
+            packet: payload.buffer,
+            samples: sampleCount,
+            cursor: startCursor,
+            source: 'mic',
+          };
+          try {
+            transmitAudioChunk(entry, ws);
+          } catch (err) {
+            console.error('[GlassContext] Failed to send mic audio chunk', err);
+          }
+        }
+      };
+
+      micSource.connect(micProcessor);
+      micProcessor.connect(audioContext.destination);
+      processorNodesRef.current.push(micProcessor);
+
+      if (systemStream) {
+        const systemSource = audioContext.createMediaStreamSource(systemStream);
+        const systemProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+        systemProcessor.onaudioprocess = (e) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            let inputData = e.inputBuffer.getChannelData(0);
+            if (needsResampling) {
+              const targetLength = Math.floor(inputData.length / resampleRatio);
+              const downsampled = new Float32Array(targetLength);
+              for (let i = 0; i < targetLength; i++) {
+                downsampled[i] = inputData[Math.floor(i * resampleRatio)];
+              }
+              inputData = downsampled;
+            }
+            const pcm16 = convertFloat32ToPCM16(inputData);
+            const sampleCount = pcm16.length / 2;
+            const startCursor = systemAudioCursorRef.current;
+            const durationSeconds = sampleCount / 16000;
+            systemAudioCursorRef.current = startCursor + durationSeconds;
+            const payload = new Uint8Array(pcm16.length);
+            payload.set(pcm16);
+            const entry: BufferedAudioPacket = {
+              packet: payload.buffer,
+              samples: sampleCount,
+              cursor: startCursor,
+              source: 'system',
+            };
+            transmitAudioChunk(entry, ws);
+          }
+        };
+        systemSource.connect(systemProcessor);
+        systemProcessor.connect(audioContext.destination);
+        processorNodesRef.current.push(systemProcessor);
+      }
+    },
+    [transmitAudioChunk]
   );
 
   // Connect to Glass API
@@ -898,6 +1025,40 @@ export function GlassProvider({
               // Stop video tracks as we only need audio
               const videoTracks = systemStream.getVideoTracks();
               videoTracks.forEach((track) => track.stop());
+              const cleanupExisting = screenShareTrackCleanupRef.current;
+              if (cleanupExisting) {
+                cleanupExisting();
+                screenShareTrackCleanupRef.current = null;
+              }
+
+              const handleScreenShareEnded = () => {
+                console.log('[GlassContext] Screen share audio stopped - disconnecting call');
+                const cleanup = screenShareTrackCleanupRef.current;
+                if (cleanup) {
+                  screenShareTrackCleanupRef.current = null;
+                  cleanup();
+                }
+                toast.info(t`Screen share stopped`, {
+                  description: t`Ending the call because screen sharing ended.`,
+                });
+                const fn = disconnectRef.current;
+                if (fn) {
+                  fn().catch((err) => {
+                    console.error('[GlassContext] Failed to disconnect after screen share ended', err);
+                  });
+                }
+              };
+
+              audioTracks.forEach((track) => {
+                track.addEventListener('ended', handleScreenShareEnded);
+              });
+
+              screenShareTrackCleanupRef.current = () => {
+                audioTracks.forEach((track) => {
+                  track.removeEventListener('ended', handleScreenShareEnded);
+                });
+              };
+
               systemStreamRef.current = systemStream;
             }
           } catch (err: any) {
@@ -959,82 +1120,103 @@ export function GlassProvider({
           params.set('partner_id', initialPartnerId);
         }
         params.set('auth_token', token);
-        const ws = new WebSocket(`${wsUrl}/ws/audio-multi?${params.toString()}`);
+        const ws = new WebSocket(`${wsUrl}/ws/audio?${params.toString()}`);
         wsRef.current = ws;
 
         ws.binaryType = 'arraybuffer';
 
-        ws.onopen = () => {
-          console.log('WebSocket connected to Glass API');
-          hasOpenedRef.current = true;
-          setStatus({ value: 'connected' });
-          // Assume budget unknown at connect; show skeleton for a short probe window
-          setBudgetStatus('unknown');
-          if (budgetProbeTimerRef.current) clearTimeout(budgetProbeTimerRef.current);
-          budgetProbeTimerRef.current = setTimeout(() => {
-            // If no time event arrived during probe, hide timer UI (no limit)
-            setBudgetStatus((prev) => (prev === 'unknown' ? 'disabled' : prev));
-          }, 2000);
-          startAudioStreaming(ws, micStream, systemStream);
-          // Initialize elapsed timer (client-side, 1s tick)
+        ws.onopen = async () => {
           try {
-            // Reset start-remaining baseline at the beginning of a session
-            setStartRemainingSeconds(undefined);
-            startRemainingRef.current = undefined;
-            setElapsedSeconds(0);
-            if (elapsedTickRef.current) clearInterval(elapsedTickRef.current);
-            elapsedTickRef.current = setInterval(() => {
-              setElapsedSeconds((prev) => (typeof prev === 'number' ? prev + 1 : 1));
-            }, 1000);
-          } catch {}
+            console.log('WebSocket connected to Glass API');
+            hasOpenedRef.current = true;
+            setStatus({ value: 'connected' });
+            // Assume budget unknown at connect; show skeleton for a short probe window
+            setBudgetStatus('unknown');
+            if (budgetProbeTimerRef.current) clearTimeout(budgetProbeTimerRef.current);
+            budgetProbeTimerRef.current = setTimeout(() => {
+              // If no time event arrived during probe, hide timer UI (no limit)
+              setBudgetStatus((prev) => (prev === 'unknown' ? 'disabled' : prev));
+            }, 2000);
+            micAudioCursorRef.current = 0;
+            systemAudioCursorRef.current = 0;
+            ws.send(
+              JSON.stringify({
+                type: 'client_init',
+                session_id: sessionIdRef.current,
+                sample_rate: 16000,
+                encoding: 'pcm16',
+                vad_chunk_duration: 4096 / 16000,
+              })
+            );
+            startAudioStreaming(ws, micStream, systemStream);
+            // Initialize elapsed timer (client-side, 1s tick)
+            try {
+              // Reset start-remaining baseline at the beginning of a session
+              setStartRemainingSeconds(undefined);
+              startRemainingRef.current = undefined;
+              setElapsedSeconds(0);
+              if (elapsedTickRef.current) clearInterval(elapsedTickRef.current);
+              elapsedTickRef.current = setInterval(() => {
+                setElapsedSeconds((prev) => (typeof prev === 'number' ? prev + 1 : 1));
+              }, 1000);
+            } catch {}
 
-          // Send settings to backend
-          ws.send(
-            JSON.stringify({
-              type: 'set_feedback_mode',
-              mode: currentSettings.feedbackMode,
-            })
-          );
+            // Send settings to backend
+            ws.send(
+              JSON.stringify({
+                type: 'set_feedback_mode',
+                mode: currentSettings.feedbackMode,
+              })
+            );
 
-          ws.send(
-            JSON.stringify({
-              type: 'set_suggest_mode',
-              mode: currentSettings.suggestMode || 'off',
-            })
-          );
+            ws.send(
+              JSON.stringify({
+                type: 'set_suggest_mode',
+                mode: currentSettings.suggestMode || 'off',
+              })
+            );
 
-          ws.send(
-            JSON.stringify({
-              type: 'set_suggest_length',
-              mode: currentSettings.suggestionLengthMode || 'auto',
-            })
-          );
+            ws.send(
+              JSON.stringify({
+                type: 'set_suggest_length',
+                mode: currentSettings.suggestionLengthMode || 'auto',
+              })
+            );
 
-          ws.send(
-            JSON.stringify({
-              type: 'session_config',
-              learning_lang: languages.learningLang,
-              native_lang: languages.nativeLang,
-              mode: mode,
-              partner_id: partnerId || partner?.id || null,
-            })
-          );
+            ws.send(
+              JSON.stringify({
+                type: 'session_config',
+                learning_lang: languages.learningLang,
+                native_lang: languages.nativeLang,
+                mode: mode,
+                partner_id: partnerId || partner?.id || null,
+              })
+            );
 
-          // Send user profile (country, level) so backend can tailor suggestions
-          ws.send(
-            JSON.stringify({
-              type: 'set_profile',
-              language_level: currentSettings.languageLevel || null,
-              pronunciation_mode: currentSettings.pronunciationMode || 'native',
-            })
-          );
+            // Send user profile (country, level) so backend can tailor suggestions
+            ws.send(
+              JSON.stringify({
+                type: 'set_profile',
+                language_level: currentSettings.languageLevel || null,
+                pronunciation_mode: currentSettings.pronunciationMode || 'native',
+              })
+            );
 
-          // Send heartbeat every 20 seconds to keep connection alive
-          heartbeatIntervalRef.current = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-              ws.send(JSON.stringify({ type: 'ping' }));
-            }
-          }, 20000);
+            // Send heartbeat every 20 seconds to keep connection alive
+            heartbeatIntervalRef.current = setInterval(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'ping' }));
+              }
+            }, 20000);
+          } catch (err) {
+            console.error('[GlassContext] Failed to initialize voice session', err);
+            toast.error(t`Unable to connect`, {
+              description: t`Voice stream failed to initialize. Please try again.`,
+            });
+            try {
+              ws.close();
+            } catch {}
+          }
         };
 
         ws.onmessage = (event) => {
@@ -1058,7 +1240,10 @@ export function GlassProvider({
                       toast.info(t`Trial session ended due to time limit.`);
                     } catch {}
                     // Run End Call flow (analyze and show summary)
-                    disconnect().catch(() => {});
+                    const fn = disconnectRef.current;
+                    if (fn) {
+                      fn().catch(() => {});
+                    }
                   } else {
                     // No time was available from the start → redirect to time-limit page
                     setStatus({ value: 'idle' });
@@ -1149,7 +1334,7 @@ export function GlassProvider({
         throw error;
       }
     },
-    [generateSessionId, updateFFT, onError, acquireMicStream, rebuildMicAnalyser]
+    [generateSessionId, updateFFT, onError, acquireMicStream, rebuildMicAnalyser, startAudioStreaming]
   );
 
   // Handle TTS audio chunks
@@ -1186,7 +1371,7 @@ export function GlassProvider({
       }
 
       // Log all events for debugging
-      if (data.t === 'utterance_end' || data.t === 'translation') {
+      if (data.t === 'utterance_completed' || data.t === 'translation') {
         console.log('Received event:', data.t, data);
       }
 
@@ -1210,12 +1395,20 @@ export function GlassProvider({
       }
 
       // PARTIAL TRANSCRIPT: ephemeral overlay per utterance (simple overwrite)
-      if (data.t === 'partial_transcript') {
+      if (data.t === 'transcript_interim') {
         const text = (data.text || '').trim();
         if (!text) return;
 
         const utteranceId = data.utterance_id;
         if (!utteranceId) return;
+
+        const start = typeof data.start === 'number' ? data.start : undefined;
+        const duration =
+          typeof data.duration === 'number'
+            ? data.duration
+            : typeof start === 'number' && typeof data.end === 'number'
+              ? data.end - start
+              : undefined;
 
         // Determine role from source
         let role: 'user' | 'partner' = 'partner';
@@ -1239,8 +1432,8 @@ export function GlassProvider({
               ...existing,
               partial: text,
               receivedAt: new Date(),
-              start: typeof data.start === 'number' ? data.start : existing.start,
-              duration: typeof data.duration === 'number' ? data.duration : existing.duration,
+              start: start ?? existing.start,
+              duration: duration ?? existing.duration,
             };
             return next;
           }
@@ -1251,8 +1444,8 @@ export function GlassProvider({
             receivedAt: new Date(),
             utteranceId,
             partial: text,
-            start: typeof data.start === 'number' ? data.start : undefined,
-            duration: typeof data.duration === 'number' ? data.duration : undefined,
+            start,
+            duration,
           });
           return next;
         });
@@ -1261,12 +1454,28 @@ export function GlassProvider({
       }
 
       // FINAL TRANSCRIPT: upsert final message for utterance (no concatenation)
-      if (data.t === 'transcript') {
+      if (data.t === 'transcript_final') {
         const text = (data.text || '').trim();
         if (!text) return;
 
         const utteranceId = data.utterance_id;
         if (!utteranceId) return;
+
+        const start = typeof data.start === 'number' ? data.start : undefined;
+        const duration =
+          typeof data.duration === 'number'
+            ? data.duration
+            : typeof start === 'number' && typeof data.end === 'number'
+              ? data.end - start
+              : undefined;
+        const end =
+          typeof data.end === 'number'
+            ? data.end
+            : typeof start === 'number' && typeof duration === 'number'
+              ? start + duration
+              : undefined;
+        const latencyMs = typeof data.latency_ms === 'number' ? data.latency_ms : undefined;
+        const completedBy = typeof data.completed_by === 'string' ? data.completed_by : undefined;
 
         // Auto-play TTS for AI responses when requested
         if (data.auto_tts && data.source === 'ai') {
@@ -1287,8 +1496,6 @@ export function GlassProvider({
           role = data.speaker === 'user' ? 'user' : 'partner';
         }
 
-        const isSpeechFinal = Boolean(data.speech_final);
-
         setMessages((prev) => {
           const next = [...prev];
           const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.message.role === role);
@@ -1304,8 +1511,11 @@ export function GlassProvider({
               partial: undefined,
               receivedAt: new Date(),
               // Update timing information
-              start: typeof data.start === 'number' ? data.start : existing.start,
-              duration: typeof data.duration === 'number' ? data.duration : existing.duration,
+              start: start ?? existing.start,
+              duration: duration ?? existing.duration,
+              end: end ?? existing.end,
+              latencyMs: latencyMs ?? existing.latencyMs,
+              completedBy: completedBy ?? existing.completedBy,
             };
             return next;
           }
@@ -1317,18 +1527,14 @@ export function GlassProvider({
             translation,
             receivedAt: new Date(),
             utteranceId,
-            start: typeof data.start === 'number' ? data.start : undefined,
-            duration: typeof data.duration === 'number' ? data.duration : undefined,
+            start,
+            duration,
+            end,
+            latencyMs,
+            completedBy,
           });
           return next;
         });
-
-        // Clear all suggestions when user's speech is final
-        if (isSpeechFinal && role === 'user') {
-          setTimeout(() => {
-            setSuggestions([]);
-          }, 1000);
-        }
 
         onMessage?.();
         return;
@@ -1364,8 +1570,8 @@ export function GlassProvider({
         return;
       }
 
-      // Handle utterance end: clear any remaining partial overlay for that utterance
-      if (data.t === 'utterance_end') {
+      // Handle utterance completion: finalize any remaining partial overlay and clear suggestions
+      if (data.t === 'utterance_completed') {
         const utteranceId = data.utterance_id;
         if (!utteranceId) return;
 
@@ -1373,11 +1579,64 @@ export function GlassProvider({
         const isUserUtterance =
           data.source === 'mic' || (typeof data.source === 'string' && data.source.startsWith('mic_'));
 
+        const start = typeof data.start === 'number' ? data.start : undefined;
+        const end = typeof data.end === 'number' ? data.end : undefined;
+        const duration =
+          typeof data.duration === 'number'
+            ? data.duration
+            : typeof start === 'number' && typeof end === 'number'
+              ? end - start
+              : undefined;
+        const latencyMs = typeof data.latency_ms === 'number' ? data.latency_ms : undefined;
+        const completedBy = typeof data.completed_by === 'string' ? data.completed_by : undefined;
+        const fallbackText = typeof data.text === 'string' ? data.text : undefined;
+
+        // Determine role from source for fallback creation
+        let role: 'user' | 'partner' = 'partner';
+        if (data.role) {
+          role = data.role === 'user' ? 'user' : 'partner';
+        } else if (data.source) {
+          role =
+            data.source === 'mic' || (typeof data.source === 'string' && data.source.startsWith('mic_'))
+              ? 'user'
+              : 'partner';
+        } else if (data.speaker) {
+          role = data.speaker === 'user' ? 'user' : 'partner';
+        }
+
         setMessages((prev) => {
           const next = [...prev];
-          const idx = next.findIndex((m) => m.utteranceId === utteranceId && m.partial);
+          const idx = next.findIndex((m) => m.utteranceId === utteranceId);
           if (idx >= 0) {
-            next.splice(idx, 1);
+            const existing = next[idx];
+            next[idx] = {
+              ...existing,
+              partial: undefined,
+              latencyMs: latencyMs ?? existing.latencyMs,
+              completedBy: completedBy ?? existing.completedBy,
+              start: start ?? existing.start,
+              duration: duration ?? existing.duration,
+              end: end ?? existing.end,
+              message:
+                fallbackText && !existing.message.content
+                  ? { ...existing.message, content: fallbackText }
+                  : existing.message,
+            };
+            return next;
+          }
+
+          if (fallbackText) {
+            next.push({
+              type: role === 'user' ? 'user_message' : 'partner_message',
+              message: { role, content: fallbackText },
+              receivedAt: new Date(),
+              utteranceId,
+              start,
+              duration,
+              end,
+              latencyMs,
+              completedBy,
+            });
           }
           return next;
         });
@@ -1400,18 +1659,22 @@ export function GlassProvider({
               reason_native?: string;
               target_text?: string;
               pronunciation?: string;
+              error_type?: string;
             }
           | undefined;
         const text = typeof data.text === 'string' ? data.text : undefined;
         const isAuto = data.auto === true;
+        const errorType =
+          suggestion && typeof suggestion.error_type === 'string' ? suggestion.error_type : undefined;
+        const isNoneError = (errorType || '').toLowerCase() === 'none';
 
         // If auto feedback, show as feedback bubble
-        if (isAuto && suggestion) {
+        if (isAuto && suggestion && !isNoneError) {
           addFeedback(suggestion);
         }
 
         // Also attach to message for transcript history
-        if (utteranceId) {
+        if (utteranceId && (!isNoneError || text)) {
           setMessages((prev) => {
             const next = [...prev];
             const idx = next.findIndex((m) => m.utteranceId === utteranceId);
@@ -1422,6 +1685,7 @@ export function GlassProvider({
                     reason_native: typeof suggestion.reason_native === 'string' ? suggestion.reason_native : undefined,
                     target_text: typeof suggestion.target_text === 'string' ? suggestion.target_text : undefined,
                     pronunciation: typeof suggestion.pronunciation === 'string' ? suggestion.pronunciation : undefined,
+                    error_type: errorType,
                   }
                 : { text };
               next[idx] = {
@@ -1462,79 +1726,21 @@ export function GlassProvider({
     [onMessage]
   );
 
-  // Stream audio to WebSocket
-  const startAudioStreaming = useCallback((ws: WebSocket, micStream: MediaStream, systemStream: MediaStream | null) => {
-    const audioContext = new AudioContext({ sampleRate: 16000 });
-    streamingContextRef.current = audioContext;
-
-    // Check actual sample rate - browser may not support 16000Hz
-    const actualSampleRate = audioContext.sampleRate;
-    console.log(`Audio sample rate: requested=16000Hz, actual=${actualSampleRate}Hz`);
-
-    const micSource = audioContext.createMediaStreamSource(micStream);
-    const micProcessor = audioContext.createScriptProcessor(4096, 1, 1);
-
-    // Downsample if needed
-    const resampleRatio = actualSampleRate / 16000;
-    const needsResampling = resampleRatio !== 1;
-
-    micProcessor.onaudioprocess = (e) => {
-      if (ws.readyState === WebSocket.OPEN && !isMutedRef.current) {
-        let inputData = e.inputBuffer.getChannelData(0);
-
-        // Simple downsampling if needed
-        if (needsResampling) {
-          const targetLength = Math.floor(inputData.length / resampleRatio);
-          const downsampled = new Float32Array(targetLength);
-          for (let i = 0; i < targetLength; i++) {
-            downsampled[i] = inputData[Math.floor(i * resampleRatio)];
-          }
-          inputData = downsampled;
-        }
-
-        const pcm16 = convertFloat32ToPCM16(inputData);
-        const payload = new Uint8Array(pcm16.length + 1);
-        payload[0] = 0x01; // mic channel
-        payload.set(pcm16, 1);
-        ws.send(payload.buffer);
-      }
-    };
-
-    micSource.connect(micProcessor);
-    micProcessor.connect(audioContext.destination);
-    processorNodesRef.current.push(micProcessor);
-
-    // Stream system audio if available
-    if (systemStream) {
-      const systemSource = audioContext.createMediaStreamSource(systemStream);
-      const systemProcessor = audioContext.createScriptProcessor(4096, 1, 1);
-
-      systemProcessor.onaudioprocess = (e) => {
-        if (ws.readyState === WebSocket.OPEN) {
-          let inputData = e.inputBuffer.getChannelData(0);
-
-          // Simple downsampling if needed
-          if (needsResampling) {
-            const targetLength = Math.floor(inputData.length / resampleRatio);
-            const downsampled = new Float32Array(targetLength);
-            for (let i = 0; i < targetLength; i++) {
-              downsampled[i] = inputData[Math.floor(i * resampleRatio)];
-            }
-            inputData = downsampled;
-          }
-
-          const pcm16 = convertFloat32ToPCM16(inputData);
-          const payload = new Uint8Array(pcm16.length + 1);
-          payload[0] = 0x02; // system channel
-          payload.set(pcm16, 1);
-          ws.send(payload.buffer);
-        }
-      };
-
-      systemSource.connect(systemProcessor);
-      systemProcessor.connect(audioContext.destination);
-      processorNodesRef.current.push(systemProcessor);
+  const stopStreaming = useCallback(() => {
+    processorNodesRef.current.forEach((processor) => {
+      try {
+        processor.disconnect();
+      } catch {}
+    });
+    processorNodesRef.current = [];
+    if (streamingContextRef.current) {
+      try {
+        streamingContextRef.current.close();
+      } catch {}
+      streamingContextRef.current = null;
     }
+    micAudioCursorRef.current = 0;
+    systemAudioCursorRef.current = 0;
   }, []);
 
   const restartMicStream = useCallback(
@@ -1548,8 +1754,7 @@ export function GlassProvider({
       }
 
       isRestartingMicRef.current = true;
-      const preferredDeviceId =
-        typeof targetDeviceId === 'undefined' ? micPreferenceRef.current : targetDeviceId;
+      const preferredDeviceId = typeof targetDeviceId === 'undefined' ? micPreferenceRef.current : targetDeviceId;
 
       try {
         console.log(`[GlassContext] Restarting microphone stream (reason=${reason})`);
@@ -1565,19 +1770,7 @@ export function GlassProvider({
 
         rebuildMicAnalyser(newMicStream);
 
-        processorNodesRef.current.forEach((processor) => {
-          try {
-            processor.disconnect();
-          } catch {}
-        });
-        processorNodesRef.current = [];
-        if (streamingContextRef.current) {
-          try {
-            streamingContextRef.current.close();
-          } catch {}
-          streamingContextRef.current = null;
-        }
-
+        stopStreaming();
         startAudioStreaming(ws, newMicStream, systemStreamRef.current);
       } catch (err) {
         console.error('[GlassContext] Failed to restart microphone stream', err);
@@ -1588,7 +1781,7 @@ export function GlassProvider({
         isRestartingMicRef.current = false;
       }
     },
-    [acquireMicStream, rebuildMicAnalyser, startAudioStreaming]
+    [acquireMicStream, rebuildMicAnalyser, startAudioStreaming, stopStreaming]
   );
 
   restartMicStreamRef.current = restartMicStream;
@@ -1703,6 +1896,11 @@ export function GlassProvider({
     console.log('[GlassContext] Set isIntentionalDisconnectRef = true');
     shouldAutoRecoverMicRef.current = false;
     detachMicTrackMonitor();
+    const cleanupScreenShareListener = screenShareTrackCleanupRef.current;
+    if (cleanupScreenShareListener) {
+      screenShareTrackCleanupRef.current = null;
+      cleanupScreenShareListener();
+    }
 
     // Stop elapsed timer
     if (localTickRef.current) {
@@ -1721,11 +1919,10 @@ export function GlassProvider({
       animationFrameRef.current = null;
     }
 
-    // Disconnect processor nodes
-    processorNodesRef.current.forEach((processor) => {
-      processor.disconnect();
-    });
-    processorNodesRef.current = [];
+    // Disconnect processor nodes / streaming context
+    stopStreaming();
+    // Stop any TTS playback so audio doesn't keep running after hang up
+    stopSpeaking();
 
     // Stop heartbeat
     if (heartbeatIntervalRef.current) {
@@ -1755,11 +1952,6 @@ export function GlassProvider({
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
-    }
-
-    if (streamingContextRef.current) {
-      streamingContextRef.current.close();
-      streamingContextRef.current = null;
     }
 
     setMicFft(new Array(24).fill(0));
@@ -1846,6 +2038,8 @@ export function GlassProvider({
                 durationSeconds: detail.durationSeconds ?? null,
                 learningLang: detail.learningLang ?? null,
                 nativeLang: detail.nativeLang ?? null,
+                memoryThreadId: detail.memoryThreadId ?? null,
+                memoryInsights: detail.memoryInsights ?? null,
               };
 
               setConversationAnalysis(analysis);
@@ -1903,6 +2097,10 @@ export function GlassProvider({
     // Don't reset isIntentionalDisconnectRef here if we're analyzing
     // It will be reset when summary is closed or after polling times out
   }, []);
+
+  useEffect(() => {
+    disconnectRef.current = disconnect;
+  }, [disconnect]);
 
   // Mute/Unmute
   const mute = useCallback(() => {
@@ -2042,6 +2240,12 @@ export function GlassProvider({
     ttsAudioChunksRef.current = [];
   }, []);
 
+  useEffect(() => {
+    if (showSummary) {
+      stopSpeaking();
+    }
+  }, [showSummary, stopSpeaking]);
+
   // Smooth local countdown between server updates
   useEffect(() => {
     // Start ticking when connected and we have a server baseline
@@ -2110,6 +2314,7 @@ export function GlassProvider({
 
   // Close summary
   const closeSummary = useCallback(() => {
+    stopSpeaking();
     setShowSummary(false);
     setConversationAnalysis(null);
     // Return to idle status to show start screen
@@ -2120,19 +2325,20 @@ export function GlassProvider({
     setTranslations([]);
     // Reset the flag
     isIntentionalDisconnectRef.current = false;
-  }, []);
+  }, [stopSpeaking]);
 
   // Start new call after saving to waitlist
   const startNewCallWithContext = useCallback((contextInfo: ExtractedInfo[]) => {
     // Close summary and return to start screen
     // (Context is not actually saved, just sent to waitlist API for Discord notification)
+    stopSpeaking();
     setShowSummary(false);
     setConversationAnalysis(null);
     // Return to idle status to show start screen
     setStatus({ value: 'idle' });
     // Reset the flag
     isIntentionalDisconnectRef.current = false;
-  }, []);
+  }, [stopSpeaking]);
 
   // Cleanup on unmount
   useEffect(() => {

@@ -29,38 +29,33 @@ class Roleplay:
         self._emit = emit_callback
         
         # Configuration
-        self.contact_name: str | None = None
-        self.contact_description: str | None = None
-        self.contact_voice_id: str | None = None
-        self.contact_id: str | None = None
+        self.partner_name: str | None = None
+        self.partner_description: str | None = None
+        self.partner_voice_id: str | None = None
+        self.partner_id: str | None = None
+        self.user_name: str | None = None
         self.learning_lang: str = "en"
         self.native_lang: str = "ko"
         
-        # Track feedback for context
-        self.recent_feedback: list[str] = []
         self._translations: dict[str, str] = {}
 
-    def add_feedback(self, feedback_text: str) -> None:
-        """Add feedback to recent context (max 3)."""
-        self.recent_feedback.append(feedback_text)
-        if len(self.recent_feedback) > 3:
-            self.recent_feedback.pop(0)
+    def set_user_name(self, name: str | None) -> None:
+        self.user_name = name.strip() if isinstance(name, str) and name.strip() else None
 
     async def generate_ai_response(
         self,
         user_text: str,
         *,
         recent_conversation: list[dict],
-        user_context: str = "",
         thread_context: str = "",
+        interaction_context: str = "",
     ) -> str:
         """Generate AI conversation partner response.
         
         Args:
             user_text: User's message
             recent_conversation: Recent conversation history
-            user_context: User-level context
-            thread_context: Thread-level context
+            thread_context: Partner-specific history/notes from past interactions
             
         Returns:
             AI response text
@@ -71,21 +66,38 @@ class Roleplay:
             target_lang = lang_code_to_name(self.learning_lang)
             native_lang = lang_code_to_name(self.native_lang)
             
-            # Get recent feedback for context
-            recent_feedback = "\n".join(self.recent_feedback) if self.recent_feedback else None
-            
             # Build prompt
-            recent_conv_texts = [msg.get("text", "") for msg in recent_conversation]
+            recent_conv_texts: list[str] = []
+            for message in recent_conversation[-6:]:
+                role = (message.get("role") or "partner").lower()
+                if role == "user":
+                    speaker = "User"
+                    name = self.user_name
+                else:
+                    speaker = "You"
+                    name = self.partner_name
+                text = (message.get("text") or "").strip()
+                if not text:
+                    continue
+                label = f"{speaker} ({name})" if name else speaker
+                recent_conv_texts.append(f"{label}: {text}")
+            if not recent_conv_texts:
+                recent_conv_texts = ["(No recent conversation yet)"]
             system_prompt, user_prompt = prompts.build_ai_response_prompt(
                 user_text=user_text,
-                contact_name=self.contact_name,
-                contact_description=self.contact_description,
+                partner_name=self.partner_name,
+                partner_description=self.partner_description,
                 target_lang=target_lang,
                 native_lang=native_lang,
                 recent_conversation=recent_conv_texts,
-                recent_feedback=recent_feedback,
-                user_context=user_context,
                 thread_context=thread_context,
+                interaction_context=interaction_context or None,
+                user_name=self.user_name,
+            )
+            LOGGER.debug(
+                "[RoleplayPrompt]\nSYSTEM:\n%s\n\nUSER:\n%s",
+                system_prompt,
+                user_prompt,
             )
             
             # Generate response
@@ -114,8 +126,8 @@ class Roleplay:
         event_type_translation,
         *,
         recent_conversation: list[dict],
-        user_context: str = "",
         thread_context: str = "",
+        interaction_context: str = "",
         user_message_end_time: float | None = None,
     ) -> dict | None:
         """Generate and emit AI conversation turn.
@@ -126,8 +138,7 @@ class Roleplay:
             event_type_transcript: Transcript event type
             event_type_translation: Translation event type
             recent_conversation: Recent conversation history
-            user_context: User-level context
-            thread_context: Thread-level context
+            thread_context: Partner-specific context/history
             user_message_end_time: When user finished speaking
             
         Returns:
@@ -137,8 +148,8 @@ class Roleplay:
         ai_response = await self.generate_ai_response(
             user_text,
             recent_conversation=recent_conversation,
-            user_context=user_context,
             thread_context=thread_context,
+            interaction_context=interaction_context,
         )
         
         if not ai_response:
@@ -160,9 +171,13 @@ class Roleplay:
                 "speech_final": True,
                 "lang": self.learning_lang,
                 "auto_tts": True,  # Signal for automatic TTS
-                "voice_id": self.contact_voice_id,  # Include voice_id for TTS
+                "voice_id": self.partner_voice_id,  # Include voice_id for TTS
                 "start": ai_start_time,
                 "duration": ai_duration,
+                "end": ai_start_time + ai_duration,
+                "audio_cursor": ai_start_time + ai_duration,
+                "latency_ms": 0,
+                "completed_by": "speech_final",
             },
             source="ai",
         )

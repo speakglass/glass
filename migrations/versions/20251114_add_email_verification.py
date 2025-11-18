@@ -37,3 +37,7 @@ def downgrade():
     op.drop_column('account_users', 'email_verified')
 
 
+
+
+
+

@@ -33,9 +33,9 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('last_login_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('onboarding_completed_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('learning_lang', sa.String(length=32), nullable=True),
-    sa.Column('native_lang', sa.String(length=32), nullable=True),
-    sa.Column('proficiency', sa.String(length=32), nullable=True),
+        sa.Column('learning_lang', sa.String(length=32), nullable=True),
+        sa.Column('native_lang', sa.String(length=32), nullable=True),
+        sa.Column('proficiency', sa.String(length=32), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_account_users_email'), 'account_users', ['email'], unique=True)
@@ -85,4 +85,3 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_account_users_email'), table_name='account_users')
     op.drop_table('account_users')
     # ### end Alembic commands ###
-

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAccountSession } from '@/contexts/account-session-context';
 import { createColumns, Memory } from './columns';
@@ -20,7 +20,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2 } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
+const MEMORY_VISIBLE_LIMIT = 50;
 
 export function MemoryTable() {
   const { token } = useAccountSession();
@@ -34,14 +37,24 @@ export function MemoryTable() {
   const [memoriesToDelete, setMemoriesToDelete] = useState<Memory[] | null>(null);
   const deleteToastIdRef = useRef<string | number | null>(null);
   const bulkDeleteToastIdRef = useRef<string | number | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['memories'],
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(searchInput.trim()), 350);
+    return () => clearTimeout(handle);
+  }, [searchInput]);
+
+  const searchQuery = debouncedSearch;
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['memories', searchQuery],
     queryFn: async () => {
       if (!token) throw new Error('No access token');
-      return await fetchMemories(token);
+      return await fetchMemories(token, searchQuery ? { search: searchQuery } : undefined);
     },
     enabled: !!token,
+    placeholderData: (prevData) => prevData,
   });
 
   const deleteMutation = useMutation({
@@ -180,8 +193,9 @@ export function MemoryTable() {
   };
 
   const columns = createColumns(handleEdit, handleDelete);
+  const isInitialLoad = isLoading && !data;
 
-  if (isLoading) {
+  if (isInitialLoad) {
     return (
       <div className="flex items-center justify-center p-8">
         <Trans>Loading memories...</Trans>
@@ -189,16 +203,49 @@ export function MemoryTable() {
     );
   }
 
+  const visibleCount = data?.items.length ?? 0;
+  const shouldShowLimitNotice = !searchQuery && visibleCount >= MEMORY_VISIBLE_LIMIT;
+  const limitTooltipIcon = shouldShowLimitNotice ? (
+    <Tooltip delayDuration={200}>
+      <TooltipTrigger asChild>
+        <Info className="h-4 w-4 cursor-help text-muted-foreground hover:text-foreground" />
+      </TooltipTrigger>
+      <TooltipContent side="top" align="start">
+        <p className="max-w-xs text-sm">
+          <Trans>
+            This table highlights the latest {MEMORY_VISIBLE_LIMIT} memories. Older ones stay archived, so use the search field
+            whenever you want to surface something specific.
+          </Trans>
+        </p>
+      </TooltipContent>
+    </Tooltip>
+  ) : null;
+
   return (
     <>
-      <DataTable
-        columns={columns}
-        data={data?.items || []}
-        onBulkDelete={handleBulkDelete}
-        onAddNew={handleAddNew}
-        totalCount={data?.total || 0}
-        meta={{ onViewMemory: handleViewMemory }}
-      />
+      {shouldShowLimitNotice && (
+        <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
+          <Trans>Showing the latest {MEMORY_VISIBLE_LIMIT} memories</Trans>
+          {limitTooltipIcon}
+        </div>
+      )}
+
+      <div className="relative">
+        <DataTable
+          columns={columns}
+          data={data?.items || []}
+          onBulkDelete={handleBulkDelete}
+          onAddNew={handleAddNew}
+          meta={{ onViewMemory: handleViewMemory }}
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+        />
+        {isFetching && !isInitialLoad && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/70">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        )}
+      </div>
 
       <MemoryDialog
         open={dialogOpen}

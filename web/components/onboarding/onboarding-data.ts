@@ -1,3 +1,5 @@
+import type { MemoryInsights } from '@/lib/account-api';
+
 // Types
 export const DEMO_LOCALES = ['en', 'ja', 'ko', 'zh', 'es', 'fr'] as const;
 export type DemoLocale = (typeof DEMO_LOCALES)[number];
@@ -646,6 +648,39 @@ export const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = 
   {} as Record<string, Record<string, ExamplePhrase>>
 );
 
+export const DEMO_MEMORY_INSIGHTS: Record<DemoLocale, MemoryInsights> = {
+  en: {
+    user_insights: ['You mentioned wanting to hang out this week and prefer afternoon meetups.'],
+    partner_insights: ['Emma prefers scheduling around 3pm and keeps the tone relaxed.'],
+    interaction_insights: ['You agreed to meet tomorrow at 3pm to hang out.'],
+  },
+  ja: {
+    user_insights: ['今週は友達と遊ぶのが好きで、午後が都合よさそうだと話していました。'],
+    partner_insights: ['Emmaさんは午後3時頃を提案していて、リラックスした予定を好むようです。'],
+    interaction_insights: ['明日午後3時に会うことで話がまとまりました。'],
+  },
+  ko: {
+    user_insights: ['이번 주에 친구들과 만나고 싶어하고 오후 시간이 괜찮다고 말씀하셨어요.'],
+    partner_insights: ['Emma는 오후 3시쯤을 추천하며 편안한 약속을 선호해요.'],
+    interaction_insights: ['내일 오후 3시에 만나기로 했어요.'],
+  },
+  zh: {
+    user_insights: ['你说这周想和朋友见面，下午比较有空。'],
+    partner_insights: ['Emma 说下午3点方便，喜欢轻松的安排。'],
+    interaction_insights: ['你们约好明天下午3点一起出去玩。'],
+  },
+  es: {
+    user_insights: ['Dijiste que esta semana prefieres salir con amigos y que la tarde te viene bien.'],
+    partner_insights: ['Emma puede a las 3pm y disfruta de planes relajados.'],
+    interaction_insights: ['Quedaron en verse mañana a las 3pm para pasar el rato.'],
+  },
+  fr: {
+    user_insights: ["Tu as dit que tu voulais sortir avec des amis cette semaine et que l'après-midi te convenait."],
+    partner_insights: ['Emma est dispo vers 15h et aime les plans détendus.'],
+    interaction_insights: ['Vous avez convenu de vous voir demain à 15h pour passer un bon moment.'],
+  },
+};
+
 // Helper functions
 export const isDemoLocale = (value: string): value is DemoLocale => DEMO_LOCALES.includes(value as DemoLocale);
 
@@ -653,6 +688,8 @@ export const normalizeLocale = (locale: string): DemoLocale => {
   const lowered = locale.toLowerCase();
   return isDemoLocale(lowered) ? (lowered as DemoLocale) : 'en';
 };
+
+export const getDemoMemoryInsights = (locale: string): MemoryInsights => DEMO_MEMORY_INSIGHTS[normalizeLocale(locale)];
 
 export const getLocalizedText = (key: TextKey, locale: string): string => {
   const normalized = normalizeLocale(locale);

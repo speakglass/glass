@@ -29,8 +29,38 @@ import {
   normalizeLocale,
   getLocalizedText,
   getDemoTemplate,
-  getLanguageExample,
+  getDemoMemoryInsights,
 } from './onboarding-data';
+import type { LearningLevel } from '@/types/learning-level';
+import { isLearningLevel, needsPronunciationSupport } from '@/types/learning-level';
+
+const LANGUAGE_LEVEL_OPTIONS: { value: LearningLevel; label: string; description: string; icon: string }[] = [
+  { value: 'zero', label: t`Zero`, description: t`I am starting from zero and need full guidance.`, icon: '🥚' },
+  {
+    value: 'beginner',
+    label: t`Beginner`,
+    description: t`I can say simple phrases but need help forming sentences.`,
+    icon: '🌱',
+  },
+  {
+    value: 'elementary',
+    label: t`Elementary`,
+    description: t`I can hold short chats about daily life with support.`,
+    icon: '🌿',
+  },
+  {
+    value: 'intermediate',
+    label: t`Intermediate`,
+    description: t`I can explain ideas, ask follow-up questions, and manage most conversations.`,
+    icon: '🌼',
+  },
+  {
+    value: 'advanced',
+    label: t`Advanced`,
+    description: t`I can discuss complex topics and want to sound more natural.`,
+    icon: '🌟',
+  },
+];
 
 function OnboardingTour() {
   const router = useRouter();
@@ -60,7 +90,8 @@ function OnboardingTour() {
   const learningLocale = normalizeLocale(learningLang);
   const nativeLocale = normalizeLocale(nativeLang);
   const demoTemplate = useMemo(() => getDemoTemplate(learningLocale), [learningLocale]);
-  const needsPronunciation = settings.proficiency === 'cant_read';
+  const tourLevel = isLearningLevel(settings.languageLevel) ? settings.languageLevel : undefined;
+  const tourNeedsPronunciation = needsPronunciationSupport(tourLevel);
   const typewriterText = useMemo(() => getLocalizedText('typingKeywords', nativeLocale), [nativeLocale]);
 
   const onboardingMessages = useMemo(() => {
@@ -136,6 +167,7 @@ function OnboardingTour() {
         { label: 'Preference', value: 'Enjoys learning languages', editable: true },
       ],
       feedback: summaryCombined,
+      memoryInsights: getDemoMemoryInsights(nativeLocale),
       messages: [
         {
           text: partnerMessage.text,
@@ -165,7 +197,7 @@ function OnboardingTour() {
         },
       ],
     };
-  }, [demoTemplate, nativeLocale, learningLocale, needsPronunciation, snapshot]);
+  }, [demoTemplate, nativeLocale, learningLocale, tourNeedsPronunciation, snapshot]);
 
   // Detect mobile screen size
   useEffect(() => {
@@ -261,7 +293,9 @@ function OnboardingTour() {
   const mockSuggestionData = useMemo(() => {
     if (currentStep === 2 && onboardingShowHintResult) {
       const translation = SUGGESTION_TRANSLATIONS[nativeLocale] ?? SUGGESTION_TRANSLATIONS.en;
-      const pronunciation = needsPronunciation ? SUGGESTION_PRONUNCIATIONS[learningLocale]?.[nativeLocale] : undefined;
+      const pronunciation = tourNeedsPronunciation
+        ? SUGGESTION_PRONUNCIATIONS[learningLocale]?.[nativeLocale]
+        : undefined;
       return {
         targetText: demoTemplate.suggestion.targetText,
         pronunciation,
@@ -270,12 +304,14 @@ function OnboardingTour() {
       };
     }
     return undefined;
-  }, [currentStep, onboardingShowHintResult, demoTemplate, learningLocale, nativeLocale, needsPronunciation]);
+  }, [currentStep, onboardingShowHintResult, demoTemplate, learningLocale, nativeLocale, tourNeedsPronunciation]);
 
   const mockFeedbackData = useMemo(() => {
     if (currentStep === 3) {
       const translation = FEEDBACK_EXPLANATIONS[learningLocale]?.[nativeLocale] ?? FEEDBACK_EXPLANATIONS.en?.en ?? '';
-      const pronunciation = needsPronunciation ? FEEDBACK_PRONUNCIATIONS[learningLocale]?.[nativeLocale] : undefined;
+      const pronunciation = tourNeedsPronunciation
+        ? FEEDBACK_PRONUNCIATIONS[learningLocale]?.[nativeLocale]
+        : undefined;
       return {
         targetText: demoTemplate.feedbackBubble.targetText,
         pronunciation,
@@ -284,7 +320,7 @@ function OnboardingTour() {
       };
     }
     return undefined;
-  }, [currentStep, demoTemplate, learningLocale, nativeLocale, needsPronunciation]);
+  }, [currentStep, demoTemplate, learningLocale, nativeLocale, tourNeedsPronunciation]);
 
   const handleComplete = async () => {
     // Extract language from pathname
@@ -351,9 +387,7 @@ function OnboardingTour() {
         <div className={currentStep === 3 ? 'invisible' : ''}>
           <CallSummary
             {...mockCallSummaryData}
-            memoryCountOverride={2}
             conversationCountOverride={3}
-            initialShowMemory={currentStep === 5}
             onClose={() => {}}
             onStartNewCall={() => {}}
           />
@@ -364,20 +398,21 @@ function OnboardingTour() {
 }
 
 export default function OnboardingClient() {
-  const { onboardingStatus, markOnboardingComplete } = useAccountSession();
+  const { onboardingStatus, markOnboardingComplete, token } = useAccountSession();
   const { updateSettings, settings } = useGlass();
   const router = useRouter();
   const pathname = usePathname();
   const [step, setStep] = useState<'native-lang' | 'learning-lang' | 'level' | 'tour'>('native-lang');
-
-  // Initialize from settings or context if available
   const [languages, setLanguages] = useState({
     learningLang: settings.languages?.learningLang || '',
     nativeLang: settings.languages?.nativeLang || '',
   });
-  const [proficiency, setProficiency] = useState<'cant_read' | 'can_read' | undefined>(
-    settings.proficiency as 'cant_read' | 'can_read' | undefined
-  );
+  const initialLevel = isLearningLevel(settings.languageLevel) ? settings.languageLevel : undefined;
+  const [languageLevel, setLanguageLevel] = useState<LearningLevel | ''>(initialLevel ?? '');
+  const [savingLanguageLevel, setSavingLanguageLevel] = useState(false);
+  const [languageLevelError, setLanguageLevelError] = useState<string | null>(null);
+  const resolvedLevel = (languageLevel || initialLevel || undefined) as LearningLevel | undefined;
+  const needsPronunciation = needsPronunciationSupport(resolvedLevel);
 
   // Persist language selection across page transitions
   useEffect(() => {
@@ -385,6 +420,11 @@ export default function OnboardingClient() {
       updateSettings({ languages });
     }
   }, [languages]);
+
+  useEffect(() => {
+    setLanguageLevel('');
+    setLanguageLevelError(null);
+  }, [languages.learningLang]);
 
   // If onboarding is already completed, show tour directly
   if (onboardingStatus && onboardingStatus.completed) {
@@ -416,25 +456,33 @@ export default function OnboardingClient() {
     });
   };
 
-  const handleLevelComplete = async () => {
+  const handleLanguageLevelNext = async () => {
+    if (!languages.learningLang || !languages.nativeLang || !languageLevel) {
+      setLanguageLevelError(t`Select a level to continue`);
+      return;
+    }
+    if (!token) {
+      setLanguageLevelError(t`Authentication is required. Please refresh and try again.`);
+      return;
+    }
+    setLanguageLevelError(null);
+    setSavingLanguageLevel(true);
     try {
-      // Save settings to context
       updateSettings({
         languages,
-        proficiency,
+        languageLevel,
       });
-
-      // Mark onboarding as complete and save to database
       await markOnboardingComplete({
         learningLang: languages.learningLang,
         nativeLang: languages.nativeLang,
-        proficiency: proficiency!,
+        languageLevel: languageLevel,
       });
-
-      // Show tour
       setStep('tour');
     } catch (error) {
-      console.error('Failed to complete onboarding:', error);
+      console.error('[Onboarding] Failed to save language level', error);
+      setLanguageLevelError(t`Unable to save level. Please try again.`);
+    } finally {
+      setSavingLanguageLevel(false);
     }
   };
 
@@ -549,100 +597,72 @@ export default function OnboardingClient() {
     );
   }
 
-  // Level selection
-  const phrase = getLanguageExample(languages.learningLang, languages.nativeLang);
+  if (step === 'level') {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-6 sm:gap-8 px-1.5 w-full max-w-2xl">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-medium">
+              <Trans>How confident are you in this language?</Trans>
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-lg">
+              <Trans>Select the description that feels closest to your speaking ability.</Trans>
+            </p>
+          </div>
 
-  return (
-    <div className="fixed inset-0 flex items-center justify-center p-4">
-      <div className="flex flex-col items-center gap-6 sm:gap-8 px-1.5">
-        <div className="text-center">
-          <h2 className="text-2xl font-medium mb-2">
-            <Trans>Do you want pronunciation help?</Trans>
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            <Trans>We'll show how to read sentences in your alphabet when helpful</Trans>
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start">
-          <button
-            onClick={() => {
-              setProficiency('cant_read');
-            }}
-            className={cn(
-              'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
-              'bg-card border border-border hover:border-foreground/30 hover:scale-[1.02]',
-              proficiency === 'cant_read' && 'border-foreground/30 ring-2 ring-foreground/20'
-            )}
-          >
-            <div className="flex flex-col gap-3">
-              <div className="text-center">
-                <div className="font-medium mb-1 text-base">
-                  <Trans>Yes, show pronunciation</Trans>
-                </div>
-              </div>
-              <div className="mt-auto">
-                <div className="rounded-md px-5 py-3 text-left bg-muted border border-border">
-                  <div className="text-sm leading-snug font-medium">{phrase?.target || 'Example phrase'}</div>
-                  {phrase?.pronunciation && (
-                    <div className="text-sky-600 dark:text-sky-400 text-sm leading-snug font-medium mt-0.5">
-                      {phrase.pronunciation}
-                    </div>
+          <div className="flex flex-col gap-3 w-full">
+            {LANGUAGE_LEVEL_OPTIONS.map((option) => {
+              const isActive = languageLevel === option.value;
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => setLanguageLevel(option.value)}
+                  className={cn(
+                    'w-full rounded-2xl border border-border/70 bg-card/70 px-4 py-4 flex items-start gap-4 text-left transition hover:border-foreground/50 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring',
+                    isActive && 'border-foreground/40 ring-2 ring-foreground/20 bg-card'
                   )}
-                  {phrase?.translation && (
-                    <div className="text-sm text-muted-foreground mt-1">{phrase.translation}</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </button>
+                >
+                  <div
+                    className={cn(
+                      'flex h-12 w-12 items-center justify-center rounded-xl border text-lg',
+                      isActive ? 'border-foreground bg-foreground/10 text-foreground' : 'border-border text-muted-foreground'
+                    )}
+                    aria-hidden
+                  >
+                    {option.icon}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-base">{option.label}</div>
+                    <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
-          <button
-            onClick={() => {
-              setProficiency('can_read');
-            }}
-            className={cn(
-              'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
-              'bg-card border border-border hover:border-foreground/30 hover:scale-[1.02]',
-              proficiency === 'can_read' && 'border-foreground/30 ring-2 ring-foreground/20'
-            )}
-          >
-            <div className="flex flex-col gap-3">
-              <div className="text-center">
-                <div className="font-medium mb-1 text-base">
-                  <Trans>No, I'm fine</Trans>
-                </div>
-              </div>
-              <div className="mt-auto">
-                <div className="rounded-md px-5 py-3 text-left bg-muted border border-border">
-                  <div className="text-sm leading-snug font-medium">{phrase?.target || 'Example phrase'}</div>
-                  {phrase?.translation && (
-                    <div className="text-sm text-muted-foreground mt-1">{phrase.translation}</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </button>
-        </div>
+          {languageLevelError && <p className="text-sm text-red-500">{languageLevelError}</p>}
 
-        <div className="flex justify-between items-center w-full max-w-[640px]">
-          <button
-            onClick={() => setStep('learning-lang')}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Trans>← Back</Trans>
-          </button>
-          <Button
-            onClick={handleLevelComplete}
-            disabled={!proficiency}
-            variant="default"
-            size="sm"
-            className={cn('text-sm font-medium', !proficiency && 'opacity-50 cursor-not-allowed')}
-          >
-            <Trans>Start Tutorial</Trans>
-          </Button>
+          <div className="flex justify-between items-center w-full max-w-xl">
+            <button
+              onClick={() => setStep('learning-lang')}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Trans>← Back</Trans>
+            </button>
+            <Button
+              onClick={handleLanguageLevelNext}
+              disabled={!languageLevel || savingLanguageLevel}
+              variant="default"
+              size="sm"
+              className={cn('text-sm font-medium', (!languageLevel || savingLanguageLevel) && 'opacity-50')}
+            >
+              {savingLanguageLevel ? <Trans>Saving…</Trans> : <Trans>Next →</Trans>}
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null;
 }

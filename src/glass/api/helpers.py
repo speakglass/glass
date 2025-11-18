@@ -19,6 +19,7 @@ LOGGER = logging.getLogger(__name__)
 def client_id_for_user(user: AuthenticatedUser) -> str:
     return f"user:{user.user_id}"
 
+
 async def generate_conversation_title_with_llm(
     llm_adapter: LLMPort | None,
     messages: list[dict[str, Any]],
@@ -27,14 +28,15 @@ async def generate_conversation_title_with_llm(
     """Generate a conversation title using LLM based on initial messages."""
     if not llm_adapter or not messages:
         return None
-    
+
     # Get first 5-8 messages for context
     initial_messages = messages[:8]
     if len(initial_messages) < 2:
         return None
-    
+
     # Format messages for the prompt
     conversation_text = ""
+
     def _label_for_message(msg: dict[str, Any]) -> str:
         role = (msg.get("role") or "").lower()
         partner_id = (msg.get("partner_id") or "").lower()
@@ -51,10 +53,10 @@ async def generate_conversation_title_with_llm(
         if text:
             label = _label_for_message(msg)
             conversation_text += f"{label}: {text}\n"
-    
+
     if not conversation_text.strip():
         return None
-    
+
     # Map language codes to full names
     language_map = {
         "ko": "Korean (한국어)",
@@ -64,9 +66,9 @@ async def generate_conversation_title_with_llm(
         "es": "Spanish (Español)",
         "fr": "French (Français)",
     }
-    
+
     target_language = language_map.get(native_lang or "en", "English")
-    
+
     # Generate title using LLM
     prompt = f"""Based on the following conversation, generate a short, descriptive title in {target_language}.
 
@@ -82,7 +84,7 @@ Rules:
 - Output ONLY the title, nothing else
 
 Title:"""
-    
+
     try:
         title = await llm_adapter.call(
             prompt=prompt,
@@ -90,14 +92,14 @@ Title:"""
             max_tokens=60,
         )
         title = (title or "").strip().strip('"').strip("'").strip()
-        
+
         # Validate title length
         if title and 2 <= len(title.split()) <= 10:
             LOGGER.info(f"Generated title: {title}")
             return title
     except Exception as e:
         LOGGER.warning(f"Failed to generate title with LLM: {e}")
-    
+
     return None
 
 
@@ -115,7 +117,7 @@ async def extract_partner_profile_with_llm(
     lines: list[str] = []
 
     def _label(role: str) -> str:
-        return "Partner" if role == "partner" else "Learner"
+        return "Partner" if role == "partner" else "User"
 
     for msg in initial_messages:
         role = (msg.get("role") or "").lower()
@@ -167,6 +169,33 @@ JSON:
     return None
 
 
+def _is_assistant_message(message: dict[str, Any] | None) -> bool:
+    if not isinstance(message, dict):
+        return False
+    role = (message.get("role") or "").strip().lower()
+    if role == "assistant":
+        return True
+    speaker_type = (message.get("speaker_type") or "").strip().lower()
+    if speaker_type == "assistant":
+        return True
+    source = (message.get("source") or "").strip().lower()
+    if source == "glass":
+        return True
+    speaker = (message.get("speaker") or "").strip().lower()
+    if speaker in {"glass", "assistant"}:
+        return True
+    partner_id = (message.get("partner_id") or "").strip().lower()
+    if partner_id == "glass":
+        return True
+    return False
+
+
+def _filter_user_partner_messages(messages: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    if not messages:
+        return []
+    return [msg for msg in messages if not _is_assistant_message(msg)]
+
+
 def _conversation_excerpt(
     messages: list[dict[str, Any]],
     *,
@@ -180,15 +209,16 @@ def _conversation_excerpt(
     def _label(msg: dict[str, Any]) -> str:
         role = (msg.get("role") or "").lower()
         if role == "user":
-            return "Learner"
+            return "User"
         if role == "assistant":
             return "Glass"
         if role == "partner":
             return "Partner"
         return "Other"
 
+    recordings = _filter_user_partner_messages(messages)
     lines: list[str] = []
-    for msg in messages[-max_messages:]:
+    for msg in recordings[-max_messages:]:
         text = (msg.get("text") or "").strip()
         if not text:
             continue

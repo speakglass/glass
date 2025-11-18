@@ -331,8 +331,8 @@ async def ensure_live_session_partner(
     """Create (or fetch) a placeholder partner for a specific live-call session.
 
     Placeholder partners let us persist FK references even if the user didn't
-    pre-select a contact before starting the call. Users can later edit or
-    merge these placeholders into real contacts.
+    pre-select a partner before starting the call. Users can later edit or
+    merge these placeholders into real partners.
     """
     partner_id = f"live:{session_id}"
     async_session_factory = db.session()
@@ -662,6 +662,7 @@ async def upsert_conversation(
     duration_seconds: int | None,
     partner_id: str | None = None,
     participant_snapshot: dict[str, Any] | None = None,
+    memory_insights: dict[str, Any] | None = None,
 ) -> AccountConversation:
     """Persist a conversation summary for later review.
     
@@ -687,6 +688,8 @@ async def upsert_conversation(
                 convo.partner_id = partner_id
             if participant_snapshot is not None:
                 convo.participant_snapshot = participant_snapshot
+            if memory_insights is not None:
+                convo.memory_insights = memory_insights
         else:
             convo = AccountConversation(
                 user_id=user_id,
@@ -703,6 +706,7 @@ async def upsert_conversation(
                 duration_seconds=duration_seconds,
                 partner_id=partner_id,
                 participant_snapshot=participant_snapshot,
+                memory_insights=memory_insights,
             )
             session.add(convo)
         await session.commit()
@@ -832,7 +836,8 @@ async def update_conversation_title(
     *,
     user_id: str,
     conversation_id: str,
-    title: str,
+    title: str | None = None,
+    memory_insights: dict[str, Any] | None = None,
 ) -> AccountConversation | None:
     """Update the title of a conversation. Returns the updated conversation or None if not found."""
     async_session_factory = db.session()
@@ -845,8 +850,10 @@ async def update_conversation_title(
         )
         if not convo:
             return None
-        
-        convo.title = title
+        if title is not None:
+            convo.title = title
+        if memory_insights is not None:
+            convo.memory_insights = memory_insights
         await session.commit()
         await session.refresh(convo)
         return convo
@@ -989,7 +996,7 @@ async def mark_onboarding_completed(
     user_id: str,
     learning_lang: str | None = None,
     native_lang: str | None = None,
-    proficiency: str | None = None,
+    language_level: str | None = None,
 ) -> AccountUser:
     """Mark onboarding as completed for a user and save language preferences."""
     async_session_factory = db.session()
@@ -1009,8 +1016,8 @@ async def mark_onboarding_completed(
             user.learning_lang = learning_lang
         if native_lang:
             user.native_lang = native_lang
-        if proficiency:
-            user.proficiency = proficiency
+        if language_level:
+            user.language_level = language_level
         
         await session.commit()
         await session.refresh(user)

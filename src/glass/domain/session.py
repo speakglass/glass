@@ -46,7 +46,7 @@ class ConversationSession:
         self.session_start_time = time.time()
         self.mode: str = "live_call"  # "live_call" or "roleplay"
         self._active_roleplay_task: asyncio.Task | None = None
-        
+        self._active_user_utterance_task: asyncio.Task | None = None
         # Initialize processors
         self.speech_recognition = SpeechRecognition(
             session_id=session_id,
@@ -80,6 +80,13 @@ class ConversationSession:
         self.partner_profile: dict[str, Any] | None = None
         self.partner_id: str | None = None
         self.user_profile: dict[str, Any] | None = None
+        self._pending_profile_facts: dict[str, dict[str, Any]] = {}
+        self._pending_persona_payload: dict[str, Any] | None = None
+        self._pending_partner_payload: dict[str, Any] | None = None
+        self._pending_partner_summary: str | None = None
+        self._profile_fact_cache: dict[tuple[str, str], list[dict[str, Any]]] = {}
+        self._last_thread_summary_update: float = 0.0
+        self._thread_summary_task: asyncio.Task | None = None
         
         # TTS processor (optional)
         self.synthesis: TTSProcessor | None = None
@@ -108,14 +115,19 @@ class ConversationSession:
                     asr_queue, 
                     source=source, 
                     language=self.assistant.learning_lang,
-                    event_type_transcript=EventType.TRANSCRIPT,
-                    event_type_partial=EventType.PARTIAL_TRANSCRIPT,
-                    event_type_utterance_end=EventType.UTTERANCE_END,
+                    event_type_transcript=EventType.TRANSCRIPT_FINAL,
+                    event_type_partial=EventType.TRANSCRIPT_INTERIM,
                 )
             )
         ]
 
-        producer = asyncio.create_task(SpeechRecognition.broadcast_audio(audio_iter, [asr_queue]))
+        producer = asyncio.create_task(
+            SpeechRecognition.broadcast_audio(
+                audio_iter,
+                [asr_queue],
+                on_chunk=self.speech_recognition.advance_audio_cursor_from_chunk,
+            )
+        )
         try:
             await asyncio.gather(producer, *tasks)
         except Exception:
@@ -169,20 +181,27 @@ class ConversationSession:
             utterance_id=utterance_id,
         )
         self.memory.upsert_message(memory_msg)
+        self._schedule_thread_summary_update()
         
         self.lang = lang or self.lang
         
         # Trigger LLM processing only when speech is final (utterance complete)
         if speech_final:
-            asyncio.create_task(self._process_final_utterance(
-                text=text,
-                utterance_id=utterance_id or "",
-                source_lang=lang,
-                source=source or "unknown",
-                is_user=is_mic,
-                start=start,
-                duration=duration,
-            ))
+            if is_mic:
+                self._cancel_user_utterance_processing("new_user_turn")
+            task = asyncio.create_task(
+                self._process_final_utterance(
+                    text=text,
+                    utterance_id=utterance_id or "",
+                    source_lang=lang,
+                    source=source or "unknown",
+                    is_user=is_mic,
+                    start=start,
+                    duration=duration,
+                )
+            )
+            if is_mic:
+                self._track_user_utterance_task(task)
 
     async def _process_final_utterance(
         self,
@@ -197,28 +216,25 @@ class ConversationSession:
         """Process final utterance (orchestrates memory, LLM, and roleplay)."""
         # Get context from memory processor
         user_context, thread_context = await self.memory.get_hybrid_context()
-        recent_conversation = self.memory.get_recent_conversation()
         recent_thread_conversation = self.memory.get_thread_recent_conversation(self.memory_thread_id)
         target_lang_code = (self.assistant.learning_lang or self.default_lang).lower()
         utterance_lang_code = (source_lang or target_lang_code).lower()
-        language_profile = await self.memory.get_language_profile_data(target_lang_code)
         feedback_records = await self.memory.list_language_feedback(
             utterance_lang_code,
             limit=5,
         )
-        language_profile_context = self._compose_language_profile_context(language_profile, target_lang_code)
         language_feedback_context = self._compose_language_feedback_context(feedback_records, utterance_lang_code)
         profile_facts: list[dict[str, Any]] | None = None
         last_partner_message: str | None = None
         if not is_user and (source or "").lower() != "ai":
             last_partner_message = text
-            profile_facts = await self.memory.search_profile_facts(
-                user_hint=None,
-                last_partner_message=text,
-                limit=5,
-            )
+            profile_facts = await self._get_profile_facts_for_context(None, text)
         
         # Process with LLM (translation, feedback, suggestions)
+        merged_profile_facts = profile_facts if profile_facts is not None else self._merge_session_profile_facts(None)
+        formatted_thread_lines = self._format_conversation_snippets(recent_thread_conversation)
+        formatted_thread_recent = "\n".join(formatted_thread_lines)
+        formatted_recent = formatted_thread_recent
         await self.assistant.process_utterance(
             text=text,
             utterance_id=utterance_id,
@@ -228,12 +244,11 @@ class ConversationSession:
             event_type_translation=EventType.TRANSLATION,
             event_type_feedback=EventType.FEEDBACK,
             event_type_suggestion=EventType.SUGGESTION,
-            recent_conversation=recent_conversation,
+            recent_conversation=formatted_recent,
             user_context=user_context,
-            thread_context=thread_context,
-            language_profile_context=language_profile_context,
+            thread_context=formatted_thread_recent or thread_context,
             language_feedback_context=language_feedback_context,
-            profile_facts=profile_facts,
+            profile_facts=merged_profile_facts,
             last_partner_message=last_partner_message,
         )
         
@@ -257,10 +272,11 @@ class ConversationSession:
                     self.roleplay.emit_ai_turn(
                         user_text=text,
                         user_utterance_id=utterance_id,
-                        event_type_transcript=EventType.TRANSCRIPT,
+                        event_type_transcript=EventType.TRANSCRIPT_FINAL,
                         event_type_translation=EventType.TRANSLATION,
                         recent_conversation=recent_thread_conversation,
-                        thread_context=partner_context_block,
+                        thread_context=thread_context,
+                        interaction_context=partner_context_block,
                         user_message_end_time=user_message_end_time,
                     )
                 )
@@ -288,22 +304,19 @@ class ConversationSession:
                         extra=extra,
                     )
                     self.memory.upsert_message(ai_memory_msg)
+                    self._schedule_thread_summary_update()
 
                     # Suggest response after AI turn (if enabled)
                     if self.assistant.suggest_mode != "off":
-                        augmented_conversation = recent_thread_conversation + [ai_msg]
+                        augmented_lines = self._format_conversation_snippets(recent_thread_conversation + [ai_msg])
                         ai_utt_id = ai_msg.get("utterance_id") or utterance_id
                         ai_text = ai_msg.get("text")
-                        profile_facts_after_ai = await self.memory.search_profile_facts(
-                            user_hint=None,
-                            last_partner_message=ai_text,
-                            limit=5,
-                        )
+                        profile_facts_after_ai = await self._get_profile_facts_for_context(None, ai_text)
                         asyncio.create_task(
                             self.assistant.emit_suggestion(
                                 utterance_id=ai_utt_id,
                                 event_type=EventType.SUGGESTION,
-                                recent_conversation=augmented_conversation,
+                                recent_conversation=augmented_lines,
                                 profile_facts=profile_facts_after_ai,
                                 last_partner_message=ai_text,
                             )
@@ -348,22 +361,26 @@ class ConversationSession:
         for fact in parsed:
             if not isinstance(fact, dict):
                 continue
-            key = (fact.get("key") or "").strip()
+            key = (fact.get("key") or "").strip().lower()
             value = (fact.get("value") or "").strip()
             if not key or not value:
                 continue
+            if key in {"name", "introduction"}:
+                continue
+            if "my name is" in value.lower():
+                continue
             category = (fact.get("category") or "profile").strip() or "profile"
-            dedup[key.lower()] = {
-                "key": key.lower(),
+            dedup[key] = {
+                "key": key,
                 "value": value,
                 "category": category,
                 "updated_at": now,
             }
 
-        if not dedup:
-            return
-
-        await self.memory.add_profile_facts(list(dedup.values()))
+        for fact in dedup.values():
+            self._pending_profile_facts[fact["key"]] = fact
+        if dedup:
+            self._clear_profile_fact_cache()
 
 
     async def _emit(
@@ -409,9 +426,6 @@ class ConversationSession:
                 # Track feedback for roleplay context
                 if event_type == EventType.FEEDBACK:
                     self.roleplay.add_feedback(msg_text)
-                    record = self._build_feedback_record(payload)
-                    if record:
-                        asyncio.create_task(self._persist_feedback_record(record))
         except Exception:
             # Do not let persistence errors block event delivery
             pass
@@ -444,6 +458,21 @@ class ConversationSession:
             LOGGER.info("[Roleplay] Cancelling active response (%s)", reason)
             task.cancel()
         self._active_roleplay_task = None
+
+    def _cancel_user_utterance_processing(self, reason: str) -> None:
+        task = self._active_user_utterance_task
+        if task and not task.done():
+            LOGGER.info("[Session] Cancelling user processing (%s)", reason)
+            task.cancel()
+        self._active_user_utterance_task = None
+
+    def _track_user_utterance_task(self, task: asyncio.Task) -> None:
+        self._active_user_utterance_task = task
+        task.add_done_callback(self._on_user_utterance_task_done)
+
+    def _on_user_utterance_task_done(self, task: asyncio.Task) -> None:
+        if self._active_user_utterance_task is task:
+            self._active_user_utterance_task = None
 
     def attach_events(self, events: EventsPort | None) -> None:
         """Add an additional events port (e.g. when a new WebSocket connects)."""
@@ -488,7 +517,7 @@ class ConversationSession:
                 metadata["assistant_type"] = assistant_type
             return metadata
         if is_user:
-            metadata.update({"role": "user", "speaker_type": "user"})
+            metadata.update(self._user_identity())
             return metadata
         metadata.update(self._partner_identity())
         return metadata
@@ -499,11 +528,26 @@ class ConversationSession:
             "native_language": (self.assistant.native_lang or self.default_lang).lower(),
         }
 
+    def _user_identity(self) -> dict[str, Any]:
+        profile = self.user_profile or {}
+        user_id = profile.get("id") or self.memory.user_id
+        normalized_user_id = None
+        if isinstance(user_id, str) and user_id.strip():
+            normalized_user_id = f"user:{user_id.strip().lower()}"
+        fallback_id = f"user:{self.session_id}".lower()
+        metadata: dict[str, Any] = {
+            "role": "user",
+            "speaker_type": "user",
+            "partner_id": normalized_user_id or fallback_id,
+            "is_partner": False,
+        }
+        return metadata
+
     def _partner_identity(self) -> dict[str, Any]:
         partner_profile = self.partner_profile or {}
         partner_id = self.partner_id or partner_profile.get("id") or f"partner:{self.session_id}"
         partner_name = partner_profile.get("name")
-        metadata: dict[str, Any] = {"role": "partner", "speaker_type": "partner"}
+        metadata: dict[str, Any] = {"role": "partner", "speaker_type": "partner", "is_partner": True}
 
         def _normalize(value: Any) -> Any:
             return value.lower() if isinstance(value, str) else value
@@ -513,28 +557,6 @@ class ConversationSession:
         if partner_name:
             metadata["partner_name"] = partner_name
         return metadata
-
-    def _compose_language_profile_context(
-        self,
-        profile: dict[str, Any] | None,
-        language_code: str | None,
-    ) -> str:
-        if not profile:
-            return ""
-        lines: list[str] = []
-        level = profile.get("proficiency_level") or profile.get("level")
-        if level:
-            lines.append(f"- Level: {level}")
-        sessions = profile.get("total_sessions")
-        if sessions is not None:
-            lines.append(f"- Sessions: {sessions}")
-        feedback_total = profile.get("total_feedback_count")
-        if feedback_total is not None:
-            lines.append(f"- Feedback entries: {feedback_total}")
-        if not lines:
-            return ""
-        header = (language_code or profile.get("language_code") or "").upper()
-        return f"Language profile{f' ({header})' if header else ''}:\n" + "\n".join(lines)
 
     def _compose_language_feedback_context(
         self,
@@ -555,7 +577,7 @@ class ConversationSession:
                 parts.append(f"(Pattern: {pattern})")
             detail = " ".join(parts) if parts else "Feedback"
             sentence = entry.get("user_sentence")
-            created = self._format_feedback_timestamp(entry.get("created_at"))
+            created = self._format_feedback_timestamp(entry.get("recorded_at") or entry.get("created_at"))
             snippet = f' -> "{sentence}"' if sentence else ""
             stamp = f" [{created}]" if created else ""
             lines.append(f"- {detail}{snippet}{stamp}")
@@ -602,6 +624,7 @@ class ConversationSession:
         for key in (
             "partner_id",
             "partner_name",
+            "is_partner",
             "speaker_type",
             "assistant_type",
             "target_language",
@@ -657,41 +680,25 @@ class ConversationSession:
         self.memory.set_thread_id(self.memory_thread_id)
 
     async def _persist_session_metadata(self) -> None:
-        if not self.memory.user_id:
-            return
-        persona_payload = self._build_user_persona_payload()
-        await self.memory.upsert_user_persona(
-            user_id=self.memory.user_id,
-            native_languages=persona_payload["native_languages"],
-            learning_languages=persona_payload["learning_languages"],
-            goals=persona_payload["goals"],
-            preferred_tone=persona_payload["preferred_tone"],
-        )
+        self._pending_persona_payload = self._build_user_persona_payload()
         partner_payload = self._build_partner_profile_payload()
         if partner_payload:
-            await self.memory.upsert_partner_profile(
-                user_id=self.memory.user_id,
-                partner_profile=partner_payload,
-            )
+            self._pending_partner_payload = partner_payload
 
     def _build_user_persona_payload(self) -> dict[str, Any]:
         lang_meta = self._language_metadata()
         native_language = lang_meta["native_language"]
         learning_language = lang_meta["target_language"]
-        profile = self.user_profile or {}
         learning_entry = {
             "code": learning_language,
             "level": (self.assistant.language_level or "zero").lower(),
             "mode": self.mode,
         }
-        goals = profile.get("goals")
-        if not isinstance(goals, list):
-            goals = []
+        user_name = (self.user_profile or {}).get("name")
         return {
+            "display_name": user_name,
             "native_languages": [native_language],
             "learning_languages": [learning_entry],
-            "goals": goals,
-            "preferred_tone": profile.get("preferred_tone") or "supportive",
         }
 
     def _build_partner_profile_payload(self) -> dict[str, Any] | None:
@@ -700,25 +707,44 @@ class ConversationSession:
         normalized_partner_id = self._normalize_partner_id(partner_id)
         if not partner and not normalized_partner_id:
             return None
-        relationship_type = partner.get("relationship_type") or ("live_call" if self.mode == "live_call" else "roleplay")
-        primary_language = (
-            partner.get("native_lang")
-            or partner.get("learning_lang")
-            or self.assistant.learning_lang
-            or self.default_lang
-        )
-        partner_kind = "live" if relationship_type == "live_call" else "roleplay"
+        notes = partner.get("description") or partner.get("notes")
+        relation = partner.get("relation_to_user") or partner.get("relationship_type")
+        if not relation:
+            relation = "live_call" if self.mode == "live_call" else "roleplay"
         payload = {
             "partner_id": normalized_partner_id or partner_id,
             "name": partner.get("name"),
-            "company": partner.get("company"),
-            "role": partner.get("role"),
-            "relationship_type": relationship_type,
-            "partner_kind": partner_kind,
-            "primary_language": primary_language,
-            "notes": partner.get("description"),
+            "notes": notes,
+            "relation_to_user": relation,
         }
         return payload
+
+    async def flush_pending_memory(self) -> None:
+        """Persist pending persona, partner, fact, and partner summary data after a call."""
+        if not self.memory.user_id:
+            return
+        if self._pending_persona_payload:
+            payload = self._pending_persona_payload
+            await self.memory.upsert_user_persona(
+                user_id=self.memory.user_id,
+                native_languages=payload["native_languages"],
+                learning_languages=payload["learning_languages"],
+                display_name=payload.get("display_name"),
+            )
+            self._pending_persona_payload = None
+        if self._pending_partner_payload:
+            await self.memory.upsert_partner_profile(
+                user_id=self.memory.user_id,
+                partner_profile=self._pending_partner_payload,
+            )
+            self._pending_partner_payload = None
+        if self._pending_profile_facts:
+            await self.memory.add_profile_facts(list(self._pending_profile_facts.values()))
+            self._pending_profile_facts.clear()
+            self._clear_profile_fact_cache()
+        if self._pending_partner_summary and self.partner_id:
+            await self.memory.store_partner_summary(self.partner_id, self._pending_partner_summary)
+            self._pending_partner_summary = None
 
     def _build_thread_id(self, user_id: str, partner_id: str) -> str:
         normalized_partner = self._normalize_partner_id(partner_id) or partner_id
@@ -730,53 +756,108 @@ class ConversationSession:
             return partner_id.lower()
         return None
 
-    def _build_feedback_record(self, payload: dict[str, Any] | None) -> dict[str, Any] | None:
-        if not isinstance(payload, dict):
-            return None
-        structured = payload.get("suggestion")
-        if not isinstance(structured, dict):
-            return None
-        explanation = (structured.get("reason_native") or payload.get("text") or "").strip()
-        corrected = (structured.get("target_text") or "").strip()
-        user_sentence = (structured.get("user_sentence") or payload.get("user_sentence") or "").strip()
-        if not (explanation or corrected):
-            return None
-        created_ts = payload.get("timestamp")
-        created_at = None
-        if isinstance(created_ts, (int, float)):
-            created_at = created_ts
-        elif isinstance(created_ts, datetime):
-            created_at = created_ts.timestamp()
-        return {
-            "language_code": structured.get("language_code") or (self.assistant.learning_lang or self.default_lang),
-            "error_type": structured.get("error_type") or "general",
-            "pattern": structured.get("pattern") or "",
-            "user_sentence": user_sentence,
-            "corrected_sentence": corrected,
-            "explanation": explanation,
-            "partner_id": self._normalize_partner_id(self.partner_id or (self.partner_profile or {}).get("id")),
-            "ref_thread_id": self.memory_thread_id,
-            "ref_message_id": payload.get("utterance_id"),
-            "created_at": created_at,
-        }
+    def _pending_profile_fact_list(self) -> list[dict[str, Any]]:
+        return list(self._pending_profile_facts.values())
 
-    async def _persist_feedback_record(self, record: dict[str, Any]) -> None:
-        """Persist structured feedback without blocking the emit loop."""
-        if not self.memory.user_id:
+    def _merge_session_profile_facts(
+        self,
+        profile_facts: list[dict[str, Any]] | None,
+    ) -> list[dict[str, Any]]:
+        facts = list(profile_facts or [])
+        if self._pending_profile_facts:
+            facts.extend(self._pending_profile_fact_list())
+        return facts
+
+    def stage_partner_summary(self, summary: str | None) -> None:
+        self._pending_partner_summary = summary.strip() if isinstance(summary, str) and summary.strip() else None
+
+    def _schedule_thread_summary_update(self) -> None:
+        if self._thread_summary_task and not self._thread_summary_task.done():
             return
+        self._thread_summary_task = asyncio.create_task(self._run_thread_summary_update())
+
+    async def _run_thread_summary_update(self) -> None:
         try:
-            await self.memory.add_feedback_record(
-                user_id=self.memory.user_id,
-                record=record,
-            )
+            now = time.time()
+            if now - self._last_thread_summary_update < 15:
+                return
+            history = self.memory.get_thread_recent_conversation(self.memory_thread_id)
+            if not history:
+                return
+            lines = self._format_conversation_snippets(history[-10:])
+            if not lines:
+                return
+            existing_summary = self.memory.get_thread_context_summary()
+            system_prompt, user_prompt = prompts.build_thread_summary_prompt(lines, existing_summary)
+            async with self._llm_gate:
+                summary = await self.assistant.llm.call(
+                    prompt=user_prompt,
+                    system=system_prompt,
+                    temperature=0.1,
+                    max_tokens=180,
+                )
+            if summary and summary.strip():
+                self.memory.update_thread_context_summary(summary.strip())
+                self._last_thread_summary_update = now
         except Exception as exc:
-            LOGGER.debug("[Memory] Failed to persist feedback record: %s", exc)
+            LOGGER.debug("[ThreadSummary] Failed to refresh: %s", exc)
+        finally:
+            self._thread_summary_task = None
+
+    def _format_conversation_snippets(self, history: list[dict]) -> list[str]:
+        snippets: list[str] = []
+        for message in history:
+            role = (message.get("role") or "partner").lower()
+            if role == "user":
+                speaker = "User"
+                name = (self.user_profile or {}).get("name")
+            else:
+                speaker = "You"
+                name = self.partner_profile.get("name") if self.partner_profile else None
+            speaker_label = f"{speaker} ({name})" if name else speaker
+            text = (message.get("text") or "").strip()
+            if text:
+                snippets.append(f"{speaker_label}: {text}")
+        return snippets
+
+    def _profile_fact_cache_key(
+        self,
+        user_hint: str | None,
+        last_partner_message: str | None,
+    ) -> tuple[str, str]:
+        hint = (user_hint or "").strip().lower()
+        partner_msg = (last_partner_message or "").strip()
+        return (hint, partner_msg)
+
+    def _clear_profile_fact_cache(self) -> None:
+        self._profile_fact_cache.clear()
+
+    async def _get_profile_facts_for_context(
+        self,
+        user_hint: str | None,
+        last_partner_message: str | None,
+    ) -> list[dict[str, Any]]:
+        key = self._profile_fact_cache_key(user_hint, last_partner_message)
+        cached = self._profile_fact_cache.get(key)
+        if cached is not None:
+            return cached
+        facts = await self.memory.search_profile_facts(
+            user_hint=user_hint,
+            last_partner_message=last_partner_message,
+            limit=5,
+        )
+        merged = self._merge_session_profile_facts(facts)
+        self._profile_fact_cache[key] = merged
+        return merged
+
 
     def set_user_profile(self, language_level: str | None, pronunciation_mode: str | None = None) -> None:
         """Set user profile (language level and pronunciation mode)."""
         self.assistant.language_level = language_level
         if pronunciation_mode is not None:
             self.assistant.pronunciation_mode = pronunciation_mode
+        if isinstance(self.user_profile, dict):
+            self.roleplay.set_user_name(self.user_profile.get("name"))
         LOGGER.info(
             f"Session {self.session_id} profile updated: language_level={language_level}, pronunciation_mode={pronunciation_mode}"
         )
@@ -851,11 +932,8 @@ class ConversationSession:
         LOGGER.info(f"[Manual Suggestion] Starting with length_mode={self.assistant.suggest_length_mode}")
         
         recent_conversation = self.memory.get_thread_recent_conversation(self.memory_thread_id)
-        profile_facts = await self.memory.search_profile_facts(
-            user_hint=user_hint,
-            last_partner_message=None,
-            limit=5,
-        )
+        formatted_recent = self._format_conversation_snippets(recent_conversation)
+        profile_facts = await self._get_profile_facts_for_context(user_hint, None)
         last_partner_message = None
         for msg in reversed(recent_conversation):
             role = (msg.get("role") or "").lower()
@@ -867,7 +945,7 @@ class ConversationSession:
         target_lang_name = lang_code_to_name(self.assistant.learning_lang)
         native_lang_name = lang_code_to_name(self.assistant.native_lang)
         
-        recent_conv_texts = [msg.get("text", "") for msg in recent_conversation]
+        recent_conv_texts = formatted_recent
         system_prompt, user_prompt = prompts.build_suggestion_prompt(
             target_lang=target_lang_name,
             native_lang=native_lang_name,
@@ -942,6 +1020,7 @@ class ConversationSession:
             "name": name,
             "avatar_url": avatar_url,
         }
+        self.roleplay.set_user_name(name)
         
         # Parse name for better memory graph construction
         first_name = None
@@ -974,6 +1053,25 @@ class ConversationSession:
         
         # Load user context (facts, preferences, history)
         await self.load_user_context(user_id)
+
+        # Prefetch thread + language context once per session (non-suggestion features)
+        target_lang_code = (learning_lang or self.default_lang).lower()
+        partner_reference = self.partner_id or (self.partner_profile or {}).get("id")
+        prefetch_tasks = [
+            asyncio.create_task(self.memory.get_thread_context(refresh=True)),
+            asyncio.create_task(self.memory.list_language_feedback(target_lang_code, limit=5)),
+        ]
+        if partner_reference:
+            prefetch_tasks.append(
+                asyncio.create_task(
+                    self.memory.get_partner_history_context(
+                        partner_reference,
+                        limit=5,
+                        refresh=True,
+                    )
+                )
+            )
+        await asyncio.gather(*prefetch_tasks, return_exceptions=True)
         
         # Trigger initial AI greeting in roleplay mode and persist it
         if mode == "roleplay":
@@ -993,13 +1091,19 @@ class ConversationSession:
                     )
                 else:
                     LOGGER.info("[Roleplay] No prior partner interactions for user %s", user_id)
+                recent_thread_conversation: list[dict[str, Any]] = []
+                if self.memory.has_thread_history(self.memory_thread_id):
+                    recent_thread_conversation = self.memory.get_thread_recent_conversation(self.memory_thread_id)
+                current_thread_summary = await self.memory.get_thread_context()
+
                 ai_msg = await self.roleplay.emit_ai_turn(
                     user_text="[START]",
                     user_utterance_id="initial",
-                    event_type_transcript=EventType.TRANSCRIPT,
+                    event_type_transcript=EventType.TRANSCRIPT_FINAL,
                     event_type_translation=EventType.TRANSLATION,
-                    recent_conversation=self.memory.get_thread_recent_conversation(self.memory_thread_id),
-                    thread_context=partner_context_block,
+                    recent_conversation=recent_thread_conversation,
+                    thread_context=current_thread_summary,
+                    interaction_context=partner_context_block,
                 )
                 if ai_msg:
                     partner_label = (self.partner_profile or {}).get("name") or "partner"
@@ -1022,3 +1126,5 @@ class ConversationSession:
                     self.memory.upsert_message(ai_memory_msg)
             except Exception as e:
                 LOGGER.error(f"Failed to emit initial AI greeting: {e}", exc_info=True)
+        self._last_thread_summary_update: float = 0.0
+        self._thread_summary_task: asyncio.Task | None = None

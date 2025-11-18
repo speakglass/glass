@@ -77,7 +77,7 @@ pnpm dev
 
 The application uses a custom `VoiceContext` provider that:
 
-1. Establishes WebSocket connection to Glass API (`/ws/audio-multi`)
+1. Establishes WebSocket connection to Glass API (`/ws/audio`)
 2. Captures microphone audio via `getUserMedia()`
 3. Optionally captures system audio via `getDisplayMedia()`
 4. Multiplexes both audio streams with channel identifiers (0x01 for mic, 0x02 for system)

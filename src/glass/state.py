@@ -38,6 +38,7 @@ class SessionManager:
         self.context_window_size = context_window_size
         self._pipelines: dict[str, ConversationSession] = {}
         self._lock = asyncio.Lock()
+        self._pending_memory_threads: set[str] = set()
 
     async def get_or_create(self, session_id: str, events_port=None) -> ConversationSession:
         async with self._lock:
@@ -64,6 +65,17 @@ class SessionManager:
             pipeline = self._pipelines.pop(session_id, None)
             if pipeline:
                 LOGGER.info("Disposed pipeline for session %s", session_id)
+
+    def mark_memory_pending(self, thread_id: str | None) -> None:
+        if thread_id:
+            self._pending_memory_threads.add(thread_id)
+
+    def clear_memory_pending(self, thread_id: str | None) -> None:
+        if thread_id and thread_id in self._pending_memory_threads:
+            self._pending_memory_threads.discard(thread_id)
+
+    def is_memory_pending(self, thread_id: str | None) -> bool:
+        return bool(thread_id and thread_id in self._pending_memory_threads)
 
     @staticmethod
     def new_session_id() -> str:

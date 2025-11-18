@@ -5,6 +5,8 @@ import { useSession, signOut } from 'next-auth/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AccountSnapshot, OnboardingStatus } from '@/lib/account-api';
 import { fetchOnboardingStatus, completeOnboarding } from '@/lib/account-api';
+import type { LearningLevel } from '@/types/learning-level';
+import { isLearningLevel } from '@/types/learning-level';
 
 type SessionData = {
   token: string;
@@ -21,7 +23,7 @@ type AccountSessionContextValue = {
   markOnboardingComplete: (settings: {
     learningLang: string;
     nativeLang: string;
-    proficiency: string;
+    languageLevel: LearningLevel;
   }) => Promise<void>;
 };
 
@@ -58,6 +60,8 @@ async function fetchSessionData(): Promise<SessionData> {
     }
 
     const payload = (await response.json()) as { token: string; snapshot: AccountSnapshot };
+    const userLevel = payload.snapshot?.user.languageLevel ?? null;
+    payload.snapshot.user.languageLevel = isLearningLevel(userLevel) ? userLevel : null;
 
     // Fetch onboarding status
     try {
@@ -138,7 +142,7 @@ export function AccountSessionProvider({ children }: { children: React.ReactNode
 
   // Mutation for completing onboarding
   const markOnboardingCompleteMutation = useMutation({
-    mutationFn: async (settings: { learningLang: string; nativeLang: string; proficiency: string }) => {
+    mutationFn: async (settings: { learningLang: string; nativeLang: string; languageLevel: LearningLevel }) => {
       if (!sessionData?.token) {
         throw new Error('No token available');
       }
@@ -177,7 +181,7 @@ export function AccountSessionProvider({ children }: { children: React.ReactNode
       refresh: async () => {
         await refetch();
       },
-      markOnboardingComplete: async (settings: { learningLang: string; nativeLang: string; proficiency: string }) => {
+      markOnboardingComplete: async (settings: { learningLang: string; nativeLang: string; languageLevel: LearningLevel }) => {
         await markOnboardingCompleteMutation.mutateAsync(settings);
       },
     }),

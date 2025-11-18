@@ -56,6 +56,13 @@ def create_app() -> FastAPI:
     async def _init_history_store() -> None:
         await app.state.history_store.init_models()
         await ensure_default_partners(app.state.history_store)
+        memory_adapter = app.state.app_state.session_manager.memory_adapter
+        configure_ontology = getattr(memory_adapter, "configure_ontology", None)
+        if callable(configure_ontology):
+            try:
+                await configure_ontology()
+            except Exception as exc:  # pragma: no cover - startup log helper
+                logging.getLogger(__name__).warning("Failed to configure memory ontology: %s", exc)
 
     logger = logging.getLogger("glass.http")
 

@@ -79,7 +79,7 @@ export function MemoryDialog({ open, onClose, onSave, memory, isLoading, readOnl
               />
               {!readOnly && (
                 <p className="text-xs text-muted-foreground">
-                  <Trans>AI will automatically organize and categorize this information</Trans>
+                  <Trans>AI will organize and categorize this automatically, which can take up to 2 minutes.</Trans>
                 </p>
               )}
             </div>

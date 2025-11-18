@@ -2,20 +2,12 @@
 
 from __future__ import annotations
 
-from typing import AsyncIterable, Iterable, Protocol, Sequence
+from typing import Any, AsyncIterable, Protocol, Sequence
 
 from .entities import SessionEvent
 
 
 class MemoryPort(Protocol):
-    async def upsert(
-        self,
-        nodes: Iterable[dict],
-        edges: Iterable[tuple[str, str, str]] | None = None,
-    ) -> None: ...
-
-    async def retrieve(self, session_id: str, query: str, *, k: int = 6) -> Sequence[dict]: ...
-
     async def get_user_context_block(self, user_id: str, use_cache: bool = True) -> str:
         """Get user-level context (all past conversations) for session start."""
         ...
@@ -40,23 +32,117 @@ class MemoryPort(Protocol):
         """
         ...
 
-    async def get_raw_context_block(
-        self,
-        session_id: str,
-        user_id: str | None = None,
-    ) -> str:
-        """Get thread-level context (current conversation) for LLM prompts.
-        
-        DEPRECATED: Use get_context_for_prompt() instead.
-        """
-        ...
-
-    async def warm_user_cache(self, user_id: str) -> None:
-        """Warm cache for faster retrieval."""
-        ...
-    
     def invalidate_user_cache(self, user_id: str) -> None:
         """Invalidate cached user context."""
+        ...
+
+    async def upsert_user_persona(
+        self,
+        *,
+        user_id: str,
+        native_languages: list[str],
+        learning_languages: list[dict[str, str]],
+        display_name: str | None = None,
+    ) -> None:
+        """Persist or update structured user persona information."""
+        ...
+
+    async def upsert_partner_profile(
+        self,
+        *,
+        user_id: str,
+        partner_profile: dict[str, object],
+    ) -> None:
+        """Persist partner/relationship metadata for later retrieval."""
+        ...
+
+    async def add_feedback_record(
+        self,
+        *,
+        user_id: str,
+        record: dict[str, object],
+    ) -> None:
+        """Store structured feedback record linked to a user."""
+        ...
+
+    async def add_profile_facts(
+        self,
+        *,
+        user_id: str,
+        facts: list[dict[str, Any]],
+    ) -> None:
+        """Store automatically extracted profile facts for a user."""
+        ...
+
+    async def search_profile_facts(
+        self,
+        *,
+        user_id: str,
+        user_hint: str | None = None,
+        last_partner_message: str | None = None,
+        limit: int = 5,
+    ) -> list[dict[str, Any]]:
+        """Retrieve relevant profile facts for prompt building."""
+        ...
+
+    async def add_conversation_messages(
+        self,
+        thread_id: str,
+        user_id: str,
+        messages: list[dict],
+        session_start_time: float | None = None,
+        participants: dict[str, dict[str, Any]] | None = None,
+        return_context: bool = False,
+    ) -> str | None:
+        """Persist conversation messages and optionally return a context block."""
+        ...
+
+    async def persist_conversation_insights(
+        self,
+        *,
+        user_id: str,
+        thread_id: str,
+        insights: dict[str, Any],
+        partner_id: str | None = None,
+        language_code: str | None = None,
+        started_at: float | None = None,
+        ended_at: float | None = None,
+    ) -> None:
+        """Persist extracted conversation memories."""
+        ...
+
+    async def list_feedback_records(
+        self,
+        user_id: str,
+        language_code: str | None = None,
+        limit: int = 20,
+    ) -> list[dict[str, Any]]:
+        """List structured feedback records, optionally filtered by language."""
+        ...
+
+    async def record_interaction(
+        self,
+        *,
+        user_id: str,
+        thread_id: str,
+        partner_id: str | None,
+        language_code: str | None,
+        summary: str | None = None,
+        topics: Sequence[str] | None = None,
+        started_at: float | None = None,
+        ended_at: float | None = None,
+    ) -> None:
+        """Record an interaction summary for analytics/debugging."""
+        ...
+
+    async def get_partner_context(
+        self,
+        *,
+        user_id: str,
+        partner_id: str,
+        limit: int = 5,
+    ) -> str:
+        """Return condensed history/context for conversations with a partner."""
         ...
 
 

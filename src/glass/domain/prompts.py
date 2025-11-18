@@ -462,13 +462,13 @@ def build_ai_response_prompt(
     sections = []
 
     if thread_context:
-        context_summary = f"- Learner's name: {user_name}" if user_name else ""
+        context_summary = f"- User's name: {user_name}" if user_name else ""
         summary_block = "\n".join(filter(None, [context_summary, f"- Current session summary: {thread_context}"]))
         sections.append("# Current Session Context\n" + summary_block)
     else:
         intro_lines = ["# Current Session Context"]
         if user_name:
-            intro_lines.append(f"- Learner's name: {user_name}")
+            intro_lines.append(f"- User's name: {user_name}")
         intro_lines.append("- No session history yet; start by getting to know them.")
         sections.append("\n".join(intro_lines))
 
@@ -601,30 +601,39 @@ def build_memory_extraction_prompt(
     """Build prompts for extracting durable memories from a finished conversation."""
     system = dedent(
         f"""
-        You are Glass Memory, a meticulous assistant that distills conversations into a few durable memories.
-        Capture new facts relevant to future interactions. The user speaks {native_lang_name}.
+        You are Glass Memory. Extract only durable, long-term facts explicitly stated in the conversation.
+
+        USER FACTS (highest priority):
+        Stable information about the user such as identity traits (not name), background, long-term preferences, routines, constraints, skills, or goals.
+
+        INTERACTION FACTS:
+        Long-term agreements, commitments, or follow-ups shared between the user and the partner that extend beyond this session.
+
+        # Durable vs Non-durable
+        Example (store): “I work night shifts.” (stable routine)
+        Example (discard): “I’m tired today.” (temporary state)
+
+        Do NOT store one-off events, emotions, greetings, or temporary plans.
+        Do NOT infer or guess. Only use explicit statements.
+        Prefer storing user facts over anything else.
+        Write all insights in {native_lang_name}.
         """
     ).strip()
     user = dedent(
         f"""
-        Conversation transcript (chronological):
+        Conversation transcript:
         {conversation_excerpt}
 
-        Extract ONLY the most important information and return strict JSON with keys:
-        - user_insights: short, factual sentences about the learner that capture unique, durable context (e.g., occupation, stable preferences, recurring constraints) that doesn’t already exist in the participant snapshot.
-        - partner_insights: short sentences describing the partner (session instructor) – their role, interests, preferences they expressed, or requests for this user.
-        - interaction_insights: short sentences describing specific events, decisions, follow-ups, or shared discoveries from this conversation.
+        Return ONLY this JSON object:
+
+        {{ "user_insights": [...], "interaction_insights": [...] }}
 
         Rules:
-        * Prioritize user_insights first, then partner_insights, then interaction_insights; keep each section focused on that entity only.
-        * If there is nothing meaningful to report for a category, set it to an empty list—do not fabricate details.
-        * Output valid JSON only, no markdown or commentary.
-        Example output:
-        {{
-          "user_insights": ["Jinho works at a Seoul-based design studio and prefers learning business vocabulary in Korean."],
-          "partner_insights": ["Alex teaches conversational finance and likes to reference recent news."],
-          "interaction_insights": ["Jinho asked for examples of startup pitches, and Alex recommended memorizing the 3-segment framework for next time."]
-        }}
+        - If a section has no durable facts, return an empty array.
+        - User insights take priority over interaction facts.
+        - Exclude all names and any personal identifiers.
+        - Include only explicit, long-term facts.
+        - Output ONLY the JSON object.
         """
     ).strip()
     return system, user
