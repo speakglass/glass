@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.1.7](https://github.com/speakglass/glass/compare/v0.1.6...v0.1.7) (2025-11-18)
+
+
+### Features
+
+* **api:** add partners API and update environment configuration ([d3c372f](https://github.com/speakglass/glass/commit/d3c372facca0a1d7dbc7d04981f1bca5e07e6944))
+* **api:** enhance conversation memory extraction and insights ([a1e18df](https://github.com/speakglass/glass/commit/a1e18df9ac75dd8dfc4e11efb15a69592ff49f25))
+* **api:** update language proficiency handling and add memory insights ([37669e2](https://github.com/speakglass/glass/commit/37669e22983351faa0f1c8307f6af4635257e14d))
+* **auth:** enhance session cookie configuration for improved security ([94d502e](https://github.com/speakglass/glass/commit/94d502e33cc513003af411b908a355cabbf34b91))
+* **auth:** update authentication configuration for Auth.js v5 ([3d8adfd](https://github.com/speakglass/glass/commit/3d8adfd72a6a1079d9eec47432e6e87f482fc1e2))
+* **db:** enhance database connection logging and error handling ([16b3d00](https://github.com/speakglass/glass/commit/16b3d0043bff3abb5c20ed54e26abfa0c24890e7))
+* **docker:** add Azurite service for local Azure storage emulation ([29f4110](https://github.com/speakglass/glass/commit/29f4110ec5352263a0e67b1bd274d4b587653901))
+* **ui:** enhance user menu with usage display and new UsageBar component ([c7a6ada](https://github.com/speakglass/glass/commit/c7a6adad8638b4cc499a87fa6e3a8158514f36f7))
+
+
+### Bug Fixes
+
+* **deploy:** correct Python indentation in start.sh database check ([4c3b1b3](https://github.com/speakglass/glass/commit/4c3b1b39b7ed16058621a1e3864345d3f2838930))
+* **deploy:** print database connection error details ([84d620a](https://github.com/speakglass/glass/commit/84d620adf6ff7f82e6bedf1756b6ae633234ccdd))
+* **deploy:** resolve Azure deployment startup and migration issues ([c3afae2](https://github.com/speakglass/glass/commit/c3afae20fd04cd912bfb8645b2ded1153735af07))
+* **deploy:** show database connection errors for debugging ([6fe76f0](https://github.com/speakglass/glass/commit/6fe76f0fb3a3984371bc573f18d65d7b3420dde6))
+* **deploy:** update startup command path for production deployment ([273ffb9](https://github.com/speakglass/glass/commit/273ffb9c7fafe09bb97e707915bda1297841842c))
+* **deploy:** update startup command to use bash for script execution ([908831a](https://github.com/speakglass/glass/commit/908831a9ddef7a964fe3a6428c9924bc61860b29))
+* **migrations:** add smart migration state detection to prevent duplicate table errors ([e6149a9](https://github.com/speakglass/glass/commit/e6149a97710842aeb2f35f7996f2a9af16aca671))
+* **migrations:** improve upgrade command logging in start script ([878d58b](https://github.com/speakglass/glass/commit/878d58b2d8226b56e009511ad20c9cec1acc23a4))
+
+
+### Code Refactoring
+
+* **deploy:** simplify migration script ([efa2636](https://github.com/speakglass/glass/commit/efa26365dd775b73f98e448bd78c697d13c98f05))
+* **deploy:** simplify startup and migration logic ([bdc4720](https://github.com/speakglass/glass/commit/bdc472052d157526b671bda8c4f17e53cdfc8686))
+* **migrations:** simplify to use only environment variable for database URL ([9db3140](https://github.com/speakglass/glass/commit/9db3140b8fa1ea3bde4ffdbe5d0a92f1d1da16aa))
+* **start:** improve error handling and code structure ([b1a659d](https://github.com/speakglass/glass/commit/b1a659d48cf47e3be924e850185028885257dcfe))
+
 ## [0.1.6](https://github.com/speakglass/glass/compare/v0.1.5...v0.1.6) (2025-11-14)
 
 
