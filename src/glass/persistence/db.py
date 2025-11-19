@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text, func, Index
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -105,7 +105,7 @@ class AccountConversation(Base):
     scores: Mapped[dict[str, Any] | None] = mapped_column(
         JSON(none_as_null=True), nullable=True
     )
-    # extracted_info removed - memory extraction is now handled by Zep
+    # extracted_info removed - durable memory now handled by dedicated adapter
     messages: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSON(none_as_null=True), nullable=True
     )
@@ -132,6 +132,111 @@ class AccountConversation(Base):
     partner: Mapped["ConversationPartner"] = relationship()
 
 
+class MemoryThread(Base):
+    __tablename__ = "memory_threads"
+
+    id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    partner_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_context: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_interaction_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class MemoryMessage(Base):
+    __tablename__ = "memory_messages"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: uuid.uuid4().hex)
+    thread_id: Mapped[str] = mapped_column(String(128), ForeignKey("memory_threads.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    role: Mapped[str] = mapped_column(String(32))
+    language: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    text: Mapped[str] = mapped_column(Text)
+    metadata_json: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSON(none_as_null=True), nullable=True)
+    occurred_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_memory_messages_thread_time", "thread_id", "occurred_at"),
+    )
+
+
+class MemoryRecord(Base):
+    __tablename__ = "memory_records"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: uuid.uuid4().hex)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    thread_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    partner_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    category: Mapped[str] = mapped_column(String(32), index=True)
+    retention: Mapped[str] = mapped_column(String(32), index=True)
+    importance: Mapped[int] = mapped_column(default=0)
+    text: Mapped[str] = mapped_column(Text)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    keywords: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    entities: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    metadata_json: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSON(none_as_null=True), nullable=True)
+    source: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    source_reference: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    content_hash: Mapped[str] = mapped_column(String(64))
+
+    __table_args__ = (
+        Index("ix_memory_records_user_hash", "user_id", "content_hash", unique=True),
+    )
+
+
+class MemoryPersona(Base):
+    __tablename__ = "memory_personas"
+
+    user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    first_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    native_languages: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    learning_languages: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    traits: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    metadata_json: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSON(none_as_null=True), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class MemoryPartnerProfile(Base):
+    __tablename__ = "memory_partner_profiles"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: uuid.uuid4().hex)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    partner_id: Mapped[str] = mapped_column(String(128), index=True)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    relation_to_user: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    metadata_json: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSON(none_as_null=True), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        Index("ix_memory_partner_profiles_user_partner", "user_id", "partner_id", unique=True),
+    )
+
+
+class MemoryFeedbackRecord(Base):
+    __tablename__ = "memory_feedback_records"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: uuid.uuid4().hex)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    language_code: Mapped[str | None] = mapped_column(String(16), nullable=True, index=True)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON(none_as_null=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 
@@ -149,7 +254,7 @@ class PasswordResetToken(Base):
     )
 
 
-# AccountMemory model removed - all memory management now in Zep Cloud Knowledge Graph
+# AccountMemory model removed - centralized memory service persists insights separately
 
 
 class PersistenceDatabase:

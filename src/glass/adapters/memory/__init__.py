@@ -5,7 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Protocol
 
-from .zep import ZepMemoryAdapter
+from .inmemory import InMemoryMemoryAdapter
+from .postgres import PostgresMemoryAdapter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -15,17 +16,21 @@ class MemoryAdapter(Protocol):
     async def retrieve(self, session_id: str, query: str, k: int = 6): ...
 
 
-def build_memory_adapter(settings) -> MemoryAdapter:
-    provider = getattr(settings, "memory_provider", "zep").lower()
+def build_memory_adapter(settings, *, database=None, redis_client=None, llm_adapter=None) -> MemoryAdapter:
+    provider = getattr(settings, "memory_provider", "postgres").lower()
     
-    if provider == "zep":
-        api_key = getattr(settings, "zep_api_key", None)
-        if not api_key:
-            raise ValueError("Zep API key is required.")
-        return ZepMemoryAdapter(  # type: ignore[return-value]
-            api_key=api_key,
-            project_id=getattr(settings, "zep_project_id", None),
+    if provider == "postgres":
+        if database is None:
+            raise ValueError("PersistenceDatabase instance is required for Postgres memory adapter.")
+        return PostgresMemoryAdapter(
+            database=database,
+            redis_client=redis_client,
+            cache_ttl=int(getattr(settings, "memory_cache_ttl", 180) or 180),
+            thread_context_window=int(getattr(settings, "context_window_size", 5) or 5),
+            llm=llm_adapter,
         )
+    if provider == "inmemory":
+        return InMemoryMemoryAdapter()  # type: ignore[return-value]
     
     raise ValueError(f"Unknown memory provider: {provider}")
 
@@ -33,5 +38,6 @@ def build_memory_adapter(settings) -> MemoryAdapter:
 __all__ = [
     "MemoryAdapter",
     "build_memory_adapter",
-    "ZepMemoryAdapter",
+    "InMemoryMemoryAdapter",
+    "PostgresMemoryAdapter",
 ]
