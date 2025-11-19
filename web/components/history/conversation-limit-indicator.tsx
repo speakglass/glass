@@ -1,11 +1,14 @@
 'use client';
 
-import { Info } from 'lucide-react';
+import Link from 'next/link';
+import { MessageSquare } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
-import { t } from '@lingui/core/macro';
 
 import { useAccountSession } from '@/contexts/account-session-context';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { useLocale } from '@/hooks/use-locale';
 import { cn } from '@/utils';
 
 type ConversationLimitIndicatorProps = {
@@ -14,6 +17,7 @@ type ConversationLimitIndicatorProps = {
 
 export function ConversationLimitIndicator({ className }: ConversationLimitIndicatorProps) {
   const { snapshot, status } = useAccountSession();
+  const locale = useLocale();
   const limits = snapshot?.limits?.conversations || null;
 
   const quotaEnabled = Boolean(limits?.enabled && limits.limit);
@@ -23,49 +27,73 @@ export function ConversationLimitIndicator({ className }: ConversationLimitIndic
 
   const limitMax = limits!.limit ?? 0;
   const limitUsed = limits!.used ?? 0;
+  const cappedUsage = Math.min(limitUsed, limitMax);
   const isAtLimit = Boolean(limits!.blocked || limitUsed >= limitMax);
-
-  const labelText = t`${limitUsed}개 / ${limitMax}`;
+  const usagePercent = limitMax > 0 ? Math.min(100, Math.round((cappedUsage / limitMax) * 100)) : 0;
+  const billingHref = `/${locale}/billing`;
 
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/40 px-4 py-2 shadow-sm',
+        'w-full rounded-3xl border border-border/50 bg-card/60 px-4 py-3 shadow-sm backdrop-blur',
         className
       )}
     >
-      <div className="flex flex-col leading-tight">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          <Trans>History limit</Trans>
-        </p>
-        <p className={cn('text-base font-semibold', isAtLimit ? 'text-red-600 dark:text-red-400' : 'text-foreground')}>
-          {labelText}
-        </p>
-      </div>
-
-      <Tooltip delayDuration={100}>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            className={cn(
-              'rounded-full p-1 transition-colors',
-              isAtLimit
-                ? 'text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-            aria-label={t`Conversation limit info`}
-          >
-            <Info className="size-4" />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="top" align="end" className="max-w-xs text-xs leading-relaxed">
-          {status === 'loading' ? (
-            <Trans>Checking your plan…</Trans>
-          ) : (
-            <Trans>Free plan keeps up to {limitMax} saved conversations. Upgrade to unlock unlimited history.</Trans>
+      <div className="flex flex-wrap items-center gap-4">
+        <div
+          className={cn(
+            'flex size-11 items-center justify-center rounded-2xl text-primary',
+            isAtLimit ? 'bg-red-500/10 text-red-500' : 'bg-primary/10'
           )}
-        </TooltipContent>
-      </Tooltip>
+        >
+          <MessageSquare className="size-5" />
+        </div>
+
+        <div className="min-w-[160px] flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <Trans>Saved conversations</Trans>
+          </p>
+          <div className="flex items-baseline gap-2">
+            <p className={cn('text-xl font-semibold', isAtLimit ? 'text-red-600 dark:text-red-400' : 'text-foreground')}>
+              {cappedUsage}/{limitMax}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {status === 'loading' ? (
+                <Trans>Checking your plan…</Trans>
+              ) : isAtLimit ? (
+                <Trans>Free plan limit reached</Trans>
+              ) : (
+                <Trans>Free plan limit</Trans>
+              )}
+            </p>
+          </div>
+          <div className="mt-2">
+            <Progress value={usagePercent} className={isAtLimit ? 'bg-red-500/20 [&>div]:bg-red-500' : undefined} />
+          </div>
+        </div>
+
+        <Tooltip delayDuration={150}>
+          <TooltipTrigger asChild>
+            <Button
+              variant={isAtLimit ? 'default' : 'ghost'}
+              size="sm"
+              className="rounded-full px-4"
+              asChild
+            >
+              <Link href={billingHref}>
+                <Trans>Upgrade</Trans>
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" align="end" className="max-w-xs text-xs leading-relaxed">
+            {status === 'loading' ? (
+              <Trans>Checking your plan…</Trans>
+            ) : (
+              <Trans>Upgrade to keep unlimited conversation history.</Trans>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      </div>
     </div>
   );
 }

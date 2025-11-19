@@ -84,6 +84,21 @@ class InMemoryMemoryAdapter:
     def _next_record_id(self) -> str:
         return f"mem-{int(time.time() * 1000)}-{len(self._records) + 1}"
 
+    def _coerce_scope(self, value: Any) -> str:
+        if isinstance(value, str):
+            lowered = value.strip().lower()
+            if lowered == "relationship":
+                return "interaction"
+            if lowered in {"user", "partner", "interaction"}:
+                return lowered
+        return "user"
+
+    def _record_view(self, record: dict[str, Any]) -> dict[str, Any]:
+        view = dict(record)
+        view["scope"] = self._coerce_scope(view.get("scope") or view.get("subject_role"))
+        view.pop("subject_role", None)
+        return view
+
     async def persist_memory_records(
         self,
         *,
@@ -91,6 +106,7 @@ class InMemoryMemoryAdapter:
         entries: list[dict[str, Any]],
         partner_id: str | None = None,
         language_code: str | None = None,
+        native_language_code: str | None = None,
         started_at: float | None = None,
         ended_at: float | None = None,
         conversation_id: str | None = None,
@@ -100,15 +116,13 @@ class InMemoryMemoryAdapter:
             if not text:
                 continue
             record_id = self._next_record_id()
-            subject_role = (entry.get("subject_role") or entry.get("scope") or "user").lower()
-            if subject_role not in {"user", "partner", "relationship"}:
-                subject_role = "user"
+            scope = self._coerce_scope(entry.get("scope") or entry.get("subject_role"))
             record = {
                 "id": record_id,
                 "user_id": user_id,
                 "conversation_id": entry.get("conversation_id") or entry.get("thread_id") or conversation_id,
                 "partner_id": entry.get("partner_id") or partner_id,
-                "subject_role": subject_role,
+                "scope": scope,
                 "category": (entry.get("category") or "fact").lower(),
                 "retention": (entry.get("retention") or "long_term").lower(),
                 "importance": int(entry.get("importance") or 50),
@@ -135,7 +149,7 @@ class InMemoryMemoryAdapter:
             items = [item for item in items if search.lower() in item["text"].lower()]
         total = len(items)
         items = items[offset : offset + limit]
-        return items, total
+        return [self._record_view(item) for item in items], total
 
     async def list_conversation_memories(
         self,
@@ -150,7 +164,7 @@ class InMemoryMemoryAdapter:
             if record.get("user_id") == user_id and record.get("conversation_id") == conversation_id
         ]
         records.sort(key=lambda item: item.get("updated_at") or "", reverse=True)
-        return records[:limit]
+        return [self._record_view(record) for record in records[:limit]]
 
     async def list_partner_memories(
         self,
@@ -173,7 +187,7 @@ class InMemoryMemoryAdapter:
             ),
             reverse=True,
         )
-        return [dict(record) for record in records[:limit]]
+        return [self._record_view(record) for record in records[:limit]]
 
     async def create_memory_record(
         self, *, user_id: str, value: str, conversation_id: str | None = None
@@ -187,7 +201,7 @@ class InMemoryMemoryAdapter:
             "user_id": user_id,
             "conversation_id": conversation_id,
             "partner_id": None,
-            "subject_role": "user",
+            "scope": "user",
             "text": value,
             "category": "fact",
             "retention": "long_term",
@@ -200,7 +214,7 @@ class InMemoryMemoryAdapter:
             "updated_at": None,
         }
         self._records[record_id] = record
-        return record
+        return self._record_view(record)
 
     async def update_memory_record(self, *, user_id: str, record_id: str, value: str) -> dict[str, Any]:
         record = self._records.get(record_id)
@@ -208,7 +222,7 @@ class InMemoryMemoryAdapter:
             raise ValueError("Memory not found")
         record["text"] = value
         record["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-        return record
+        return self._record_view(record)
 
     async def delete_memory_record(self, *, user_id: str, record_id: str) -> bool:
         record = self._records.get(record_id)

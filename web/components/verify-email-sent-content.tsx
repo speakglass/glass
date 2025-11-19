@@ -75,10 +75,10 @@ export function VerifyEmailSentContent({ className, ...props }: React.ComponentP
             <Trans>Check your email</Trans>
           </CardTitle>
           <CardDescription className="space-y-1">
-            <div>
+            <span className="block">
               <Trans>We've sent a verification link to</Trans>
-            </div>
-            {email && <div className="font-medium text-foreground">{email}</div>}
+            </span>
+            {email && <span className="block font-medium text-foreground">{email}</span>}
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -14,7 +14,10 @@ export interface UserProfile {
   emailVerified: boolean;
   subscriptionStatus?: string | null;
   subscriptionPlan?: string | null;
+  subscriptionInterval?: string | null;
   subscriptionCurrentPeriodEnd?: string | null;
+  subscriptionCancelAt?: string | null;
+  subscriptionCancelAtPeriodEnd?: boolean | null;
   billingExempt?: boolean;
 }
 
@@ -130,7 +133,10 @@ export interface BillingSnapshot {
   billingExempt: boolean;
   status?: string | null;
   plan?: string | null;
+  planInterval?: string | null;
   currentPeriodEnd?: string | null;
+  cancelAt?: string | null;
+  cancelAtPeriodEnd?: boolean | null;
 }
 
 export interface OnboardingStatus {
@@ -143,7 +149,7 @@ export interface Memory {
   text: string;
   category: string;
   retention: string;
-  subjectRole?: string | null;
+  scope?: string | null;
   importance?: number | null;
   partnerId?: string | null;
   conversationId?: string | null;
@@ -283,7 +289,10 @@ type UserApi = {
   email_verified: boolean;
   subscription_status?: string | null;
   subscription_plan?: string | null;
+  subscription_interval?: string | null;
   subscription_current_period_end?: string | null;
+  subscription_cancel_at?: string | null;
+  subscription_cancel_at_period_end?: boolean | null;
   billing_exempt?: boolean | null;
 };
 
@@ -311,6 +320,10 @@ interface CheckoutSessionResponseApi {
   plan: string;
 }
 
+interface BillingPortalSessionResponseApi {
+  portal_url: string;
+}
+
 interface BillingSnapshotApi {
   enabled: boolean;
   active: boolean;
@@ -318,7 +331,10 @@ interface BillingSnapshotApi {
   billing_exempt: boolean;
   status?: string | null;
   plan?: string | null;
+  plan_interval?: string | null;
   current_period_end?: string | null;
+  cancel_at?: string | null;
+  cancel_at_period_end?: boolean | null;
 }
 
 type PartnerApi = {
@@ -354,7 +370,7 @@ type MemoryApi = {
   text: string;
   category: string;
   retention: string;
-  subject_role?: string | null;
+  scope?: string | null;
   importance?: number | null;
   partner_id?: string | null;
   conversation_id?: string | null;
@@ -505,7 +521,10 @@ function mapUser(data: UserApi): UserProfile {
     emailVerified: data.email_verified,
     subscriptionStatus: data.subscription_status ?? null,
     subscriptionPlan: data.subscription_plan ?? null,
+    subscriptionInterval: data.subscription_interval ?? null,
     subscriptionCurrentPeriodEnd: data.subscription_current_period_end ?? null,
+    subscriptionCancelAt: data.subscription_cancel_at ?? null,
+    subscriptionCancelAtPeriodEnd: data.subscription_cancel_at_period_end ?? null,
     billingExempt: Boolean(data.billing_exempt),
   };
 }
@@ -516,12 +535,15 @@ function mapBilling(data: BillingSnapshotApi | undefined): BillingSnapshot {
       enabled: false,
       active: true,
       selfHosted: true,
-      billingExempt: true,
-      status: null,
-      plan: null,
-      currentPeriodEnd: null,
-    };
-  }
+    billingExempt: true,
+    status: null,
+    plan: null,
+    planInterval: null,
+    currentPeriodEnd: null,
+    cancelAt: null,
+    cancelAtPeriodEnd: null,
+  };
+}
   return {
     enabled: data.enabled,
     active: data.active,
@@ -529,7 +551,10 @@ function mapBilling(data: BillingSnapshotApi | undefined): BillingSnapshot {
     billingExempt: data.billing_exempt,
     status: data.status ?? null,
     plan: data.plan ?? null,
+    planInterval: data.plan_interval ?? null,
     currentPeriodEnd: data.current_period_end ?? null,
+    cancelAt: data.cancel_at ?? null,
+    cancelAtPeriodEnd: data.cancel_at_period_end ?? null,
   };
 }
 
@@ -557,7 +582,7 @@ function mapMemory(data: MemoryApi): Memory {
     text: data.text,
     category: data.category,
     retention: data.retention,
-    subjectRole: data.subject_role ?? null,
+    scope: data.scope ?? null,
     importance: data.importance ?? null,
     partnerId: data.partner_id ?? null,
     conversationId: data.conversation_id ?? null,
@@ -672,6 +697,41 @@ export async function createCheckoutSession(
     sessionId: data.session_id,
     plan: data.plan,
   };
+}
+
+export async function createBillingPortalSession(
+  token: string,
+  options?: { returnUrl?: string }
+): Promise<{ portalUrl: string }> {
+  const body: Record<string, string> = {};
+  if (options?.returnUrl) {
+    body.return_url = options.returnUrl;
+  }
+  const data = await authedFetch<BillingPortalSessionResponseApi>('/billing/portal', token, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return {
+    portalUrl: data.portal_url,
+  };
+}
+
+export async function createBillingContactRequest(
+  token: string,
+  payload: { name: string; email: string; company?: string; teamSize?: string; message: string }
+): Promise<{ success: boolean }> {
+  const body = {
+    name: payload.name,
+    email: payload.email,
+    company: payload.company ?? '',
+    team_size: payload.teamSize ?? '',
+    message: payload.message,
+  };
+  const data = await authedFetch<{ success: boolean }>('/billing/contact', token, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return data;
 }
 
 export interface PartnerCreateInput {

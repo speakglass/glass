@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from ...domain.ports import LLMPort
+from ...utils.language import lang_code_to_name
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,15 +56,27 @@ async def classify_memory(
     user_id: str,
     text: str,
     scope: str | None = None,
+    native_language: str | None = None,
 ) -> MemoryClassification:
     """Classify the given fact using the configured LLM."""
     normalized = " ".join((text or "").strip().split())
     if not normalized:
         raise ValueError("Memory text cannot be empty")
 
+    summary_lang_instruction = ""
+    if native_language:
+        lang_name = lang_code_to_name(native_language)
+        summary_lang_instruction = (
+            f"The user's native language is {lang_name}. "
+            "Write the `summary` field using this language even if the memory text is in another language."
+        )
+
+    language_block = f"{summary_lang_instruction.strip()}\n\n" if summary_lang_instruction else ""
+
     prompt = (
         f"Scope: {scope or 'user'}\n"
         f"Memory text:\n{normalized}\n\n"
+        f"{language_block}"
         "Respond with JSON only."
     )
     response = await llm.call(

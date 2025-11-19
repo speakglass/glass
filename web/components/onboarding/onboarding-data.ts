@@ -537,21 +537,21 @@ const makeDemoMemories = (
     text: entries.user,
     category: 'fact',
     retention: 'long_term',
-    subjectRole: 'user',
+    scope: 'user',
   },
   {
     id: `demo-memory-${locale}-partner`,
     text: entries.partner,
     category: 'fact',
     retention: 'long_term',
-    subjectRole: 'partner',
+    scope: 'partner',
   },
   {
     id: `demo-memory-${locale}-interaction`,
     text: entries.interaction,
     category: 'context',
     retention: 'short_term',
-    subjectRole: 'relationship',
+    scope: 'interaction',
   },
 ];
 

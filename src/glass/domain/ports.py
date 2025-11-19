@@ -56,6 +56,7 @@ class MemoryPort(Protocol):
         entries: list[dict[str, Any]],
         partner_id: str | None = None,
         language_code: str | None = None,
+        native_language_code: str | None = None,
         started_at: float | None = None,
         ended_at: float | None = None,
     ) -> None:

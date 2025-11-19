@@ -419,7 +419,6 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
                 memory_entries = await build_memory_entries_with_llm(
                     llm_adapter,
                     messages,
-                    learning_lang_cfg,
                     native_lang_cfg,
                     partner_label=(pipeline.partner_profile or {}).get("name"),
                 )
@@ -464,6 +463,7 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
                     entries=memory_entries,
                     partner_id=memory_partner_id,
                     language_code=learning_lang_cfg,
+                    native_language_code=native_lang_cfg,
                     started_at=started_at.timestamp() if started_at else None,
                     ended_at=ended_at.timestamp() if ended_at else None,
                 )

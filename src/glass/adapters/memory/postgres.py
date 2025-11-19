@@ -37,32 +37,29 @@ def _normalize_partner_id(partner_id: Any | None) -> str | None:
     return text or None
 
 
-VALID_SUBJECT_ROLES = {"user", "partner", "relationship"}
 VALID_SCOPES = {"user", "partner", "interaction"}
 
 
-def _canonical_subject_role(value: Any) -> str | None:
+def _canonical_scope(value: Any) -> str | None:
     if isinstance(value, str):
         lowered = value.strip().lower()
-        if lowered in VALID_SUBJECT_ROLES:
+        if lowered == "relationship":
+            return "interaction"
+        if lowered in VALID_SCOPES:
             return lowered
     return None
 
 
-def _subject_role_from_scope(scope: str) -> str:
-    return "relationship" if scope == "interaction" else scope
-
-
-def _scope_from_subject_role(subject_role: str) -> str:
-    return "interaction" if subject_role == "relationship" else subject_role
-
-
-def _coerce_scope(value: Any) -> str:
-    if isinstance(value, str):
-        lowered = value.strip().lower()
-        if lowered in VALID_SCOPES:
-            return lowered
+def _resolve_scope(*values: Any) -> str:
+    for value in values:
+        normalized = _canonical_scope(value)
+        if normalized:
+            return normalized
     return "user"
+
+
+def _scope_from_db(value: Any) -> str:
+    return _resolve_scope(value)
 
 
 def _normalize_category(value: Any) -> str:
@@ -150,13 +147,13 @@ def _parse_retention_expiry(value: Any) -> datetime | None:
 def _build_content_hash(
     *,
     user_id: str,
-    subject_role: str,
+    scope: str,
     partner_id: str | None,
     conversation_id: str | None,
     text: str,
 ) -> str:
     normalized = text.lower().strip()
-    payload = f"{user_id}|{subject_role}|{partner_id or ''}|{conversation_id or ''}|{normalized}"
+    payload = f"{user_id}|{scope}|{partner_id or ''}|{conversation_id or ''}|{normalized}"
     return hashlib.sha1(payload.encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
@@ -358,6 +355,7 @@ class PostgresMemoryAdapter:
         entries: list[dict[str, Any]],
         partner_id: str | None = None,
         language_code: str | None = None,
+        native_language_code: str | None = None,
         started_at: float | None = None,
         ended_at: float | None = None,
         conversation_id: str | None = None,
@@ -368,6 +366,7 @@ class PostgresMemoryAdapter:
             entries=entries or [],
             partner_id=partner_norm,
             language_code=language_code,
+            native_language_code=native_language_code,
             started_at=started_at,
             ended_at=ended_at,
             conversation_id=conversation_id,
@@ -381,6 +380,7 @@ class PostgresMemoryAdapter:
         entries: list[dict[str, Any]],
         partner_id: str | None,
         language_code: str | None,
+        native_language_code: str | None,
         started_at: float | None,
         ended_at: float | None,
         conversation_id: str | None,
@@ -398,13 +398,11 @@ class PostgresMemoryAdapter:
             if has_structured_fields:
                 record_partner = _normalize_partner_id(entry.get("partner_id")) or partner_id
                 entry_conversation_id = entry.get("conversation_id") or entry.get("thread_id")
+                scope_hint = entry.get("thread_scope") or entry.get("conversation_scope")
+                scope_hint_normalized = _canonical_scope(scope_hint)
                 if entry_conversation_id is None:
-                    scope_hint = entry.get("thread_scope") or entry.get("conversation_scope")
-                    entry_conversation_id = None if scope_hint == "user" else conversation_id
-                subject_role = _canonical_subject_role(entry.get("subject_role"))
-                if not subject_role:
-                    scope_hint = _coerce_scope(entry.get("scope"))
-                    subject_role = _subject_role_from_scope(scope_hint)
+                    entry_conversation_id = None if scope_hint_normalized == "user" else conversation_id
+                scope = _resolve_scope(entry.get("scope"), entry.get("subject_role"), scope_hint_normalized)
                 category = _normalize_category(entry.get("category"))
                 retention = _normalize_retention(entry.get("retention"))
                 importance = _normalize_importance(entry.get("importance"))
@@ -414,18 +412,13 @@ class PostgresMemoryAdapter:
                 retention_expires_at = entry.get("retention_expires_at") or entry.get("expires_at")
                 retention_expires_at = _parse_retention_expiry(retention_expires_at)
             else:
-                subject_role_from_entry = _canonical_subject_role(entry.get("subject_role"))
-                if subject_role_from_entry:
-                    subject_role = subject_role_from_entry
-                    scope = _scope_from_subject_role(subject_role)
-                else:
-                    scope = _coerce_scope(entry.get("scope"))
-                    subject_role = _subject_role_from_scope(scope)
+                scope = _resolve_scope(entry.get("scope"), entry.get("subject_role"))
                 classification = await classify_memory(
                     llm=self.llm,
                     user_id=user_id,
                     text=text,
                     scope=scope,
+                    native_language=native_language_code,
                 )
                 record_partner = partner_id
                 entry_conversation_id = conversation_id
@@ -440,7 +433,7 @@ class PostgresMemoryAdapter:
             payload = {
                 "user_id": user_id,
                 "partner_id": record_partner,
-                "subject_role": subject_role,
+                "subject_role": scope,
                 "category": category,
                 "retention": retention,
                 "importance": importance,
@@ -453,7 +446,7 @@ class PostgresMemoryAdapter:
                 "updated_at": timestamp,
                 "content_hash": _build_content_hash(
                     user_id=user_id,
-                    subject_role=subject_role,
+                    scope=scope,
                     partner_id=record_partner,
                     conversation_id=entry_conversation_id,
                     text=text,
@@ -517,7 +510,7 @@ class PostgresMemoryAdapter:
         items = [
             {
                 "id": row.id,
-                "subject_role": row.subject_role,
+                "scope": _scope_from_db(row.subject_role),
                 "category": row.category,
                 "retention": row.retention,
                 "importance": row.importance,
@@ -561,7 +554,7 @@ class PostgresMemoryAdapter:
                 "id": row.id,
                 "text": row.text,
                 "category": row.category,
-                "subject_role": row.subject_role,
+                "scope": _scope_from_db(row.subject_role),
                 "retention": row.retention,
                 "importance": row.importance,
                 "summary": row.summary,
@@ -607,7 +600,7 @@ class PostgresMemoryAdapter:
                 "text": row.text,
                 "summary": row.summary,
                 "category": row.category,
-                "subject_role": row.subject_role,
+                "scope": _scope_from_db(row.subject_role),
                 "importance": row.importance,
                 "partner_id": row.partner_id,
                 "conversation_id": row.conversation_id,
@@ -649,7 +642,7 @@ class PostgresMemoryAdapter:
             "updated_at": _now(),
             "content_hash": _build_content_hash(
                 user_id=user_id,
-                subject_role="user",
+                scope="user",
                 partner_id=None,
                 conversation_id=conversation_id,
                 text=text,
@@ -695,7 +688,7 @@ class PostgresMemoryAdapter:
         self.invalidate_user_cache(user_id)
         return {
             "id": row["id"],
-            "subject_role": row["subject_role"],
+            "scope": _scope_from_db(row["subject_role"]),
             "category": row["category"],
             "text": row["text"],
             "retention": row["retention"],
@@ -730,8 +723,7 @@ class PostgresMemoryAdapter:
             subject_role_value = result.scalar_one_or_none()
         if not subject_role_value:
             raise ValueError("Memory record not found")
-        subject_role = _canonical_subject_role(subject_role_value) or "user"
-        scope_hint = _scope_from_subject_role(subject_role)
+        scope_hint = _scope_from_db(subject_role_value)
         classification = await classify_memory(
             llm=self.llm,
             user_id=user_id,
@@ -778,7 +770,7 @@ class PostgresMemoryAdapter:
         self.invalidate_user_cache(user_id)
         return {
             "id": row["id"],
-            "subject_role": row["subject_role"],
+            "scope": _scope_from_db(row["subject_role"]),
             "category": row["category"],
             "text": row["text"],
             "retention": row["retention"],

@@ -120,14 +120,14 @@ export const createColumns = (
     },
   },
   {
-    accessorKey: 'subjectRole',
-    header: () => <Trans>Subject role</Trans>,
+    accessorKey: 'scope',
+    header: () => <Trans>Scope</Trans>,
     cell: ({ row }) => {
-      const role = row.getValue('subjectRole') as string | null;
-      if (!role) return renderPlaceholder();
+      const scope = row.getValue('scope') as string | null;
+      if (!scope) return renderPlaceholder();
       return (
         <Badge variant="outline" className="text-xs">
-          {formatReadableLabel(role)}
+          {formatReadableLabel(scope)}
         </Badge>
       );
     },

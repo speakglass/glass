@@ -29,7 +29,7 @@ script yet. This repo hosts both the FastAPI backend (speech → understanding �
 ## Features
 
 - 🎧 Real-time feedback, sentence suggestions, and pronunciation hints/romanization
-- 🔤 Keyword → natural sentence translation with context awareness
+- 🔤 Keyword → natural sentence translation with context awareness (Gemini 2.5 Flash by default)
 - 🗣️ Practice mode with on-device mic + optional AI voice partner
 - 🧠 Persistent memory powered by Postgres + Redis that personalizes over time
 - 💾 Meeting history, transcripts, and summaries stored in Postgres
@@ -78,7 +78,7 @@ Every feature maps to one of these abstractions, which keeps the mental model si
 
 ## Tech stack
 
-- **Backend:** Python 3.11+, FastAPI, WebSockets, SQLAlchemy, Redis, Deepgram, OpenAI, ElevenLabs
+- **Backend:** Python 3.11+, FastAPI, WebSockets, SQLAlchemy, Redis, Deepgram, Gemini (default) with OpenAI fallback, ElevenLabs
 - **Frontend:** Next.js 16 App Router, React 18, NextAuth, TanStack Query/Table, Lingui, Tailwind tooling
 - **Data & infra:** Postgres for history, Redis for usage metering, Docker images for api/web, pnpm-managed frontend
 - **Testing & tooling:** Pytest, Next lint, Lingui extraction/compile, Husky + Commitlint
@@ -101,9 +101,9 @@ cp web/.env.example web/.env
 
 3. Edit `.env` with your provider API keys:
 
-   - `GLASS_LLM_PROVIDER` - `openai` (default) or `gemini`
-   - `GLASS_OPENAI_API_KEY` - OpenAI API key for LLM (when using OpenAI)
-   - `GLASS_GEMINI_API_KEY` - Google AI Studio key for Gemini 2.5 Flash LLM (when using Gemini)
+   - `GLASS_LLM_PROVIDER` - defaults to `gemini`, set to `openai` only if you want that adapter
+   - `GLASS_GEMINI_API_KEY` - Google AI Studio key for Gemini 2.5 Flash LLM (required unless switching to OpenAI)
+   - `GLASS_OPENAI_API_KEY` - OpenAI API key (only when `GLASS_LLM_PROVIDER=openai`)
    - `GLASS_ELEVENLABS_API_KEY` - ElevenLabs API key for TTS
    - `GLASS_DEEPGRAM_KEY` - Deepgram API key for ASR
    - `GLASS_AUTH_JWT_SECRET` - Generate with `openssl rand -hex 32`

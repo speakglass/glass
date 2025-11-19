@@ -10,7 +10,7 @@ from pydantic import Field
 
 class Settings(BaseSettings):
     # Provider selection
-    llm_provider: str = "openai"
+    llm_provider: str = "gemini"
     asr_provider: str = "deepgram"
     tts_provider: str = "elevenlabs"
     memory_provider: str = "postgres"

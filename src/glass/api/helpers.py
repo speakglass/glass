@@ -12,6 +12,7 @@ from ..auth.jwt import AuthenticatedUser
 from ..domain import prompts
 from ..domain.ports import LLMPort
 from ..persistence.db import AccountConversation, ConversationPartner
+from ..utils.language import lang_code_to_name
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +27,6 @@ class MemoryFactPayload(TypedDict, total=False):
     entities: list[dict[str, str]]
     retention_ttl_days: float | int | None
     retention_expires_at: str | None
-    subject_role: str
     partner_id: str | None
     conversation_id: str | None
     scope: str | None
@@ -189,8 +189,7 @@ JSON:
 async def build_memory_entries_with_llm(
     llm_adapter: LLMPort | None,
     messages: list[dict[str, Any]],
-    learning_lang: str | None,
-    native_lang: str | None,
+    native_language: str | None = None,
     partner_label: str | None = None,
     *,
     partner_id: str | None = None,
@@ -201,11 +200,11 @@ async def build_memory_entries_with_llm(
         return []
 
     try:
+        native_language_name = lang_code_to_name(native_language) if native_language else None
         candidates = await extract_memory_candidates(
             llm=llm_adapter,
             messages=messages,
-            learning_language=learning_lang,
-            native_language=native_lang,
+            native_language_name=native_language_name,
             partner_label=partner_label,
             existing_memories=existing_memories or [],
         )

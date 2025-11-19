@@ -1143,7 +1143,10 @@ async def update_user_subscription(
     stripe_subscription_id: str | None | object = _UNSET,
     subscription_status: str | None | object = _UNSET,
     subscription_plan: str | None | object = _UNSET,
+    subscription_interval: str | None | object = _UNSET,
     current_period_end: datetime | None | object = _UNSET,
+    cancel_at: datetime | None | object = _UNSET,
+    cancel_at_period_end: bool | None | object = _UNSET,
 ) -> AccountUser:
     async_session_factory = db.session()
     async with async_session_factory() as session:
@@ -1158,8 +1161,14 @@ async def update_user_subscription(
             user.subscription_status = subscription_status  # type: ignore[assignment]
         if subscription_plan is not _UNSET:
             user.subscription_plan = subscription_plan  # type: ignore[assignment]
+        if subscription_interval is not _UNSET:
+            user.subscription_interval = subscription_interval  # type: ignore[assignment]
         if current_period_end is not _UNSET:
             user.subscription_current_period_end = current_period_end  # type: ignore[assignment]
+        if cancel_at is not _UNSET:
+            user.subscription_cancel_at = cancel_at  # type: ignore[assignment]
+        if cancel_at_period_end is not _UNSET:
+            user.subscription_cancel_at_period_end = cancel_at_period_end  # type: ignore[assignment]
         await session.commit()
         await session.refresh(user)
         return user
@@ -1176,7 +1185,10 @@ async def clear_user_subscription(
         stripe_subscription_id=None,
         subscription_status=None,
         subscription_plan=None,
+        subscription_interval=None,
         current_period_end=None,
+        cancel_at=None,
+        cancel_at_period_end=None,
     )
 
 

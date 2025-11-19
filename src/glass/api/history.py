@@ -65,7 +65,10 @@ class UserResponse(BaseModel):
     email_verified: bool = False
     subscription_status: str | None = None
     subscription_plan: str | None = None
+    subscription_interval: str | None = None
     subscription_current_period_end: datetime | None = None
+    subscription_cancel_at: datetime | None = None
+    subscription_cancel_at_period_end: bool | None = None
     billing_exempt: bool = False
 
 
@@ -76,7 +79,10 @@ class BillingStatusResponse(BaseModel):
     billing_exempt: bool
     status: str | None = None
     plan: str | None = None
+    plan_interval: str | None = None
     current_period_end: datetime | None = None
+    cancel_at: datetime | None = None
+    cancel_at_period_end: bool | None = None
 
 
 class PartnerInfo(BaseModel):
@@ -195,7 +201,10 @@ async def account_snapshot_endpoint(
                 email_verified=account_user.email_verified,
                 subscription_status=account_user.subscription_status,
                 subscription_plan=account_user.subscription_plan,
+                subscription_interval=account_user.subscription_interval,
                 subscription_current_period_end=account_user.subscription_current_period_end,
+                subscription_cancel_at=account_user.subscription_cancel_at,
+                subscription_cancel_at_period_end=account_user.subscription_cancel_at_period_end,
                 billing_exempt=bool(account_user.billing_exempt),
             ),
             billing=BillingStatusResponse(**billing_payload),
@@ -373,7 +382,6 @@ async def update_conversation_partner_endpoint(
             entries = await build_memory_entries_with_llm(
                 llm_adapter,
                 convo.messages,
-                convo.learning_lang,
                 convo.native_lang,
                 partner.name,
             )
@@ -389,6 +397,7 @@ async def update_conversation_partner_endpoint(
                     entries=entries,
                     partner_id=partner.id,
                     language_code=convo.learning_lang,
+                    native_language_code=convo.native_lang,
                     started_at=started_epoch,
                     ended_at=ended_epoch,
                 )
@@ -534,7 +543,7 @@ async def get_conversation_memories(
     for record in records:
         payload = dict(record)
         payload.setdefault("conversation_id", conversation_id)
-        payload.setdefault("subject_role", "user")
+        payload.setdefault("scope", "user")
         payload.setdefault("category", "fact")
         payload.setdefault("retention", "long_term")
         payload.setdefault("importance", 50)

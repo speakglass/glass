@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class MemoryRecordResponse(BaseModel):
     id: str
     text: str
-    subject_role: str
+    scope: str
     category: str
     retention: str
     importance: int

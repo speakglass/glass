@@ -5,16 +5,9 @@ from datetime import datetime
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+import httpx
 from pydantic import BaseModel, Field
-
-try:  # pragma: no cover - optional dependency guard
-    from stripe.error import SignatureVerificationError, StripeError  # type: ignore
-except ImportError:  # pragma: no cover
-    class StripeError(Exception):
-        pass
-
-    class SignatureVerificationError(StripeError):
-        pass
+from stripe import SignatureVerificationError, StripeError
 
 from ..auth.jwt import AuthenticatedUser, require_authenticated_user
 from ..services.billing import BillingDisabledError, StripeService
@@ -74,7 +67,10 @@ class BillingStatusResponse(BaseModel):
     billing_exempt: bool
     status: str | None = None
     plan: str | None = None
+    plan_interval: str | None = None
     current_period_end: datetime | None = None
+    cancel_at: datetime | None = None
+    cancel_at_period_end: bool | None = None
 
 
 class CheckoutSessionRequest(BaseModel):
@@ -97,6 +93,29 @@ class CheckoutSessionResponse(BaseModel):
 
 class WebhookAcknowledgement(BaseModel):
     status: str
+
+
+class ContactSalesRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    email: str = Field(..., min_length=3, max_length=255)
+    company: str | None = Field(default=None, max_length=120)
+    team_size: str | None = Field(default=None, max_length=64)
+    message: str = Field(..., min_length=1, max_length=2000)
+
+
+class ContactSalesResponse(BaseModel):
+    success: bool
+
+
+class PortalSessionRequest(BaseModel):
+    return_url: str | None = Field(
+        default=None,
+        description="Destination after managing billing (defaults to /billing)",
+    )
+
+
+class PortalSessionResponse(BaseModel):
+    portal_url: str
 
 
 def _billing_service(request: Request) -> StripeService:
@@ -167,6 +186,90 @@ async def create_checkout_session(
         )
 
     return CheckoutSessionResponse(checkout_url=session.url, session_id=session.id, plan=payload.plan)
+
+
+@router.post("/billing/portal", response_model=PortalSessionResponse)
+async def create_billing_portal_session(
+    request: Request,
+    payload: PortalSessionRequest,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> PortalSessionResponse:
+    svc = _billing_service(request)
+    if not svc.enabled:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Billing is disabled")
+
+    db = request.app.state.history_store
+    account_user = await get_user_by_id(db, user.user_id)
+    if not account_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if not account_user.stripe_customer_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No billing customer found")
+
+    settings = request.app.state.app_state.settings
+    return_url = payload.return_url or f"{settings.frontend_url}/billing"
+
+    try:
+        session = await svc.create_billing_portal_session(
+            customer_id=account_user.stripe_customer_id,
+            return_url=return_url,
+        )
+    except BillingDisabledError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except StripeError as exc:  # pragma: no cover - network failure
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Stripe error") from exc
+
+    return PortalSessionResponse(portal_url=session.url)
+
+
+@router.post("/billing/contact", response_model=ContactSalesResponse)
+async def contact_sales(
+    request: Request,
+    payload: ContactSalesRequest,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> ContactSalesResponse:
+    webhook = request.app.state.app_state.settings.discord_webhook_url
+    if not webhook:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Sales contact unavailable")
+
+    embed = {
+        "title": "📩 Contact Sales",
+        "color": 0xF97316,
+        "fields": [
+            {"name": "User", "value": f"{user.name or 'Unknown'} ({user.email})", "inline": False},
+            {"name": "Name", "value": payload.name.strip() or "—", "inline": True},
+            {"name": "Email", "value": payload.email.strip(), "inline": True},
+            {
+                "name": "Company",
+                "value": (payload.company or "—")[:256],
+                "inline": True,
+            },
+            {
+                "name": "Team Size",
+                "value": (payload.team_size or "—")[:128],
+                "inline": True,
+            },
+            {
+                "name": "Message",
+                "value": payload.message.strip()[:1024] or "—",
+                "inline": False,
+            },
+        ],
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                webhook,
+                json={"content": "New sales inquiry", "embeds": [embed]},
+                headers={"Content-Type": "application/json"},
+            )
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Failed to submit inquiry") from exc
+
+    if resp.status_code >= 300:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Failed to submit inquiry")
+
+    return ContactSalesResponse(success=True)
 
 
 @router.post("/billing/stripe/webhook", response_model=WebhookAcknowledgement)
@@ -304,10 +407,16 @@ async def _persist_subscription_update(
         kwargs["subscription_status"] = sub_payload["status"]
     if sub_payload.get("plan"):
         kwargs["subscription_plan"] = sub_payload["plan"]
+    if sub_payload.get("plan_interval"):
+        kwargs["subscription_interval"] = sub_payload["plan_interval"]
     if sub_payload.get("current_period_end") is not None:
         kwargs["current_period_end"] = sub_payload["current_period_end"]
     if sub_payload.get("customer_id"):
         kwargs["stripe_customer_id"] = sub_payload["customer_id"]
+    if sub_payload.get("cancel_at") is not None:
+        kwargs["cancel_at"] = sub_payload["cancel_at"]
+    if sub_payload.get("cancel_at_period_end") is not None:
+        kwargs["cancel_at_period_end"] = sub_payload["cancel_at_period_end"]
     kwargs.update(extra_kwargs)
     if kwargs:
         await update_user_subscription(db, user_id=user_id, **kwargs)

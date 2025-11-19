@@ -147,10 +147,10 @@ function formatDuration(seconds?: number | null) {
   return t`${mins}m ${secs}s`;
 }
 
-const MEMORY_SUBJECT_LABELS: Record<string, string> = {
+const MEMORY_SCOPE_LABELS: Record<string, string> = {
   user: t`User`,
   partner: t`Partner`,
-  relationship: t`Interaction`,
+  interaction: t`Interaction`,
 };
 
 // Language names localized by current UI language
@@ -202,12 +202,6 @@ export function ConversationHistory() {
   const locale = useLocale();
   const router = useRouter();
   const { snapshot, status, token, refresh } = useAccountSession();
-  const conversationLimit = snapshot?.limits?.conversations || null;
-  const limitEnabled = Boolean(conversationLimit?.enabled && conversationLimit?.limit);
-  const limitMax = conversationLimit?.limit ?? null;
-  const limitUsed = conversationLimit?.used ?? 0;
-  const limitUsageLabel = limitMax !== null ? `${Math.min(limitUsed, limitMax)}/${limitMax}` : null;
-  const billingHref = `/${locale}/billing`;
   const [selected, setSelected] = useState<ConversationDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -964,28 +958,6 @@ export function ConversationHistory() {
               </Button>
             )}
           </div>
-          {limitEnabled && limitUsageLabel && (
-            <div className="rounded-3xl border border-dashed border-amber-400/60 bg-amber-50/80 dark:bg-amber-500/10 px-4 py-3 flex items-center justify-between gap-3 text-sm">
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  <Trans>Saved conversations</Trans>
-                </p>
-                <p className="text-lg font-semibold text-foreground">{limitUsageLabel}</p>
-                <p className="text-xs text-muted-foreground">
-                  <Trans>Free plan limit: {limitMax ?? 0}</Trans>
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="cursor-pointer whitespace-nowrap"
-                onClick={() => router.push(billingHref)}
-              >
-                <Trans>Upgrade</Trans>
-              </Button>
-            </div>
-          )}
-
           {/* Loading State */}
           {loadingConversations && (
             <div className="flex items-center justify-center py-8">
@@ -1634,7 +1606,7 @@ export function ConversationHistory() {
                       >
                         <div className="mt-2 bg-background/50 border border-border/30 rounded-lg p-3 max-h-64 overflow-auto space-y-2">
                           {memoryRecords.map((memory) => {
-                            const label = MEMORY_SUBJECT_LABELS[(memory.subjectRole || '').toLowerCase()] || t`Memory`;
+                            const label = MEMORY_SCOPE_LABELS[(memory.scope || '').toLowerCase()] || t`Memory`;
                             return (
                               <div
                                 key={memory.id}

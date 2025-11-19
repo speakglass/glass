@@ -13,27 +13,27 @@ LOGGER = logging.getLogger(__name__)
 
 
 LLM_MEMORY_EXTRACTOR_PROMPT = """
-You are Glass Memory. Extract durable facts from bilingual tutoring conversations.
+You are Glass Memory. Extract durable facts from tutoring conversations.
 
 Input JSON has:
 {
-  "learning_language": "...",
-  "native_language": "...",
   "partner_name": "...",
+  "native_language_name": "...",
   "recent_turns": [{"role": "user|partner", "text": "..."}],
   "conversation_excerpt": "...",
   "existing_memories": ["..."]
 }
 
 Return STRICT JSON with key "facts": an array of objects containing:
-- "text": concise statement exactly as spoken (no translation)
+- "text": concise statement grounded in the conversation (translate if needed so it matches the provided native_language_name)
 - "scope": "user" | "partner" | "interaction"
 - "speaker": "user" | "partner" (who said it)
 - "evidence": optional short quote or justification
 
 Guidelines:
+- Always express each fact in the provided native_language_name even when the conversation uses other languages.
 - Surface only information explicitly stated or reaffirmed in the transcript.
-- Use scope=user for learner facts, partner for the tutor's information, interaction for shared commitments/plans.
+- Use scope=user for user facts, partner for the partner's information, interaction for shared commitments/plans.
 - Highlight stable preferences, skills, routines, goals. Ignore greetings or temporary feelings.
 - Limit to the 8 most relevant facts and avoid duplicates or anything already present in existing_memories.
 - Keep statements short for downstream classification. Output JSON only.
@@ -62,11 +62,11 @@ def _clean_text(value: Any, *, limit: int | None = None) -> str | None:
 def _normalize_scope(value: Any, *, speaker: str | None = None) -> str | None:
     if isinstance(value, str):
         lowered = value.strip().lower()
-        if lowered in {"user", "learner"}:
+        if lowered == "user":
             return "user"
-        if lowered in {"partner", "tutor", "teacher"}:
+        if lowered == "partner":
             return "partner"
-        if lowered in {"interaction", "relationship", "thread", "session"}:
+        if lowered == "interaction":
             return "interaction"
     if speaker in {"user", "partner"}:
         return speaker
@@ -111,8 +111,7 @@ async def extract_memory_candidates(
     *,
     llm: LLMPort | None,
     messages: list[dict[str, Any]],
-    learning_language: str | None,
-    native_language: str | None,
+    native_language_name: str | None = None,
     partner_label: str | None = None,
     existing_memories: Sequence[str] | None = None,
 ) -> list[MemoryExtractionCandidate]:
@@ -126,9 +125,8 @@ async def extract_memory_candidates(
         return []
 
     payload = {
-        "learning_language": learning_language or "",
-        "native_language": native_language or "",
         "partner_name": partner_label or "",
+        "native_language_name": native_language_name or "",
         "recent_turns": turns,
         "conversation_excerpt": excerpt,
         "existing_memories": list(existing_memories or []),

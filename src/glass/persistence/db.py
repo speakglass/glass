@@ -26,8 +26,6 @@ class AccountUser(Base):
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    # Legacy: previously tracked extra usage allowance (unused now)
-    bonus_minutes: Mapped[int | None] = mapped_column(default=None)
     # Email verification
     email_verified: Mapped[bool] = mapped_column(default=False)
     verification_token: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
@@ -52,7 +50,10 @@ class AccountUser(Base):
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
     subscription_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
     subscription_plan: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    subscription_interval: Mapped[str | None] = mapped_column(String(16), nullable=True)
     subscription_current_period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    subscription_cancel_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    subscription_cancel_at_period_end: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     billing_exempt: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     conversations: Mapped[list["AccountConversation"]] = relationship(

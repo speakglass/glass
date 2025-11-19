@@ -4,7 +4,6 @@ import { ConversationHistory } from '@/components/history/conversation-history';
 import { Trans } from '@lingui/react/macro';
 import { initLingui } from '@/lib/init-lingui';
 import { DEFAULT_LANGUAGE, LOCALIZED_LANGUAGE_CODES } from '@/lib/supported-languages';
-import { ConversationLimitIndicator } from '@/components/history/conversation-limit-indicator';
 
 export default async function HistoryPage({ params }: { params: Promise<{ lang: string }> }) {
   const session = await auth();
@@ -31,7 +30,6 @@ export default async function HistoryPage({ params }: { params: Promise<{ lang: 
               <h1 className="text-3xl font-bold">
                 <Trans>Your saved calls</Trans>
               </h1>
-              <ConversationLimitIndicator className="mt-1" />
             </div>
             <div className="size-12 rounded-full overflow-hidden bg-card/80 border border-border/50 shadow-sm">
               <img src="/glass-ai.png" alt="Glass AI" className="w-full h-full object-cover" />

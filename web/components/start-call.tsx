@@ -698,6 +698,7 @@ export default function StartCall() {
         return;
       }
     }
+    setStep('mode');
   };
 
   const handleStartCall = async () => {

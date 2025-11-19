@@ -185,6 +185,7 @@ class ConversationMemory:
         conversation_id: str | None = None,
         partner_id: str | None = None,
         language_code: str | None = None,
+        native_language_code: str | None = None,
         started_at: float | None = None,
         ended_at: float | None = None,
     ) -> None:
@@ -197,6 +198,7 @@ class ConversationMemory:
             entries=entries,
             partner_id=partner_id,
             language_code=language_code,
+            native_language_code=native_language_code,
             started_at=started_at,
             ended_at=ended_at,
         )
