@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/speakglass/glass/compare/v0.1.7...v0.1.8) (2025-11-18)
+
+
+### Features
+
+* **api:** add InteractionObservedFactEdge and enhance edge handling ([0d385db](https://github.com/speakglass/glass/commit/0d385db4942228c47fa57d751ec4d571a3c9a84a))
+
 ## [0.1.7](https://github.com/speakglass/glass/compare/v0.1.6...v0.1.7) (2025-11-18)
 
 
