@@ -10,16 +10,28 @@ type PartnerSearchEmptyStateProps = {
   searchTerm?: string;
   isCreating?: boolean;
   onCreate?: () => void;
+  isSearching?: boolean;
 };
 
 export function PartnerSearchEmptyState({
   searchTerm,
   isCreating,
   onCreate,
+  isSearching = true,
 }: PartnerSearchEmptyStateProps) {
   const hasSearch = Boolean(searchTerm);
-  const canCreate = hasSearch && typeof onCreate === 'function';
+  const canCreate = typeof onCreate === 'function';
   const displayTerm = searchTerm || '';
+  const title = isSearching ? (
+    <Trans>No matching partners.</Trans>
+  ) : (
+    <Trans>No partners yet.</Trans>
+  );
+  const subtitle = isSearching ? null : (
+    <p className="text-[11px] text-muted-foreground/80">
+      <Trans>Create a partner to link this conversation.</Trans>
+    </p>
+  );
 
   return (
     <div className="px-3 pb-1 pt-1">
@@ -27,9 +39,8 @@ export function PartnerSearchEmptyState({
         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-background/80 text-muted-foreground">
           <Search className="h-3.5 w-3.5" />
         </div>
-        <p className="text-sm font-medium text-foreground">
-          <Trans>No matching partners.</Trans>
-        </p>
+        <p className="text-[13px] font-medium text-foreground">{title}</p>
+        {subtitle}
         {canCreate && (
           <Button
             type="button"
@@ -44,7 +55,13 @@ export function PartnerSearchEmptyState({
             ) : (
               <Plus className="h-4 w-4 text-muted-foreground" />
             )}
-            <span className="truncate font-medium">{t`New ${displayTerm}`}</span>
+            {isSearching && displayTerm ? (
+              <span className="truncate font-medium">{t`New ${displayTerm}`}</span>
+            ) : (
+              <span className="font-medium">
+                <Trans>Create partner</Trans>
+              </span>
+            )}
           </Button>
         )}
       </div>

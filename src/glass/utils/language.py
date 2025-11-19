@@ -16,9 +16,7 @@ def lang_code_to_name(code: str) -> str:
         'en': 'English',
         'ko': 'Korean',
         'ja': 'Japanese',
-        'zh': 'Chinese',
         'es': 'Spanish',
         'fr': 'French',
     }
     return lang_map.get(code, code.capitalize())
-

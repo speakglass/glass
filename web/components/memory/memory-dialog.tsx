@@ -23,7 +23,7 @@ export function MemoryDialog({ open, onClose, onSave, memory, isLoading, readOnl
 
   useEffect(() => {
     if (memory) {
-      setValue(memory.fact);
+      setValue(memory.text);
     } else {
       setValue('');
     }
@@ -50,13 +50,7 @@ export function MemoryDialog({ open, onClose, onSave, memory, isLoading, readOnl
         <form onSubmit={handleSubmit}>
           <DialogHeader className={readOnly ? 'pb-3' : ''}>
             <DialogTitle className={readOnly ? 'text-base' : ''}>
-              {readOnly ? (
-                <Trans>Memory</Trans>
-              ) : memory ? (
-                <Trans>Edit memory</Trans>
-              ) : (
-                <Trans>Add new memory</Trans>
-              )}
+              {readOnly ? <Trans>Memory</Trans> : memory ? <Trans>Edit memory</Trans> : <Trans>Add new memory</Trans>}
             </DialogTitle>
           </DialogHeader>
 
@@ -75,11 +69,15 @@ export function MemoryDialog({ open, onClose, onSave, memory, isLoading, readOnl
                 disabled={isLoading || readOnly}
                 rows={readOnly ? 8 : 8}
                 required={!readOnly}
-                className={readOnly ? 'resize-none border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm' : 'resize-none'}
+                className={
+                  readOnly
+                    ? 'resize-none border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm'
+                    : 'resize-none'
+                }
               />
               {!readOnly && (
                 <p className="text-xs text-muted-foreground">
-                  <Trans>AI will organize and categorize this automatically, which can take up to 2 minutes.</Trans>
+                  <Trans>AI will organize and categorize this automatically.</Trans>
                 </p>
               )}
             </div>
@@ -96,13 +94,7 @@ export function MemoryDialog({ open, onClose, onSave, memory, isLoading, readOnl
                   <Trans>Cancel</Trans>
                 </Button>
                 <Button type="submit" disabled={isLoading || !value.trim()}>
-                  {isLoading ? (
-                    <Trans>Saving...</Trans>
-                  ) : memory ? (
-                    <Trans>Update</Trans>
-                  ) : (
-                    <Trans>Create</Trans>
-                  )}
+                  {isLoading ? <Trans>Saving...</Trans> : memory ? <Trans>Update</Trans> : <Trans>Create</Trans>}
                 </Button>
               </>
             )}

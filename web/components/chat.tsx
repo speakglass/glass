@@ -13,7 +13,7 @@ import { Trans } from '@lingui/react/macro';
 
 export default function Chat() {
   const ref = useRef<ComponentRef<typeof Messages> | null>(null);
-  const { status, conversationAnalysis, showSummary, closeSummary, startNewCallWithContext } = useGlass();
+  const { status, conversationAnalysis, showSummary, closeSummary } = useGlass();
   const [analysisProgress, setAnalysisProgress] = useState(0);
 
   // Debug: Log render conditions
@@ -105,17 +105,15 @@ export default function Chat() {
             key={'call-summary'}
             conversationId={conversationAnalysis.conversationId}
             scores={conversationAnalysis.scores}
-            extractedInfo={conversationAnalysis.extractedInfo}
             feedback={conversationAnalysis.feedback}
             messages={conversationAnalysis.messages}
             feedbackItems={conversationAnalysis.feedbackItems}
-            participantSnapshot={conversationAnalysis.participantSnapshot}
-            memoryInsights={conversationAnalysis.memoryInsights ?? null}
+            partner={conversationAnalysis.partner ?? null}
             durationSeconds={conversationAnalysis.durationSeconds}
             learningLang={conversationAnalysis.learningLang}
             nativeLang={conversationAnalysis.nativeLang}
+            initialMemories={conversationAnalysis.memories}
             onClose={closeSummary}
-            onStartNewCall={startNewCallWithContext}
           />
         )}
       </AnimatePresence>

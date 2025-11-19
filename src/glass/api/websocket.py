@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
 import time
 from datetime import datetime, timezone
@@ -17,15 +16,17 @@ from ..utils.audio import iter_multiplexed_audio
 from ..persistence.service import (
     upsert_conversation,
     get_partner_by_id,
-    ensure_live_session_partner,
     update_partner_details,
+    get_user_by_id,
+    count_conversations,
 )
 from .helpers import (
     derive_conversation_title,
     generate_conversation_title_with_llm,
     extract_partner_profile_with_llm,
-    extract_conversation_memories_with_llm,
+    build_memory_entries_with_llm,
 )
+from ..services.limits import conversation_limit_status
 
 LOGGER = logging.getLogger(__name__)
 
@@ -59,6 +60,33 @@ def _partner_to_profile(partner) -> dict[str, Any]:
         "is_system": partner.user_id is None,
     }
 
+
+def _normalize_message_partner_ids(
+    messages: list[dict[str, Any]] | None,
+    *,
+    pipeline_partner_id: str | None,
+    persisted_partner_id: str | None,
+) -> list[dict[str, Any]]:
+    """Ensure persisted messages only reference valid partner IDs."""
+    if not messages:
+        return []
+    normalized: list[dict[str, Any]] = []
+    for entry in messages:
+        if not isinstance(entry, dict):
+            normalized.append(entry)
+            continue
+        payload = dict(entry)
+        raw_partner_id = payload.get("partner_id")
+        cleaned_partner_id = raw_partner_id.strip() if isinstance(raw_partner_id, str) else None
+        if cleaned_partner_id and pipeline_partner_id and cleaned_partner_id == pipeline_partner_id:
+            if persisted_partner_id:
+                payload["partner_id"] = persisted_partner_id
+            else:
+                payload.pop("partner_id", None)
+        elif not cleaned_partner_id:
+            payload.pop("partner_id", None)
+        normalized.append(payload)
+    return normalized
 
 
 def _is_origin_allowed(origin: str | None) -> bool:
@@ -111,29 +139,46 @@ async def audio_stream(
     client_id = _client_id_from_ws(websocket, user)
     if user:
         await app_state.set_session_owner(sid, user.user_id)
-    usage_task: asyncio.Task | None = None
-    if app_state.settings.daily_free_minutes is not None:
-        usage_task = await _init_quota_and_schedule_close(websocket, app_state, client_id, user)
-        if usage_task is None:
-            return
     history_store = getattr(websocket.app.state, "history_store", None)
     partner_profile: dict[str, Any] | None = None
+    resolved_learning_lang = (learning_lang or "").strip().lower()
+    resolved_native_lang = (native_lang or "").strip().lower()
+    if history_store and user:
+        try:
+            account_user = await get_user_by_id(history_store, user.user_id)
+        except Exception as exc:
+            account_user = None
+            LOGGER.warning("[WebSocket] Failed to load account user %s: %s", user.user_id, exc)
+        if account_user:
+            app_state_obj = app_state
+            billing_service = getattr(app_state_obj, "billing_service", None)
+            if billing_service:
+                billing_payload = billing_service.user_status_payload(account_user)
+                total_conversations = await count_conversations(history_store, user_id=user.user_id)
+                limit_state = conversation_limit_status(
+                    app_state_obj.settings,
+                    billing_payload,
+                    used=total_conversations,
+                )
+                if limit_state.blocked:
+                    await websocket.close(code=4403, reason="conversation limit reached")
+                    return
+            if not resolved_learning_lang and account_user.learning_lang:
+                resolved_learning_lang = account_user.learning_lang.strip().lower()
+            if not resolved_native_lang and account_user.native_lang:
+                resolved_native_lang = account_user.native_lang.strip().lower()
+    if not resolved_learning_lang:
+        resolved_learning_lang = "en"
+    if not resolved_native_lang:
+        resolved_native_lang = "en"
+    learning_lang = resolved_learning_lang
+    native_lang = resolved_native_lang
     if partner_id and user and history_store:
         partner_model = await get_partner_by_id(history_store, partner_id, user_id=user.user_id)
         if partner_model:
             partner_profile = _partner_to_profile(partner_model)
         else:
             LOGGER.warning(f"[Roleplay] Partner {partner_id} not found for user {user.user_id}")
-    elif mode == "live_call" and history_store and user:
-        placeholder_partner = await ensure_live_session_partner(
-            history_store,
-            user_id=user.user_id,
-            session_id=sid,
-            learning_lang=learning_lang,
-            native_lang=native_lang,
-        )
-        partner_profile = _partner_to_profile(placeholder_partner)
-        partner_id = placeholder_partner.id
     normalized_mode = (mode or "").lower()
     allow_system_audio = normalized_mode == "live_call"
     events_adapter = WebSocketEventsAdapter(websocket) if events else None
@@ -192,10 +237,6 @@ async def audio_stream(
             task.cancel()
         raise
     finally:
-        if usage_task:
-            usage_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await usage_task
         # Auto-save conversation when WebSocket disconnects
         if user and pipeline.memory.get_full_conversation():
             asyncio.create_task(_auto_save_conversation(websocket.app, sid, user, pipeline))
@@ -236,143 +277,12 @@ async def session_events(
         return
 
 
-async def _init_quota_and_schedule_close(
-    websocket: WebSocket,
-    app_state,
-    client_id: str,
-    user: AuthenticatedUser | None = None,
-) -> asyncio.Task | None:
-    """Initialize daily cumulative quota and start usage metering loop.
-
-    Returns an asyncio.Task tracking usage, or None if quota exhausted.
-    """
-    from ..persistence.service import get_user_by_id
-
-    settings = get_settings()
-    daily_total_sec = int(settings.daily_free_minutes or 0) * 60
-
-    # Get user's bonus minutes if authenticated
-    bonus_minutes = None
-    if user:
-        try:
-            history_store = getattr(websocket.app.state, "history_store", None)
-            if history_store:
-                account_user = await get_user_by_id(history_store, user.user_id)
-                if account_user and account_user.bonus_minutes:
-                    bonus_minutes = account_user.bonus_minutes
-                    LOGGER.info(f"[Quota] User {user.user_id} has {bonus_minutes} bonus minutes")
-            else:
-                LOGGER.debug("[Quota] history_store missing on app state; cannot fetch bonus minutes")
-        except Exception as e:
-            LOGGER.warning(f"[Quota] Failed to fetch bonus_minutes for user {user.user_id if user else 'unknown'}: {e}")
-
-    try:
-        # Fetch remaining quota from Redis with timeout handling
-        remaining_sec = await asyncio.wait_for(
-            app_state.get_remaining_seconds_quota(client_id, bonus_minutes=bonus_minutes),
-            timeout=10.0,  # Don't block connection start too long
-        )
-        LOGGER.info(
-            f"[Quota] Client {client_id}: {remaining_sec}s remaining (daily: {daily_total_sec}s, bonus: {bonus_minutes or 0}min)"
-        )
-    except asyncio.TimeoutError:
-        LOGGER.warning(f"[Quota] Redis timeout on init for {client_id}, allowing connection")
-        remaining_sec = daily_total_sec  # Fail open: allow connection if Redis is down
-    except Exception as e:
-        LOGGER.exception(f"[Quota] Failed to check quota for {client_id}: {e}")
-        remaining_sec = daily_total_sec  # Fail open
-
-    # Block if quota exhausted
-    if remaining_sec <= 0:
-        try:
-            await websocket.send_json({"t": "limit_reached", "reason": "time", "max": daily_total_sec})
-        except Exception:
-            pass
-        try:
-            await websocket.close(code=1013)
-        except Exception:
-            pass
-        return None
-
-    # Send time info to client
-    try:
-        await websocket.send_json({"t": "time_remaining", "seconds": int(remaining_sec), "total": daily_total_sec})
-        LOGGER.info(f"[Quota] Sent time_remaining to client {client_id}: {remaining_sec}s")
-    except Exception as e:
-        LOGGER.warning(f"[Quota] Failed to send time_remaining: {e}")
-
-    # Start usage tracking
-    return asyncio.create_task(
-        _usage_meter_loop(
-            websocket,
-            app_state,
-            client_id,
-            daily_total_sec,
-            bonus_minutes,
-        )
-    )
-
-
-async def _usage_meter_loop(
-    websocket: WebSocket,
-    app_state,
-    client_id: str,
-    daily_total_sec: int,
-    bonus_minutes: int | None = None,
-) -> None:
-    """Track usage locally; sync + check quota every 5 minutes for robustness.
-
-    Balance between efficiency and robustness:
-    - Periodic sync handles multi-connection abuse and server crashes
-    - 5-minute interval keeps Redis load low while preventing quota bypass
-    """
-    sync_interval = 300  # 5 minutes - good balance
-    start_time = asyncio.get_event_loop().time()
-    last_sync = 0
-
-    try:
-        while True:
-            await asyncio.sleep(sync_interval)
-            elapsed = int(asyncio.get_event_loop().time() - start_time)
-            seconds_to_sync = elapsed - last_sync
-
-            # Sync accumulated time to Redis
-            if seconds_to_sync > 0:
-                total_used = await app_state.incr_used_seconds(client_id, seconds_to_sync)
-                last_sync = elapsed
-                LOGGER.debug(f"[Quota] Synced {seconds_to_sync}s for client {client_id} (total today: {total_used}s)")
-
-                # Check if quota exceeded (handles multi-connection case)
-                # This uses the actual get_remaining_seconds_quota to check bonus too
-                remaining = await app_state.get_remaining_seconds_quota(client_id, bonus_minutes=bonus_minutes)
-                if remaining <= 0:
-                    try:
-                        await websocket.send_json({"t": "limit_reached", "reason": "time", "max": daily_total_sec})
-                    except Exception:
-                        pass
-                    try:
-                        await websocket.close(code=1000)
-                    except Exception:
-                        pass
-                    return
-    finally:
-        # Sync any remaining time on disconnect (handles clean shutdown or crash recovery)
-        elapsed = int(asyncio.get_event_loop().time() - start_time)
-        remaining = elapsed - last_sync
-        if remaining > 0:
-            try:
-                await app_state.incr_used_seconds(client_id, remaining)
-                LOGGER.info(f"[Quota] Final sync: {remaining}s for client {client_id} on disconnect")
-            except Exception as e:
-                LOGGER.warning(f"[Budget] Failed to sync on disconnect: {e}")
-
-
 async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser, pipeline) -> None:
     """Automatically analyze and save conversation when WebSocket disconnects."""
     session_manager = getattr(app.state.app_state, "session_manager", None)
-    thread_id = getattr(pipeline, "memory_thread_id", None)
+    conversation_id = getattr(pipeline, "conversation_id", None)
     if session_manager:
-        session_manager.mark_memory_pending(thread_id)
+        await session_manager.mark_memory_pending(conversation_id)
     try:
         user_id = user.user_id
         LOGGER.info(f"[AutoSave] Starting auto-save for session {session_id}")
@@ -381,6 +291,7 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
         full_conversation = pipeline.memory.get_full_conversation()
         messages = []
         for msg in full_conversation:
+            message_kind = msg.get("kind")
             message_dict: dict[str, Any] = {}
             for key in (
                 "role",
@@ -391,11 +302,12 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
                 "duration",
                 "event_type",
                 "translation",
+                "kind",
             ):
                 if key in msg and msg[key] is not None:
                     message_dict[key] = msg[key]
             utterance_id = msg.get("utterance_id")
-            if utterance_id:
+            if utterance_id and message_kind not in {"feedback", "suggestion"}:
                 if utterance_id in pipeline.assistant._translations:
                     message_dict["translation"] = pipeline.assistant._translations[utterance_id]
                 elif utterance_id in pipeline.roleplay._translations:
@@ -443,11 +355,11 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
         else:
             analysis = analysis_result
 
-        title: str
+            title: str
         if isinstance(title_result, BaseException) or not title_result:
             LOGGER.warning("[AutoSave] Title generation failed, using fallback")
-            # Fallback to date-based title (extracted_info is now handled by Zep)
-            title = derive_conversation_title(None, started_at)
+            # Fallback to date-based title (durable extraction handled later)
+            title = derive_conversation_title(started_at)
         else:
             title = title_result
 
@@ -465,9 +377,14 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
         if delayed_feedback:
             analysis["feedback"] = delayed_feedback
 
+        feedback_items: list[dict[str, Any]] | None = None
+        if assistant:
+            raw_feedback = getattr(assistant, "all_feedback", None)
+            if raw_feedback:
+                feedback_items = [dict(entry) for entry in raw_feedback if isinstance(entry, dict)]
+
         # Save to database
-        # Note: Memory extraction is now handled by Zep (no extracted_info field)
-        participant_snapshot = pipeline.build_participant_snapshot()
+        # Note: Memory extraction is handled asynchronously (no extracted_info field)
 
         db = app.state.history_store
         partner_id_to_persist: str | None = None
@@ -495,11 +412,11 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
                 )
 
         interaction_summary = None
-        memory_insights: dict[str, Any] | None = None
-        # Extract durable memories so the call summary can include insights.
+        memory_partner_id = pipeline_partner_id
+        memory_entries: list[dict[str, str]] = []
         if llm_adapter:
             try:
-                memory_insights = await extract_conversation_memories_with_llm(
+                memory_entries = await build_memory_entries_with_llm(
                     llm_adapter,
                     messages,
                     learning_lang_cfg,
@@ -509,6 +426,17 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
             except Exception as exc:
                 LOGGER.debug("[AutoSave] Memory extraction skipped: %s", exc)
 
+        app_state_obj = app.state.app_state
+        memory_adapter = getattr(app_state_obj.session_manager, "memory_adapter", None)
+        if partner_id_to_persist:
+            memory_partner_id = partner_id_to_persist
+
+        messages_for_persistence = _normalize_message_partner_ids(
+            messages,
+            pipeline_partner_id=pipeline_partner_id,
+            persisted_partner_id=partner_id_to_persist,
+        )
+
         await upsert_conversation(
             db,
             user_id=user_id,
@@ -517,16 +445,30 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
             summary=analysis.get("feedback"),
             feedback=analysis.get("feedback"),
             scores=analysis.get("scores"),
-            messages=messages,
+            messages=messages_for_persistence,
             learning_lang=learning_lang_cfg,
             native_lang=native_lang_cfg,
             started_at=started_at or ended_at,
             ended_at=ended_at,
             duration_seconds=duration_seconds,
             partner_id=partner_id_to_persist,
-            participant_snapshot=participant_snapshot,
-            memory_insights=memory_insights,
+            feedback_items=feedback_items,
         )
+
+        if memory_adapter and memory_entries:
+            conversation_binding = getattr(pipeline, "conversation_id", session_id)
+            try:
+                await memory_adapter.persist_memory_records(
+                    user_id=user_id,
+                    conversation_id=conversation_binding,
+                    entries=memory_entries,
+                    partner_id=memory_partner_id,
+                    language_code=learning_lang_cfg,
+                    started_at=started_at.timestamp() if started_at else None,
+                    ended_at=ended_at.timestamp() if ended_at else None,
+                )
+            except Exception as exc:
+                LOGGER.warning("[AutoSave] Failed to persist memory records: %s", exc)
 
         if persisted_partner_model and llm_adapter:
             await _maybe_enrich_live_partner(
@@ -539,18 +481,18 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
                 session_id,
             )
 
-        if memory_insights:
-            interaction_entries = memory_insights.get("interaction_insights") or []
-            if interaction_entries:
-                interaction_summary = interaction_entries[0]
+        if memory_entries:
+            for entry in memory_entries:
+                if entry.get("scope") == "interaction":
+                    interaction_summary = entry.get("text")
+                    break
 
         if not interaction_summary:
             interaction_summary = analysis.get("feedback") if isinstance(analysis.get("feedback"), str) else None
 
-        pipeline.memory.update_thread_context_summary(interaction_summary)
-        pipeline._last_thread_summary_update = time.time() if hasattr(pipeline, "_last_thread_summary_update") else 0.0
-        pipeline.stage_partner_summary(interaction_summary)
-        await pipeline.flush_pending_memory()
+        pipeline.memory.update_conversation_context_summary(interaction_summary)
+        if hasattr(pipeline, "_last_conversation_summary_update"):
+            pipeline._last_conversation_summary_update = time.time()
 
         # Clear session owner
         await app.state.app_state.clear_session_owner(session_id)
@@ -560,7 +502,7 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
         LOGGER.exception(f"[AutoSave] Failed to auto-save conversation for session {session_id}: {e}")
     finally:
         if session_manager:
-            session_manager.clear_memory_pending(thread_id)
+            await session_manager.clear_memory_pending(conversation_id)
         if session_manager is not None:
             try:
                 await session_manager.remove_pipeline(session_id)
@@ -584,7 +526,7 @@ async def _maybe_enrich_live_partner(
     """Use LLM to extract partner profile hints and update placeholder partners."""
     try:
         meta = partner.extra_metadata or {}
-        if meta.get("type") != "live_call":
+        if getattr(partner, "kind", None) != "live_call":
             return
         extracted = await extract_partner_profile_with_llm(
             llm_adapter,

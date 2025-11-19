@@ -13,8 +13,6 @@ LANGUAGE_ALIASES = {
     "ko": "ko",
     "japanese": "ja",
     "ja": "ja",
-    "chinese": "zh",
-    "zh": "zh",
     "spanish": "es",
     "es": "es",
     "french": "fr",
@@ -24,38 +22,27 @@ LANGUAGE_ALIASES = {
 
 # Pronunciation examples for language pairs (native -> target codes)
 PRONUNCIATION_EXAMPLES = {
-    # Chinese learners (zh)
-    ("zh", "ko"): "Korean '안녕하세요' → 'ān níng hā sāi yō'",
-    ("zh", "ja"): "Japanese 'ありがとう' → 'ā lǐ gā duō'",
-    ("zh", "en"): "English 'hello' → 'hā lóu'",
-    ("zh", "es"): "Spanish 'hola' → 'āo lā'",
-    ("zh", "fr"): "French 'bonjour' → 'bāng zhū'",
     # Korean learners (ko)
-    ("ko", "zh"): "Chinese '你好' → '니하오'",
     ("ko", "ja"): "Japanese 'ありがとう' → '아리가또'",
     ("ko", "en"): "English 'hello' → '헬로우'",
     ("ko", "es"): "Spanish 'gracias' → '그라씨아스'",
     ("ko", "fr"): "French 'merci' → '메르씨'",
     # Japanese learners (ja)
-    ("ja", "zh"): "Chinese '你好' → 'ニーハオ'",
     ("ja", "ko"): "Korean '안녕하세요' → 'アンニョンハセヨ'",
     ("ja", "en"): "English 'thank you' → 'サンキュー'",
     ("ja", "es"): "Spanish 'hola' → 'オラ'",
     ("ja", "fr"): "French 'bonjour' → 'ボンジュール'",
     # English learners (en)
-    ("en", "zh"): "Chinese '谢谢' → 'xie-xie'",
     ("en", "ko"): "Korean '감사합니다' → 'gam-sa-ham-ni-da'",
     ("en", "ja"): "Japanese 'ありがとう' → 'a-ri-ga-to'",
     ("en", "es"): "Spanish 'gracias' → 'gra-see-as'",
     ("en", "fr"): "French 'merci' → 'mer-see'",
     # Spanish learners (es)
-    ("es", "zh"): "Chinese '你好' → 'ni jao'",
     ("es", "ko"): "Korean '안녕하세요' → 'an-niong-ja-se-io'",
     ("es", "ja"): "Japanese 'ありがとう' → 'a-ri-ga-to'",
     ("es", "en"): "English 'hello' → 'je-lou'",
     ("es", "fr"): "French 'bonjour' → 'bon-yur'",
     # French learners (fr)
-    ("fr", "zh"): "Chinese '你好' → 'ni hao'",
     ("fr", "ko"): "Korean '안녕하세요' → 'an-nioung-ha-sé-yo'",
     ("fr", "ja"): "Japanese 'ありがとう' → 'a-ri-ga-to'",
     ("fr", "en"): "English 'hello' → 'hé-lo'",
@@ -65,7 +52,6 @@ PRONUNCIATION_EXAMPLES = {
 ROMANIZATION_EXAMPLES = {
     "ja": "'ありがとう' → 'arigatou'",
     "ko": "'안녕하세요' → 'annyeonghaseyo'",
-    "zh": "'你好' → 'ni hao'",
     "en": "'hello' → 'hello'",
     "es": "'gracias' → 'gracias'",
     "fr": "'merci' → 'merci'",
@@ -93,7 +79,6 @@ def build_suggestion_prompt(
     native_lang: str,
     user_hint: str | None = None,
     recent_conversation: list[str] | None,
-    profile_facts: list[dict[str, str]] | None = None,
     last_partner_message: str | None = None,
     length_mode: str = "auto",
 ) -> tuple[str, str]:
@@ -121,7 +106,7 @@ Suggest a natural, contextually appropriate response in {target_lang} for the le
 2. **Flow-based**: If no hint, follow the natural conversation flow
 3. **Level-appropriate**: Match the user's proficiency level
 4. **Conversational**: Keep it natural and realistic
-5. **Context-aware**: Use provided context only when genuinely relevant. Profile facts are written in the user's native language—reuse the value verbatim when it helps.{length_instruction}
+5. **Context-aware**: Use provided context only when genuinely relevant.{length_instruction}
 
 # Output Format
 Return JSON with suggestion and translation:
@@ -155,28 +140,6 @@ Return JSON with suggestion and translation:
     # Section 3: Partner's latest message (for quick reference)
     if last_partner_message:
         sections.append("# Partner's Last Message\n" + last_partner_message)
-
-    # Section 4: Stored profile facts (canonical user info)
-    if profile_facts:
-        fact_lines = []
-        for fact in profile_facts:
-            key = fact.get("key") or "fact"
-            value = fact.get("value") or ""
-            category = fact.get("category")
-            updated = fact.get("updated_at")
-            extra = []
-            if category:
-                extra.append(category)
-            if updated:
-                extra.append(f"updated {updated}")
-            qualifier = f" ({', '.join(extra)})" if extra else ""
-            fact_lines.append(f"- {key}: {value}{qualifier}")
-        if fact_lines:
-            sections.append(
-                "# User Profile Facts (written in the learner's native language)\n"
-                + "\n".join(fact_lines)
-                + "\n\nUse them exactly as written when relevant."
-            )
 
     # Section 4: Task instruction
     length_requirement = ""
@@ -227,42 +190,6 @@ Return JSON with suggestion and translation:
     return system_prompt, user_prompt
 
 
-def build_profile_fact_prompt(
-    *,
-    user_message: str,
-    native_language: str,
-) -> tuple[str, str]:
-    """Build prompts for extracting profile facts from a user utterance."""
-    system_prompt = """You identify personal facts about a speaker.
-
-Extract only facts that describe the person (job, location, family, hobbies, goals, background, preferences).
-Return STRICT JSON: an array of objects with "key", "value", and "category".
-If there are no relevant facts, return [].
-"""
-    user_prompt = dedent(
-        f"""
-        The user's native language is {native_language}. Keep the fact value EXACTLY in that language (no translation).
-
-        Return JSON array only. Each object:
-        - key: short English tag like job, location, family, hobby, goal, major, company
-        - value: the fact in the user's own words (their native language)
-        - category: one of profile, background, preference, goal (pick the closest)
-
-        Example response:
-        [
-          {{"key": "job", "value": "저는 백엔드 엔지니어예요.", "category": "profile"}},
-          {{"key": "location", "value": "도쿄에서 일하고 있어요.", "category": "background"}}
-        ]
-
-        Only extract facts about the user as a person. Ignore opinions or statements about others.
-
-        User's message:
-        \"\"\"{user_message}\"\"\"
-        """
-    ).strip()
-    return system_prompt.strip(), user_prompt
-
-
 def build_translation_prompt(text: str, source_lang: str, target_lang: str) -> tuple[str, str]:
     """Build system and user prompts for translation.
 
@@ -281,7 +208,7 @@ def build_feedback_prompt(
     native_lang: str,
     recent_conversation: list[str],
     last_suggestion: dict | None = None,
-    thread_context: str | None = None,
+    conversation_context: str | None = None,
 ) -> tuple[str, str]:
     """Build system and user prompts for feedback.
 
@@ -342,12 +269,12 @@ Supportive but straightforward - focus on what's wrong, not what the user might 
         sections.append(suggestion_info)
 
     # Section 3: Conversation context
-    if recent_conversation or thread_context:
+    if recent_conversation or conversation_context:
         context_parts = []
         if recent_conversation:
             context_parts.append("## Recent Conversation\n" + "\n".join(recent_conversation[-3:]))
-        if thread_context:
-            context_parts.append(f"## Session Patterns\n{thread_context}")
+        if conversation_context:
+            context_parts.append(f"## Session Patterns\n{conversation_context}")
         sections.append("# Additional Context (Use if relevant)\n\n" + "\n\n".join(context_parts))
 
     # Section 4: Output format
@@ -419,7 +346,7 @@ def build_ai_response_prompt(
     target_lang: str,
     native_lang: str,
     recent_conversation: list[str],
-    thread_context: str | None = None,
+    conversation_context: str | None = None,
     interaction_context: str | None = None,
     user_name: str | None = None,
 ) -> tuple[str, str]:
@@ -461,9 +388,11 @@ def build_ai_response_prompt(
     # Build user prompt sections
     sections = []
 
-    if thread_context:
+    if conversation_context:
         context_summary = f"- User's name: {user_name}" if user_name else ""
-        summary_block = "\n".join(filter(None, [context_summary, f"- Current session summary: {thread_context}"]))
+        summary_block = "\n".join(
+            filter(None, [context_summary, f"- Current session summary: {conversation_context}"])
+        )
         sections.append("# Current Session Context\n" + summary_block)
     else:
         intro_lines = ["# Current Session Context"]
@@ -676,7 +605,7 @@ def build_memory_extraction_prompt(
     return system, user
 
 
-def build_thread_summary_prompt(
+def build_conversation_summary_prompt(
     conversation_lines: list[str],
     existing_summary: str | None = None,
 ) -> tuple[str, str]:

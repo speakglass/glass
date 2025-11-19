@@ -1,29 +1,21 @@
 import type { LearningLevel } from '@/types/learning-level';
 import { isLearningLevel } from '@/types/learning-level';
 
-export interface Usage {
-  // Daily quota (resets at UTC midnight)
-  dailyTotalSeconds: number | null; // null if unlimited
-  dailyRemainingSeconds: number | null; // null if unlimited
-  // Bonus quota (persists across days, used after daily is exhausted)
-  bonusTotalSeconds: number | null;
-  bonusRemainingSeconds: number | null;
-  // Combined remaining (for backward compatibility and simple display)
-  totalRemainingSeconds: number | null;
-}
-
 export interface UserProfile {
   id: string;
   email: string;
   name?: string | null;
   avatarUrl?: string | null;
-  bonusMinutes?: number | null; // Extra minutes that can be used after daily quota
   createdAt: string;
   lastLoginAt?: string | null;
   learningLang?: string | null;
   nativeLang?: string | null;
   languageLevel?: LearningLevel | null;
   emailVerified: boolean;
+  subscriptionStatus?: string | null;
+  subscriptionPlan?: string | null;
+  subscriptionCurrentPeriodEnd?: string | null;
+  billingExempt?: boolean;
 }
 
 export interface ConversationSummary {
@@ -36,12 +28,25 @@ export interface ConversationSummary {
   durationSeconds?: number | null;
   learningLang?: string | null;
   nativeLang?: string | null;
-  scores?: Record<string, unknown> | null;
+  scores?: ConversationScores | null;
   partnerId?: string | null;
-  participantSnapshot?: Record<string, unknown> | null;
+  partner?: ConversationPartnerRef | null;
+}
+
+export interface ConversationPartnerRef {
+  id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  avatarUrl?: string | null;
+  voiceId?: string | null;
+  learningLang?: string | null;
+  nativeLang?: string | null;
+  isSystem?: boolean | null;
+  kind?: 'roleplay' | 'live_call' | null;
 }
 
 export interface ConversationMessage {
+  id?: number | null;
   text: string;
   source?: string | null;
   utterance_id?: string | null;
@@ -53,18 +58,31 @@ export interface ConversationMessage {
   partner_id?: string | null;
 }
 
-export interface ConversationDetail extends ConversationSummary {
-  messages?: ConversationMessage[];
-  extractedInfo?: Array<Record<string, unknown>> | null;
-  feedback?: string | null;
-  memoryThreadId?: string | null;
-  memoryInsights?: MemoryInsights | null;
+export interface ConversationFeedbackItem {
+  messageId?: number | null;
+  utteranceId?: string | null;
+  text?: string | null;
+  suggestedText?: string | null;
+  originalText?: string | null;
+  feedbackType?: string | null;
+  severity?: string | null;
+  spanStart?: number | null;
+  spanEnd?: number | null;
+  isOverall?: boolean | null;
 }
 
-export interface MemoryInsights {
-  user_insights?: string[];
-  partner_insights?: string[];
-  interaction_insights?: string[];
+export interface ConversationDetail extends ConversationSummary {
+  messages?: ConversationMessage[];
+  feedback?: string | null;
+  memories: Memory[];
+  feedbackItems?: ConversationFeedbackItem[];
+}
+
+export interface ConversationScores {
+  fluency: number;
+  accuracy: number;
+  comprehensibility: number;
+  overall?: number | null;
 }
 
 export interface ConversationPartner {
@@ -81,10 +99,38 @@ export interface ConversationPartner {
   extraMetadata?: Record<string, unknown> | null;
 }
 
+export interface ConversationLimitSnapshot {
+  enabled: boolean;
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+  blocked: boolean;
+}
+
+export interface AccountLimitsSnapshot {
+  conversations?: ConversationLimitSnapshot | null;
+}
+
 export interface AccountSnapshot {
   user: UserProfile;
-  usage: Usage;
-  conversations: ConversationSummary[];
+  billing: BillingSnapshot;
+  limits?: AccountLimitsSnapshot | null;
+}
+
+export interface CheckoutSession {
+  checkoutUrl: string;
+  sessionId: string;
+  plan: string;
+}
+
+export interface BillingSnapshot {
+  enabled: boolean;
+  active: boolean;
+  selfHosted: boolean;
+  billingExempt: boolean;
+  status?: string | null;
+  plan?: string | null;
+  currentPeriodEnd?: string | null;
 }
 
 export interface OnboardingStatus {
@@ -94,15 +140,19 @@ export interface OnboardingStatus {
 
 export interface Memory {
   id: string;
-  name: string | null; // Edge name/type from the memory graph (e.g., "LIKES", "KNOWS")
-  fact: string; // The actual fact text
-  createdAt: Date | null;
-  validAt: Date | null;
-  invalidAt: Date | null;
-  expiredAt: Date | null;
-  // Computed fields
-  label: string; // Formatted name for display
-  status: 'active' | 'expired' | 'invalid';
+  text: string;
+  category: string;
+  retention: string;
+  subjectRole?: string | null;
+  importance?: number | null;
+  partnerId?: string | null;
+  conversationId?: string | null;
+  summary?: string | null;
+  keywords?: string[] | null;
+  entities?: Array<{ label: string; value: string }> | null;
+  retentionExpiresAt?: Date | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
 }
 
 export interface MemoryListResponse {
@@ -112,15 +162,8 @@ export interface MemoryListResponse {
   offset: number;
 }
 
-export interface ConversationMemory {
-  id: string; // Edge UUID
-  label: string;
-  value: string;
-  editable: boolean;
-}
-
 export interface ConversationMemoriesResponse {
-  memories: ConversationMemory[];
+  memories: Memory[];
   processing: boolean; // True if extraction is still processing
 }
 
@@ -130,7 +173,7 @@ export interface ConversationContextRange {
 }
 
 export interface ConversationContextItem {
-  type: 'fact' | 'entity' | 'episode' | 'unknown';
+  type: 'fact' | 'entity' | 'episode' | 'unknown' | 'context';
   label?: string | null;
   text: string;
   range?: ConversationContextRange | null;
@@ -144,6 +187,10 @@ export interface VoicePreviewResponse {
 export interface ConversationContextResponse {
   items: ConversationContextItem[];
   rawContext?: string | null;
+}
+
+interface ConversationCreateResponseApi {
+  conversation_id: string;
 }
 
 interface ConversationContextResponseApi {
@@ -164,6 +211,18 @@ interface VoicePreviewResponseApi {
   mime_type?: string | null;
 }
 
+interface ConversationMemoriesResponseApi {
+  memories: MemoryApi[];
+  processing: boolean;
+}
+
+type ConversationScoresApi = {
+  fluency?: number | null;
+  accuracy?: number | null;
+  comprehensibility?: number | null;
+  overall?: number | null;
+};
+
 type ConversationSummaryApi = {
   id: string;
   session_id: string;
@@ -174,17 +233,41 @@ type ConversationSummaryApi = {
   duration_seconds?: number | null;
   learning_lang?: string | null;
   native_lang?: string | null;
-  scores?: Record<string, unknown> | null;
+  scores?: ConversationScoresApi | null;
   partner_id?: string | null;
-  participant_snapshot?: Record<string, unknown> | null;
+  partner?: ConversationPartnerRefApi | null;
 };
 
 type ConversationDetailApi = ConversationSummaryApi & {
   messages?: Array<Record<string, unknown>>;
-  extracted_info?: Array<Record<string, unknown>> | null;
   feedback?: string | null;
-  memory_thread_id?: string | null;
-  memory_insights?: MemoryInsights | null;
+  memories?: MemoryApi[] | null;
+  feedback_items?: ConversationFeedbackItemApi[] | null;
+};
+
+type ConversationPartnerRefApi = {
+  id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  avatar_url?: string | null;
+  voice_id?: string | null;
+  learning_lang?: string | null;
+  native_lang?: string | null;
+  is_system?: boolean | null;
+  kind?: 'roleplay' | 'live_call' | null;
+};
+
+type ConversationFeedbackItemApi = {
+  message_id?: number | null;
+  utterance_id?: string | null;
+  text?: string | null;
+  suggested_text?: string | null;
+  original_text?: string | null;
+  feedback_type?: string | null;
+  severity?: string | null;
+  span_start?: number | null;
+  span_end?: number | null;
+  is_overall?: boolean | null;
 };
 
 type UserApi = {
@@ -192,27 +275,50 @@ type UserApi = {
   email: string;
   name?: string | null;
   avatar_url?: string | null;
-  bonus_minutes?: number | null;
   created_at: string;
   last_login_at?: string | null;
   learning_lang?: string | null;
   native_lang?: string | null;
   language_level?: string | null;
   email_verified: boolean;
+  subscription_status?: string | null;
+  subscription_plan?: string | null;
+  subscription_current_period_end?: string | null;
+  billing_exempt?: boolean | null;
 };
 
-type UsageApi = {
-  daily_total_seconds: number | null;
-  daily_remaining_seconds: number | null;
-  bonus_total_seconds: number | null;
-  bonus_remaining_seconds: number | null;
-  total_remaining_seconds: number | null;
-};
+interface ConversationLimitSnapshotApi {
+  enabled: boolean;
+  limit?: number | null;
+  used: number;
+  remaining?: number | null;
+  blocked: boolean;
+}
+
+interface AccountLimitsSnapshotApi {
+  conversations?: ConversationLimitSnapshotApi | null;
+}
 
 interface AccountSnapshotApi {
   user: UserApi;
-  usage: UsageApi;
-  conversations?: ConversationSummaryApi[];
+  billing: BillingSnapshotApi;
+  limits?: AccountLimitsSnapshotApi | null;
+}
+
+interface CheckoutSessionResponseApi {
+  checkout_url: string;
+  session_id: string;
+  plan: string;
+}
+
+interface BillingSnapshotApi {
+  enabled: boolean;
+  active: boolean;
+  self_hosted: boolean;
+  billing_exempt: boolean;
+  status?: string | null;
+  plan?: string | null;
+  current_period_end?: string | null;
 }
 
 type PartnerApi = {
@@ -245,12 +351,19 @@ interface CompleteOnboardingResponseApi {
 
 type MemoryApi = {
   id: string;
-  name: string | null;
-  fact: string;
-  created_at: string | null;
-  valid_at: string | null;
-  invalid_at: string | null;
-  expired_at: string | null;
+  text: string;
+  category: string;
+  retention: string;
+  subject_role?: string | null;
+  importance?: number | null;
+  partner_id?: string | null;
+  conversation_id?: string | null;
+  summary?: string | null;
+  keywords?: string[] | null;
+  entities?: Array<{ label: string; value: string }> | null;
+  retention_expires_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 interface MemoryListResponseApi {
@@ -282,6 +395,18 @@ export function getApiBase(): string {
   }
 }
 
+function mapScores(data?: ConversationScoresApi | null): ConversationScores | null {
+  if (!data) {
+    return null;
+  }
+  return {
+    fluency: typeof data.fluency === 'number' ? data.fluency : 0,
+    accuracy: typeof data.accuracy === 'number' ? data.accuracy : 0,
+    comprehensibility: typeof data.comprehensibility === 'number' ? data.comprehensibility : 0,
+    overall: typeof data.overall === 'number' ? data.overall : null,
+  };
+}
+
 function mapSummary(data: ConversationSummaryApi): ConversationSummary {
   return {
     id: data.id,
@@ -293,9 +418,49 @@ function mapSummary(data: ConversationSummaryApi): ConversationSummary {
     durationSeconds: data.duration_seconds,
     learningLang: data.learning_lang,
     nativeLang: data.native_lang,
-    scores: data.scores,
+    scores: mapScores(data.scores),
     partnerId: data.partner_id,
-    participantSnapshot: data.participant_snapshot || null,
+    partner: mapPartnerRef(data.partner),
+  };
+}
+
+function mapPartnerRef(data?: ConversationPartnerRefApi | null): ConversationPartnerRef | null {
+  if (!data) {
+    return null;
+  }
+  const normalizedKind =
+    data.kind === 'live_call'
+      ? 'live_call'
+      : data.kind === 'roleplay'
+      ? 'roleplay'
+      : data.is_system || data.voice_id
+      ? 'roleplay'
+      : null;
+  return {
+    id: data.id ?? null,
+    name: data.name ?? null,
+    description: data.description ?? null,
+    avatarUrl: data.avatar_url ?? null,
+    voiceId: data.voice_id ?? null,
+    learningLang: data.learning_lang ?? null,
+    nativeLang: data.native_lang ?? null,
+    isSystem: data.is_system ?? null,
+    kind: normalizedKind,
+  };
+}
+
+function mapFeedbackItem(data: ConversationFeedbackItemApi): ConversationFeedbackItem {
+  return {
+    messageId: typeof data.message_id === 'number' ? data.message_id : null,
+    utteranceId: data.utterance_id ?? null,
+    text: data.text ?? null,
+    suggestedText: data.suggested_text ?? null,
+    originalText: data.original_text ?? null,
+    feedbackType: data.feedback_type ?? null,
+    severity: data.severity ?? null,
+    spanStart: typeof data.span_start === 'number' ? data.span_start : null,
+    spanEnd: typeof data.span_end === 'number' ? data.span_end : null,
+    isOverall: data.is_overall ?? null,
   };
 }
 
@@ -304,10 +469,9 @@ function mapDetail(data: ConversationDetailApi): ConversationDetail {
   return {
     ...summary,
     messages: (data.messages as ConversationMessage[] | undefined) ?? [],
-    extractedInfo: data.extracted_info,
     feedback: data.feedback,
-    memoryThreadId: data.memory_thread_id ?? null,
-    memoryInsights: data.memory_insights ?? null,
+    memories: Array.isArray(data.memories) ? data.memories.map(mapMemory) : [],
+    feedbackItems: Array.isArray(data.feedback_items) ? data.feedback_items.map(mapFeedbackItem) : [],
   };
 }
 
@@ -333,48 +497,76 @@ function mapUser(data: UserApi): UserProfile {
     email: data.email,
     name: data.name,
     avatarUrl: data.avatar_url,
-    bonusMinutes: data.bonus_minutes,
     createdAt: data.created_at,
     lastLoginAt: data.last_login_at,
     learningLang: data.learning_lang,
     nativeLang: data.native_lang,
     languageLevel: isLearningLevel(data.language_level) ? data.language_level : null,
     emailVerified: data.email_verified,
+    subscriptionStatus: data.subscription_status ?? null,
+    subscriptionPlan: data.subscription_plan ?? null,
+    subscriptionCurrentPeriodEnd: data.subscription_current_period_end ?? null,
+    billingExempt: Boolean(data.billing_exempt),
   };
 }
 
-function mapUsage(data: UsageApi): Usage {
+function mapBilling(data: BillingSnapshotApi | undefined): BillingSnapshot {
+  if (!data) {
+    return {
+      enabled: false,
+      active: true,
+      selfHosted: true,
+      billingExempt: true,
+      status: null,
+      plan: null,
+      currentPeriodEnd: null,
+    };
+  }
   return {
-    dailyTotalSeconds: data.daily_total_seconds,
-    dailyRemainingSeconds: data.daily_remaining_seconds,
-    bonusTotalSeconds: data.bonus_total_seconds,
-    bonusRemainingSeconds: data.bonus_remaining_seconds,
-    totalRemainingSeconds: data.total_remaining_seconds,
+    enabled: data.enabled,
+    active: data.active,
+    selfHosted: data.self_hosted,
+    billingExempt: data.billing_exempt,
+    status: data.status ?? null,
+    plan: data.plan ?? null,
+    currentPeriodEnd: data.current_period_end ?? null,
+  };
+}
+
+function mapLimits(data: AccountLimitsSnapshotApi | null | undefined): AccountLimitsSnapshot | null {
+  if (!data) return null;
+  if (!data.conversations) {
+    return {
+      conversations: null,
+    };
+  }
+  return {
+    conversations: {
+      enabled: Boolean(data.conversations.enabled),
+      limit: data.conversations.limit ?? null,
+      used: data.conversations.used ?? 0,
+      remaining: data.conversations.remaining ?? null,
+      blocked: Boolean(data.conversations.blocked),
+    },
   };
 }
 
 function mapMemory(data: MemoryApi): Memory {
-  // Format label from edge name
-  const label = data.name ? data.name.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) : 'Memory';
-
-  // Compute status from backend fields
-  let status: 'active' | 'expired' | 'invalid' = 'active';
-  if (data.expired_at) {
-    status = 'expired';
-  } else if (data.invalid_at) {
-    status = 'invalid';
-  }
-
   return {
     id: data.id,
-    name: data.name,
-    fact: data.fact,
+    text: data.text,
+    category: data.category,
+    retention: data.retention,
+    subjectRole: data.subject_role ?? null,
+    importance: data.importance ?? null,
+    partnerId: data.partner_id ?? null,
+    conversationId: data.conversation_id ?? null,
+    summary: data.summary ?? null,
+    keywords: data.keywords ?? null,
+    entities: data.entities ?? null,
+    retentionExpiresAt: data.retention_expires_at ? new Date(data.retention_expires_at) : null,
     createdAt: data.created_at ? new Date(data.created_at) : null,
-    validAt: data.valid_at ? new Date(data.valid_at) : null,
-    invalidAt: data.invalid_at ? new Date(data.invalid_at) : null,
-    expiredAt: data.expired_at ? new Date(data.expired_at) : null,
-    label,
-    status,
+    updatedAt: data.updated_at ? new Date(data.updated_at) : null,
   };
 }
 
@@ -432,6 +624,13 @@ async function authedFetch<T>(path: string, token: string, init?: RequestInit): 
   return response.json() as Promise<T>;
 }
 
+export async function createConversationSession(token: string): Promise<string> {
+  const data = await authedFetch<ConversationCreateResponseApi>('/conversations/new', token, {
+    method: 'POST',
+  });
+  return data.conversation_id;
+}
+
 export async function fetchAccountSnapshot(token: string): Promise<AccountSnapshot> {
   console.log('[accountApi] fetchAccountSnapshot called');
   try {
@@ -439,13 +638,40 @@ export async function fetchAccountSnapshot(token: string): Promise<AccountSnapsh
     console.log('[accountApi] Account snapshot fetched successfully');
     return {
       user: mapUser(data.user),
-      usage: mapUsage(data.usage),
-      conversations: data.conversations ? data.conversations.map(mapSummary) : [],
+      billing: mapBilling(data.billing),
+      limits: mapLimits(data.limits),
     };
   } catch (error) {
     console.error('[accountApi] fetchAccountSnapshot error:', error);
     throw error;
   }
+}
+
+export type BillingPlanKey = 'monthly' | 'yearly';
+
+export async function createCheckoutSession(
+  token: string,
+  options?: { plan?: BillingPlanKey; successUrl?: string; cancelUrl?: string }
+): Promise<CheckoutSession> {
+  const body: Record<string, string> = {
+    plan: options?.plan ?? 'monthly',
+  };
+  if (options?.successUrl) {
+    body.success_url = options.successUrl;
+  }
+  if (options?.cancelUrl) {
+    body.cancel_url = options.cancelUrl;
+  }
+
+  const data = await authedFetch<CheckoutSessionResponseApi>('/billing/checkout', token, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return {
+    checkoutUrl: data.checkout_url,
+    sessionId: data.session_id,
+    plan: data.plan,
+  };
 }
 
 export interface PartnerCreateInput {
@@ -583,17 +809,6 @@ export async function updateConversationTitle(
   return mapSummary(data);
 }
 
-export async function updateConversationMemoryInsights(
-  token: string,
-  conversationId: string,
-  memoryInsights: MemoryInsights
-): Promise<void> {
-  await authedFetch<ConversationSummaryApi>(`/conversations/${conversationId}`, token, {
-    method: 'PATCH',
-    body: JSON.stringify({ memory_insights: memoryInsights }),
-  });
-}
-
 export async function deleteConversation(token: string, conversationId: string): Promise<void> {
   await authedFetch<void>(`/conversations/${conversationId}`, token, {
     method: 'DELETE',
@@ -624,16 +839,14 @@ export async function reassignConversationPartner(
 
 export async function fetchConversationMemories(
   token: string,
-  conversationId: string,
-  options?: { threadId?: string | null }
+  conversationId: string
 ): Promise<ConversationMemoriesResponse> {
-  const params = new URLSearchParams();
-  if (options?.threadId) {
-    params.set('thread_id', options.threadId);
-  }
-  const query = params.toString();
-  const url = `/conversations/${conversationId}/memories${query ? `?${query}` : ''}`;
-  return await authedFetch<ConversationMemoriesResponse>(url, token);
+  const url = `/conversations/${conversationId}/memories`;
+  const data = await authedFetch<ConversationMemoriesResponseApi>(url, token);
+  return {
+    memories: data.memories.map(mapMemory),
+    processing: data.processing,
+  };
 }
 
 export async function fetchConversationContext(
@@ -721,16 +934,12 @@ export async function fetchMemories(
   options?: {
     limit?: number;
     offset?: number;
-    status?: string;
     search?: string;
   }
 ): Promise<MemoryListResponse> {
   const params = new URLSearchParams();
   params.set('limit', String(options?.limit || 50));
   params.set('offset', String(options?.offset || 0));
-  if (options?.status) {
-    params.set('status', options.status);
-  }
   if (options?.search) {
     params.set('search', options.search);
   }
@@ -742,23 +951,6 @@ export async function fetchMemories(
     limit: data.limit,
     offset: data.offset,
   };
-}
-
-export async function pinZepFact(token: string, zepFactId: string, value: string, label?: string): Promise<Memory> {
-  const data = await authedFetch<MemoryApi>('/memories/pin-zep-fact', token, {
-    method: 'POST',
-    body: JSON.stringify({
-      zep_fact_id: zepFactId,
-      value,
-      label,
-    }),
-  });
-  return mapMemory(data);
-}
-
-export async function fetchMemory(token: string, memoryId: string): Promise<Memory> {
-  const data = await authedFetch<MemoryApi>(`/memories/${memoryId}`, token);
-  return mapMemory(data);
 }
 
 export async function createMemories(token: string, memories: Array<{ value: string }>): Promise<Memory[]> {

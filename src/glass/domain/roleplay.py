@@ -47,7 +47,7 @@ class Roleplay:
         user_text: str,
         *,
         recent_conversation: list[dict],
-        thread_context: str = "",
+        conversation_context: str = "",
         interaction_context: str = "",
     ) -> str:
         """Generate AI conversation partner response.
@@ -55,7 +55,7 @@ class Roleplay:
         Args:
             user_text: User's message
             recent_conversation: Recent conversation history
-            thread_context: Partner-specific history/notes from past interactions
+            conversation_context: Partner-specific history/notes from past interactions
             
         Returns:
             AI response text
@@ -90,7 +90,7 @@ class Roleplay:
                 target_lang=target_lang,
                 native_lang=native_lang,
                 recent_conversation=recent_conv_texts,
-                thread_context=thread_context,
+                conversation_context=conversation_context,
                 interaction_context=interaction_context or None,
                 user_name=self.user_name,
             )
@@ -126,7 +126,7 @@ class Roleplay:
         event_type_translation,
         *,
         recent_conversation: list[dict],
-        thread_context: str = "",
+        conversation_context: str = "",
         interaction_context: str = "",
         user_message_end_time: float | None = None,
     ) -> dict | None:
@@ -138,7 +138,7 @@ class Roleplay:
             event_type_transcript: Transcript event type
             event_type_translation: Translation event type
             recent_conversation: Recent conversation history
-            thread_context: Partner-specific context/history
+            conversation_context: Partner-specific context/history
             user_message_end_time: When user finished speaking
             
         Returns:
@@ -148,7 +148,7 @@ class Roleplay:
         ai_response = await self.generate_ai_response(
             user_text,
             recent_conversation=recent_conversation,
-            thread_context=thread_context,
+            conversation_context=conversation_context,
             interaction_context=interaction_context,
         )
         

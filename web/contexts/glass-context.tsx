@@ -5,7 +5,14 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { t } from '@lingui/core/macro';
 import { useAccountSession } from '@/contexts/account-session-context';
-import type { ConversationMessage, MemoryInsights } from '@/lib/account-api';
+import type {
+  ConversationFeedbackItem,
+  ConversationMessage,
+  ConversationPartnerRef,
+  ConversationScores,
+  Memory,
+} from '@/lib/account-api';
+import { createConversationSession } from '@/lib/account-api';
 import type { LearningLevel } from '@/types/learning-level';
 import { isLearningLevel } from '@/types/learning-level';
 
@@ -124,45 +131,24 @@ export type AITranslation = {
   timestamp: number;
 };
 
-export interface ConversationScores {
-  fluency: number;
-  accuracy: number;
-  comprehensibility: number;
-}
-
-export interface ExtractedInfo {
-  label: string;
-  value: string;
-  editable: boolean;
-}
-
-type ParticipantSnapshot = {
-  partner?: {
-    id?: string | null;
-    name?: string | null;
-    avatar_url?: string | null;
-  };
-  user?: {
-    id?: string | null;
-    name?: string | null;
-    email?: string | null;
-  };
+const DEFAULT_CONVERSATION_SCORES: ConversationScores = {
+  fluency: 0,
+  accuracy: 0,
+  comprehensibility: 0,
 };
 
 export interface ConversationAnalysis {
   sessionId: string;
   conversationId?: string; // DB conversation ID for fetching Zep memories
   scores: ConversationScores;
-  extractedInfo: ExtractedInfo[];
   feedback: string;
   messages: ConversationMessage[];
-  feedbackItems: Array<{ utterance_id: string; text: string }>;
-  participantSnapshot?: ParticipantSnapshot | null;
+  feedbackItems: ConversationFeedbackItem[];
+  memories: Memory[];
   durationSeconds?: number | null;
   learningLang?: string | null;
   nativeLang?: string | null;
-  memoryThreadId?: string | null;
-  memoryInsights?: MemoryInsights | null;
+  partner?: ConversationPartnerRef | null;
 }
 
 interface GlassContextValue {
@@ -178,10 +164,6 @@ interface GlassContextValue {
   translations: AITranslation[];
   conversationAnalysis: ConversationAnalysis | null;
   showSummary: boolean;
-  budgetStatus: 'unknown' | 'enabled' | 'disabled';
-  remainingSeconds?: number;
-  totalSeconds?: number;
-  startRemainingSeconds?: number;
   elapsedSeconds?: number;
   updateSettings: (partial: Partial<VoiceSettings>) => void;
   updateFeedbackMode: (mode: FeedbackMode) => void;
@@ -212,7 +194,6 @@ interface GlassContextValue {
   isSpeaking: boolean;
   stopSpeaking: () => void;
   closeSummary: () => void;
-  startNewCallWithContext: (contextInfo: ExtractedInfo[]) => void;
   // Onboarding helpers
   loadDemoConversation: (
     msgs: Array<{
@@ -260,17 +241,8 @@ export function GlassProvider({
   useEffect(() => {
     console.log('[GlassContext] showSummary changed:', showSummary, 'status:', status.value);
   }, [showSummary, status.value]);
-  const [remainingSeconds, setRemainingSeconds] = useState<number | undefined>(undefined);
-  const [totalSeconds, setTotalSeconds] = useState<number | undefined>(undefined);
-  const [startRemainingSeconds, setStartRemainingSeconds] = useState<number | undefined>(undefined);
   const [elapsedSeconds, setElapsedSeconds] = useState<number | undefined>(undefined);
-  const [budgetStatus, setBudgetStatus] = useState<'unknown' | 'enabled' | 'disabled'>('disabled');
-  const serverRemainingRef = useRef<number | undefined>(undefined);
-  const lastSyncTsRef = useRef<number | undefined>(undefined);
-  const localTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startRemainingRef = useRef<number | undefined>(undefined);
-  const budgetProbeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [settings, setSettings] = useState<VoiceSettings>(() => {
     if (typeof window === 'undefined')
       return {
@@ -666,6 +638,25 @@ export function GlassProvider({
       return next;
     });
   }, []);
+  useEffect(() => {
+    const profileLearning = snapshot?.user?.learningLang || null;
+    const profileNative = snapshot?.user?.nativeLang || null;
+    if (!profileLearning && !profileNative) {
+      return;
+    }
+    const currentLanguages = settings.languages || { learningLang: 'en', nativeLang: 'ko' };
+    const nextLanguages = {
+      learningLang: profileLearning || currentLanguages.learningLang,
+      nativeLang: profileNative || currentLanguages.nativeLang,
+    };
+    if (
+      nextLanguages.learningLang === currentLanguages.learningLang &&
+      nextLanguages.nativeLang === currentLanguages.nativeLang
+    ) {
+      return;
+    }
+    updateSettings({ languages: nextLanguages });
+  }, [settings.languages, snapshot?.user?.learningLang, snapshot?.user?.nativeLang, updateSettings]);
 
   useEffect(() => {
     if (!isLearningLevel(profileLanguageLevel)) return;
@@ -725,15 +716,11 @@ export function GlassProvider({
     [updateSettings]
   );
 
-  // Guard: if a WS error occurs, ignore any subsequent budget/time events
+  // Guard: if a WS error occurs, ignore any subsequent events
   const hasWsErrorRef = useRef(false);
   // Mark when WS has fully opened (used to differentiate initial connect vs active session)
   const hasOpenedRef = useRef(false);
 
-  // Generate session ID
-  const generateSessionId = useCallback(() => {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }, []);
 
   // Update FFT visualization
   const updateFFT = useCallback(() => {
@@ -771,7 +758,8 @@ export function GlassProvider({
           autoGainControl: true,
         };
         if (deviceId) {
-          constraints.deviceId = { ideal: deviceId } as ConstrainDOMString;
+          // Use exact device match when the user picked a specific microphone
+          constraints.deviceId = { exact: deviceId } as ConstrainDOMString;
         }
         return constraints;
       };
@@ -988,8 +976,17 @@ export function GlassProvider({
           }
         } catch {}
 
-        // Generate session ID
-        sessionIdRef.current = generateSessionId();
+        // Request a new conversation identifier from backend
+        try {
+          sessionIdRef.current = await createConversationSession(token);
+        } catch (error) {
+          console.error('[GlassContext] Failed to create conversation session', error);
+          toast.error(t`Unable to start conversation`, {
+            description: t`Please try again in a few moments.`,
+          });
+          setStatus({ value: 'disconnected' });
+          return;
+        }
 
         // Request microphone access with selected device if provided
         const { stream: micStream } = await acquireMicStream(currentSettings.micDeviceId);
@@ -1130,13 +1127,6 @@ export function GlassProvider({
             console.log('WebSocket connected to Glass API');
             hasOpenedRef.current = true;
             setStatus({ value: 'connected' });
-            // Assume budget unknown at connect; show skeleton for a short probe window
-            setBudgetStatus('unknown');
-            if (budgetProbeTimerRef.current) clearTimeout(budgetProbeTimerRef.current);
-            budgetProbeTimerRef.current = setTimeout(() => {
-              // If no time event arrived during probe, hide timer UI (no limit)
-              setBudgetStatus((prev) => (prev === 'unknown' ? 'disabled' : prev));
-            }, 2000);
             micAudioCursorRef.current = 0;
             systemAudioCursorRef.current = 0;
             ws.send(
@@ -1151,9 +1141,6 @@ export function GlassProvider({
             startAudioStreaming(ws, micStream, systemStream);
             // Initialize elapsed timer (client-side, 1s tick)
             try {
-              // Reset start-remaining baseline at the beginning of a session
-              setStartRemainingSeconds(undefined);
-              startRemainingRef.current = undefined;
               setElapsedSeconds(0);
               if (elapsedTickRef.current) clearInterval(elapsedTickRef.current);
               elapsedTickRef.current = setInterval(() => {
@@ -1220,46 +1207,13 @@ export function GlassProvider({
         };
 
         ws.onmessage = (event) => {
-          // If we've already encountered a WS error, ignore any late events (e.g., budget/time)
+          // If we've already encountered a WS error, ignore any late events
           if (hasWsErrorRef.current) {
             return;
           }
           if (typeof event.data === 'string') {
             try {
               const data = JSON.parse(event.data);
-              // Limits (time-based only)
-              if (data.t === 'limit_reached') {
-                if (hasWsErrorRef.current) return;
-                const reason = data.reason as 'time' | undefined;
-                const receivedAnyTime = startRemainingRef.current !== undefined;
-                if (reason === 'time') {
-                  // Treat time limit as graceful end ONLY if we actually received time_remaining before
-                  setBudgetStatus('enabled');
-                  if (receivedAnyTime) {
-                    try {
-                      toast.info(t`Trial session ended due to time limit.`);
-                    } catch {}
-                    // Run End Call flow (analyze and show summary)
-                    const fn = disconnectRef.current;
-                    if (fn) {
-                      fn().catch(() => {});
-                    }
-                  } else {
-                    // No time was available from the start → redirect to time-limit page
-                    setStatus({ value: 'idle' });
-                    try {
-                      toast.info(t`You've used your free time`);
-                    } catch {}
-                    try {
-                      ws.close();
-                    } catch {}
-                    try {
-                      window.location.href = '/time-limit';
-                    } catch {}
-                  }
-                }
-                return;
-              }
               handleServerMessage(data);
             } catch (err) {
               // Ignore non-JSON messages (could be ping/pong)
@@ -1295,6 +1249,12 @@ export function GlassProvider({
               router.push('/failure');
             } catch {}
           }
+          if (event.code === 4403) {
+            toast.error(t`Saved call limit reached`, {
+              description: t`Delete older history or upgrade your plan to continue.`,
+            });
+            hasWsErrorRef.current = true;
+          }
 
           hasOpenedRef.current = false;
           // Only set disconnected status if this wasn't an intentional disconnect
@@ -1303,11 +1263,6 @@ export function GlassProvider({
             setStatus({ value: 'disconnected' });
           } else {
             console.log('[GlassContext] Skipping status change (intentional disconnect or error)');
-          }
-          // Clear budget probe timer
-          if (budgetProbeTimerRef.current) {
-            clearTimeout(budgetProbeTimerRef.current);
-            budgetProbeTimerRef.current = null;
           }
           if (heartbeatIntervalRef.current) {
             clearInterval(heartbeatIntervalRef.current);
@@ -1334,7 +1289,7 @@ export function GlassProvider({
         throw error;
       }
     },
-    [generateSessionId, updateFFT, onError, acquireMicStream, rebuildMicAnalyser, startAudioStreaming]
+    [updateFFT, onError, acquireMicStream, rebuildMicAnalyser, startAudioStreaming]
   );
 
   // Handle TTS audio chunks
@@ -1373,25 +1328,6 @@ export function GlassProvider({
       // Log all events for debugging
       if (data.t === 'utterance_completed' || data.t === 'translation') {
         console.log('Received event:', data.t, data);
-      }
-
-      // Time remaining events
-      if (data.t === 'time_remaining') {
-        const secs = typeof data.seconds === 'number' ? data.seconds : undefined;
-        const total = typeof data.total === 'number' ? data.total : undefined;
-        setBudgetStatus('enabled');
-        // On first receipt during a session, capture the starting remaining seconds (guarded by ref)
-        if (typeof secs === 'number' && startRemainingRef.current === undefined) {
-          startRemainingRef.current = secs;
-          setStartRemainingSeconds(secs);
-        }
-        if (typeof secs === 'number') {
-          serverRemainingRef.current = secs;
-          lastSyncTsRef.current = Date.now();
-          setRemainingSeconds(secs);
-        }
-        if (typeof total === 'number') setTotalSeconds(total);
-        return;
       }
 
       // PARTIAL TRANSCRIPT: ephemeral overlay per utterance (simple overwrite)
@@ -1902,12 +1838,7 @@ export function GlassProvider({
       cleanupScreenShareListener();
     }
 
-    // Stop elapsed timer
-    if (localTickRef.current) {
-      clearInterval(localTickRef.current);
-      localTickRef.current = null;
-    }
-    // Also stop elapsed client-side ticker
+    // Stop elapsed client-side ticker
     if (elapsedTickRef.current) {
       clearInterval(elapsedTickRef.current);
       elapsedTickRef.current = null;
@@ -2026,20 +1957,19 @@ export function GlassProvider({
               const detail = await fetchConversationDetail(authTokenRef.current, conversation.id);
 
               // Build ConversationAnalysis from the saved conversation
+              const resolvedScores = detail.scores ?? { ...DEFAULT_CONVERSATION_SCORES };
               const analysis: ConversationAnalysis = {
                 sessionId: detail.sessionId,
-                conversationId: conversation.id, // Add DB conversation ID for Zep memory fetch
-                scores: (detail.scores as any) || { fluency: 0, accuracy: 0, comprehensibility: 0 },
-                extractedInfo: (detail.extractedInfo as any) || [],
+                conversationId: conversation.id,
+                scores: resolvedScores,
                 feedback: detail.feedback || '',
                 messages: detail.messages || [],
-                feedbackItems: [], // Not stored in DB currently
-                participantSnapshot: (detail.participantSnapshot as ParticipantSnapshot | null) || null,
+                feedbackItems: detail.feedbackItems ?? [],
+                memories: detail.memories ?? [],
                 durationSeconds: detail.durationSeconds ?? null,
                 learningLang: detail.learningLang ?? null,
                 nativeLang: detail.nativeLang ?? null,
-                memoryThreadId: detail.memoryThreadId ?? null,
-                memoryInsights: detail.memoryInsights ?? null,
+                partner: detail.partner ?? null,
               };
 
               setConversationAnalysis(analysis);
@@ -2246,30 +2176,6 @@ export function GlassProvider({
     }
   }, [showSummary, stopSpeaking]);
 
-  // Smooth local countdown between server updates
-  useEffect(() => {
-    // Start ticking when connected and we have a server baseline
-    if (status.value === 'connected' && serverRemainingRef.current !== undefined) {
-      if (localTickRef.current) clearInterval(localTickRef.current);
-      localTickRef.current = setInterval(() => {
-        const base = serverRemainingRef.current ?? 0;
-        const t0 = lastSyncTsRef.current ?? Date.now();
-        const elapsed = Math.max(0, Math.floor((Date.now() - t0) / 1000));
-        const smooth = Math.max(0, base - elapsed);
-        setRemainingSeconds((prev) => {
-          // Only update if it actually changes to avoid extra renders
-          return prev !== smooth ? smooth : prev;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (localTickRef.current) {
-        clearInterval(localTickRef.current);
-        localTickRef.current = null;
-      }
-    };
-  }, [status.value]);
-
   // Request TTS for text
   const speakText = useCallback(
     async (text: string, voiceId?: string) => {
@@ -2327,19 +2233,6 @@ export function GlassProvider({
     isIntentionalDisconnectRef.current = false;
   }, [stopSpeaking]);
 
-  // Start new call after saving to waitlist
-  const startNewCallWithContext = useCallback((contextInfo: ExtractedInfo[]) => {
-    // Close summary and return to start screen
-    // (Context is not actually saved, just sent to waitlist API for Discord notification)
-    stopSpeaking();
-    setShowSummary(false);
-    setConversationAnalysis(null);
-    // Return to idle status to show start screen
-    setStatus({ value: 'idle' });
-    // Reset the flag
-    isIntentionalDisconnectRef.current = false;
-  }, [stopSpeaking]);
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -2362,7 +2255,6 @@ export function GlassProvider({
     translations,
     conversationAnalysis,
     showSummary,
-    budgetStatus,
     updateSettings,
     updateFeedbackMode,
     updateSuggestMode,
@@ -2392,10 +2284,6 @@ export function GlassProvider({
     isSpeaking,
     stopSpeaking,
     closeSummary,
-    startNewCallWithContext,
-    remainingSeconds,
-    totalSeconds,
-    startRemainingSeconds,
     elapsedSeconds,
     loadDemoConversation,
   };

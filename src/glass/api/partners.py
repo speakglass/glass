@@ -4,9 +4,9 @@ import asyncio
 import logging
 import mimetypes
 from pathlib import Path
-from typing import Literal, Any
+from typing import Literal, Any, cast
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, UploadFile, File
 from pydantic import BaseModel, HttpUrl, constr
 
 from ..auth.jwt import AuthenticatedUser, require_authenticated_user
@@ -63,7 +63,10 @@ class PartnerUpdateRequest(BaseModel):
 
 def _serialize_partner(partner) -> PartnerResponse:
     meta = partner.extra_metadata or {}
-    kind = "live_call" if (meta.get("type") == "live_call") else "roleplay"
+    kind_value: Literal["roleplay", "live_call"] = "live_call" if not partner.voice_id else "roleplay"
+    intrinsic_kind = getattr(partner, "kind", None)
+    if intrinsic_kind in {"roleplay", "live_call"}:
+        kind_value = cast(Literal["roleplay", "live_call"], intrinsic_kind)
     return PartnerResponse(
         id=partner.id,
         slug=partner.slug,
@@ -74,7 +77,7 @@ def _serialize_partner(partner) -> PartnerResponse:
         learning_lang=partner.learning_lang,
         native_lang=partner.native_lang,
         is_system=bool(partner.user_id is None),
-        kind=kind,
+        kind=kind_value,
         extra_metadata=meta or None,
     )
 
@@ -135,17 +138,18 @@ async def update_partner_endpoint(
     return _serialize_partner(partner)
 
 
-@router.delete("/{partner_id}", status_code=204)
+@router.delete("/{partner_id}", status_code=204, response_class=Response)
 async def delete_partner_endpoint(
     request: Request,
     partner_id: str,
     user: AuthenticatedUser = Depends(require_authenticated_user),
-) -> None:
+) -> Response:
     db = request.app.state.history_store
     try:
         await delete_partner(db, partner_id=partner_id, user_id=user.user_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return Response(status_code=204)
 
 
 @router.get("/{partner_id}", response_model=PartnerResponse)

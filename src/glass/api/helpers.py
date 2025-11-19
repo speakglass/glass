@@ -3,17 +3,35 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, TypedDict
 
 from fastapi import HTTPException
 
+from ..adapters.memory.extractor import extract_memory_candidates
 from ..auth.jwt import AuthenticatedUser
 from ..domain import prompts
-from ..domain.memory import ConversationInsights
-from ..persistence.db import AccountConversation, ConversationPartner
 from ..domain.ports import LLMPort
+from ..persistence.db import AccountConversation, ConversationPartner
 
 LOGGER = logging.getLogger(__name__)
+
+
+class MemoryFactPayload(TypedDict, total=False):
+    text: str
+    summary: str | None
+    category: str
+    retention: str
+    importance: int
+    keywords: list[str]
+    entities: list[dict[str, str]]
+    retention_ttl_days: float | int | None
+    retention_expires_at: str | None
+    subject_role: str
+    partner_id: str | None
+    conversation_id: str | None
+    scope: str | None
+    speaker: str | None
+    evidence: str | None
 
 
 def client_id_for_user(user: AuthenticatedUser) -> str:
@@ -62,7 +80,6 @@ async def generate_conversation_title_with_llm(
         "ko": "Korean (한국어)",
         "en": "English",
         "ja": "Japanese (日本語)",
-        "zh": "Chinese (中文)",
         "es": "Spanish (Español)",
         "fr": "French (Français)",
     }
@@ -169,200 +186,97 @@ JSON:
     return None
 
 
-def _is_assistant_message(message: dict[str, Any] | None) -> bool:
-    if not isinstance(message, dict):
-        return False
-    role = (message.get("role") or "").strip().lower()
-    if role == "assistant":
-        return True
-    speaker_type = (message.get("speaker_type") or "").strip().lower()
-    if speaker_type == "assistant":
-        return True
-    source = (message.get("source") or "").strip().lower()
-    if source == "glass":
-        return True
-    speaker = (message.get("speaker") or "").strip().lower()
-    if speaker in {"glass", "assistant"}:
-        return True
-    partner_id = (message.get("partner_id") or "").strip().lower()
-    if partner_id == "glass":
-        return True
-    return False
-
-
-def _filter_user_partner_messages(messages: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
-    if not messages:
-        return []
-    return [msg for msg in messages if not _is_assistant_message(msg)]
-
-
-def _conversation_excerpt(
-    messages: list[dict[str, Any]],
-    *,
-    max_chars: int = 4000,
-    max_messages: int = 40,
-) -> str:
-    """Render a compact transcript for downstream memory prompts."""
-    if not messages:
-        return ""
-
-    def _label(msg: dict[str, Any]) -> str:
-        role = (msg.get("role") or "").lower()
-        if role == "user":
-            return "User"
-        if role == "assistant":
-            return "Glass"
-        if role == "partner":
-            return "Partner"
-        return "Other"
-
-    recordings = _filter_user_partner_messages(messages)
-    lines: list[str] = []
-    for msg in recordings[-max_messages:]:
-        text = (msg.get("text") or "").strip()
-        if not text:
-            continue
-        lines.append(f"{_label(msg)}: {text}")
-
-    excerpt = "\n".join(lines)
-    if len(excerpt) <= max_chars:
-        return excerpt
-    return excerpt[-max_chars:]
-
-
-def _clean_text(value: Any, *, limit: int | None = None) -> str | None:
-    if not isinstance(value, str):
-        return None
-    cleaned = value.strip()
-    if not cleaned:
-        return None
-    if limit and len(cleaned) > limit:
-        cleaned = cleaned[:limit].rstrip()
-    return cleaned
-
-
-def _normalize_highlight_list(data: Any, *, max_items: int, limit: int) -> list[str]:
-    if not isinstance(data, list):
-        return []
-    highlights: list[str] = []
-    for entry in data:
-        text = _clean_text(entry, limit=limit)
-        if text:
-            highlights.append(text)
-        if len(highlights) >= max_items:
-            break
-    return highlights
-
-
-def _normalize_conversation_insights(payload: dict[str, Any]) -> ConversationInsights | None:
-    user_insights = _normalize_highlight_list(payload.get("user_insights"), max_items=3, limit=200)
-    partner_insights = _normalize_highlight_list(payload.get("partner_insights"), max_items=3, limit=200)
-    interaction_insights = _normalize_highlight_list(payload.get("interaction_insights"), max_items=3, limit=200)
-
-    if not any([user_insights, partner_insights, interaction_insights]):
-        return None
-
-    insights: ConversationInsights = {}
-    if user_insights:
-        insights["user_insights"] = user_insights
-    if partner_insights:
-        insights["partner_insights"] = partner_insights
-    if interaction_insights:
-        insights["interaction_insights"] = interaction_insights
-    return insights
-
-
-async def extract_conversation_memories_with_llm(
+async def build_memory_entries_with_llm(
     llm_adapter: LLMPort | None,
     messages: list[dict[str, Any]],
     learning_lang: str | None,
     native_lang: str | None,
     partner_label: str | None = None,
-) -> ConversationInsights | None:
-    """Use LLM to extract durable memories from a finished conversation."""
+    *,
+    partner_id: str | None = None,
+    existing_memories: list[str] | None = None,
+) -> list[MemoryFactPayload]:
+    """Extract conversational facts in a classifier-compatible format."""
     if not llm_adapter or not messages:
-        return None
-
-    excerpt = _conversation_excerpt(messages)
-    if not excerpt:
-        return None
-
-    native_name = native_lang or "unknown"
-    system_prompt, user_prompt = prompts.build_memory_extraction_prompt(
-        conversation_excerpt=excerpt,
-        native_lang_name=native_name,
-    )
-    if partner_label:
-        user_prompt += f"\nPartner reference: {partner_label}\n"
+        return []
 
     try:
-        response = await llm_adapter.call(
-            prompt=user_prompt,
-            system=system_prompt,
-            temperature=0.1,
-            max_tokens=900,
-            json_mode=True,
+        candidates = await extract_memory_candidates(
+            llm=llm_adapter,
+            messages=messages,
+            learning_language=learning_lang,
+            native_language=native_lang,
+            partner_label=partner_label,
+            existing_memories=existing_memories or [],
         )
     except Exception as exc:
-        LOGGER.debug("[MemoryExtraction] LLM call failed: %s", exc)
-        return None
+        LOGGER.debug("[MemoryExtraction] Candidate extraction failed: %s", exc)
+        return []
 
-    if not response:
-        return None
+    entries: list[MemoryFactPayload] = []
+    for candidate in candidates:
+        entry: MemoryFactPayload = {
+            "text": candidate.text,
+            "scope": candidate.scope,
+            "speaker": candidate.speaker,
+        }
+        if candidate.evidence:
+            entry["evidence"] = candidate.evidence
+        entries.append(entry)
 
-    try:
-        data = json.loads(response)
-    except Exception as exc:
-        LOGGER.debug("[MemoryExtraction] Failed to parse JSON: %s", exc)
-        return None
-
-    if not isinstance(data, dict):
-        return None
-
-    return _normalize_conversation_insights(data)
+    return entries
 
 
-def derive_conversation_title(
-    extracted_info: list[dict[str, Any]] | None,
-    started_at: datetime | None,
-) -> str:
+def derive_conversation_title(started_at: datetime | None) -> str:
     """Fallback title generation when LLM is not available."""
-    if extracted_info:
-        for item in extracted_info:
-            label = (item.get("label") or "").lower()
-            if label in {"topic", "event", "meeting", "subject"}:
-                value = (item.get("value") or "").strip()
-                if value:
-                    return value
     if started_at:
         return started_at.strftime("Conversation on %b %d")
     return "Conversation"
 
 
-def _hydrate_participant_snapshot(
-    snapshot: dict[str, Any] | None,
-    partner: ConversationPartner | None,
-) -> dict[str, Any] | None:
-    if not snapshot and not partner:
-        return snapshot
-    hydrated: dict[str, Any] = dict(snapshot or {})
-    partner_snapshot = dict((snapshot or {}).get("partner") or {})
-    if partner:
-        partner_snapshot.update(
+def _serialize_partner(partner: ConversationPartner | None) -> dict[str, Any] | None:
+    if not partner:
+        return None
+    kind = partner.kind if getattr(partner, "kind", None) in {"roleplay", "live_call"} else (
+        "live_call" if not partner.voice_id else "roleplay"
+    )
+    return {
+        "id": partner.id,
+        "name": partner.name,
+        "description": partner.description,
+        "avatar_url": partner.avatar_url,
+        "voice_id": partner.voice_id,
+        "learning_lang": partner.learning_lang,
+        "native_lang": partner.native_lang,
+        "is_system": partner.user_id is None,
+        "kind": kind,
+    }
+
+
+def _serialize_feedback_entries(entries: list[Any] | None) -> list[dict[str, Any]]:
+    """Serialize message-level feedback records for API responses."""
+    if not entries:
+        return []
+    serialized: list[dict[str, Any]] = []
+    for entry in entries:
+        if not entry:
+            continue
+        message = getattr(entry, "message", None)
+        serialized.append(
             {
-                "id": partner.id,
-                "name": partner.name,
-                "description": partner.description,
-                "avatar_url": partner.avatar_url,
-                "voice_id": partner.voice_id,
-                "learning_lang": partner.learning_lang,
-                "native_lang": partner.native_lang,
-                "is_system": partner.user_id is None,
+                "message_id": getattr(entry, "message_id", None),
+                "utterance_id": getattr(message, "utterance_id", None) if message else None,
+                "text": getattr(entry, "explanation", None),
+                "suggested_text": getattr(entry, "suggested_text", None),
+                "original_text": getattr(entry, "original_text", None),
+                "feedback_type": getattr(entry, "feedback_type", None),
+                "severity": getattr(entry, "severity", None),
+                "is_overall": getattr(entry, "is_overall", False),
+                "span_start": getattr(entry, "span_start", None),
+                "span_end": getattr(entry, "span_end", None),
             }
         )
-    if partner_snapshot:
-        hydrated["partner"] = partner_snapshot
-    return hydrated or None
+    return serialized
 
 
 def serialize_summary(
@@ -382,7 +296,7 @@ def serialize_summary(
         "native_lang": convo.native_lang,
         "scores": convo.scores,
         "partner_id": convo.partner_id,
-        "participant_snapshot": _hydrate_participant_snapshot(convo.participant_snapshot, partner),
+        "partner": _serialize_partner(partner),
     }
 
 
@@ -390,16 +304,14 @@ def serialize_detail(
     convo: AccountConversation,
     *,
     partner: ConversationPartner | None = None,
-    memory_thread_id: str | None = None,
-    memory_insights: ConversationInsights | None = None,
+    memories: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     base = serialize_summary(convo, partner=partner)
     payload: dict[str, Any] = {
         "messages": convo.messages,
         "feedback": convo.feedback,
-        "memory_thread_id": memory_thread_id,
+        "memories": memories or [],
+        "feedback_items": _serialize_feedback_entries(getattr(convo, "feedback_entries", None)),
     }
-    if memory_insights is not None:
-        payload["memory_insights"] = memory_insights
     base.update(payload)
     return base

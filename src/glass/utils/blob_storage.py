@@ -9,13 +9,22 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from urllib.parse import quote
 
-from azure.core.exceptions import ResourceExistsError
-from azure.storage.blob import (
-    BlobServiceClient,
-    BlobSasPermissions,
-    ContentSettings,
-    generate_blob_sas,
-)
+try:  # pragma: no cover - optional dependency
+    from azure.core.exceptions import ResourceExistsError
+    from azure.storage.blob import (
+        BlobServiceClient,
+        BlobSasPermissions,
+        ContentSettings,
+        generate_blob_sas,
+    )
+except ImportError:  # pragma: no cover - azure SDK optional for tests
+    ResourceExistsError = Exception  # type: ignore[assignment]
+    BlobServiceClient = None  # type: ignore[assignment]
+    BlobSasPermissions = None  # type: ignore[assignment]
+    ContentSettings = None  # type: ignore[assignment]
+
+    def generate_blob_sas(*args, **kwargs):
+        raise RuntimeError("azure-storage-blob is not installed")
 
 LOGGER = logging.getLogger(__name__)
 AZURITE_DEFAULT_API_VERSION = "2023-11-03"
@@ -36,6 +45,8 @@ class AzureBlobUploader:
     _connection_settings: dict[str, str] = field(init=False, repr=False, default_factory=dict)
 
     def __post_init__(self) -> None:
+        if BlobServiceClient is None:
+            raise RuntimeError("azure-storage-blob is required for AzureBlobUploader")
         client_kwargs = {}
         inferred_version = self._infer_api_version()
         if inferred_version:
@@ -132,6 +143,9 @@ class AzureBlobUploader:
             LOGGER.debug("Skipping SAS generation for %s; missing account key", blob_name)
             return None
         expiry = datetime.now(timezone.utc) + timedelta(seconds=ttl)
+        if BlobSasPermissions is None:
+            LOGGER.warning("azure-storage-blob is not installed; unable to sign blob URLs")
+            return None
         try:
             return generate_blob_sas(
                 account_name=account_name,

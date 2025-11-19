@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text, func, Index
+from sqlalchemy import ARRAY, JSON, BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text, func, Index, UniqueConstraint
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -26,7 +26,7 @@ class AccountUser(Base):
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    # Bonus minutes: Extra usage allowance that can be used after daily free minutes are exhausted
+    # Legacy: previously tracked extra usage allowance (unused now)
     bonus_minutes: Mapped[int | None] = mapped_column(default=None)
     # Email verification
     email_verified: Mapped[bool] = mapped_column(default=False)
@@ -48,6 +48,12 @@ class AccountUser(Base):
     learning_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
     native_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
     language_level: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    subscription_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    subscription_plan: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    subscription_current_period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    billing_exempt: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     conversations: Mapped[list["AccountConversation"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
@@ -74,6 +80,7 @@ class ConversationPartner(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     voice_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False, default="roleplay")
     extra_metadata: Mapped[dict[str, Any] | None] = mapped_column(
         JSON(none_as_null=True), nullable=True
     )
@@ -92,78 +99,167 @@ class ConversationPartner(Base):
 class AccountConversation(Base):
     __tablename__ = "account_conversations"
 
-    id: Mapped[str] = mapped_column(
-        String(64), primary_key=True, default=lambda: uuid.uuid4().hex
-    )
-    session_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
     user_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("account_users.id", ondelete="CASCADE"), index=True
-    )
-    title: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
-    feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
-    scores: Mapped[dict[str, Any] | None] = mapped_column(
-        JSON(none_as_null=True), nullable=True
-    )
-    # extracted_info removed - durable memory now handled by dedicated adapter
-    messages: Mapped[list[dict[str, Any]] | None] = mapped_column(
-        JSON(none_as_null=True), nullable=True
-    )
-    learning_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    native_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    memory_insights: Mapped[dict[str, Any] | None] = mapped_column(
-        JSON(none_as_null=True), nullable=True
-    )
-    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    duration_seconds: Mapped[int | None] = mapped_column(nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
     )
     partner_id: Mapped[str | None] = mapped_column(
         String(64), ForeignKey("conversation_partners.id", ondelete="SET NULL"),
         nullable=True, index=True
     )
-    participant_snapshot: Mapped[dict[str, Any] | None] = mapped_column(
-        JSON(none_as_null=True), nullable=True
-    )
+    title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    learning_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    native_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    last_message_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    message_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     user: Mapped[AccountUser] = relationship(back_populates="conversations")
     partner: Mapped["ConversationPartner"] = relationship()
-
-
-class MemoryThread(Base):
-    __tablename__ = "memory_threads"
-
-    id: Mapped[str] = mapped_column(String(128), primary_key=True)
-    user_id: Mapped[str] = mapped_column(String(64), index=True)
-    partner_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
-    title: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
-    last_context: Mapped[str | None] = mapped_column(Text, nullable=True)
-    last_interaction_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    conversation_messages: Mapped[list["ConversationMessage"]] = relationship(
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    evaluations: Mapped[list["ConversationEvaluation"]] = relationship(
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    feedback_entries: Mapped[list["MessageFeedback"]] = relationship(
+        back_populates="conversation",
+        cascade="all, delete-orphan",
     )
 
+    @property
+    def session_id(self) -> str:
+        """Backwards-compatible alias for the primary key."""
+        return self.id
 
-class MemoryMessage(Base):
-    __tablename__ = "memory_messages"
+    def _latest_evaluation(self) -> "ConversationEvaluation | None":
+        if not self.evaluations:
+            return None
+        return max(self.evaluations, key=lambda ev: ev.created_at or datetime.min)
 
-    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: uuid.uuid4().hex)
-    thread_id: Mapped[str] = mapped_column(String(128), ForeignKey("memory_threads.id", ondelete="CASCADE"), index=True)
-    user_id: Mapped[str] = mapped_column(String(64), index=True)
-    role: Mapped[str] = mapped_column(String(32))
-    language: Mapped[str | None] = mapped_column(String(16), nullable=True)
-    text: Mapped[str] = mapped_column(Text)
-    metadata_json: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSON(none_as_null=True), nullable=True)
-    occurred_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    @property
+    def scores(self) -> dict[str, int] | None:
+        evaluation = self._latest_evaluation()
+        if not evaluation:
+            return None
+        return {
+            "fluency": evaluation.fluency_score,
+            "accuracy": evaluation.accuracy_score,
+            "comprehensibility": evaluation.expression_score,
+            "overall": evaluation.overall_score,
+        }
+
+    @property
+    def feedback(self) -> str | None:
+        evaluation = self._latest_evaluation()
+        return evaluation.overall_feedback if evaluation else None
+
+    @property
+    def messages(self) -> list[dict[str, Any]]:
+        if not self.conversation_messages:
+            return []
+        ordered = sorted(self.conversation_messages, key=lambda msg: msg.seq)
+        return [message.to_payload() for message in ordered]
+
+
+class ConversationMessage(Base):
+    __tablename__ = "conversation_messages"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("account_conversations.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[str] = mapped_column(String(64), ForeignKey("account_users.id", ondelete="CASCADE"), index=True)
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    partner_id: Mapped[str | None] = mapped_column(String(64), ForeignKey("conversation_partners.id", ondelete="SET NULL"), nullable=True)
+    utterance_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    lang_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    translation_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    translation_lang_code: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     __table_args__ = (
-        Index("ix_memory_messages_thread_time", "thread_id", "occurred_at"),
+        UniqueConstraint("conversation_id", "seq", name="uq_conversation_messages_conversation_seq"),
+        Index("ix_conversation_messages_conversation_id", "conversation_id"),
+        Index("ix_conversation_messages_utterance_id", "utterance_id"),
     )
+    conversation: Mapped[AccountConversation] = relationship(back_populates="conversation_messages")
+
+    def to_payload(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "id": self.id,
+            "role": self.role,
+            "partner_id": self.partner_id,
+            "text": self.text,
+            "language": self.lang_code,
+            "seq": self.seq,
+        }
+        if self.utterance_id:
+            payload["utterance_id"] = self.utterance_id
+        if self.translation_text:
+            if self.translation_lang_code:
+                payload["translation"] = {
+                    "text": self.translation_text,
+                    "language": self.translation_lang_code,
+                }
+            else:
+                payload["translation"] = self.translation_text
+        return payload
+
+
+class ConversationEvaluation(Base):
+    __tablename__ = "conversation_evaluations"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("account_conversations.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[str] = mapped_column(String(64), ForeignKey("account_users.id", ondelete="CASCADE"), index=True)
+    rubric_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    fluency_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    accuracy_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    expression_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    overall_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    overall_feedback: Mapped[str] = mapped_column(Text, nullable=False)
+    improvement_tips: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evaluation_raw: Mapped[dict[str, Any] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    conversation: Mapped[AccountConversation] = relationship(back_populates="evaluations")
+
+
+class MessageFeedback(Base):
+    __tablename__ = "message_feedback"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("account_conversations.id", ondelete="CASCADE"), index=True
+    )
+    message_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("conversation_messages.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[str] = mapped_column(String(64), ForeignKey("account_users.id", ondelete="CASCADE"), index=True)
+    feedback_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False)
+    original_text: Mapped[str] = mapped_column(Text, nullable=False)
+    suggested_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    explanation: Mapped[str] = mapped_column(Text, nullable=False)
+    span_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    span_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_overall: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    conversation: Mapped[AccountConversation] = relationship(back_populates="feedback_entries")
+    message: Mapped[ConversationMessage] = relationship()
 
 
 class MemoryRecord(Base):
@@ -171,19 +267,22 @@ class MemoryRecord(Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: uuid.uuid4().hex)
     user_id: Mapped[str] = mapped_column(String(64), index=True)
-    thread_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    conversation_id: Mapped[str | None] = mapped_column(
+        String(64),
+        ForeignKey("account_conversations.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     partner_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    subject_role: Mapped[str] = mapped_column(String(32), index=True)
     category: Mapped[str] = mapped_column(String(32), index=True)
     retention: Mapped[str] = mapped_column(String(32), index=True)
     importance: Mapped[int] = mapped_column(default=0)
     text: Mapped[str] = mapped_column(Text)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
-    keywords: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    keywords: Mapped[list[str] | None] = mapped_column(ARRAY(String(64)), nullable=True)
     entities: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
-    metadata_json: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSON(none_as_null=True), nullable=True)
-    source: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    source_reference: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    retention_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -193,48 +292,6 @@ class MemoryRecord(Base):
     __table_args__ = (
         Index("ix_memory_records_user_hash", "user_id", "content_hash", unique=True),
     )
-
-
-class MemoryPersona(Base):
-    __tablename__ = "memory_personas"
-
-    user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    first_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    last_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    native_languages: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
-    learning_languages: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
-    traits: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
-    metadata_json: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSON(none_as_null=True), nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-
-class MemoryPartnerProfile(Base):
-    __tablename__ = "memory_partner_profiles"
-
-    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: uuid.uuid4().hex)
-    user_id: Mapped[str] = mapped_column(String(64), index=True)
-    partner_id: Mapped[str] = mapped_column(String(128), index=True)
-    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    relation_to_user: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    metadata_json: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSON(none_as_null=True), nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-    __table_args__ = (
-        Index("ix_memory_partner_profiles_user_partner", "user_id", "partner_id", unique=True),
-    )
-
-
-class MemoryFeedbackRecord(Base):
-    __tablename__ = "memory_feedback_records"
-
-    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: uuid.uuid4().hex)
-    user_id: Mapped[str] = mapped_column(String(64), index=True)
-    language_code: Mapped[str | None] = mapped_column(String(16), nullable=True, index=True)
-    payload: Mapped[dict[str, Any]] = mapped_column(JSON(none_as_null=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class PasswordResetToken(Base):

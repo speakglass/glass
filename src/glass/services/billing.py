@@ -15,6 +15,13 @@ except ImportError:  # pragma: no cover
 
 LOGGER = logging.getLogger(__name__)
 
+
+def _normalize_bool(value: Any) -> bool:
+    """Return a deterministic boolean regardless of how the env passes it in."""
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
+
 PlanKey = Literal["monthly", "yearly"]
 Interval = Literal["month", "year"]
 
@@ -49,9 +56,9 @@ class StripeService:
         monthly_amount_cents: int,
         yearly_amount_cents: int,
         currency: str,
-        self_hosted: bool,
+        self_hosted: bool | str | int | None,
     ) -> None:
-        self.self_hosted = bool(self_hosted)
+        self.self_hosted = _normalize_bool(self_hosted)
         self.webhook_secret = webhook_secret
         normalized_currency = (currency or "usd").lower()
         self.plans: dict[PlanKey, BillingPlan] = {

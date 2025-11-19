@@ -61,9 +61,6 @@ class AuthenticatedUserResponse(BaseModel):
 
 @router.post("/accounts/register", response_model=AuthenticatedUserResponse)
 async def register_account(request: Request, payload: RegisterRequest) -> AuthenticatedUserResponse:
-    from .helpers import client_id_for_user
-    from ..auth.jwt import AuthenticatedUser
-    
     db = request.app.state.history_store
     app_state = request.app.state.app_state
     email_service = app_state.email_service
@@ -106,22 +103,7 @@ async def register_account(request: Request, payload: RegisterRequest) -> Authen
         email=payload.email,
         password_hash=password_hash,
         name=payload.name,
-        bonus_minutes=None,  # Bonus minutes not granted by default
     )
-    
-    # Reset Redis quota for new user (clear any stale data from previous tests)
-    if app_state.has_quota_tracking():
-        try:
-            client_id = client_id_for_user(AuthenticatedUser(user_id=user.id, email=user.email))
-            # Delete old quota keys to start fresh
-            if app_state._redis:
-                await app_state._redis.delete(
-                    f"glass:quota:{client_id}:end_at",
-                    f"glass:quota:{client_id}"
-                )
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(f"Failed to reset quota for new user {user.id}: {e}")
     
     # Send verification email if Resend is configured
     if email_service.enabled:
@@ -252,24 +234,7 @@ async def oauth_signin(request: Request, payload: OAuthSignInRequest) -> Authent
             name=payload.name,
             avatar_url=payload.avatar_url,
             email_verified=True,  # OAuth users are automatically verified
-            bonus_minutes=None,  # Bonus minutes not granted by default
         )
-        
-        # Reset Redis quota for new OAuth user (clear any stale data)
-        app_state = request.app.state.app_state
-        if app_state.has_quota_tracking():
-            try:
-                from .helpers import client_id_for_user
-                from ..auth.jwt import AuthenticatedUser
-                client_id = client_id_for_user(AuthenticatedUser(user_id=new_user.id, email=new_user.email))
-                if app_state._redis:
-                    await app_state._redis.delete(
-                        f"glass:quota:{client_id}:end_at",
-                        f"glass:quota:{client_id}"
-                    )
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).warning(f"Failed to reset quota for new OAuth user {new_user.id}: {e}")
         
         return AuthenticatedUserResponse(
             id=new_user.id,

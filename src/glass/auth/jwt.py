@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import jwt
 from fastapi import Depends, Header, HTTPException, status
@@ -52,27 +52,16 @@ def decode_service_token(token: str, settings: Settings) -> AuthenticatedUser:
     logger.debug(f"[JWT] Attempting to decode token (secret length: {len(settings.auth_jwt_secret)})")
     
     try:
+        decode_kwargs: dict[str, Any] = {
+            "algorithms": ["HS256"],
+            "options": {"require": ["sub", "email"], "verify_aud": False},
+        }
         payload = jwt.decode(
             token,
             settings.auth_jwt_secret,
-            algorithms=["HS256"],
-            audience="glass-api",
-            issuer="glass-web",
-            options={"require": ["sub", "email"]},
+            **decode_kwargs,
         )
         logger.debug(f"[JWT] Token decoded successfully for user: {payload.get('sub')}")
-    except jwt.InvalidAudienceError as exc:
-        logger.error(f"[JWT] Invalid audience: {exc}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token (audience mismatch)",
-        ) from exc
-    except jwt.InvalidIssuerError as exc:
-        logger.error(f"[JWT] Invalid issuer: {exc}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token (issuer mismatch)",
-        ) from exc
     except jwt.ExpiredSignatureError as exc:
         logger.error(f"[JWT] Token expired: {exc}")
         raise HTTPException(

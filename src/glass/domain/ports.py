@@ -8,86 +8,37 @@ from .entities import SessionEvent
 
 
 class MemoryPort(Protocol):
+    async def ensure_user(
+        self,
+        user_id: str,
+        email: str | None = None,
+        first_name: str | None = None,
+        last_name: str | None = None,
+    ) -> None:
+        """Ensure backing store knows about a user."""
+        ...
+
     async def get_user_context_block(self, user_id: str, use_cache: bool = True) -> str:
         """Get user-level context (all past conversations) for session start."""
         ...
     
     async def get_context_for_prompt(
         self,
-        thread_id: str,
+        conversation_id: str,
         user_id: str,
-        scope: str = "thread",
+        scope: str = "conversation",
         timeout: float = 3.0,
     ) -> str:
-        """Get context for LLM prompts with timeout and error handling.
-        
-        Args:
-            thread_id: Thread/session ID
-            user_id: User ID
-            scope: Context scope - "thread" (fast) or "hybrid" (thread + user)
-            timeout: Timeout in seconds
-        
-        Returns:
-            Formatted context string
-        """
+        """Get summarized context for a conversation."""
         ...
 
     def invalidate_user_cache(self, user_id: str) -> None:
         """Invalidate cached user context."""
         ...
 
-    async def upsert_user_persona(
-        self,
-        *,
-        user_id: str,
-        native_languages: list[str],
-        learning_languages: list[dict[str, str]],
-        display_name: str | None = None,
-    ) -> None:
-        """Persist or update structured user persona information."""
-        ...
-
-    async def upsert_partner_profile(
-        self,
-        *,
-        user_id: str,
-        partner_profile: dict[str, object],
-    ) -> None:
-        """Persist partner/relationship metadata for later retrieval."""
-        ...
-
-    async def add_feedback_record(
-        self,
-        *,
-        user_id: str,
-        record: dict[str, object],
-    ) -> None:
-        """Store structured feedback record linked to a user."""
-        ...
-
-    async def add_profile_facts(
-        self,
-        *,
-        user_id: str,
-        facts: list[dict[str, Any]],
-    ) -> None:
-        """Store automatically extracted profile facts for a user."""
-        ...
-
-    async def search_profile_facts(
-        self,
-        *,
-        user_id: str,
-        user_hint: str | None = None,
-        last_partner_message: str | None = None,
-        limit: int = 5,
-    ) -> list[dict[str, Any]]:
-        """Retrieve relevant profile facts for prompt building."""
-        ...
-
     async def add_conversation_messages(
         self,
-        thread_id: str,
+        conversation_id: str,
         user_id: str,
         messages: list[dict],
         session_start_time: float | None = None,
@@ -97,52 +48,78 @@ class MemoryPort(Protocol):
         """Persist conversation messages and optionally return a context block."""
         ...
 
-    async def persist_conversation_insights(
+    async def persist_memory_records(
         self,
         *,
         user_id: str,
-        thread_id: str,
-        insights: dict[str, Any],
+        conversation_id: str | None,
+        entries: list[dict[str, Any]],
         partner_id: str | None = None,
         language_code: str | None = None,
         started_at: float | None = None,
         ended_at: float | None = None,
     ) -> None:
-        """Persist extracted conversation memories."""
+        """Persist structured memory records derived from a conversation."""
         ...
 
-    async def list_feedback_records(
-        self,
-        user_id: str,
-        language_code: str | None = None,
-        limit: int = 20,
-    ) -> list[dict[str, Any]]:
-        """List structured feedback records, optionally filtered by language."""
-        ...
-
-    async def record_interaction(
+    async def list_conversation_memories(
         self,
         *,
         user_id: str,
-        thread_id: str,
-        partner_id: str | None,
-        language_code: str | None,
-        summary: str | None = None,
-        topics: Sequence[str] | None = None,
-        started_at: float | None = None,
-        ended_at: float | None = None,
-    ) -> None:
-        """Record an interaction summary for analytics/debugging."""
+        conversation_id: str,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """Return memory records associated with a specific conversation id."""
         ...
 
-    async def get_partner_context(
+    async def list_user_memories(
+        self,
+        *,
+        user_id: str,
+        limit: int,
+        offset: int = 0,
+        search: str | None = None,
+    ) -> tuple[list[dict[str, Any]], int]:
+        """List stored memory records for manual review."""
+        ...
+
+    async def list_partner_memories(
         self,
         *,
         user_id: str,
         partner_id: str,
-        limit: int = 5,
-    ) -> str:
-        """Return condensed history/context for conversations with a partner."""
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        """List stored memory records tied to a specific partner."""
+        ...
+
+    async def create_memory_record(
+        self,
+        *,
+        user_id: str,
+        value: str,
+        conversation_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a new durable memory record."""
+        ...
+
+    async def update_memory_record(
+        self,
+        *,
+        user_id: str,
+        record_id: str,
+        value: str,
+    ) -> dict[str, Any]:
+        """Update an existing memory record."""
+        ...
+
+    async def delete_memory_record(
+        self,
+        *,
+        user_id: str,
+        record_id: str,
+    ) -> bool:
+        """Delete a stored memory record."""
         ...
 
 

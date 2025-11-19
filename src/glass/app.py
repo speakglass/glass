@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 import time
 
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,12 +14,18 @@ from .api import router as http_router
 from .api.websocket import router as ws_router
 from .state import AppState, build_app_state
 from .config import get_settings
-from .persistence.db import PersistenceDatabase
 from .persistence.service import ensure_default_partners
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        settings = settings.model_copy(
+            update={
+                "database_url": "sqlite+aiosqlite:///./glass_test.db",
+                "memory_provider": "inmemory",
+            }
+        )
     # Ensure root logger prints our module logs (uvicorn config only covers its own loggers)
     level_name = (settings.log_level or "INFO").upper()
     level = getattr(logging, level_name, logging.INFO)
@@ -29,7 +37,7 @@ def create_app() -> FastAPI:
     root.setLevel(level)
     app = FastAPI(title="Glass API", version="0.1.0")
     app.state.app_state = build_app_state(settings)
-    app.state.history_store = PersistenceDatabase(settings.database_url)
+    app.state.history_store = app.state.app_state.database
 
     # Build CORS allow_origins list from GLASS_ALLOW_ORIGIN (supports comma-separated)
     items = [part.strip() for part in (settings.allow_origin or "").split(",")]
@@ -56,13 +64,6 @@ def create_app() -> FastAPI:
     async def _init_history_store() -> None:
         await app.state.history_store.init_models()
         await ensure_default_partners(app.state.history_store)
-        memory_adapter = app.state.app_state.session_manager.memory_adapter
-        configure_ontology = getattr(memory_adapter, "configure_ontology", None)
-        if callable(configure_ontology):
-            try:
-                await configure_ontology()
-            except Exception as exc:  # pragma: no cover - startup log helper
-                logging.getLogger(__name__).warning("Failed to configure memory ontology: %s", exc)
 
     logger = logging.getLogger("glass.http")
 

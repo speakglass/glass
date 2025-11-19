@@ -29,7 +29,7 @@ import {
   normalizeLocale,
   getLocalizedText,
   getDemoTemplate,
-  getDemoMemoryInsights,
+  getDemoMemoryRecords,
 } from './onboarding-data';
 import type { LearningLevel } from '@/types/learning-level';
 import { isLearningLevel, needsPronunciationSupport } from '@/types/learning-level';
@@ -126,7 +126,6 @@ function OnboardingTour() {
         en: `Hi ${userName}! `,
         ja: `${userName}さん、`,
         ko: `${userName}님, `,
-        zh: `${userName}，`,
         es: `¡Hola ${userName}! `,
         fr: `Salut ${userName} ! `,
       };
@@ -150,24 +149,13 @@ function OnboardingTour() {
         accuracy: 82,
         comprehensibility: 78,
       },
-      participantSnapshot: {
-        partner: {
-          id: 'partner-8f76e9b6-1b2c-4d5e-9f70-123456789abc',
-          name: partnerMessage.role === 'other' ? 'Emma' : 'Glass AI',
-          avatar_url: '/partners/emma.png',
-        },
-        user: {
-          id: 'user:onboarding',
-          name: snapshot?.user?.name || undefined,
-          email: snapshot?.user?.email || undefined,
-        },
+      partner: {
+        id: 'partner-8f76e9b6-1b2c-4d5e-9f70-123456789abc',
+        name: partnerMessage.role === 'other' ? 'Emma' : 'Glass AI',
+        avatarUrl: '/partners/emma.png',
       },
-      extractedInfo: [
-        { label: 'Topic', value: 'Daily activities and work', editable: true },
-        { label: 'Preference', value: 'Enjoys learning languages', editable: true },
-      ],
       feedback: summaryCombined,
-      memoryInsights: getDemoMemoryInsights(nativeLocale),
+      initialMemories: getDemoMemoryRecords(nativeLocale),
       messages: [
         {
           text: partnerMessage.text,
@@ -192,7 +180,7 @@ function OnboardingTour() {
       ],
       feedbackItems: [
         {
-          utterance_id: 'u2',
+          utteranceId: 'u2',
           text: feedbackItemNative,
         },
       ],
@@ -385,12 +373,7 @@ function OnboardingTour() {
       {/* CallSummary Modal - Step 3, 4, 5, 6 - Pre-render from step 3 for smooth transition */}
       {(currentStep === 3 || currentStep === 4 || currentStep === 5 || currentStep === 6) && (
         <div className={currentStep === 3 ? 'invisible' : ''}>
-          <CallSummary
-            {...mockCallSummaryData}
-            conversationCountOverride={3}
-            onClose={() => {}}
-            onStartNewCall={() => {}}
-          />
+          <CallSummary {...mockCallSummaryData} conversationCountOverride={3} onClose={() => {}} />
         </div>
       )}
     </>
@@ -625,7 +608,9 @@ export default function OnboardingClient() {
                   <div
                     className={cn(
                       'flex h-12 w-12 items-center justify-center rounded-xl border text-lg',
-                      isActive ? 'border-foreground bg-foreground/10 text-foreground' : 'border-border text-muted-foreground'
+                      isActive
+                        ? 'border-foreground bg-foreground/10 text-foreground'
+                        : 'border-border text-muted-foreground'
                     )}
                     aria-hidden
                   >

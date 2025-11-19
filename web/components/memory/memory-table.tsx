@@ -2,13 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { VisibilityState } from '@tanstack/react-table';
 import { useAccountSession } from '@/contexts/account-session-context';
 import { createColumns, Memory } from './columns';
 import { DataTable } from './data-table';
 import { fetchMemories, deleteMemory, updateMemory, createMemories } from '@/lib/account-api';
 import { toast } from 'sonner';
 import { MemoryDialog } from './memory-dialog';
-import { t } from '@lingui/core/macro';
+import { plural, t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 import {
   AlertDialog,
@@ -24,6 +25,15 @@ import { Info, Loader2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const MEMORY_VISIBLE_LIMIT = 50;
+
+const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
+  text: false,
+  importance: false,
+  keywords: false,
+  entities: false,
+  partnerId: false,
+  conversationId: false,
+};
 
 export function MemoryTable() {
   const { token } = useAccountSession();
@@ -194,6 +204,16 @@ export function MemoryTable() {
 
   const columns = createColumns(handleEdit, handleDelete);
   const isInitialLoad = isLoading && !data;
+  const totalMemories = data?.total ?? 0;
+  const totalSummaryMessage = searchQuery
+    ? plural(totalMemories, {
+        one: '# matching memory',
+        other: '# matching memories',
+      })
+    : plural(totalMemories, {
+        one: '# total memory',
+        other: '# total memories',
+      });
 
   if (isInitialLoad) {
     return (
@@ -223,12 +243,15 @@ export function MemoryTable() {
 
   return (
     <>
-      {shouldShowLimitNotice && (
-        <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-          <Trans>Showing the latest {MEMORY_VISIBLE_LIMIT} memories</Trans>
-          {limitTooltipIcon}
-        </div>
-      )}
+      <div className="mb-3 flex flex-col gap-1 text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">{totalSummaryMessage}</span>
+        {shouldShowLimitNotice && (
+          <div className="flex items-center gap-1">
+            <Trans>Showing the latest {MEMORY_VISIBLE_LIMIT} memories</Trans>
+            {limitTooltipIcon}
+          </div>
+        )}
+      </div>
 
       <div className="relative">
         <DataTable
@@ -239,6 +262,7 @@ export function MemoryTable() {
           meta={{ onViewMemory: handleViewMemory }}
           searchValue={searchInput}
           onSearchChange={setSearchInput}
+          defaultHiddenColumns={DEFAULT_COLUMN_VISIBILITY}
         />
         {isFetching && !isInitialLoad && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/70">

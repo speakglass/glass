@@ -1,4 +1,4 @@
-\"\"\"Add conversation_id to memory records.\"\"\"
+"""Add conversation_id to memory records."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = "20251211_1235_add_memory_conversation_id"
-down_revision = "20251211_1100_add_billing_columns"
+revision = "20251211_mem_conv_id"
+down_revision = "20251211_billing_columns"
 branch_labels = None
 depends_on = None
 

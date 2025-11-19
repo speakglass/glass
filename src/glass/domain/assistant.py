@@ -109,9 +109,7 @@ class LearningAssistant:
         *,
         recent_conversation: RecentConversation,
         user_context: str = "",
-        thread_context: str = "",
-        language_feedback_context: str = "",
-        profile_facts: list[dict[str, str]] | None = None,
+        conversation_context: str = "",
         last_partner_message: str | None = None,
     ) -> None:
         """Process utterance: translation, feedback, and suggestions."""
@@ -124,10 +122,9 @@ class LearningAssistant:
             )
         )
 
-        print(f"thread_context: {thread_context}")
-        print(f"language_feedback_context: {language_feedback_context}")
+        print(f"conversation_context: {conversation_context}")
 
-        feedback_thread_context = self._merge_context_blocks(thread_context, language_feedback_context)
+        feedback_conversation_context = conversation_context
         if is_user and self.feedback_mode != "off":
             tasks.append(
                 asyncio.create_task(
@@ -137,7 +134,7 @@ class LearningAssistant:
                         source,
                         event_type_feedback,
                         recent_conversation=recent_conversation,
-                        thread_context=feedback_thread_context,
+                        conversation_context=feedback_conversation_context,
                     )
                 )
             )
@@ -149,7 +146,6 @@ class LearningAssistant:
                         utterance_id=utterance_id,
                         event_type=event_type_suggestion,
                         recent_conversation=recent_conversation,
-                        profile_facts=profile_facts,
                         last_partner_message=last_partner_message,
                     )
                 )
@@ -166,7 +162,7 @@ class LearningAssistant:
         event_type_feedback,
         *,
         recent_conversation: RecentConversation,
-        thread_context: str = "",
+        conversation_context: str = "",
     ) -> None:
         """Emit feedback for a user utterance."""
         try:
@@ -190,7 +186,7 @@ class LearningAssistant:
                 native_lang=lang_code_to_name(self.native_lang),
                 recent_conversation=recent_conv_texts,
                 last_suggestion=self._last_suggestion,
-                thread_context=thread_context,
+                conversation_context=conversation_context,
             )
             feedback_text = await self.llm.call(
                 prompt=user_prompt,
@@ -240,10 +236,10 @@ class LearningAssistant:
                     )
 
                     if not is_none_error:
-                        if target_text:
-                            display_text = f"{reason} → {target_text}" if reason else target_text
-                        elif reason:
+                        if reason:
                             display_text = reason
+                        elif target_text:
+                            display_text = target_text
                         payload: dict[str, Any] = {}
                         if target_text:
                             payload["target_text"] = target_text
@@ -370,7 +366,6 @@ class LearningAssistant:
         *,
         recent_conversation: RecentConversation,
         user_hint: str | None = None,
-        profile_facts: list[dict[str, str]] | None = None,
         last_partner_message: str | None = None,
     ) -> None:
         """Emit a suggestion for what to say next."""
@@ -396,7 +391,6 @@ class LearningAssistant:
                         native_lang=native_lang_name,
                         user_hint=user_hint,
                         recent_conversation=recent_conv_texts,
-                        profile_facts=profile_facts,
                         last_partner_message=last_partner_message,
                         length_mode=self.suggest_length_mode,
                     )
@@ -449,7 +443,7 @@ class LearningAssistant:
     ) -> dict:
         """Analyze conversation and return scores and feedback using parallel LLM calls.
 
-        Note: Memory extraction is handled by Zep, not by our LLM.
+        Note: Durable memory extraction is handled by the backend memory service.
         This method only evaluates conversation quality (scores + feedback).
         """
         if not full_conversation:
@@ -500,7 +494,6 @@ class LearningAssistant:
                 "ko": "사용자 발화가 없어 평가할 수 없어요. 다음에는 대화에 참여해보세요!",
                 "en": "No user utterances to evaluate. Try speaking next time!",
                 "ja": "ユーザーの発話がないため評価できません。次回は会話に参加してみてください！",
-                "zh": "没有用户发言，无法评估。下次试着参与对话吧！",
                 "es": "No hay expresiones de usuario para evaluar. ¡Intenta hablar la próxima vez!",
                 "fr": "Aucune parole d'utilisateur à évaluer. Essayez de parler la prochaine fois !",
             }
@@ -513,7 +506,7 @@ class LearningAssistant:
             }
 
         # Run two parallel LLM calls: scores + feedback
-        # Memory extraction removed - Zep handles this automatically
+        # Memory extraction removed - handled centrally after the session
         tasks = [
             self._analyze_scores(transcript, feedback_summary, native_lang_name, learning_lang_name),
             self._analyze_feedback(transcript, feedback_summary, native_lang_name, learning_lang_name),
@@ -727,7 +720,6 @@ class LearningAssistant:
             "ko": "좋아요! 지금처럼 말해도 자연스러워요.",
             "en": "Great! That sounded natural as is.",
             "ja": "いいですね！今の表現で自然です。",
-            "zh": "很好！这样说很自然。",
             "es": "¡Genial! Suena natural tal como está.",
             "fr": "Super ! C’est naturel comme ça.",
         }

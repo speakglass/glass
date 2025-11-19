@@ -41,7 +41,6 @@ async def test_pipeline_handle_text_query_emits_suggestion():
         llm=DummyLLM(),
         memory=DummyMemory(),
         events=DummyEvents(),
-        vision=None,
     )
     result = await pipeline.handle_text_query("hello world")
     assert result["text"] == "suggestion"

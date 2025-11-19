@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Loader2,
   RefreshCcw,
@@ -27,6 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PartnerAvatar } from '@/components/partner-avatar';
+import { PartnerSearchEmptyState } from '@/components/partner-search-empty-state';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   AlertDialog,
@@ -44,6 +46,7 @@ import type {
   ConversationSummary,
   ConversationMessage,
   ConversationPartner,
+  ConversationPartnerRef,
 } from '@/lib/account-api';
 import {
   fetchConversationDetail,
@@ -144,13 +147,18 @@ function formatDuration(seconds?: number | null) {
   return t`${mins}m ${secs}s`;
 }
 
+const MEMORY_SUBJECT_LABELS: Record<string, string> = {
+  user: t`User`,
+  partner: t`Partner`,
+  relationship: t`Interaction`,
+};
+
 // Language names localized by current UI language
 const LANGUAGE_NAMES_BY_LOCALE: Record<string, Record<string, string>> = {
   en: {
     en: 'English',
     ko: 'Korean',
     ja: 'Japanese',
-    zh: 'Chinese',
     es: 'Spanish',
     fr: 'French',
   },
@@ -158,7 +166,6 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<string, Record<string, string>> = {
     en: '영어',
     ko: '한국어',
     ja: '일본어',
-    zh: '중국어',
     es: '스페인어',
     fr: '프랑스어',
   },
@@ -166,23 +173,13 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<string, Record<string, string>> = {
     en: '英語',
     ko: '韓国語',
     ja: '日本語',
-    zh: '中国語',
     es: 'スペイン語',
     fr: 'フランス語',
-  },
-  zh: {
-    en: '英语',
-    ko: '韩语',
-    ja: '日语',
-    zh: '中文',
-    es: '西班牙语',
-    fr: '法语',
   },
   es: {
     en: 'Inglés',
     ko: 'Coreano',
     ja: 'Japonés',
-    zh: 'Chino',
     es: 'Español',
     fr: 'Francés',
   },
@@ -190,7 +187,6 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<string, Record<string, string>> = {
     en: 'Anglais',
     ko: 'Coréen',
     ja: 'Japonais',
-    zh: 'Chinois',
     es: 'Espagnol',
     fr: 'Français',
   },
@@ -202,28 +198,16 @@ function getLanguageName(code: string | null | undefined, currentLocale: string 
   return localeNames[code.toLowerCase()] || code;
 }
 
-type ParticipantSnapshot = {
-  partner?: {
-    id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    avatar_url?: string | null;
-  };
-  user?: {
-    id?: string | null;
-    name?: string | null;
-    email?: string | null;
-  };
-  session?: {
-    mode?: string | null;
-    learning_lang?: string | null;
-    native_lang?: string | null;
-  };
-};
-
 export function ConversationHistory() {
   const locale = useLocale();
+  const router = useRouter();
   const { snapshot, status, token, refresh } = useAccountSession();
+  const conversationLimit = snapshot?.limits?.conversations || null;
+  const limitEnabled = Boolean(conversationLimit?.enabled && conversationLimit?.limit);
+  const limitMax = conversationLimit?.limit ?? null;
+  const limitUsed = conversationLimit?.used ?? 0;
+  const limitUsageLabel = limitMax !== null ? `${Math.min(limitUsed, limitMax)}/${limitMax}` : null;
+  const billingHref = `/${locale}/billing`;
   const [selected, setSelected] = useState<ConversationDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -239,6 +223,7 @@ export function ConversationHistory() {
   const [partnerDescriptionDraft, setPartnerDescriptionDraft] = useState('');
   const [partnerSearch, setPartnerSearch] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPartnerDeleteDialogOpen, setIsPartnerDeleteDialogOpen] = useState(false);
   const debounceTimerForTitleRef = useRef<NodeJS.Timeout>();
 
   // Pagination and search state
@@ -250,16 +235,15 @@ export function ConversationHistory() {
   const [totalConversations, setTotalConversations] = useState(0);
   const [loadingConversations, setLoadingConversations] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout>();
-  const participantSnapshot = (selected?.participantSnapshot as ParticipantSnapshot | null) || null;
-  const [partnerProfile, setPartnerProfile] = useState<ParticipantSnapshot['partner']>(
-    participantSnapshot?.partner || undefined
+  const [partnerProfile, setPartnerProfile] = useState<ConversationPartnerRef | undefined>(
+    selected?.partner || undefined
   );
   useEffect(() => {
-    setPartnerProfile(participantSnapshot?.partner || undefined);
-  }, [participantSnapshot?.partner]);
+    setPartnerProfile(selected?.partner || undefined);
+  }, [selected?.partner]);
   const [editingPartnerId, setEditingPartnerId] = useState<string | null>(partnerProfile?.id ?? null);
   const [editingPartnerAvatarUrl, setEditingPartnerAvatarUrl] = useState<string | null>(
-    partnerProfile?.avatar_url || null
+    partnerProfile?.avatarUrl || null
   );
   const currentPartnerId = partnerProfile?.id ?? null;
   const {
@@ -279,12 +263,12 @@ export function ConversationHistory() {
       setEditingPartnerId(partnerProfile?.id ?? null);
       setPartnerNameDraft(partnerProfile?.name || '');
       setPartnerDescriptionDraft(partnerProfile?.description || '');
-      setEditingPartnerAvatarUrl(partnerProfile?.avatar_url || null);
+      setEditingPartnerAvatarUrl(partnerProfile?.avatarUrl || null);
       setPartnerSearch('');
     }
   }, [
     isPartnerManagerOpen,
-    partnerProfile?.avatar_url,
+    partnerProfile?.avatarUrl,
     partnerProfile?.description,
     partnerProfile?.id,
     partnerProfile?.name,
@@ -292,19 +276,25 @@ export function ConversationHistory() {
   useEffect(() => {
     setIsPartnerManagerOpen(false);
   }, [selected?.id]);
-  const sessionMode = ((participantSnapshot?.session as { mode?: string } | undefined)?.mode || '').toLowerCase();
+  const isRoleplayPartner = Boolean(
+    partnerProfile?.kind === 'roleplay' ||
+      selected?.partner?.kind === 'roleplay' ||
+      partnerProfile?.isSystem ||
+      selected?.partner?.isSystem
+  );
+  const sessionMode = (isRoleplayPartner ? 'roleplay' : 'live_call') as 'roleplay' | 'live_call';
   const canManagePartner = sessionMode !== 'roleplay';
+  const showPartnerManager = Boolean(canManagePartner && token);
   const preparePartnerEdit = (partner?: {
     id?: string | null;
     name?: string | null;
     description?: string | null;
     avatarUrl?: string | null;
-    avatar_url?: string | null;
   }) => {
     setEditingPartnerId(partner?.id ?? null);
     setPartnerNameDraft(partner?.name || '');
     setPartnerDescriptionDraft(partner?.description || '');
-    setEditingPartnerAvatarUrl(partner?.avatarUrl ?? partner?.avatar_url ?? null);
+    setEditingPartnerAvatarUrl(partner?.avatarUrl ?? null);
   };
   const trimmedPartnerSearch = partnerSearch.trim();
   const availablePartners: ConversationPartner[] = useMemo(() => {
@@ -323,6 +313,31 @@ export function ConversationHistory() {
       setIsPartnerManagerOpen(false);
     }
   }, [canManagePartner, isPartnerManagerOpen]);
+
+  const openPartnerEditor = (partnerData?: {
+    id?: string | null;
+    name?: string | null;
+    description?: string | null;
+    avatarUrl?: string | null;
+  }) => {
+    if (!canManagePartner) {
+      return;
+    }
+    preparePartnerEdit(partnerData);
+    setIsEditModalOpen(true);
+  };
+
+  const handlePartnerSave = () => {
+    if (!partnerNameDraft.trim()) {
+      toast.error(t`Enter a partner name`);
+      return;
+    }
+    if (editingPartnerId) {
+      renamePartnerMutation.mutate();
+    } else {
+      createPartnerAndAssignMutation.mutate();
+    }
+  };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -350,21 +365,22 @@ export function ConversationHistory() {
           id: updated.id,
           name: updated.name,
           description: updated.description,
-          avatar_url: updated.avatarUrl || null,
+          avatarUrl: updated.avatarUrl || null,
+          voiceId: updated.voiceId || null,
+          kind: updated.kind,
         });
         setSelected((prev) =>
           prev
             ? {
                 ...prev,
-                participantSnapshot: {
-                  ...(prev.participantSnapshot || {}),
-                  partner: {
-                    id: updated.id,
-                    name: updated.name,
-                    description: updated.description,
-                    avatar_url: updated.avatarUrl || null,
-                  },
-                  session: prev.participantSnapshot?.session,
+                partner: {
+                  ...(prev.partner || {}),
+                  id: updated.id,
+                  name: updated.name,
+                  description: updated.description,
+                  avatarUrl: updated.avatarUrl || null,
+                  voiceId: updated.voiceId || null,
+                  kind: updated.kind,
                 },
               }
             : prev
@@ -403,20 +419,22 @@ export function ConversationHistory() {
           id: updated.id,
           name: updated.name,
           description: updated.description,
-          avatar_url: updated.avatarUrl || null,
+          avatarUrl: updated.avatarUrl || null,
+          voiceId: updated.voiceId || null,
+          kind: updated.kind,
         });
         setSelected((prev) =>
           prev
             ? {
                 ...prev,
-                participantSnapshot: {
-                  ...(prev.participantSnapshot || {}),
-                  partner: {
-                    id: updated.id,
-                    name: updated.name,
-                    description: updated.description,
-                    avatar_url: updated.avatarUrl || null,
-                  },
+                partner: {
+                  ...(prev.partner || {}),
+                  id: updated.id,
+                  name: updated.name,
+                  description: updated.description,
+                  avatarUrl: updated.avatarUrl || null,
+                  voiceId: updated.voiceId || null,
+                  kind: updated.kind,
                 },
               }
             : prev
@@ -442,21 +460,12 @@ export function ConversationHistory() {
       if (deletedId === currentPartnerId) {
         setPartnerProfile(undefined);
         setSelected((prev) => {
-          if (!prev) {
+          if (!prev || !prev.partner || prev.partner.id !== deletedId) {
             return prev;
           }
-          const prevSnapshot = (prev.participantSnapshot as ParticipantSnapshot | undefined) || undefined;
-          const prevPartner = prevSnapshot?.partner;
-          if (!prevPartner || prevPartner.id !== deletedId) {
-            return prev;
-          }
-          const ensuredSnapshot: ParticipantSnapshot = prevSnapshot ?? {};
           return {
             ...prev,
-            participantSnapshot: {
-              ...ensuredSnapshot,
-              partner: undefined,
-            },
+            partner: undefined,
           };
         });
       }
@@ -481,13 +490,20 @@ export function ConversationHistory() {
       toast.error(t`Missing authentication`);
       return;
     }
-    const confirmed = window.confirm(t`Delete this partner? This cannot be undone.`);
-    if (!confirmed) {
+    setIsPartnerDeleteDialogOpen(true);
+  };
+  const confirmDeletePartner = () => {
+    if (!editingPartnerId || !canManagePartner || deletePartnerMutation.isPending) {
+      return;
+    }
+    if (!token) {
+      toast.error(t`Missing authentication`);
+      setIsPartnerDeleteDialogOpen(false);
       return;
     }
     deletePartnerMutation.mutate();
+    setIsPartnerDeleteDialogOpen(false);
   };
-  const isPartnerActionPending = renamePartnerMutation.isPending || deletePartnerMutation.isPending;
   const createPartnerMutation = useMutation({
     mutationFn: async (name: string) => {
       if (!token) {
@@ -499,8 +515,8 @@ export function ConversationHistory() {
       }
       return createPartner(token, {
         name: trimmed,
-        learningLang: selected?.learningLang || participantSnapshot?.session?.learning_lang || undefined,
-        nativeLang: selected?.nativeLang || participantSnapshot?.session?.native_lang || undefined,
+        learningLang: selected?.learningLang || undefined,
+        nativeLang: selected?.nativeLang || undefined,
       });
     },
     onSuccess: (partner) => {
@@ -520,6 +536,51 @@ export function ConversationHistory() {
       toast.error(message);
     },
   });
+  const createPartnerAndAssignMutation = useMutation({
+    mutationFn: async () => {
+      if (!token) {
+        throw new Error(t`Missing authentication`);
+      }
+      if (!selected?.id) {
+        throw new Error(t`Select a conversation first`);
+      }
+      const trimmedName = partnerNameDraft.trim();
+      if (!trimmedName) {
+        throw new Error(t`Enter a name first`);
+      }
+      const partner = await createPartner(token, {
+        name: trimmedName,
+        description: partnerDescriptionDraft?.trim() || null,
+        learningLang: selected?.learningLang || undefined,
+        nativeLang: selected?.nativeLang || undefined,
+      });
+      await reassignConversationPartner(token, selected.id, partner.id);
+      return partner;
+    },
+    onSuccess: (partner) => {
+      const ref: ConversationPartnerRef = {
+        id: partner.id,
+        name: partner.name,
+        description: partner.description || null,
+        avatarUrl: partner.avatarUrl || null,
+        voiceId: partner.voiceId || null,
+        kind: partner.kind,
+      };
+      setPartnerProfile(ref);
+      setSelected((prev) => (prev ? { ...prev, partner: ref } : prev));
+      setEditingPartnerId(partner.id);
+      setPartnerNameDraft(partner.name || '');
+      setPartnerDescriptionDraft(partner.description || '');
+      setIsPartnerManagerOpen(false);
+      setIsEditModalOpen(false);
+      refetchPartners();
+      toast.success(t`Partner created`);
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : t`Failed to create partner`;
+      toast.error(message);
+    },
+  });
   const reassignPartnerMutation = useMutation({
     mutationFn: async (targetPartnerId: string) => {
       if (!token || !selected) {
@@ -531,7 +592,7 @@ export function ConversationHistory() {
     },
     onSuccess: (detail) => {
       setSelected(detail);
-      setPartnerProfile(detail.participantSnapshot?.partner || undefined);
+      setPartnerProfile(detail.partner || undefined);
       setIsPartnerManagerOpen(false);
       setPartnerSearch('');
       toast.success(t`Conversation partner assigned`);
@@ -541,6 +602,10 @@ export function ConversationHistory() {
       toast.error(message);
     },
   });
+  const isPartnerActionPending =
+    renamePartnerMutation.isPending || deletePartnerMutation.isPending || createPartnerAndAssignMutation.isPending;
+  const isSavingPartner = renamePartnerMutation.isPending || createPartnerAndAssignMutation.isPending;
+  const partnerDeleteTarget = partnerNameDraft?.trim() || t`this partner`;
 
   // Calculate total pages
   const totalPages = Math.ceil(totalConversations / pageSize);
@@ -703,6 +768,7 @@ export function ConversationHistory() {
       });
       setConversations(response.conversations);
       setTotalConversations(response.total);
+      await refresh();
     } catch (err) {
       console.error('Failed to delete conversation', err);
       toast.error(t`Failed to delete conversation`);
@@ -794,31 +860,20 @@ export function ConversationHistory() {
     return segmentStartPercent + segmentWidthPercent * positionInSegment;
   };
 
-  const entityColors: Record<string, string> = {
-    User: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
-    Preference: 'bg-purple-500/10 text-purple-500 border-purple-500/30',
-    Location: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30',
-    Event: 'bg-orange-500/10 text-orange-500 border-orange-500/30',
-    Object: 'bg-pink-500/10 text-pink-500 border-pink-500/30',
-    Topic: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/30',
-    Organization: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30',
-    Document: 'bg-gray-500/10 text-gray-500 border-gray-500/30',
-  };
-
   // Extract scores from selected conversation
   const scores = useMemo(() => {
-    if (!selected?.scores) {
+    const summaryScores = selected?.scores;
+    if (!summaryScores) {
       return null;
     }
     return {
-      fluency: (selected.scores.fluency as number) || 0,
-      accuracy: (selected.scores.accuracy as number) || 0,
-      comprehensibility: (selected.scores.comprehensibility as number) || 0,
+      fluency: summaryScores.fluency ?? 0,
+      accuracy: summaryScores.accuracy ?? 0,
+      comprehensibility: summaryScores.comprehensibility ?? 0,
     };
   }, [selected]);
 
   const averageScore = scores ? Math.round((scores.fluency + scores.accuracy + scores.comprehensibility) / 3) : 0;
-  const userProfile = participantSnapshot?.user;
 
   const participantDirectory = useMemo(() => {
     const directory = new Map<
@@ -829,17 +884,17 @@ export function ConversationHistory() {
       }
     >();
     directory.set('glass', { name: t`Glass`, avatarUrl: '/glass-ai.png' });
-    directory.set('user', { name: userProfile?.name || t`You`, avatarUrl: undefined });
+    directory.set('user', { name: t`You`, avatarUrl: undefined });
     const partnerEntry = {
       name: partnerProfile?.name || t`Partner`,
-      avatarUrl: partnerProfile?.avatar_url || undefined,
+      avatarUrl: partnerProfile?.avatarUrl ?? undefined,
     };
     directory.set('partner', partnerEntry);
     if (partnerProfile?.id && typeof partnerProfile.id === 'string') {
       directory.set(partnerProfile.id.toLowerCase(), partnerEntry);
     }
     return directory;
-  }, [partnerProfile, userProfile]);
+  }, [partnerProfile]);
 
   const resolveParticipantInfo = (message: ConversationMessage) => {
     const role = getMessageRole(message);
@@ -855,7 +910,7 @@ export function ConversationHistory() {
     }
     return participantDirectory.get('partner') || { name: t`Partner` };
   };
-  const extractedInfo = (selected?.extractedInfo as Array<{ label: string; value: string }>) || [];
+  const memoryRecords = selected?.memories ?? [];
   const selectedConversationName = selected?.title || t`this conversation`;
 
   if (status === 'loading' || status === 'idle' || status === 'signed-out') {
@@ -909,6 +964,27 @@ export function ConversationHistory() {
               </Button>
             )}
           </div>
+          {limitEnabled && limitUsageLabel && (
+            <div className="rounded-3xl border border-dashed border-amber-400/60 bg-amber-50/80 dark:bg-amber-500/10 px-4 py-3 flex items-center justify-between gap-3 text-sm">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  <Trans>Saved conversations</Trans>
+                </p>
+                <p className="text-lg font-semibold text-foreground">{limitUsageLabel}</p>
+                <p className="text-xs text-muted-foreground">
+                  <Trans>Free plan limit: {limitMax ?? 0}</Trans>
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="cursor-pointer whitespace-nowrap"
+                onClick={() => router.push(billingHref)}
+              >
+                <Trans>Upgrade</Trans>
+              </Button>
+            </div>
+          )}
 
           {/* Loading State */}
           {loadingConversations && (
@@ -938,11 +1014,7 @@ export function ConversationHistory() {
           {!loadingConversations &&
             conversations.map((conversation) => {
               const isActive = selected?.id === conversation.id;
-              const convScores = conversation.scores as {
-                fluency: number;
-                accuracy: number;
-                comprehensibility: number;
-              } | null;
+              const convScores = conversation.scores ?? null;
               const avgScore = convScores
                 ? Math.round((convScores.fluency + convScores.accuracy + convScores.comprehensibility) / 3)
                 : 0;
@@ -1081,10 +1153,10 @@ export function ConversationHistory() {
                           </span>
                         </>
                       )}
-                      {partnerProfile && (
+                      {(partnerProfile || showPartnerManager) && (
                         <>
                           <span className="text-muted-foreground/30">•</span>
-                          {canManagePartner ? (
+                          {showPartnerManager ? (
                             <Popover open={isPartnerManagerOpen} onOpenChange={setIsPartnerManagerOpen}>
                               <PopoverTrigger asChild>
                                 <button
@@ -1097,11 +1169,11 @@ export function ConversationHistory() {
                                   <PartnerAvatar
                                     className="h-6 w-6"
                                     fallbackSize="sm"
-                                    name={partnerProfile.name}
-                                    src={partnerProfile.avatar_url || undefined}
+                                    name={partnerProfile?.name || t`Partner`}
+                                    src={partnerProfile?.avatarUrl || undefined}
                                   />
                                   <span className="font-medium text-foreground">
-                                    {partnerProfile.name || t`Partner`}
+                                    {partnerProfile?.name || t`Partner`}
                                   </span>
                                   <ChevronDown
                                     className={cn(
@@ -1127,32 +1199,45 @@ export function ConversationHistory() {
                                   />
                                 </div>
                                 <div className="py-2">
-                                  <div className="px-3">
-                                    <div className="group relative flex items-center gap-2 rounded-md bg-accent/70 px-3 py-2 pr-16 text-sm">
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <PartnerAvatar
-                                          className="h-6 w-6"
-                                          fallbackSize="sm"
-                                          name={partnerProfile.name}
-                                          src={partnerProfile.avatar_url || undefined}
-                                        />
-                                        <span className="font-medium text-foreground truncate">
-                                          {partnerProfile.name || t`Partner`}
-                                        </span>
+                                  {partnerProfile ? (
+                                    <div className="px-3">
+                                      <div className="group relative flex items-center gap-2 rounded-md bg-accent/70 px-3 py-2 pr-16 text-sm">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <PartnerAvatar
+                                            className="h-6 w-6"
+                                            fallbackSize="sm"
+                                            name={partnerProfile.name}
+                                            src={partnerProfile.avatarUrl || undefined}
+                                          />
+                                          <span className="font-medium text-foreground truncate">
+                                            {partnerProfile.name || t`Partner`}
+                                          </span>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            preparePartnerEdit(partnerProfile);
+                                            setIsPartnerManagerOpen(false);
+                                            setIsEditModalOpen(true);
+                                          }}
+                                          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-border/60 bg-card/80 px-2 py-1 text-xs font-medium text-foreground opacity-0 transition hover:bg-accent group-hover:opacity-100 cursor-pointer"
+                                        >
+                                          <Trans>Edit</Trans>
+                                        </button>
                                       </div>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          preparePartnerEdit(partnerProfile);
-                                          setIsPartnerManagerOpen(false);
-                                          setIsEditModalOpen(true);
-                                        }}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-border/60 bg-card/80 px-2 py-1 text-xs font-medium text-foreground opacity-0 transition hover:bg-accent group-hover:opacity-100 cursor-pointer"
-                                      >
-                                        <Trans>Edit</Trans>
-                                      </button>
                                     </div>
-                                  </div>
+                                  ) : (
+                                    <div className="px-3">
+                                      <div className="rounded-md border border-dashed border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                                        <p className="font-medium text-foreground">
+                                          <Trans>No partner assigned</Trans>
+                                        </p>
+                                        <p>
+                                          <Trans>Select an existing partner or create a new one.</Trans>
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
                                   <div className="px-3 pt-3 text-xs text-muted-foreground">
                                     <Trans>Select a partner</Trans>
                                   </div>
@@ -1245,10 +1330,10 @@ export function ConversationHistory() {
                               <PartnerAvatar
                                 className="h-6 w-6"
                                 fallbackSize="sm"
-                                name={partnerProfile.name}
-                                src={partnerProfile.avatar_url || undefined}
+                                name={partnerProfile?.name || t`Partner`}
+                                src={partnerProfile?.avatarUrl || undefined}
                               />
-                              <span className="font-medium text-foreground">{partnerProfile.name || t`Partner`}</span>
+                              <span className="font-medium text-foreground">{partnerProfile?.name || t`Partner`}</span>
                             </span>
                           )}
                         </>
@@ -1523,7 +1608,7 @@ export function ConversationHistory() {
               )}
 
               {/* Memory Section */}
-              {extractedInfo.length > 0 && (
+              {memoryRecords.length > 0 && (
                 <section>
                   <button
                     onClick={() => setShowMemory(!showMemory)}
@@ -1534,7 +1619,7 @@ export function ConversationHistory() {
                       <span className="text-sm font-semibold">
                         <Trans>Memory</Trans>
                       </span>
-                      <span className="text-xs text-muted-foreground">({extractedInfo.length})</span>
+                      <span className="text-xs text-muted-foreground">({memoryRecords.length})</span>
                     </div>
                     {showMemory ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
                   </button>
@@ -1548,22 +1633,25 @@ export function ConversationHistory() {
                         className="overflow-hidden"
                       >
                         <div className="mt-2 bg-background/50 border border-border/30 rounded-lg p-3 max-h-64 overflow-auto space-y-2">
-                          {extractedInfo.map((info, index) => (
-                            <div
-                              key={index}
-                              className="flex items-start gap-2 p-2 rounded-lg bg-background/50 border border-border/20"
-                            >
-                              <span
-                                className={cn(
-                                  'px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 border',
-                                  entityColors[info.label] || 'bg-slate-500/10 text-slate-500 border-slate-500/30'
-                                )}
+                          {memoryRecords.map((memory) => {
+                            const label = MEMORY_SUBJECT_LABELS[(memory.subjectRole || '').toLowerCase()] || t`Memory`;
+                            return (
+                              <div
+                                key={memory.id}
+                                className="flex items-start gap-2 p-2 rounded-lg bg-background/50 border border-border/20"
                               >
-                                {info.label}
-                              </span>
-                              <div className="flex-1 min-w-0 text-sm break-words">{info.value}</div>
-                            </div>
-                          ))}
+                                <span
+                                  className={cn(
+                                    'px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 border',
+                                    'bg-slate-500/10 text-slate-500 border-slate-500/30'
+                                  )}
+                                >
+                                  {label}
+                                </span>
+                                <div className="flex-1 min-w-0 text-sm break-words">{memory.text}</div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </motion.div>
                     )}
@@ -1802,6 +1890,34 @@ export function ConversationHistory() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <AlertDialog open={isPartnerDeleteDialogOpen} onOpenChange={setIsPartnerDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Delete partner</Trans>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t`Are you sure you want to delete "${partnerDeleteTarget}"? This cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletePartnerMutation.isPending}>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event: React.MouseEvent) => {
+                event.preventDefault();
+                confirmDeletePartner();
+              }}
+              className="bg-destructive text-white hover:bg-destructive/90"
+              disabled={deletePartnerMutation.isPending}
+            >
+              {deletePartnerMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+              <Trans>Delete</Trans>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

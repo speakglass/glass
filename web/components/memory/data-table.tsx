@@ -52,6 +52,7 @@ interface DataTableProps<TData, TValue> {
   footerNote?: React.ReactNode;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
+  defaultHiddenColumns?: VisibilityState;
 }
 
 export function DataTable<TData, TValue>({
@@ -63,10 +64,13 @@ export function DataTable<TData, TValue>({
   footerNote,
   searchValue,
   onSearchChange,
+  defaultHiddenColumns,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => ({
+    ...(defaultHiddenColumns || {}),
+  }));
   const [rowSelection, setRowSelection] = React.useState({});
 
   const table = useReactTable({

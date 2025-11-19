@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, field_validator
+from pydantic import Field
 
 
 class Settings(BaseSettings):
@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     llm_provider: str = "openai"
     asr_provider: str = "deepgram"
     tts_provider: str = "elevenlabs"
-    memory_provider: str = "zep"
+    memory_provider: str = "postgres"
 
     # OpenAI LLM
     openai_api_key: str | None = None
@@ -39,9 +39,8 @@ class Settings(BaseSettings):
     elevenlabs_voice_id: str = "cgSgspJ2msm6clMCkdW9"  # Default voice (Female)
     elevenlabs_ai_voice_id: str = "iP95p4xoKVk53GoZ742B"  # AI voice (Male)
 
-    # Zep Memory
-    zep_api_key: str | None = None
-    zep_project_id: str | None = None
+    # Memory settings
+    memory_cache_ttl: int = 180
 
     # CORS
     allow_origin: str = "*"
@@ -62,17 +61,11 @@ class Settings(BaseSettings):
     resend_verification_template_id: str | None = None
     resend_password_reset_template_id: str | None = None
 
-    # Conversation window for LLM context (Zep best practice: 5 messages)
+    # Conversation window for LLM context (messages to keep in fast cache)
     context_window_size: int = 5
 
-    # Redis (usage tracking)
+    # Redis (shared caching / background tasks)
     redis_url: str | None = None
-
-    # Daily free usage quota per user in minutes (resets every UTC midnight)
-    # - If None: Unlimited usage (no quota enforcement)
-    # - If set: Users get this many minutes per day for free
-    # After daily quota is exhausted, users can still use bonus_minutes from their account
-    daily_free_minutes: int | None = None
 
     # Database for account persistence (meeting history, auth metadata)
     database_url: str = "postgresql+asyncpg://glass:glass@localhost:5432/glass"
@@ -92,20 +85,16 @@ class Settings(BaseSettings):
     azure_blob_sign_urls: bool | None = None
     azure_blob_signed_url_ttl_seconds: int = 60 * 60 * 24 * 365  # 1 year
 
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="GLASS_")
+    # Billing / Stripe
+    self_hosted: bool = True
+    stripe_secret_key: str | None = None
+    stripe_webhook_secret: str | None = None
+    stripe_monthly_amount_cents: int = 2499
+    stripe_yearly_amount_cents: int = 19999
+    billing_currency: str = "usd"
+    free_tier_conversation_limit: int = 10
 
-    # Coerce empty string/None-like values to None (disables limit)
-    @field_validator("daily_free_minutes", mode="before")
-    @classmethod
-    def _coerce_daily_free_minutes(cls, value):
-        if value is None:
-            return None
-        if isinstance(value, str):
-            s = value.strip().lower()
-            if s == "" or s in {"none", "null", "unset"}:
-                return None
-            # Let pydantic handle proper int parsing afterwards if it's numeric
-        return value
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="GLASS_")
 
 
 @lru_cache(maxsize=1)

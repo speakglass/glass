@@ -55,11 +55,13 @@ export const ConversationMessagesList = ({
         const speakerInfo = resolveParticipantInfo(message);
         const speakerName = speakerInfo?.name;
         const avatarUrl = speakerInfo?.avatarUrl;
-        const key = getMessageKey
-          ? getMessageKey(message, index)
-          : message.utterance_id
-          ? `${message.utterance_id}-${index}`
-          : index;
+        const defaultKey =
+          message.utterance_id !== undefined && message.utterance_id !== null && message.utterance_id !== ''
+            ? `utt:${message.utterance_id}-${index}`
+            : typeof message.id === 'number'
+            ? `msg:${message.id}-${index}`
+            : index;
+        const key = getMessageKey ? getMessageKey(message, index) : defaultKey;
 
         return (
           <div key={key} className={cn('flex gap-3 py-2', (isUser || isGlass) && 'flex-row-reverse text-right')}>

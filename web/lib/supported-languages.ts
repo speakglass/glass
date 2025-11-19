@@ -18,12 +18,6 @@ export const SUPPORTED_LANGUAGES = {
     region: 'Popular',
     label: '日本語 (Japanese)',
   },
-  zh: {
-    name: 'Chinese',
-    native_name: '中文',
-    region: 'Popular',
-    label: '中文 (Chinese)',
-  },
   es: {
     name: 'Spanish',
     native_name: 'Español',
@@ -48,7 +42,6 @@ export const LOCALIZED_LANGUAGE_CODES = [
   'en',
   'ja',
   'ko',
-  'zh',
   'es',
   'fr',
 ] as const;

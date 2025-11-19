@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
 class ConversationAnalysisRequest(BaseModel):
     session_id: str = Field(..., description="Session identifier for the conversation to analyze.")
-
-
-class ExtractedInfo(BaseModel):
-    label: str = Field(..., description="Label for the extracted information (e.g., 'User name', 'Interest').")
-    value: str = Field(..., description="The extracted value.")
-    editable: bool = Field(default=True, description="Whether this info can be edited by the user.")
 
 
 class ConversationScores(BaseModel):
@@ -24,7 +20,9 @@ class ConversationScores(BaseModel):
 class ConversationAnalysisResponse(BaseModel):
     session_id: str
     scores: ConversationScores
-    extracted_info: list[ExtractedInfo]
+    initial_memories: list[dict[str, Any]] = Field(
+        default_factory=list, description="Seed memories captured alongside the analysis."
+    )
     feedback: str = Field(..., description="Overall feedback with strengths and areas for improvement.")
     messages: list[dict] = Field(default_factory=list, description="All messages from the conversation.")
     feedback_items: list[dict] = Field(default_factory=list, description="All feedback items from the conversation.")

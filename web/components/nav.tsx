@@ -31,6 +31,7 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
   const segments = pathname?.split('/').filter(Boolean) ?? [];
   const langSegment = segments[0] || 'en';
   const historyHref = `/${langSegment}/history`;
+  const billingHref = `/${langSegment}/billing`;
 
   // Check if this is the opensource version (via environment variable)
   const isOpenSource = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_IS_OPENSOURCE === 'true' : false;
@@ -86,7 +87,7 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
             <Trans>Community</Trans>
           </span>
         </Button>
-        <UserMenu historyHref={historyHref} open={userMenuOpen} onOpenChange={onUserMenuOpenChange} />
+        <UserMenu historyHref={historyHref} billingHref={billingHref} open={userMenuOpen} onOpenChange={onUserMenuOpenChange} />
       </div>
     </div>
   );

@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-import time
 import uuid
 import logging
-from datetime import datetime, timezone, timedelta
 
 from .adapters.asr import build_asr_adapter
 from .adapters.websocket import NullEventsAdapter
@@ -15,7 +13,9 @@ from .adapters.memory import build_memory_adapter
 from .adapters.tts import build_tts_adapter
 from .config import Settings
 from .domain.session import ConversationSession
+from .persistence.db import PersistenceDatabase
 from .services.email import EmailService
+from .services.billing import StripeService
 
 LOGGER = logging.getLogger(__name__)    
 
@@ -30,6 +30,8 @@ class SessionManager:
         memory_adapter,
         tts_adapter=None,
         context_window_size: int = 5,
+        redis_client=None,
+        pending_memory_ttl: int = 900,
     ) -> None:
         self.asr_adapter = asr_adapter
         self.llm_adapter = llm_adapter
@@ -38,7 +40,9 @@ class SessionManager:
         self.context_window_size = context_window_size
         self._pipelines: dict[str, ConversationSession] = {}
         self._lock = asyncio.Lock()
-        self._pending_memory_threads: set[str] = set()
+        self._pending_memory_conversations: set[str] = set()
+        self._redis = redis_client
+        self._pending_memory_ttl = pending_memory_ttl
 
     async def get_or_create(self, session_id: str, events_port=None) -> ConversationSession:
         async with self._lock:
@@ -66,16 +70,45 @@ class SessionManager:
             if pipeline:
                 LOGGER.info("Disposed pipeline for session %s", session_id)
 
-    def mark_memory_pending(self, thread_id: str | None) -> None:
-        if thread_id:
-            self._pending_memory_threads.add(thread_id)
+    def _pending_memory_key(self, conversation_id: str) -> str:
+        return f"glass:memories:pending:{conversation_id}"
 
-    def clear_memory_pending(self, thread_id: str | None) -> None:
-        if thread_id and thread_id in self._pending_memory_threads:
-            self._pending_memory_threads.discard(thread_id)
+    async def mark_memory_pending(self, conversation_id: str | None) -> None:
+        if not conversation_id:
+            return
+        self._pending_memory_conversations.add(conversation_id)
+        if self._redis:
+            try:
+                await self._redis.set(
+                    self._pending_memory_key(conversation_id),
+                    "1",
+                    ex=self._pending_memory_ttl,
+                )
+            except Exception as exc:
+                LOGGER.debug("Failed to mark pending memory in Redis: %s", exc)
 
-    def is_memory_pending(self, thread_id: str | None) -> bool:
-        return bool(thread_id and thread_id in self._pending_memory_threads)
+    async def clear_memory_pending(self, conversation_id: str | None) -> None:
+        if not conversation_id:
+            return
+        if conversation_id in self._pending_memory_conversations:
+            self._pending_memory_conversations.discard(conversation_id)
+        if self._redis:
+            try:
+                await self._redis.delete(self._pending_memory_key(conversation_id))
+            except Exception as exc:
+                LOGGER.debug("Failed to clear pending memory in Redis: %s", exc)
+
+    async def is_memory_pending(self, conversation_id: str | None) -> bool:
+        if not conversation_id:
+            return False
+        if self._redis:
+            try:
+                exists = await self._redis.exists(self._pending_memory_key(conversation_id))
+                if exists:
+                    return True
+            except Exception as exc:
+                LOGGER.debug("Failed to read pending memory flag from Redis: %s", exc)
+        return conversation_id in self._pending_memory_conversations
 
     @staticmethod
     def new_session_id() -> str:
@@ -87,12 +120,6 @@ class AppState:
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        # Enforce Redis when daily quota is enabled
-        if settings.daily_free_minutes is not None and not settings.redis_url:
-            raise ValueError(
-                "GLASS_DAILY_FREE_MINUTES is set but GLASS_REDIS_URL is not configured. "
-                "Please provide GLASS_REDIS_URL or set GLASS_DAILY_FREE_MINUTES=None to disable the feature."
-            )
         self._redis = None
         
         if settings.redis_url:
@@ -139,15 +166,15 @@ class AppState:
                     error_detail = "URL parsing failed"
                 
                 LOGGER.error(f"❌ Redis connection failed ({error_detail}): {e}")
-                if settings.daily_free_minutes is not None:
-                    raise RuntimeError(
-                        f"Redis required for daily quota but connection failed: {e}\n"
-                        f"Connection details: {error_detail}\n"
-                        f"Check: Redis URL, firewall, and port accessibility"
-                    )
+        self.database = PersistenceDatabase(settings.database_url)
         asr_adapter = build_asr_adapter(settings)
         llm_adapter = build_llm_adapter(settings)
-        memory_adapter = build_memory_adapter(settings)
+        memory_adapter = build_memory_adapter(
+            settings,
+            database=self.database,
+            redis_client=self._redis,
+            llm_adapter=llm_adapter,
+        )
         tts_adapter = build_tts_adapter(settings)
         self.session_manager = SessionManager(
             asr_adapter=asr_adapter,
@@ -155,6 +182,7 @@ class AppState:
             memory_adapter=memory_adapter,
             tts_adapter=tts_adapter,
             context_window_size=int(settings.context_window_size or 5),
+            redis_client=self._redis,
         )
         # Email service for verification and password reset
         self.email_service = EmailService(
@@ -163,143 +191,17 @@ class AppState:
             verification_template_id=settings.resend_verification_template_id,
             password_reset_template_id=settings.resend_password_reset_template_id,
         )
-        # In-memory fallback for daily usage (used if Redis temporarily fails)
-        # key: client_id, value: (date_str_utc, used_seconds)
-        self._fallback_daily_usage: dict[str, tuple[str, int]] = {}
-        # Error logging throttle (avoid spamming logs on Redis failures)
-        self._last_redis_error_log: dict[str, float] = {}  # method_name -> last_log_time
-        self._redis_error_log_interval = 60.0  # Log once per minute
+        self.billing_service = StripeService(
+            api_key=settings.stripe_secret_key,
+            webhook_secret=settings.stripe_webhook_secret,
+            monthly_amount_cents=int(settings.stripe_monthly_amount_cents or 0),
+            yearly_amount_cents=int(settings.stripe_yearly_amount_cents or 0),
+            currency=settings.billing_currency or "usd",
+            self_hosted=settings.self_hosted,
+        )
         # Track session → authenticated user ownership
         self._session_owner_lock = asyncio.Lock()
         self._session_owner: dict[str, str] = {}
-
-    # Removed per-day session cap logic
-
-    def _should_log_redis_error(self, method_name: str) -> bool:
-        """Check if we should log Redis error (throttle to avoid spam)."""
-        now = time.time()
-        last_log = self._last_redis_error_log.get(method_name, 0)
-        if now - last_log >= self._redis_error_log_interval:
-            self._last_redis_error_log[method_name] = now
-            return True
-        return False
-
-    # --------- Daily quota tracking (shared across sessions) ----------
-    def has_quota_tracking(self) -> bool:
-        """True if daily quota tracking is enabled and Redis is configured."""
-        return self.settings.daily_free_minutes is not None and self._redis is not None
-
-    # --------- Daily cumulative usage (resets every UTC midnight) ----------
-    def _today_str_utc(self) -> str:
-        now = datetime.now(timezone.utc)
-        return now.strftime("%Y%m%d")
-
-    def _seconds_until_utc_midnight(self) -> int:
-        now = datetime.now(timezone.utc)
-        tomorrow = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-        return max(1, int((tomorrow - now).total_seconds()))
-
-    async def get_used_seconds_today(self, client_id: str) -> int:
-        """Return seconds used today for this client (UTC day). Ensures key is initialized with TTL.
-
-        Requires Redis when feature is enabled; uses in-proc fallback on transient errors.
-        """
-        if not self.has_quota_tracking():
-            # With quota disabled, treat as 0 used (unlimited)
-            return 0
-        date_str = self._today_str_utc()
-        key = f"glass:usage:{client_id}:{date_str}"
-        try:
-            # Initialize key with TTL to next midnight if missing
-            if not await self._redis.exists(key):  # type: ignore[union-attr]
-                await self._redis.set(key, 0, ex=self._seconds_until_utc_midnight(), nx=True)  # type: ignore[union-attr]
-            val = await self._redis.get(key)  # type: ignore[union-attr]
-            used = max(0, int(val or 0))
-            # Ensure key has TTL; if not, set it
-            ttl = await self._redis.ttl(key)  # type: ignore[union-attr]
-            if ttl is not None and ttl < 0:
-                await self._redis.expire(key, self._seconds_until_utc_midnight())  # type: ignore[union-attr]
-            # Cache fallback
-            self._fallback_daily_usage[client_id] = (date_str, used)
-            return used
-        except Exception as e:
-            if self._should_log_redis_error("get_used_seconds_today"):
-                LOGGER.warning("[Budget] get_used_seconds_today Redis error: %s; using fallback (logging throttled to 1/min)", e)
-            cached = self._fallback_daily_usage.get(client_id)
-            if cached is None or cached[0] != date_str:
-                # New day or no cache → reset fallback
-                self._fallback_daily_usage[client_id] = (date_str, 0)
-                return 0
-            return int(cached[1])
-
-    async def incr_used_seconds(self, client_id: str, seconds: int = 1) -> int:
-        """Increment seconds used today and return updated used total (UTC day)."""
-        seconds = max(1, int(seconds))
-        if not self.has_quota_tracking():
-            # If quota disabled, do nothing and return 0 used (unlimited)
-            return 0
-        date_str = self._today_str_utc()
-        key = f"glass:usage:{client_id}:{date_str}"
-        try:
-            # Ensure key exists with TTL to midnight
-            if not await self._redis.exists(key):  # type: ignore[union-attr]
-                await self._redis.set(key, 0, ex=self._seconds_until_utc_midnight(), nx=True)  # type: ignore[union-attr]
-            used = await self._redis.incrby(key, seconds)  # type: ignore[union-attr]
-            # Ensure expiry is still present
-            ttl = await self._redis.ttl(key)  # type: ignore[union-attr]
-            if ttl is not None and ttl < 0:
-                await self._redis.expire(key, self._seconds_until_utc_midnight())  # type: ignore[union-attr]
-            # Cache fallback
-            self._fallback_daily_usage[client_id] = (date_str, int(used))
-            return int(used)
-        except Exception as e:
-            if self._should_log_redis_error("incr_used_seconds"):
-                LOGGER.warning("[Budget] incr_used_seconds Redis error: %s; using fallback (logging throttled to 1/min)", e)
-            cached = self._fallback_daily_usage.get(client_id)
-            if cached is None or cached[0] != date_str:
-                new_used = seconds
-            else:
-                new_used = int(cached[1]) + seconds
-            self._fallback_daily_usage[client_id] = (date_str, new_used)
-            return new_used
-
-    async def get_remaining_seconds_quota(self, client_id: str, bonus_minutes: int | None = None) -> int:
-        """Return remaining seconds available today for this client.
-        
-        Logic:
-        - If daily_free_minutes is None: Return None (unlimited)
-        - Otherwise: Return daily remaining + bonus remaining
-        
-        Args:
-            client_id: User's client ID
-            bonus_minutes: User's bonus minutes from account (if any)
-        
-        Returns:
-            Remaining seconds, or a very large number if unlimited
-        """
-        if self.settings.daily_free_minutes is None:
-            # Unlimited usage
-            return 999999999  # Very large number to indicate unlimited
-        
-        # Calculate daily remaining
-        daily_total = max(0, int(self.settings.daily_free_minutes) * 60)
-        used = await self.get_used_seconds_today(client_id)
-        daily_remaining = max(0, daily_total - used)
-        
-        # If still has daily quota, return it
-        if daily_remaining > 0:
-            return daily_remaining
-        
-        # Daily quota exhausted, check bonus
-        if bonus_minutes is not None and bonus_minutes > 0:
-            bonus_seconds = max(0, int(bonus_minutes) * 60)
-            # How much over daily quota?
-            over_daily = used - daily_total
-            bonus_remaining = max(0, bonus_seconds - over_daily)
-            return bonus_remaining
-        
-        # No quota left
-        return 0
 
     # --------- Session ownership ----------
     async def set_session_owner(self, session_id: str, user_id: str) -> None:

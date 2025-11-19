@@ -101,7 +101,6 @@ export default function OnboardingBottomPanel({
     const langNames: Record<string, string> = {
       ja: t`Japanese`,
       ko: t`Korean`,
-      zh: t`Chinese`,
       es: t`Spanish`,
       fr: t`French`,
       en: t`English`,

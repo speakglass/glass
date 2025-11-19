@@ -1,11 +1,10 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
-import { LogOut, History, Settings as SettingsIcon, Brain, BookOpen, ArrowUpRight } from 'lucide-react';
+import { LogOut, History, Settings as SettingsIcon, Brain, BookOpen, ArrowUpRight, CreditCard } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
-import { useQuery } from '@tanstack/react-query';
 import Settings from './settings';
 
 import {
@@ -20,47 +19,22 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAccountSession } from '@/contexts/account-session-context';
-import { cn } from '@/utils';
-
-async function fetchUsage(token: string | null) {
-  if (!token) throw new Error('No token');
-
-  const response = await fetch('/api/session', {
-    cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch usage');
-  }
-
-  const data = await response.json();
-  return data.snapshot.usage;
-}
 
 export function UserMenu({
   historyHref,
+  billingHref,
   open,
   onOpenChange,
 }: {
   historyHref: string;
+  billingHref: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
   const { data: session, status: sessionStatus } = useSession();
-  const { snapshot, token } = useAccountSession();
+  const { snapshot } = useAccountSession();
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  // Auto-refresh usage every 30 seconds
-  const { data: usage } = useQuery({
-    queryKey: ['usage', token],
-    queryFn: () => fetchUsage(token),
-    enabled: !!token,
-    refetchInterval: 30000, // 30 seconds
-    initialData: snapshot?.usage,
-  });
+  const showBillingLink = Boolean(snapshot?.billing && !snapshot.billing.selfHosted);
 
   const user = session?.user;
   const avatar = user?.image || null;
@@ -71,12 +45,6 @@ export function UserMenu({
       .join('')
       .slice(0, 2)
       .toUpperCase() || '?';
-
-  // Format usage display
-  // Show usage only if daily quota is configured
-  const showUsage = usage && usage.dailyTotalSeconds !== null;
-  const isUsingBonus = usage && usage.dailyRemainingSeconds === 0 && (usage.bonusRemainingSeconds ?? 0) > 0;
-  const hasBonusMinutes = usage?.bonusTotalSeconds != null && usage.bonusTotalSeconds > 0;
 
   if (!session?.user) {
     if (sessionStatus === 'loading') {
@@ -115,24 +83,6 @@ export function UserMenu({
               </div>
             </div>
           </DropdownMenuLabel>
-          {showUsage && (
-            <div className="px-3 pb-2 space-y-2">
-              <UsageBar
-                label={<Trans>Daily free minutes</Trans>}
-                remainingSeconds={usage?.dailyRemainingSeconds ?? 0}
-                totalSeconds={usage?.dailyTotalSeconds ?? undefined}
-                highlight={isUsingBonus ? 'bg-amber-500' : 'bg-primary'}
-              />
-              {hasBonusMinutes && (
-                <UsageBar
-                  label={<Trans>Bonus minutes</Trans>}
-                  remainingSeconds={usage?.bonusRemainingSeconds ?? 0}
-                  totalSeconds={usage?.bonusTotalSeconds ?? undefined}
-                  highlight="bg-purple-500"
-                />
-              )}
-            </div>
-          )}
           <DropdownMenuSeparator />
 
           <DropdownMenuGroup>
@@ -148,6 +98,14 @@ export function UserMenu({
                 <Trans>Memory</Trans>
               </Link>
             </DropdownMenuItem>
+            {showBillingLink && (
+              <DropdownMenuItem asChild>
+                <Link href={billingHref} className="cursor-pointer">
+                  <CreditCard />
+                  <Trans>Billing</Trans>
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={() => setSettingsOpen(true)} className="cursor-pointer">
               <SettingsIcon />
               <Trans>Settings</Trans>
@@ -173,51 +131,5 @@ export function UserMenu({
         </DropdownMenuContent>
       </DropdownMenu>
     </>
-  );
-}
-
-type UsageBarProps = {
-  label: ReactNode;
-  remainingSeconds?: number | null;
-  totalSeconds?: number | null;
-  highlight?: string;
-  minLabel?: ReactNode;
-};
-
-function UsageBar({
-  label,
-  remainingSeconds,
-  totalSeconds,
-  highlight = 'bg-primary',
-  minLabel = <Trans>min</Trans>,
-}: UsageBarProps) {
-  const rawRemaining = typeof remainingSeconds === 'number' ? Math.max(0, remainingSeconds) : 0;
-  const rawTotal = typeof totalSeconds === 'number' && totalSeconds > 0 ? totalSeconds : null;
-  const remainingMinutes = Math.max(0, Math.floor(rawRemaining / 60));
-  const totalMinutes = rawTotal ? Math.max(0, Math.floor(rawTotal / 60)) : null;
-  const percent = rawTotal ? Math.min(100, (rawRemaining / rawTotal) * 100) : rawRemaining > 0 ? 100 : 0;
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-[11px] uppercase">
-        <span className="font-semibold tracking-wide text-muted-foreground">{label}</span>
-        <span className="tabular-nums text-[11px] font-semibold text-foreground">
-          {totalMinutes !== null ? (
-            <>
-              {remainingMinutes} / {totalMinutes}
-            </>
-          ) : (
-            remainingMinutes
-          )}
-          <span className="ml-1 text-[10px] font-normal text-muted-foreground">{minLabel}</span>
-        </span>
-      </div>
-      <div className="h-1 rounded-full bg-border/70 overflow-hidden">
-        <div
-          className={cn('h-full rounded-full transition-all duration-300', highlight)}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-    </div>
   );
 }

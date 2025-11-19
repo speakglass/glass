@@ -1,12 +1,11 @@
 import { t } from '@lingui/core/macro';
 
 export const LANGUAGE_NAMES_BY_LOCALE: Record<string, Record<string, string>> = {
-  en: { en: 'English', ko: 'Korean', ja: 'Japanese', zh: 'Chinese', es: 'Spanish', fr: 'French' },
-  ko: { en: '영어', ko: '한국어', ja: '일본어', zh: '중국어', es: '스페인어', fr: '프랑스어' },
-  ja: { en: '英語', ko: '韓国語', ja: '日本語', zh: '中国語', es: 'スペイン語', fr: 'フランス語' },
-  zh: { en: '英语', ko: '韩语', ja: '日语', zh: '中文', es: '西班牙语', fr: '法语' },
-  es: { en: 'Inglés', ko: 'Coreano', ja: 'Japonés', zh: 'Chino', es: 'Español', fr: 'Francés' },
-  fr: { en: 'Anglais', ko: 'Coréen', ja: 'Japonais', zh: 'Chinois', es: 'Espagnol', fr: 'Français' },
+  en: { en: 'English', ko: 'Korean', ja: 'Japanese', es: 'Spanish', fr: 'French' },
+  ko: { en: '영어', ko: '한국어', ja: '일본어', es: '스페인어', fr: '프랑스어' },
+  ja: { en: '英語', ko: '韓国語', ja: '日本語', es: 'スペイン語', fr: 'フランス語' },
+  es: { en: 'Inglés', ko: 'Coreano', ja: 'Japonés', es: 'Español', fr: 'Francés' },
+  fr: { en: 'Anglais', ko: 'Coréen', ja: 'Japonais', es: 'Espagnol', fr: 'Français' },
 };
 
 export function getLanguageName(code: string | null | undefined, locale: string = 'en'): string {

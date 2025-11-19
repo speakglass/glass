@@ -38,9 +38,9 @@ class OpenAILLMAdapter:
         json_mode: bool = False,
     ) -> str:
         """Call OpenAI chat completions API.
-        
+
         Supports standard OpenAI models via chat completions API.
-        
+
         Args:
             prompt: Simple string prompt or list of messages
             messages: Full message array [{"role": "user", "content": "..."}]
@@ -49,14 +49,14 @@ class OpenAILLMAdapter:
             temperature: Sampling temperature 0-2
             max_tokens: Max response tokens
             json_mode: Force JSON response
-            
+
         Usage:
             # Simple prompt
             await llm.call("Translate this", system="You are a translator")
-            
+
             # With messages
             await llm.call(messages=[{"role": "user", "content": "Hello"}])
-            
+
             # Multi-turn
             await llm.call(messages=[
                 {"role": "user", "content": "Hi"},
@@ -69,27 +69,42 @@ class OpenAILLMAdapter:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        
+
         try:
             # Build input for Responses API
-            # Responses API uses 'input' instead of 'messages', and 'instructions' for system prompts
+            # Responses API uses 'input' instead of 'messages'
+            prelude_messages: list[dict[str, str]] = []
+            if system:
+                prelude_messages.append({"role": "system", "content": system})
+            if json_mode:
+                # Lower-case "json" to satisfy OpenAI Responses API requirement
+                prelude_messages.append(
+                    {
+                        "role": "system",
+                        "content": "Respond only with strict json output and return valid json.",
+                    }
+                )
+
             if messages:
                 # Use messages array directly as input
                 input_data = messages.copy()
-                # If system prompt provided, use instructions parameter
-                instructions_param = system
+                if prelude_messages:
+                    input_data = prelude_messages + input_data
             elif prompt:
                 if isinstance(prompt, list):
-                    input_data = prompt
-                    instructions_param = system
+                    input_data = prompt.copy()
+                    if prelude_messages:
+                        input_data = prelude_messages + input_data
                 else:
                     # Simple string prompt
-                    input_data = prompt
-                    instructions_param = system
+                    if prelude_messages:
+                        input_data = prelude_messages + [{"role": "user", "content": prompt}]
+                    else:
+                        input_data = prompt
             else:
                 LOGGER.error("Either 'prompt' or 'messages' must be provided")
                 return ""
-            
+
             # Responses API payload
             payload = {
                 "model": chosen_model,
@@ -97,19 +112,15 @@ class OpenAILLMAdapter:
                 "max_output_tokens": max_tokens,
                 "temperature": temperature,
             }
-            
-            # Add instructions if provided (system prompt)
-            if instructions_param:
-                payload["instructions"] = instructions_param
-            
+
             if json_mode:
                 # For structured outputs in Responses API
                 payload["text"] = {"format": {"type": "json_object"}}
-            
+
             # GPT-5 specific: add reasoning effort
             if chosen_model.startswith("gpt-5"):
                 payload["reasoning"] = {"effort": "low"}
-            
+
             async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
                 response = await client.post("/responses", json=payload, headers=headers)
                 if response.status_code != 200:
@@ -118,17 +129,17 @@ class OpenAILLMAdapter:
                     LOGGER.debug(f"Request payload: {payload}")
                 response.raise_for_status()
                 data = response.json()
-            
+
             # Extract text from responses API format
             # Check for output_text helper property first (if available in SDK)
             if "output_text" in data:
                 return data["output_text"].strip()
-            
+
             # Otherwise parse output array manually
             output = data.get("output", [])
             if not isinstance(output, list):
                 return ""
-            
+
             parts = []
             for segment in output:
                 if isinstance(segment, dict):
@@ -137,10 +148,9 @@ class OpenAILLMAdapter:
                         for fragment in segment.get("content", []):
                             if isinstance(fragment, dict) and fragment.get("type") == "output_text":
                                 parts.append(fragment.get("text", ""))
-            
+
             return " ".join(part.strip() for part in parts if part).strip()
-        
+
         except Exception as e:
             LOGGER.error(f"OpenAI API call failed [model={chosen_model}]: {e}", exc_info=True)
             return ""
-    

@@ -182,6 +182,16 @@ class PostgresMemoryAdapter:
             raise ValueError("LLM adapter is required for PostgresMemoryAdapter")
         self.llm = llm
 
+    async def ensure_user(
+        self,
+        user_id: str,
+        email: str | None = None,
+        first_name: str | None = None,
+        last_name: str | None = None,
+    ) -> None:  # noqa: ARG002
+        """Ensure a user exists for memory operations (Postgres path is a no-op)."""
+        return
+
     # ------------- Cache helpers -------------
     async def _cache_get(self, key: str) -> str | None:
         if not self.redis:
@@ -341,32 +351,6 @@ class PostgresMemoryAdapter:
         return await self.get_context_for_prompt(conversation_id, user_id, scope="conversation", timeout=timeout)
 
     # ------------- Persistence helpers -------------
-    async def ensure_user(
-        self,
-        user_id: str,
-        email: str | None = None,
-        first_name: str | None = None,
-        last_name: str | None = None,
-    ) -> None:
-        """Legacy no-op retained for compatibility."""
-        return
-
-    async def ensure_thread(self, conversation_id: str, user_id: str) -> None:  # noqa: ARG002
-        """Legacy no-op retained for compatibility."""
-        return
-
-    async def add_conversation_messages(
-        self,
-        conversation_id: str,
-        user_id: str,
-        messages: list[dict],
-        session_start_time: float | None = None,
-        participants: dict[str, dict[str, Any]] | None = None,
-        return_context: bool = False,
-    ) -> str | None:
-        """Legacy no-op retained for compatibility."""
-        return None
-
     async def persist_memory_records(
         self,
         *,
@@ -513,90 +497,6 @@ class PostgresMemoryAdapter:
         for convo_id in affected_conversations:
             await self._invalidate_conversation_cache(convo_id)
 
-    async def upsert_user_persona(
-        self,
-        *,
-        user_id: str,
-        native_languages: list[str],
-        learning_languages: list[dict[str, str]],
-        display_name: str | None = None,
-    ) -> None:
-        """Legacy no-op retained for compatibility."""
-        self.invalidate_user_cache(user_id)
-
-    async def upsert_partner_profile(
-        self,
-        *,
-        user_id: str,
-        partner_profile: dict[str, object],
-    ) -> None:
-        """Legacy no-op retained for compatibility."""
-        return
-
-    async def add_feedback_record(
-        self,
-        *,
-        user_id: str,
-        record: dict[str, object],
-    ) -> None:
-        """Legacy no-op retained for compatibility."""
-        return
-
-    async def list_feedback_records(
-        self,
-        user_id: str,
-        language_code: str | None = None,
-        limit: int = 20,
-    ) -> list[dict[str, Any]]:
-        """Legacy no-op retained for compatibility."""
-        return []
-
-    async def add_profile_facts(
-        self,
-        *,
-        user_id: str,
-        facts: list[dict[str, Any]],
-    ) -> None:
-        """Legacy no-op retained for compatibility."""
-        return
-        self.invalidate_user_cache(user_id)
-
-    async def search_profile_facts(
-        self,
-        *,
-        user_id: str,
-        user_hint: str | None = None,
-        last_partner_message: str | None = None,
-        limit: int = 5,
-    ) -> list[dict[str, Any]]:
-        """Legacy no-op retained for compatibility."""
-        return []
-
-    async def record_interaction(
-        self,
-        *,
-        user_id: str,
-        conversation_id: str,
-        partner_id: str | None,
-        language_code: str | None,
-        summary: str | None = None,
-        topics: list[str] | None = None,
-        started_at: float | None = None,
-        ended_at: float | None = None,
-    ) -> None:
-        """Legacy no-op retained for compatibility."""
-        return
-
-    async def get_partner_context(
-        self,
-        *,
-        user_id: str,
-        partner_id: str,
-        limit: int = 5,
-    ) -> str:
-        """Legacy no-op retained for compatibility."""
-        return ""
-
     async def list_user_memories(
         self,
         *,
@@ -670,6 +570,47 @@ class PostgresMemoryAdapter:
                 "partner_id": row.partner_id,
                 "conversation_id": row.conversation_id,
                 "retention_expires_at": row.retention_expires_at.isoformat() if row.retention_expires_at else None,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+                "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+            }
+            for row in rows
+        ]
+
+    async def list_partner_memories(
+        self,
+        *,
+        user_id: str,
+        partner_id: str,
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        if not partner_id:
+            return []
+        async_session = self.database.session()
+        async with async_session() as session:
+            stmt = (
+                select(MemoryRecord)
+                .where(
+                    MemoryRecord.user_id == user_id,
+                    MemoryRecord.partner_id == partner_id,
+                )
+                .order_by(
+                    MemoryRecord.importance.desc(),
+                    func.coalesce(MemoryRecord.updated_at, MemoryRecord.created_at).desc(),
+                    MemoryRecord.created_at.desc(),
+                )
+                .limit(limit)
+            )
+            rows = (await session.scalars(stmt)).all()
+        return [
+            {
+                "id": row.id,
+                "text": row.text,
+                "summary": row.summary,
+                "category": row.category,
+                "subject_role": row.subject_role,
+                "importance": row.importance,
+                "partner_id": row.partner_id,
+                "conversation_id": row.conversation_id,
                 "created_at": row.created_at.isoformat() if row.created_at else None,
                 "updated_at": row.updated_at.isoformat() if row.updated_at else None,
             }

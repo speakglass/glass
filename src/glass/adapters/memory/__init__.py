@@ -18,7 +18,7 @@ class MemoryAdapter(Protocol):
 
 def build_memory_adapter(settings, *, database=None, redis_client=None, llm_adapter=None) -> MemoryAdapter:
     provider = getattr(settings, "memory_provider", "postgres").lower()
-    
+
     if provider == "postgres":
         if database is None:
             raise ValueError("PersistenceDatabase instance is required for Postgres memory adapter.")
@@ -26,12 +26,12 @@ def build_memory_adapter(settings, *, database=None, redis_client=None, llm_adap
             database=database,
             redis_client=redis_client,
             cache_ttl=int(getattr(settings, "memory_cache_ttl", 180) or 180),
-            thread_context_window=int(getattr(settings, "context_window_size", 5) or 5),
+            conversation_context_window=int(getattr(settings, "context_window_size", 5) or 5),
             llm=llm_adapter,
         )
     if provider == "inmemory":
         return InMemoryMemoryAdapter()  # type: ignore[return-value]
-    
+
     raise ValueError(f"Unknown memory provider: {provider}")
 
 

@@ -1,7 +1,7 @@
 import { useGlass, LanguageSettings, SessionConfig } from '@/contexts/glass-context';
 import { useAccountSession } from '@/contexts/account-session-context';
 import { AnimatePresence, motion } from 'motion/react';
-import { Loader2, Phone, UserRound, MoreHorizontal } from 'lucide-react';
+import { Loader2, Phone, UserRound, MoreHorizontal, AlertTriangle, Trash2 } from 'lucide-react';
 import LiquidGlass from './liquid-glass';
 import { toast } from 'sonner';
 import { useRef, useState, useEffect, useCallback } from 'react';
@@ -19,6 +19,7 @@ import {
   uploadPartnerAvatar,
   updatePartner,
   deletePartner,
+  createCheckoutSession,
 } from '@/lib/account-api';
 import { PartnerVoiceSelector } from '@/components/partner-voice-selector';
 import { ROLEPLAY_VOICE_OPTIONS } from '@/lib/roleplay-voices';
@@ -100,7 +101,6 @@ const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = {
       pronunciation: 'サンキュー ベリー マッチ',
       translation: '本当にありがとうございます',
     },
-    zh: { target: 'Thank you very much', pronunciation: 'sang-kyu bay-ree ma-chee', translation: '非常感谢' },
     es: { target: 'Thank you very much', pronunciation: 'zenk yu beri mach', translation: 'Muchas gracias' },
     fr: { target: 'Thank you very much', pronunciation: 'sank iou vèri meutch', translation: 'Merci beaucoup' },
   },
@@ -111,7 +111,6 @@ const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = {
       pronunciation: 'チョンマル カムサハムニダ',
       translation: '本当にありがとうございます',
     },
-    zh: { target: '정말 감사합니다', pronunciation: 'jung-mal gam-sa-ham-nee-da', translation: '非常感谢' },
     es: { target: '정말 감사합니다', pronunciation: 'jeong-mal gam-sa-jam-ni-da', translation: 'Muchas gracias' },
     fr: { target: '정말 감사합니다', pronunciation: 'djeong-mal gam-sa-ham-ni-da', translation: 'Merci beaucoup' },
   },
@@ -122,49 +121,19 @@ const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = {
       translation: 'Thank you very much',
     },
     ko: { target: 'ありがとうございます', pronunciation: '아리가토 고자이마스', translation: '정말 감사합니다' },
-    zh: { target: 'ありがとうございます', pronunciation: 'a-ri-ga-toh go-zai-ma-su', translation: '非常感谢' },
     es: { target: 'ありがとうございます', pronunciation: 'a-ri-ga-tou go-sai-ma-su', translation: 'Muchas gracias' },
     fr: { target: 'ありがとうございます', pronunciation: 'a-ri-ga-tou go-zaï-ma-su', translation: 'Merci beaucoup' },
-  },
-  zh: {
-    en: {
-      target: '非常感谢',
-      pronunciation: 'fei-chang gan-xie',
-      translation: 'Thank you very much',
-    },
-    ko: {
-      target: '非常感谢',
-      pronunciation: '페이창 간시에',
-      translation: '정말 감사합니다',
-    },
-    ja: {
-      target: '非常感谢',
-      pronunciation: 'フェイチャン ガンシエ',
-      translation: '本当にありがとうございます',
-    },
-    es: {
-      target: '非常感谢',
-      pronunciation: 'fei-chang gan-xie',
-      translation: 'Muchas gracias',
-    },
-    fr: {
-      target: '非常感谢',
-      pronunciation: 'fei-chang gan-xie',
-      translation: 'Merci beaucoup',
-    },
   },
   es: {
     en: { target: 'Muchas gracias', pronunciation: 'moo-chahs grah-see-ahs', translation: 'Thank you very much' },
     ko: { target: 'Muchas gracias', pronunciation: '무차스 그라시아스', translation: '정말 감사합니다' },
     ja: { target: 'Muchas gracias', pronunciation: 'ムーチャス グラシアス', translation: '本当にありがとうございます' },
-    zh: { target: 'Muchas gracias', pronunciation: 'moo-chas gra-see-as', translation: '非常感谢' },
     fr: { target: 'Muchas gracias', pronunciation: 'moo-tchas gra-si-as', translation: 'Merci beaucoup' },
   },
   fr: {
     en: { target: 'Merci beaucoup', pronunciation: 'mehr-see boh-koo', translation: 'Thank you very much' },
     ko: { target: 'Merci beaucoup', pronunciation: '메르시 보쿠', translation: '정말 감사합니다' },
     ja: { target: 'Merci beaucoup', pronunciation: 'メルシー ボクー', translation: '本当にありがとうございます' },
-    zh: { target: 'Merci beaucoup', pronunciation: 'mehr-see bo-koo', translation: '非常感谢' },
     es: { target: 'Merci beaucoup', pronunciation: 'mersi boku', translation: 'Muchas gracias' },
   },
 };
@@ -218,10 +187,11 @@ const getLanguageExample = (learningLang: string, nativeLang: string): ExamplePh
 
 export default function StartCall() {
   const { status, connect, updateSettings, settings } = useGlass();
-  const { onboardingStatus, snapshot, token } = useAccountSession();
+  const { onboardingStatus, snapshot, token, refresh } = useAccountSession();
   const { playPreview, stopPreview, loadingVoiceId, playingVoiceId } = useVoicePreviewPlayer(token);
   const router = useRouter();
   const pathname = usePathname();
+  const langSegment = pathname.split('/')[1] || 'en';
   const containerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const [step, setStep] = useState<SetupStep>('start');
@@ -282,6 +252,15 @@ export default function StartCall() {
     }
   }, []);
   const [selectedPlatform, setSelectedPlatform] = useState<LiveCallPlatform>('discord');
+  const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const conversationLimit = snapshot?.limits?.conversations || null;
+  const limitEnabled = Boolean(conversationLimit?.enabled && conversationLimit?.limit);
+  const limitMax = conversationLimit?.limit ?? null;
+  const limitUsed = conversationLimit?.used ?? 0;
+  const limitDisplayUsed = limitMax !== null ? Math.min(limitUsed, limitMax) : limitUsed;
+  const limitUsageLabel = limitMax !== null ? `${limitDisplayUsed}/${limitMax}` : null;
+  const limitBlocked = Boolean(limitEnabled && conversationLimit?.blocked);
 
   const isConnecting = status.value === 'connecting' || step === 'connecting';
   const glassMode = settings.glassMode ?? false;
@@ -710,6 +689,23 @@ export default function StartCall() {
       partner: partnerForSession,
     };
 
+    if (limitEnabled) {
+      try {
+        const latestSnapshot = (await refresh()) ?? snapshot;
+        const latestLimit = latestSnapshot?.limits?.conversations ?? conversationLimit;
+        if (latestLimit?.limit && latestLimit.used >= latestLimit.limit) {
+          setQuotaDialogOpen(true);
+          return;
+        }
+      } catch (error) {
+        console.error('[StartCall] Failed to refresh before connecting', error);
+        toast.error(t`Unable to start call`, {
+          description: t`Please try again in a moment.`,
+        });
+        return;
+      }
+    }
+
     // Proceed with connection (onboarding should already be completed at this point)
     setStep('connecting');
     try {
@@ -718,6 +714,30 @@ export default function StartCall() {
       toast.error(t`Unable to start call`);
       setStep('instructions');
     }
+  };
+
+  const handleUpgradeClick = async () => {
+    if (!token) {
+      toast.error(t`Please sign in again`);
+      return;
+    }
+    setCheckoutLoading(true);
+    try {
+      const session = await createCheckoutSession(token);
+      if (typeof window !== 'undefined') {
+        window.open(session.checkoutUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch (error) {
+      console.error('[StartCall] Failed to initiate checkout', error);
+      toast.error(t`Unable to open checkout`);
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleManageHistoryClick = () => {
+    setQuotaDialogOpen(false);
+    router.push(`/${langSegment}/history`);
   };
 
   const renderPlatformInstructions = () => {
@@ -836,8 +856,7 @@ export default function StartCall() {
 
   // Redirect to onboarding if not completed
   if (onboardingStatus !== null && !onboardingStatus.completed) {
-    const lang = pathname.split('/')[1] || 'en';
-    router.push(`/${lang}/onboarding`);
+    router.push(`/${langSegment}/onboarding`);
     return null;
   }
 
@@ -916,6 +935,24 @@ export default function StartCall() {
                     </motion.div>
                   )}
                 </div>
+                {limitEnabled && limitUsageLabel && (
+                  <div className="mt-4 flex flex-col items-center gap-2 text-xs text-muted-foreground text-center">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/60 px-3 py-1">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                      <span className="font-semibold text-foreground">{limitUsageLabel}</span>
+                      <span>
+                        <Trans>conversations saved</Trans>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-primary font-medium hover:underline"
+                      onClick={() => setQuotaDialogOpen(true)}
+                    >
+                      <Trans>Upgrade for unlimited history</Trans>
+                    </button>
+                  </div>
+                )}
               </>
             )}
 
@@ -1354,6 +1391,20 @@ export default function StartCall() {
                     <Trans>Start Call</Trans>
                   </Button>
                 </div>
+                {limitEnabled && limitUsageLabel && (
+                  <div className="text-center text-xs text-muted-foreground space-y-1">
+                    <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/60 px-3 py-1">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                      <span className="font-semibold text-foreground">{limitUsageLabel}</span>
+                      <span>
+                        <Trans>saved on the free plan</Trans>
+                      </span>
+                    </div>
+                    <p>
+                      <Trans>Delete older calls or upgrade for unlimited history.</Trans>
+                    </p>
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -1610,8 +1661,8 @@ export default function StartCall() {
       </Dialog>
 
       <AlertDialog open={isDeletePartnerDialogOpen} onOpenChange={(open) => !open && handleCancelDeletePartner()}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
+      <AlertDialogContent>
+        <AlertDialogHeader>
             <AlertDialogTitle>
               <Trans>Delete partner</Trans>
             </AlertDialogTitle>
@@ -1643,6 +1694,44 @@ export default function StartCall() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Dialog open={quotaDialogOpen} onOpenChange={setQuotaDialogOpen}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>Saved call limit reached</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>Free accounts can keep up to 10 conversations. Delete old calls or upgrade for unlimited history.</Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-2xl border border-border/60 bg-muted/50 px-4 py-5 text-center space-y-3">
+            <div className="inline-flex items-center justify-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <span className="text-sm font-medium text-muted-foreground">
+                <Trans>Current usage</Trans>
+              </span>
+            </div>
+            <div className="text-3xl font-semibold tracking-tight">{limitUsageLabel || limitDisplayUsed}</div>
+            <p className="text-xs text-muted-foreground">
+              <Trans>Delete a saved call or upgrade to keep recording new ones.</Trans>
+            </p>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={handleManageHistoryClick} className="cursor-pointer">
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              <Trans>Manage history</Trans>
+            </Button>
+            <Button
+              onClick={handleUpgradeClick}
+              className="cursor-pointer"
+              disabled={checkoutLoading}
+            >
+              {checkoutLoading && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              <Trans>Upgrade plan</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
