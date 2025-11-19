@@ -552,6 +552,10 @@ export default function StartCall() {
     }
     setIsSavingCreatePartner(true);
     try {
+      if (limitBlocked) {
+        setQuotaDialogOpen(true);
+        return false;
+      }
       let partner = await createPartner(token, {
         name: trimmedName,
         description: createPartnerDescriptionDraft.trim() || undefined,
@@ -661,6 +665,41 @@ export default function StartCall() {
     setSelectedPartnerId(partnerId);
   };
 
+  const ensureConversationCapacity = useCallback(async () => {
+    if (!limitEnabled) {
+      return true;
+    }
+    try {
+      const latestSnapshot = (await refresh()) ?? snapshot;
+      const latestLimit = latestSnapshot?.limits?.conversations ?? conversationLimit;
+      if (latestLimit?.limit && latestLimit.used >= latestLimit.limit) {
+        setQuotaDialogOpen(true);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('[StartCall] Failed to refresh before proceeding', error);
+      toast.error(t`Unable to start call`, {
+        description: t`Please try again in a moment.`,
+      });
+      return false;
+    }
+  }, [limitEnabled, refresh, snapshot, conversationLimit]);
+
+  const handleInitialStart = () => {
+    if (limitEnabled) {
+      if (limitBlocked) {
+        setQuotaDialogOpen(true);
+        return;
+      }
+      const hasLocalCapacity = !(conversationLimit?.limit && conversationLimit.used >= conversationLimit.limit);
+      if (!hasLocalCapacity) {
+        setQuotaDialogOpen(true);
+        return;
+      }
+    }
+  };
+
   const handleStartCall = async () => {
     if (!selectedMode) {
       toast.error(t`Select a mode to continue`);
@@ -690,18 +729,8 @@ export default function StartCall() {
     };
 
     if (limitEnabled) {
-      try {
-        const latestSnapshot = (await refresh()) ?? snapshot;
-        const latestLimit = latestSnapshot?.limits?.conversations ?? conversationLimit;
-        if (latestLimit?.limit && latestLimit.used >= latestLimit.limit) {
-          setQuotaDialogOpen(true);
-          return;
-        }
-      } catch (error) {
-        console.error('[StartCall] Failed to refresh before connecting', error);
-        toast.error(t`Unable to start call`, {
-          description: t`Please try again in a moment.`,
-        });
+      const hasCapacity = await ensureConversationCapacity();
+      if (!hasCapacity) {
         return;
       }
     }
@@ -899,7 +928,7 @@ export default function StartCall() {
                     <LiquidGlass
                       mouseContainer={containerRef}
                       className={'z-50'}
-                      onClick={() => setStep('mode')}
+                      onClick={handleInitialStart}
                       style={{ position: 'fixed', top: '50%', left: '50%' }}
                       displacementScale={64}
                       blurAmount={0.2}
@@ -924,7 +953,7 @@ export default function StartCall() {
                         exit: { scale: 0.5 },
                       }}
                     >
-                      <Button className={'z-50 flex items-center gap-1.5 rounded-full'} onClick={() => setStep('mode')}>
+                      <Button className={'z-50 flex items-center gap-1.5 rounded-full'} onClick={handleInitialStart}>
                         <span>
                           <Phone className={'size-4 opacity-50 fill-current'} strokeWidth={0} />
                         </span>
@@ -935,24 +964,6 @@ export default function StartCall() {
                     </motion.div>
                   )}
                 </div>
-                {limitEnabled && limitUsageLabel && (
-                  <div className="mt-4 flex flex-col items-center gap-2 text-xs text-muted-foreground text-center">
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/60 px-3 py-1">
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                      <span className="font-semibold text-foreground">{limitUsageLabel}</span>
-                      <span>
-                        <Trans>conversations saved</Trans>
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      className="text-primary font-medium hover:underline"
-                      onClick={() => setQuotaDialogOpen(true)}
-                    >
-                      <Trans>Upgrade for unlimited history</Trans>
-                    </button>
-                  </div>
-                )}
               </>
             )}
 
@@ -1111,146 +1122,150 @@ export default function StartCall() {
                     ref={partnerListRef}
                     className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto pr-1 pb-3 sm:pr-2"
                   >
-                  {partnersLoading ? (
-                    <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
-                      <Trans>Loading partners...</Trans>
-                    </div>
-                  ) : roleplayPartners.length === 0 ? (
-                    <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
-                      <Trans>No partners available</Trans>
-                    </div>
-                  ) : (
-                    roleplayPartners.map((partner) => (
-                      <div
-                        key={partner.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handlePartnerSelect(partner.id)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            handlePartnerSelect(partner.id);
-                          }
-                        }}
-                        onMouseEnter={() => setHoveredPartner(partner)}
-                        onMouseLeave={() => setHoveredPartner(null)}
-                        className={cn(
-                          'group px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
-                          getCardClass(),
-                          'hover:scale-[1.01]',
-                          selectedPartnerId === partner.id &&
-                            (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent/50 border-foreground/30')
-                        )}
-                      >
-                        <div className="relative flex items-center gap-3">
-                          {partner.avatarUrl && (
-                            <div
-                              className={cn(
-                                'hidden sm:block absolute -left-48 top-1/2 -translate-y-1/2 w-40 h-40 rounded-[36px] overflow-hidden shadow-2xl border pointer-events-none transition-all duration-200',
-                                hoveredPartner?.id === partner.id
-                                  ? 'opacity-100 translate-x-0'
-                                  : 'opacity-0 -translate-x-3'
-                              )}
-                            >
-                              <img src={partner.avatarUrl} alt={partner.name} className="w-full h-full object-cover" />
-                            </div>
-                          )}
-                          <PartnerAvatar
-                            className={cn(
-                              'h-12 w-12 flex-shrink-0',
-                              glassMode
-                                ? 'border-white/30 bg-white/10 text-white/80 shadow-none'
-                                : 'bg-muted text-foreground/80'
-                            )}
-                            fallbackClassName={glassMode ? 'bg-transparent text-white/80' : undefined}
-                            fallbackSize="md"
-                            name={partner.name}
-                            src={partner.avatarUrl || undefined}
-                            alt={partner.name}
-                          />
-                          <div className={'flex-1 min-w-0 flex items-start gap-2'}>
-                            <div className="flex-1 min-w-0">
-                              <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
-                                {partner.name}
-                              </div>
-                              <div className={`${getTextClass('muted')} text-xs truncate`}>{partner.description}</div>
-                            </div>
-                          {partner.isSystem === false && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <button
-                                    type="button"
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                    }}
-                                    className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-foreground rounded-lg p-1.5 border border-border/0 hover:border-border bg-muted/60 hover:bg-muted data-[state=open]:opacity-100 data-[state=open]:border-border data-[state=open]:bg-muted"
-                                    aria-label="Partner actions"
-                                  >
-                                    <MoreHorizontal className="w-4 h-4" />
-                                  </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      openEditPartnerModal(partner);
-                                    }}
-                                  >
-                                    <Trans>Edit</Trans>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive"
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      openDeletePartnerDialog(partner);
-                                    }}
-                                  >
-                                    <Trans>Delete</Trans>
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </div>
-                        </div>
+                    {partnersLoading ? (
+                      <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
+                        <Trans>Loading partners...</Trans>
                       </div>
-                    ))
-                  )}
-
-                  {/* Custom Partner */}
-                  <div className={'w-full'}>
-                    <button
-                      onClick={openCreatePartnerModal}
-                      className={cn(
-                        'w-full px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
-                        getCardClass(),
-                        'hover:scale-[1.01]'
-                      )}
-                    >
-                      <div className={'flex items-center gap-3'}>
+                    ) : roleplayPartners.length === 0 ? (
+                      <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
+                        <Trans>No partners available</Trans>
+                      </div>
+                    ) : (
+                      roleplayPartners.map((partner) => (
                         <div
+                          key={partner.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handlePartnerSelect(partner.id)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              handlePartnerSelect(partner.id);
+                            }
+                          }}
+                          onMouseEnter={() => setHoveredPartner(partner)}
+                          onMouseLeave={() => setHoveredPartner(null)}
                           className={cn(
-                            'w-12 h-12 rounded-full flex items-center justify-center border',
-                            glassMode
-                              ? 'border-white/30 bg-white/5 text-white/80'
-                              : 'border-border bg-muted text-muted-foreground'
+                            'group px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
+                            getCardClass(),
+                            'hover:scale-[1.01]',
+                            selectedPartnerId === partner.id &&
+                              (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent/50 border-foreground/30')
                           )}
                         >
-                          <UserRound className="w-6 h-6" strokeWidth={1.75} />
-                        </div>
-                        <div className={'flex-1 min-w-0'}>
-                          <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
-                            <Trans>Custom partner</Trans>
+                          <div className="relative flex items-center gap-3">
+                            {partner.avatarUrl && (
+                              <div
+                                className={cn(
+                                  'hidden sm:block absolute -left-48 top-1/2 -translate-y-1/2 w-40 h-40 rounded-[36px] overflow-hidden shadow-2xl border pointer-events-none transition-all duration-200',
+                                  hoveredPartner?.id === partner.id
+                                    ? 'opacity-100 translate-x-0'
+                                    : 'opacity-0 -translate-x-3'
+                                )}
+                              >
+                                <img
+                                  src={partner.avatarUrl}
+                                  alt={partner.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+                            <PartnerAvatar
+                              className={cn(
+                                'h-12 w-12 flex-shrink-0',
+                                glassMode
+                                  ? 'border-white/30 bg-white/10 text-white/80 shadow-none'
+                                  : 'bg-muted text-foreground/80'
+                              )}
+                              fallbackClassName={glassMode ? 'bg-transparent text-white/80' : undefined}
+                              fallbackSize="md"
+                              name={partner.name}
+                              src={partner.avatarUrl || undefined}
+                              alt={partner.name}
+                            />
+                            <div className={'flex-1 min-w-0 flex items-start gap-2'}>
+                              <div className="flex-1 min-w-0">
+                                <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
+                                  {partner.name}
+                                </div>
+                                <div className={`${getTextClass('muted')} text-xs truncate`}>{partner.description}</div>
+                              </div>
+                              {partner.isSystem === false && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-foreground rounded-lg p-1.5 border border-border/0 hover:border-border bg-muted/60 hover:bg-muted data-[state=open]:opacity-100 data-[state=open]:border-border data-[state=open]:bg-muted"
+                                      aria-label="Partner actions"
+                                    >
+                                      <MoreHorizontal className="w-4 h-4" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        openEditPartnerModal(partner);
+                                      }}
+                                    >
+                                      <Trans>Edit</Trans>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-destructive focus:text-destructive"
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        openDeletePartnerDialog(partner);
+                                      }}
+                                    >
+                                      <Trans>Delete</Trans>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                            </div>
                           </div>
-                          <div className={`${getTextClass('muted')} text-xs truncate`}>
-                            <Trans>Create your own conversation partner</Trans>
+                        </div>
+                      ))
+                    )}
+
+                    {/* Custom Partner */}
+                    <div className={'w-full'}>
+                      <button
+                        onClick={openCreatePartnerModal}
+                        className={cn(
+                          'w-full px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
+                          getCardClass(),
+                          'hover:scale-[1.01]'
+                        )}
+                      >
+                        <div className={'flex items-center gap-3'}>
+                          <div
+                            className={cn(
+                              'w-12 h-12 rounded-full flex items-center justify-center border',
+                              glassMode
+                                ? 'border-white/30 bg-white/5 text-white/80'
+                                : 'border-border bg-muted text-muted-foreground'
+                            )}
+                          >
+                            <UserRound className="w-6 h-6" strokeWidth={1.75} />
+                          </div>
+                          <div className={'flex-1 min-w-0'}>
+                            <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
+                              <Trans>Custom partner</Trans>
+                            </div>
+                            <div className={`${getTextClass('muted')} text-xs truncate`}>
+                              <Trans>Create your own conversation partner</Trans>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </button>
-                  </div>
+                      </button>
+                    </div>
                   </div>
                   {showPartnerListGradient && (
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-card/90 via-card/70 to-transparent" />
@@ -1391,20 +1406,6 @@ export default function StartCall() {
                     <Trans>Start Call</Trans>
                   </Button>
                 </div>
-                {limitEnabled && limitUsageLabel && (
-                  <div className="text-center text-xs text-muted-foreground space-y-1">
-                    <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/60 px-3 py-1">
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                      <span className="font-semibold text-foreground">{limitUsageLabel}</span>
-                      <span>
-                        <Trans>saved on the free plan</Trans>
-                      </span>
-                    </div>
-                    <p>
-                      <Trans>Delete older calls or upgrade for unlimited history.</Trans>
-                    </p>
-                  </div>
-                )}
               </motion.div>
             )}
 
@@ -1661,8 +1662,8 @@ export default function StartCall() {
       </Dialog>
 
       <AlertDialog open={isDeletePartnerDialogOpen} onOpenChange={(open) => !open && handleCancelDeletePartner()}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
+        <AlertDialogContent>
+          <AlertDialogHeader>
             <AlertDialogTitle>
               <Trans>Delete partner</Trans>
             </AlertDialogTitle>
@@ -1701,7 +1702,9 @@ export default function StartCall() {
               <Trans>Saved call limit reached</Trans>
             </DialogTitle>
             <DialogDescription>
-              <Trans>Free accounts can keep up to 10 conversations. Delete old calls or upgrade for unlimited history.</Trans>
+              <Trans>
+                Free accounts can keep up to 10 conversations. Delete old calls or upgrade for unlimited history.
+              </Trans>
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-2xl border border-border/60 bg-muted/50 px-4 py-5 text-center space-y-3">
@@ -1721,11 +1724,7 @@ export default function StartCall() {
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               <Trans>Manage history</Trans>
             </Button>
-            <Button
-              onClick={handleUpgradeClick}
-              className="cursor-pointer"
-              disabled={checkoutLoading}
-            >
+            <Button onClick={handleUpgradeClick} className="cursor-pointer" disabled={checkoutLoading}>
               {checkoutLoading && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               <Trans>Upgrade plan</Trans>
             </Button>
