@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-import httpx
 from pydantic import BaseModel, Field
 from stripe import SignatureVerificationError, StripeError
 
@@ -18,6 +17,7 @@ from ..persistence.service import (
     get_user_by_stripe_subscription_id,
     update_user_subscription,
 )
+from ..utils.discord import send_discord_notification
 
 router = APIRouter()
 
@@ -93,18 +93,6 @@ class CheckoutSessionResponse(BaseModel):
 
 class WebhookAcknowledgement(BaseModel):
     status: str
-
-
-class ContactSalesRequest(BaseModel):
-    name: str = Field(..., min_length=1, max_length=120)
-    email: str = Field(..., min_length=3, max_length=255)
-    company: str | None = Field(default=None, max_length=120)
-    team_size: str | None = Field(default=None, max_length=64)
-    message: str = Field(..., min_length=1, max_length=2000)
-
-
-class ContactSalesResponse(BaseModel):
-    success: bool
 
 
 class PortalSessionRequest(BaseModel):
@@ -221,63 +209,14 @@ async def create_billing_portal_session(
     return PortalSessionResponse(portal_url=session.url)
 
 
-@router.post("/billing/contact", response_model=ContactSalesResponse)
-async def contact_sales(
-    request: Request,
-    payload: ContactSalesRequest,
-    user: AuthenticatedUser = Depends(require_authenticated_user),
-) -> ContactSalesResponse:
-    webhook = request.app.state.app_state.settings.discord_webhook_url
-    if not webhook:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Sales contact unavailable")
-
-    embed = {
-        "title": "📩 Contact Sales",
-        "color": 0xF97316,
-        "fields": [
-            {"name": "User", "value": f"{user.name or 'Unknown'} ({user.email})", "inline": False},
-            {"name": "Name", "value": payload.name.strip() or "—", "inline": True},
-            {"name": "Email", "value": payload.email.strip(), "inline": True},
-            {
-                "name": "Company",
-                "value": (payload.company or "—")[:256],
-                "inline": True,
-            },
-            {
-                "name": "Team Size",
-                "value": (payload.team_size or "—")[:128],
-                "inline": True,
-            },
-            {
-                "name": "Message",
-                "value": payload.message.strip()[:1024] or "—",
-                "inline": False,
-            },
-        ],
-    }
-
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(
-                webhook,
-                json={"content": "New sales inquiry", "embeds": [embed]},
-                headers={"Content-Type": "application/json"},
-            )
-    except httpx.HTTPError as exc:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Failed to submit inquiry") from exc
-
-    if resp.status_code >= 300:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Failed to submit inquiry")
-
-    return ContactSalesResponse(success=True)
-
-
 @router.post("/billing/stripe/webhook", response_model=WebhookAcknowledgement)
 async def stripe_webhook(request: Request) -> WebhookAcknowledgement:
     svc = _billing_service(request)
     if not svc.enabled:
         # Stripe still tries to hit previously configured endpoints. Pretend it does not exist.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    settings = request.app.state.app_state.settings
+    discord_webhook = settings.discord_webhook_url
 
     payload = await request.body()
     signature = request.headers.get("stripe-signature")
@@ -294,7 +233,7 @@ async def stripe_webhook(request: Request) -> WebhookAcknowledgement:
     event_type = str(event.get("type") or "")
 
     if event_type in CHECKOUT_COMPLETED_EVENTS:
-        await _handle_checkout_completed(db, svc, obj)
+        await _handle_checkout_completed(db, svc, obj, discord_webhook)
     elif event_type in SUBSCRIPTION_EVENTS:
         await _handle_subscription_event(db, svc, obj)
     elif event_type in INVOICE_EVENTS:
@@ -305,15 +244,22 @@ async def stripe_webhook(request: Request) -> WebhookAcknowledgement:
     return WebhookAcknowledgement(status="ok")
 
 
-async def _handle_checkout_completed(db, svc: StripeService, payload: Any) -> None:
+async def _handle_checkout_completed(
+    db,
+    svc: StripeService,
+    payload: Any,
+    discord_webhook: str | None,
+) -> None:
     payload_dict = _object_to_dict(payload)
-    user_id = payload_dict.get("client_reference_id") or payload_dict.get("metadata", {}).get("user_id")
+    metadata = payload_dict.get("metadata", {}) if isinstance(payload_dict.get("metadata"), dict) else {}
+    user_id = payload_dict.get("client_reference_id") or metadata.get("user_id")
     if not user_id:
         return
     subscription_id = payload_dict.get("subscription")
     extra_kwargs: dict[str, Any] = {}
     if payload_dict.get("customer"):
         extra_kwargs["stripe_customer_id"] = str(payload_dict["customer"])
+    sub_payload: dict[str, Any] = {}
     if subscription_id:
         try:
             subscription = await svc.retrieve_subscription(str(subscription_id))
@@ -330,6 +276,41 @@ async def _handle_checkout_completed(db, svc: StripeService, payload: Any) -> No
         )
     elif extra_kwargs:
         await update_user_subscription(db, user_id=user_id, **extra_kwargs)
+
+    account_user = await get_user_by_id(db, user_id)
+    if account_user:
+        plan_name = (
+            (sub_payload.get("plan") if subscription_id else metadata.get("plan"))
+            or metadata.get("plan_key")
+            or "unknown"
+        )
+        interval = sub_payload.get("plan_interval") or metadata.get("plan_interval")
+        amount_total = payload_dict.get("amount_total")
+        currency_code = (payload_dict.get("currency") or "USD").upper()
+        if isinstance(amount_total, (int, float)):
+            amount_value = f"{amount_total / 100:.2f} {currency_code}"
+        else:
+            amount_value = "—"
+        await send_discord_notification(
+            discord_webhook,
+            embeds=[
+                {
+                    "title": "💸 Plan Purchased",
+                    "color": 0xFACC15,
+                    "fields": [
+                        {
+                            "name": "User",
+                            "value": f"{account_user.name or 'Unknown'} ({account_user.email})",
+                            "inline": False,
+                        },
+                        {"name": "Plan", "value": plan_name, "inline": True},
+                        {"name": "Interval", "value": interval or "—", "inline": True},
+                        {"name": "Amount", "value": amount_value, "inline": True},
+                    ],
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            ],
+        )
 
 
 async def _handle_subscription_event(db, svc: StripeService, payload: Any) -> None:

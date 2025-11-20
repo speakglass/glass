@@ -16,16 +16,18 @@ import {
   SuggestionLengthMode,
 } from '@/contexts/glass-context';
 import { SparkleGlyph } from '@/components/sparkle-glyph';
+import { needsPronunciationSupport } from '@/types/learning-level';
 
 type SuggestionBubbleProps = {
   suggestion: AISuggestion;
   onClose: () => void;
   durationSec: number | null; // null = no time limit
   contentOpacity?: number; // Opacity for content only (not border/background)
+  pronunciationEnabled: boolean;
 };
 
 const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
-  ({ suggestion, onClose, durationSec: _durationIgnored, contentOpacity = 1 }, ref) => {
+  ({ suggestion, onClose, durationSec: _durationIgnored, contentOpacity = 1, pronunciationEnabled }, ref) => {
     const { speakText, isSpeaking, stopSpeaking, pauseSuggestionTimer, resumeSuggestionTimer } = useGlass();
     const [isPlayingThis, setIsPlayingThis] = useState(false);
     const [showPronLoading, setShowPronLoading] = useState(false);
@@ -57,12 +59,16 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
 
     // Subtle pronunciation loading shimmer (appears only if it takes > ~220ms)
     useEffect(() => {
+      if (!pronunciationEnabled) {
+        setShowPronLoading(false);
+        return;
+      }
       if (suggestion?.target_text && !suggestion?.pronunciation) {
         const t = setTimeout(() => setShowPronLoading(true), 220);
         return () => clearTimeout(t);
       }
       setShowPronLoading(false);
-    }, [suggestion?.target_text, suggestion?.pronunciation]);
+    }, [suggestion?.target_text, suggestion?.pronunciation, pronunciationEnabled]);
 
     return (
       <motion.div
@@ -107,7 +113,7 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
                 {suggestion.pronunciation && (
                   <div className={'text-sm text-sky-600 opacity-80'}>{suggestion.pronunciation}</div>
                 )}
-                {!suggestion.pronunciation && showPronLoading && (
+                {pronunciationEnabled && !suggestion.pronunciation && showPronLoading && (
                   <div className={'h-3 w-24 rounded bg-sky-400/10 animate-pulse'} />
                 )}
                 {suggestion.native_translation && (
@@ -210,6 +216,7 @@ export default function BottomPanel() {
   const suggestMode: SuggestMode = settings.suggestMode ?? 'auto';
   const suggestionLengthMode: SuggestionLengthMode = settings.suggestionLengthMode ?? 'auto';
   const [isMobile, setIsMobile] = useState(false);
+  const pronunciationEnabled = needsPronunciationSupport(settings.languageLevel);
 
   // Detect mobile screen size
   useEffect(() => {
@@ -593,6 +600,7 @@ export default function BottomPanel() {
                                     onClose={() => removeSuggestion(item.data.id)}
                                     durationSec={settings.aiMessageDurationSec ?? null}
                                     contentOpacity={contentOpacity}
+                                    pronunciationEnabled={pronunciationEnabled}
                                   />
                                 </motion.div>
                               );

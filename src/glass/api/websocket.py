@@ -27,6 +27,7 @@ from .helpers import (
     build_memory_entries_with_llm,
 )
 from ..services.limits import conversation_limit_status
+from ..utils.discord import send_discord_notification
 
 LOGGER = logging.getLogger(__name__)
 
@@ -195,6 +196,29 @@ async def audio_stream(
         mode=mode,
         partner=partner_profile,
     )
+
+    if not getattr(pipeline, "_discord_notified_start", False):
+        setattr(pipeline, "_discord_notified_start", True)
+        await send_discord_notification(
+            app_state.settings.discord_webhook_url,
+            embeds=[
+                {
+                    "title": "🎙️ Session Started",
+                    "color": 0x22C55E,
+                    "fields": [
+                        {
+                            "name": "User",
+                            "value": f"{user.name or 'Unknown'} ({user.email})",
+                            "inline": False,
+                        },
+                        {"name": "Session ID", "value": sid, "inline": True},
+                        {"name": "Mode", "value": mode or 'unknown', "inline": True},
+                        {"name": "Languages", "value": f"{learning_lang} → {native_lang}", "inline": True},
+                    ],
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            ],
+        )
 
     LOGGER.info(
         f"WebSocket connected with learning_lang={learning_lang}, native_lang={native_lang}, "
@@ -493,6 +517,38 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
         pipeline.memory.update_conversation_context_summary(interaction_summary)
         if hasattr(pipeline, "_last_conversation_summary_update"):
             pipeline._last_conversation_summary_update = time.time()
+
+        duration_seconds_value = max(duration_seconds or 0, 0)
+        duration_minutes = duration_seconds_value / 60 if duration_seconds_value else 0
+        duration_label = (
+            f"{duration_minutes:.1f} minutes" if duration_minutes >= 1 else f"{duration_seconds_value} seconds"
+        )
+        turns = len(messages)
+        await send_discord_notification(
+            app_state_obj.settings.discord_webhook_url,
+            embeds=[
+                {
+                    "title": "✅ Session Ended",
+                    "color": 0x0EA5E9,
+                    "fields": [
+                        {
+                            "name": "User",
+                            "value": f"{user.name or 'Unknown'} ({user.email})",
+                            "inline": False,
+                        },
+                        {"name": "Session ID", "value": session_id, "inline": True},
+                        {"name": "Duration", "value": duration_label, "inline": True},
+                        {"name": "Turns", "value": str(turns), "inline": True},
+                        {
+                            "name": "Languages",
+                            "value": f"{learning_lang_cfg or '-'} → {native_lang_cfg or '-'}",
+                            "inline": True,
+                        },
+                    ],
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            ],
+        )
 
         # Clear session owner
         await app.state.app_state.clear_session_owner(session_id)

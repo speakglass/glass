@@ -84,6 +84,7 @@ export interface SessionConfig {
   mode: 'roleplay' | 'live_call';
   partnerId?: string | null;
   partner?: RoleplayPartnerProfile | null;
+  screenStream?: MediaStream | null;
 }
 
 export interface RoleplayPartnerProfile {
@@ -720,6 +721,14 @@ export function GlassProvider({
   const hasWsErrorRef = useRef(false);
   // Mark when WS has fully opened (used to differentiate initial connect vs active session)
   const hasOpenedRef = useRef(false);
+  // Reconnect state
+  const lastSessionConfigRef = useRef<SessionConfig | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const allowReconnectRef = useRef(false);
+  const fatalWsErrorRef = useRef(false);
+  const triggerReconnectRef = useRef<(() => void) | null>(null);
+  const MAX_RECONNECT_ATTEMPTS = 5;
 
 
   // Update FFT visualization
@@ -926,371 +935,13 @@ export function GlassProvider({
     [transmitAudioChunk]
   );
 
-  // Connect to Glass API
-  const connect = useCallback(
-    async (config: SessionConfig) => {
-      const { languages, mode, partner, partnerId } = config;
-      setSessionMode(mode);
-      setConversationPartner(partner ?? null);
 
-      // Check if account session is ready
-      if (accountStatusRef.current !== 'ready') {
-        toast.error(t`Unable to connect`, {
-          description: t`Please wait for session to load and try again.`,
-        });
-        return;
-      }
-
-      const token = authTokenRef.current;
-      if (!token) {
-        toast.error(t`Unable to connect`, {
-          description: t`Authentication token not available. Please refresh the page.`,
-        });
-        return;
-      }
-      // Update settings with selected languages
-      updateSettings({ languages });
-
-      // Reset disconnect flag for new connection
-      isIntentionalDisconnectRef.current = false;
-      hasWsErrorRef.current = false;
-      hasOpenedRef.current = false;
-
-      try {
-        setStatus({ value: 'connecting' });
-        // Reset conversation state for a fresh session
-        setMessages([]);
-        // Clear any lingering AI overlays from previous sessions
-        setSuggestions([]);
-        setFeedbacks([]);
-        setTranslations([]);
-
-        // Load latest settings from localStorage
-        let currentSettings = settings;
-        try {
-          if (typeof window !== 'undefined') {
-            const raw = window.localStorage.getItem('glass:settings');
-            if (raw) {
-              currentSettings = JSON.parse(raw) as VoiceSettings;
-            }
-          }
-        } catch {}
-
-        // Request a new conversation identifier from backend
-        try {
-          sessionIdRef.current = await createConversationSession(token);
-        } catch (error) {
-          console.error('[GlassContext] Failed to create conversation session', error);
-          toast.error(t`Unable to start conversation`, {
-            description: t`Please try again in a few moments.`,
-          });
-          setStatus({ value: 'disconnected' });
-          return;
-        }
-
-        // Request microphone access with selected device if provided
-        const { stream: micStream } = await acquireMicStream(currentSettings.micDeviceId);
-        micStreamRef.current = micStream;
-        shouldAutoRecoverMicRef.current = true;
-        attachMicTrackMonitor(micStream);
-
-        // Request screen share with audio (only for Live Call mode)
-        let systemStream: MediaStream | null = null;
-        let screenShareSkipped = false;
-        let screenShareError: string | null = null;
-
-        if (mode === 'live_call') {
-          try {
-            systemStream = await navigator.mediaDevices.getDisplayMedia({
-              audio: {
-                echoCancellation: false,
-                noiseSuppression: false,
-                autoGainControl: false,
-              },
-              video: true, // video must be true for screen capture
-            });
-
-            // Check if audio track is present
-            const audioTracks = systemStream.getAudioTracks();
-            if (audioTracks.length === 0) {
-              console.warn('Screen share selected without audio track');
-              systemStream.getTracks().forEach((track) => track.stop());
-              systemStream = null;
-              screenShareSkipped = true;
-              screenShareError = 'no_audio';
-            } else {
-              // Stop video tracks as we only need audio
-              const videoTracks = systemStream.getVideoTracks();
-              videoTracks.forEach((track) => track.stop());
-              const cleanupExisting = screenShareTrackCleanupRef.current;
-              if (cleanupExisting) {
-                cleanupExisting();
-                screenShareTrackCleanupRef.current = null;
-              }
-
-              const handleScreenShareEnded = () => {
-                console.log('[GlassContext] Screen share audio stopped - disconnecting call');
-                const cleanup = screenShareTrackCleanupRef.current;
-                if (cleanup) {
-                  screenShareTrackCleanupRef.current = null;
-                  cleanup();
-                }
-                toast.info(t`Screen share stopped`, {
-                  description: t`Ending the call because screen sharing ended.`,
-                });
-                const fn = disconnectRef.current;
-                if (fn) {
-                  fn().catch((err) => {
-                    console.error('[GlassContext] Failed to disconnect after screen share ended', err);
-                  });
-                }
-              };
-
-              audioTracks.forEach((track) => {
-                track.addEventListener('ended', handleScreenShareEnded);
-              });
-
-              screenShareTrackCleanupRef.current = () => {
-                audioTracks.forEach((track) => {
-                  track.removeEventListener('ended', handleScreenShareEnded);
-                });
-              };
-
-              systemStreamRef.current = systemStream;
-            }
-          } catch (err: any) {
-            // User cancelled or denied permission - don't retry
-            screenShareSkipped = true;
-            if (err.name === 'NotAllowedError') {
-              console.log('Screen share permission denied by user');
-              screenShareError = 'denied';
-            } else if (err.name === 'AbortError') {
-              console.log('Screen share cancelled by user');
-              screenShareError = 'cancelled';
-            } else {
-              console.warn('Screen share not available:', err);
-              screenShareError = 'failed';
-            }
-          }
-
-          // If screen share was skipped in Live Call mode, disconnect and show clear instructions
-          if (screenShareSkipped) {
-            shouldAutoRecoverMicRef.current = false;
-            detachMicTrackMonitor();
-            // Clean up microphone stream
-            if (micStreamRef.current) {
-              micStreamRef.current.getTracks().forEach((track) => track.stop());
-              micStreamRef.current = null;
-            }
-            setStatus({ value: 'disconnected' });
-
-            // Show clear instruction message
-            setTimeout(() => {
-              toast.error(t`Screen audio sharing required`, {
-                description: t`Please share your screen with audio from your call platform (Zoom, Google Meet, Teams).`,
-                duration: 8000,
-              });
-            }, 100);
-            return;
-          }
-        } else {
-          // Roleplay mode: no screen share needed
-          console.log('Roleplay mode: skipping screen share');
-        }
-
-        // Setup audio context for FFT visualization
-        rebuildMicAnalyser(micStream);
-
-        // Connect WebSocket to Glass API with language parameters
-        // Auto-convert HTTP URL to WebSocket URL (http→ws, https→wss)
-        const apiUrl = process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
-        const wsUrl = apiUrl.replace(/^http/, 'ws');
-        const params = new URLSearchParams({
-          sid: sessionIdRef.current,
-          events: 'true',
-          learning_lang: languages.learningLang,
-          native_lang: languages.nativeLang,
-          mode: mode,
-        });
-        const initialPartnerId = partnerId || partner?.id || null;
-        if (initialPartnerId) {
-          params.set('partner_id', initialPartnerId);
-        }
-        params.set('auth_token', token);
-        const ws = new WebSocket(`${wsUrl}/ws/audio?${params.toString()}`);
-        wsRef.current = ws;
-
-        ws.binaryType = 'arraybuffer';
-
-        ws.onopen = async () => {
-          try {
-            console.log('WebSocket connected to Glass API');
-            hasOpenedRef.current = true;
-            setStatus({ value: 'connected' });
-            micAudioCursorRef.current = 0;
-            systemAudioCursorRef.current = 0;
-            ws.send(
-              JSON.stringify({
-                type: 'client_init',
-                session_id: sessionIdRef.current,
-                sample_rate: 16000,
-                encoding: 'pcm16',
-                vad_chunk_duration: 4096 / 16000,
-              })
-            );
-            startAudioStreaming(ws, micStream, systemStream);
-            // Initialize elapsed timer (client-side, 1s tick)
-            try {
-              setElapsedSeconds(0);
-              if (elapsedTickRef.current) clearInterval(elapsedTickRef.current);
-              elapsedTickRef.current = setInterval(() => {
-                setElapsedSeconds((prev) => (typeof prev === 'number' ? prev + 1 : 1));
-              }, 1000);
-            } catch {}
-
-            // Send settings to backend
-            ws.send(
-              JSON.stringify({
-                type: 'set_feedback_mode',
-                mode: currentSettings.feedbackMode,
-              })
-            );
-
-            ws.send(
-              JSON.stringify({
-                type: 'set_suggest_mode',
-                mode: currentSettings.suggestMode || 'off',
-              })
-            );
-
-            ws.send(
-              JSON.stringify({
-                type: 'set_suggest_length',
-                mode: currentSettings.suggestionLengthMode || 'auto',
-              })
-            );
-
-            ws.send(
-              JSON.stringify({
-                type: 'session_config',
-                learning_lang: languages.learningLang,
-                native_lang: languages.nativeLang,
-                mode: mode,
-                partner_id: partnerId || partner?.id || null,
-              })
-            );
-
-            // Send user profile (country, level) so backend can tailor suggestions
-            ws.send(
-              JSON.stringify({
-                type: 'set_profile',
-                language_level: currentSettings.languageLevel || null,
-                pronunciation_mode: currentSettings.pronunciationMode || 'native',
-              })
-            );
-
-            // Send heartbeat every 20 seconds to keep connection alive
-            heartbeatIntervalRef.current = setInterval(() => {
-              if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: 'ping' }));
-              }
-            }, 20000);
-          } catch (err) {
-            console.error('[GlassContext] Failed to initialize voice session', err);
-            toast.error(t`Unable to connect`, {
-              description: t`Voice stream failed to initialize. Please try again.`,
-            });
-            try {
-              ws.close();
-            } catch {}
-          }
-        };
-
-        ws.onmessage = (event) => {
-          // If we've already encountered a WS error, ignore any late events
-          if (hasWsErrorRef.current) {
-            return;
-          }
-          if (typeof event.data === 'string') {
-            try {
-              const data = JSON.parse(event.data);
-              handleServerMessage(data);
-            } catch (err) {
-              // Ignore non-JSON messages (could be ping/pong)
-            }
-          } else if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
-            // Handle TTS audio chunks
-            handleTTSAudioChunk(event.data);
-          }
-        };
-
-        ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
-          hasWsErrorRef.current = true;
-          onError?.(new Error('WebSocket connection error'));
-        };
-
-        ws.onclose = (event) => {
-          console.log('[GlassContext] WebSocket closed:', {
-            code: event.code,
-            reason: event.reason,
-            wasClean: event.wasClean,
-            isIntentional: isIntentionalDisconnectRef.current,
-            hasError: hasWsErrorRef.current,
-          });
-
-          // Handle authentication failures
-          if (event.code === 4401) {
-            toast.error(t`Authentication failed`, {
-              description: t`Please refresh the page and try again.`,
-            });
-            hasWsErrorRef.current = true;
-            try {
-              router.push('/failure');
-            } catch {}
-          }
-          if (event.code === 4403) {
-            toast.error(t`Saved call limit reached`, {
-              description: t`Delete older history or upgrade your plan to continue.`,
-            });
-            hasWsErrorRef.current = true;
-          }
-
-          hasOpenedRef.current = false;
-          // Only set disconnected status if this wasn't an intentional disconnect
-          if (!isIntentionalDisconnectRef.current && !hasWsErrorRef.current) {
-            console.log('[GlassContext] Setting status to disconnected (unintentional close)');
-            setStatus({ value: 'disconnected' });
-          } else {
-            console.log('[GlassContext] Skipping status change (intentional disconnect or error)');
-          }
-          if (heartbeatIntervalRef.current) {
-            clearInterval(heartbeatIntervalRef.current);
-            heartbeatIntervalRef.current = null;
-          }
-          if (elapsedTickRef.current) {
-            clearInterval(elapsedTickRef.current);
-            elapsedTickRef.current = null;
-          }
-        };
-      } catch (error) {
-        console.error('Failed to connect:', error);
-        setStatus({ value: 'disconnected' });
-        hasWsErrorRef.current = true;
-        shouldAutoRecoverMicRef.current = false;
-        detachMicTrackMonitor();
-        onError?.(error as Error);
-        try {
-          router.push('/failure');
-        } catch {}
-        try {
-          wsRef.current?.close();
-        } catch {}
-        throw error;
-      }
-    },
-    [updateFFT, onError, acquireMicStream, rebuildMicAnalyser, startAudioStreaming]
-  );
+  const clearReconnectTimer = useCallback(() => {
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+  }, []);
 
   // Handle TTS audio chunks
   const handleTTSAudioChunk = useCallback(async (data: ArrayBuffer | Blob) => {
@@ -1679,6 +1330,446 @@ export function GlassProvider({
     systemAudioCursorRef.current = 0;
   }, []);
 
+  // Connect to Glass API
+  const connect = useCallback(
+    async (config: SessionConfig, options?: { resume?: boolean }) => {
+      const { languages, mode, partner, partnerId, screenStream } = config;
+      const resume = options?.resume ?? false;
+      lastSessionConfigRef.current = { ...config, screenStream: undefined };
+      allowReconnectRef.current = true;
+      fatalWsErrorRef.current = false;
+      setSessionMode(mode);
+      setConversationPartner(partner ?? null);
+
+      if (accountStatusRef.current !== 'ready') {
+        toast.error(t`Unable to connect`, {
+          description: t`Please wait for session to load and try again.`,
+        });
+        return;
+      }
+
+      const token = authTokenRef.current;
+      if (!token) {
+        toast.error(t`Unable to connect`, {
+          description: t`Authentication token not available. Please refresh the page.`,
+        });
+        return;
+      }
+
+      updateSettings({ languages });
+      isIntentionalDisconnectRef.current = false;
+      hasWsErrorRef.current = false;
+      hasOpenedRef.current = false;
+
+      try {
+        setStatus({ value: 'connecting' });
+        if (!resume) {
+          setMessages([]);
+          setSuggestions([]);
+          setFeedbacks([]);
+          setTranslations([]);
+        }
+
+        let currentSettings = settings;
+        try {
+          if (typeof window !== 'undefined') {
+            const raw = window.localStorage.getItem('glass:settings');
+            if (raw) {
+              currentSettings = JSON.parse(raw) as VoiceSettings;
+            }
+          }
+        } catch {}
+
+        try {
+          if (!resume || !sessionIdRef.current) {
+            sessionIdRef.current = await createConversationSession(token);
+          }
+        } catch (error) {
+          console.error('[GlassContext] Failed to create conversation session', error);
+          toast.error(t`Unable to start conversation`, {
+            description: t`Please try again in a few moments.`,
+          });
+          setStatus({ value: 'disconnected' });
+          return;
+        }
+
+        if (
+          !resume ||
+          !micStreamRef.current ||
+          micStreamRef.current.getAudioTracks().every((t) => t.readyState !== 'live')
+        ) {
+          const { stream: micStream } = await acquireMicStream(currentSettings.micDeviceId);
+          micStreamRef.current = micStream;
+          shouldAutoRecoverMicRef.current = true;
+          attachMicTrackMonitor(micStream);
+        }
+
+        let systemStream: MediaStream | null = systemStreamRef.current;
+        let screenShareSkipped = false;
+        let screenShareError: string | null = null;
+
+        if (mode === 'live_call') {
+          const attachScreenShareStream = (incoming: MediaStream | null): MediaStream | null => {
+            if (!incoming) {
+              return null;
+            }
+            const audioTracks = incoming.getAudioTracks();
+            if (audioTracks.length === 0) {
+              console.warn('Screen share selected without audio track');
+              incoming.getTracks().forEach((track) => track.stop());
+              return null;
+            }
+
+            const videoTracks = incoming.getVideoTracks();
+            videoTracks.forEach((track) => track.stop());
+            const cleanupExisting = screenShareTrackCleanupRef.current;
+            if (cleanupExisting) {
+              cleanupExisting();
+              screenShareTrackCleanupRef.current = null;
+            }
+
+            const handleScreenShareEnded = () => {
+              console.log('[GlassContext] Screen share audio stopped - disconnecting call');
+              const cleanup = screenShareTrackCleanupRef.current;
+              if (cleanup) {
+                screenShareTrackCleanupRef.current = null;
+                cleanup();
+              }
+              toast.info(t`Screen share stopped`, {
+                description: t`Ending the call because screen sharing ended.`,
+              });
+              const fn = disconnectRef.current;
+              if (fn) {
+                fn().catch((err) => {
+                  console.error('[GlassContext] Failed to disconnect after screen share ended', err);
+                });
+              }
+            };
+
+            audioTracks.forEach((track) => {
+              track.addEventListener('ended', handleScreenShareEnded);
+            });
+
+            screenShareTrackCleanupRef.current = () => {
+              audioTracks.forEach((track) => {
+                track.removeEventListener('ended', handleScreenShareEnded);
+              });
+            };
+
+            systemStreamRef.current = incoming;
+            return incoming;
+          };
+
+          if (screenStream) {
+            const prepared = attachScreenShareStream(screenStream);
+            if (prepared) {
+              systemStream = prepared;
+            } else {
+              screenShareSkipped = true;
+              screenShareError = 'no_audio';
+            }
+          }
+
+          const isSystemStreamLive = systemStream?.getAudioTracks().some((track) => track.readyState === 'live');
+          if (!isSystemStreamLive && !screenShareSkipped) {
+            try {
+              const capturedStream = await navigator.mediaDevices.getDisplayMedia({
+                audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+                video: true,
+              });
+
+              const prepared = attachScreenShareStream(capturedStream);
+              if (prepared) {
+                systemStream = prepared;
+              } else {
+                screenShareSkipped = true;
+                screenShareError = 'no_audio';
+              }
+            } catch (err: any) {
+              screenShareSkipped = true;
+              if (err.name === 'NotAllowedError') {
+                console.log('Screen share permission denied by user');
+                screenShareError = 'denied';
+              } else if (err.name === 'AbortError') {
+                console.log('Screen share cancelled by user');
+                screenShareError = 'cancelled';
+              } else {
+                console.warn('Screen share not available:', err);
+                screenShareError = 'failed';
+              }
+            }
+          }
+
+          if (screenShareSkipped) {
+            shouldAutoRecoverMicRef.current = false;
+            detachMicTrackMonitor();
+            if (micStreamRef.current) {
+              micStreamRef.current.getTracks().forEach((track) => track.stop());
+              micStreamRef.current = null;
+            }
+            setStatus({ value: 'disconnected' });
+            setTimeout(() => {
+              toast.error(t`Screen audio sharing required`, {
+                description: t`Please share your screen with audio from your call platform (Zoom, Google Meet, Teams).`,
+                duration: 8000,
+              });
+            }, 100);
+            return;
+          }
+        } else {
+          console.log('Roleplay mode: skipping screen share');
+        }
+
+        if (micStreamRef.current) {
+          rebuildMicAnalyser(micStreamRef.current);
+        }
+
+        const apiUrl = process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
+        const wsUrl = apiUrl.replace(/^http/, 'ws');
+        const params = new URLSearchParams({
+          sid: sessionIdRef.current,
+          events: 'true',
+          learning_lang: languages.learningLang,
+          native_lang: languages.nativeLang,
+          mode: mode,
+        });
+        const initialPartnerId = partnerId || partner?.id || null;
+        if (initialPartnerId) {
+          params.set('partner_id', initialPartnerId);
+        }
+        params.set('auth_token', token);
+        const ws = new WebSocket(`${wsUrl}/ws/audio?${params.toString()}`);
+        wsRef.current = ws;
+        ws.binaryType = 'arraybuffer';
+
+        ws.onopen = async () => {
+          try {
+            console.log('WebSocket connected to Glass API');
+            hasOpenedRef.current = true;
+            reconnectAttemptsRef.current = 0;
+            if (reconnectTimerRef.current) {
+              clearTimeout(reconnectTimerRef.current);
+              reconnectTimerRef.current = null;
+            }
+            setStatus({ value: 'connected' });
+            micAudioCursorRef.current = 0;
+            systemAudioCursorRef.current = 0;
+            ws.send(
+              JSON.stringify({
+                type: 'client_init',
+                session_id: sessionIdRef.current,
+                sample_rate: 16000,
+                encoding: 'pcm16',
+                vad_chunk_duration: 4096 / 16000,
+              })
+            );
+            if (micStreamRef.current) {
+              startAudioStreaming(ws, micStreamRef.current, systemStream);
+            }
+            try {
+              if (!resume) {
+                setElapsedSeconds(0);
+              }
+              if (elapsedTickRef.current) clearInterval(elapsedTickRef.current);
+              elapsedTickRef.current = setInterval(() => {
+                setElapsedSeconds((prev) => (typeof prev === 'number' ? prev + 1 : 1));
+              }, 1000);
+            } catch {}
+
+            ws.send(
+              JSON.stringify({
+                type: 'set_feedback_mode',
+                mode: currentSettings.feedbackMode,
+              })
+            );
+            ws.send(
+              JSON.stringify({
+                type: 'set_suggest_mode',
+                mode: currentSettings.suggestMode || 'off',
+              })
+            );
+            ws.send(
+              JSON.stringify({
+                type: 'set_suggest_length',
+                mode: currentSettings.suggestionLengthMode || 'auto',
+              })
+            );
+            ws.send(
+              JSON.stringify({
+                type: 'session_config',
+                learning_lang: languages.learningLang,
+                native_lang: languages.nativeLang,
+                mode: mode,
+                partner_id: partnerId || partner?.id || null,
+              })
+            );
+            ws.send(
+              JSON.stringify({
+                type: 'set_profile',
+                language_level: currentSettings.languageLevel || null,
+                pronunciation_mode: currentSettings.pronunciationMode || 'native',
+              })
+            );
+
+            heartbeatIntervalRef.current = setInterval(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'ping' }));
+              }
+            }, 20000);
+          } catch (err) {
+            console.error('[GlassContext] Failed to initialize voice session', err);
+            toast.error(t`Unable to connect`, {
+              description: t`Voice stream failed to initialize. Please try again.`,
+            });
+            try {
+              ws.close();
+            } catch {}
+          }
+        };
+
+        ws.onmessage = (event) => {
+          if (hasWsErrorRef.current && fatalWsErrorRef.current) {
+            return;
+          }
+          if (typeof event.data === 'string') {
+            try {
+              const data = JSON.parse(event.data);
+              handleServerMessage(data);
+            } catch (err) {}
+          } else if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
+            handleTTSAudioChunk(event.data);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          hasWsErrorRef.current = true;
+          onError?.(new Error('WebSocket connection error'));
+        };
+
+        ws.onclose = (event) => {
+          console.log('[GlassContext] WebSocket closed:', {
+            code: event.code,
+            reason: event.reason,
+            wasClean: event.wasClean,
+            isIntentional: isIntentionalDisconnectRef.current,
+            hasError: hasWsErrorRef.current,
+          });
+
+          if (event.code === 4401) {
+            toast.error(t`Authentication failed`, {
+              description: t`Please refresh the page and try again.`,
+            });
+            hasWsErrorRef.current = true;
+            fatalWsErrorRef.current = true;
+            try {
+              router.push('/failure');
+            } catch {}
+          }
+          if (event.code === 4403) {
+            toast.error(t`Saved call limit reached`, {
+              description: t`Delete older history or upgrade your plan to continue.`,
+            });
+            hasWsErrorRef.current = true;
+            fatalWsErrorRef.current = true;
+          }
+
+          hasOpenedRef.current = false;
+          if (!isIntentionalDisconnectRef.current && !fatalWsErrorRef.current) {
+            console.log('[GlassContext] Attempting auto-reconnect (unintentional close)');
+            setStatus({ value: 'disconnected' });
+            stopStreaming();
+            if (heartbeatIntervalRef.current) {
+              clearInterval(heartbeatIntervalRef.current);
+              heartbeatIntervalRef.current = null;
+            }
+            if (elapsedTickRef.current) {
+              clearInterval(elapsedTickRef.current);
+              elapsedTickRef.current = null;
+            }
+            if (reconnectTimerRef.current) {
+              clearTimeout(reconnectTimerRef.current);
+              reconnectTimerRef.current = null;
+            }
+            if (triggerReconnectRef.current) {
+              triggerReconnectRef.current();
+            }
+          } else {
+            console.log('[GlassContext] Skipping status change (intentional disconnect or error)');
+            if (heartbeatIntervalRef.current) {
+              clearInterval(heartbeatIntervalRef.current);
+              heartbeatIntervalRef.current = null;
+            }
+            if (elapsedTickRef.current) {
+              clearInterval(elapsedTickRef.current);
+              elapsedTickRef.current = null;
+            }
+          }
+        };
+      } catch (error) {
+        console.error('Failed to connect:', error);
+        setStatus({ value: 'disconnected' });
+        hasWsErrorRef.current = true;
+        shouldAutoRecoverMicRef.current = false;
+        detachMicTrackMonitor();
+        onError?.(error as Error);
+        try {
+          router.push('/failure');
+        } catch {}
+        try {
+          wsRef.current?.close();
+        } catch {}
+        throw error;
+      }
+    },
+    [
+      updateFFT,
+      onError,
+      acquireMicStream,
+      rebuildMicAnalyser,
+      startAudioStreaming,
+      handleServerMessage,
+      handleTTSAudioChunk,
+      router,
+      settings,
+      stopStreaming,
+    ]
+  );
+
+  const handleAutoReconnect = useCallback(() => {
+    if (!allowReconnectRef.current || !lastSessionConfigRef.current) {
+      return;
+    }
+    if (isIntentionalDisconnectRef.current || fatalWsErrorRef.current) {
+      return;
+    }
+
+    const attempt = reconnectAttemptsRef.current + 1;
+    reconnectAttemptsRef.current = attempt;
+    if (attempt > MAX_RECONNECT_ATTEMPTS) {
+      console.warn('[GlassContext] Max reconnect attempts reached. Giving up.');
+      setStatus({ value: 'disconnected' });
+      return;
+    }
+    const delay = Math.min(1000 * 2 ** (attempt - 1), 10000);
+    console.log(`[GlassContext] Scheduling reconnect attempt ${attempt} in ${delay}ms`);
+    setStatus({ value: 'connecting' });
+    clearReconnectTimer();
+    reconnectTimerRef.current = setTimeout(() => {
+      connect(lastSessionConfigRef.current!, { resume: true }).catch((error) => {
+        console.error('[GlassContext] Reconnect attempt failed', error);
+        handleAutoReconnect();
+      });
+    }, delay);
+  }, [clearReconnectTimer, connect]);
+
+  useEffect(() => {
+    triggerReconnectRef.current = handleAutoReconnect;
+    return () => {
+      clearReconnectTimer();
+    };
+  }, [handleAutoReconnect, clearReconnectTimer]);
+
   const restartMicStream = useCallback(
     async (targetDeviceId?: string | null, reason: MicRestartReason = 'manual') => {
       if (isRestartingMicRef.current) {
@@ -1824,213 +1915,6 @@ export function GlassProvider({
     []
   );
 
-  // Disconnect
-  const disconnect = useCallback(async () => {
-    console.log('[GlassContext] disconnect() called');
-    // Mark this as an intentional disconnect
-    isIntentionalDisconnectRef.current = true;
-    console.log('[GlassContext] Set isIntentionalDisconnectRef = true');
-    shouldAutoRecoverMicRef.current = false;
-    detachMicTrackMonitor();
-    const cleanupScreenShareListener = screenShareTrackCleanupRef.current;
-    if (cleanupScreenShareListener) {
-      screenShareTrackCleanupRef.current = null;
-      cleanupScreenShareListener();
-    }
-
-    // Stop elapsed client-side ticker
-    if (elapsedTickRef.current) {
-      clearInterval(elapsedTickRef.current);
-      elapsedTickRef.current = null;
-    }
-
-    // Stop FFT animation
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-
-    // Disconnect processor nodes / streaming context
-    stopStreaming();
-    // Stop any TTS playback so audio doesn't keep running after hang up
-    stopSpeaking();
-
-    // Stop heartbeat
-    if (heartbeatIntervalRef.current) {
-      clearInterval(heartbeatIntervalRef.current);
-      heartbeatIntervalRef.current = null;
-    }
-
-    // Close WebSocket
-    if (wsRef.current) {
-      console.log('[GlassContext] Closing WebSocket');
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-
-    // Stop media streams
-    if (micStreamRef.current) {
-      micStreamRef.current.getTracks().forEach((track) => track.stop());
-      micStreamRef.current = null;
-    }
-
-    if (systemStreamRef.current) {
-      systemStreamRef.current.getTracks().forEach((track) => track.stop());
-      systemStreamRef.current = null;
-    }
-
-    // Close audio contexts
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
-
-    setMicFft(new Array(24).fill(0));
-    setSessionMode('live_call');
-    setConversationPartner(null);
-
-    // Backend auto-saves conversation when WebSocket disconnects
-    // Set to analyzing state and poll for results
-    const currentSessionId = sessionIdRef.current;
-    const currentMessages = messagesRef.current;
-    const userMessages = currentMessages.filter((m) => m.message.role === 'user');
-    const hasUserUtterances = userMessages.length > 0;
-
-    console.log('[GlassContext] Disconnect analysis check:', {
-      currentSessionId,
-      isIntentional: isIntentionalDisconnectRef.current,
-      totalMessages: currentMessages.length,
-      userMessages: userMessages.length,
-      hasUserUtterances,
-    });
-
-    // Always analyze if intentional disconnect, even without user utterances
-    // Backend will handle the case of no user speech with appropriate message
-    if (currentSessionId && isIntentionalDisconnectRef.current) {
-      console.log('[GlassContext] Call ended. Conversation is being analyzed:', currentSessionId);
-
-      // Set to analyzing state to show loading screen
-      console.log('[GlassContext] Setting status to analyzing');
-      setStatus({ value: 'analyzing' });
-
-      // Poll for conversation analysis results
-      const startPolling = async () => {
-        const maxAttempts = 20; // 20 attempts * 1 second = 20 seconds max
-        let attempts = 0;
-
-        const poll = async () => {
-          attempts++;
-
-          try {
-            // Check if we have auth token
-            if (!authTokenRef.current) {
-              console.log('[GlassContext] No auth token, skipping poll');
-              if (attempts < maxAttempts) {
-                setTimeout(poll, 1000);
-              } else {
-                // Timeout - just show toast and return to idle
-                setStatus({ value: 'idle' });
-                toast.success(t`Conversation saved`, {
-                  description: t`Your conversation has been saved and is now available in History.`,
-                });
-                // Reset the flag on no-auth timeout
-                isIntentionalDisconnectRef.current = false;
-              }
-              return;
-            }
-
-            // Fetch recent conversations to find our session
-            const { fetchConversationSummaries } = await import('@/lib/account-api');
-            const response = await fetchConversationSummaries(authTokenRef.current, {
-              limit: 5,
-              offset: 0,
-            });
-
-            // Find conversation with matching session_id
-            const conversation = response.conversations.find((conv: any) => conv.sessionId === currentSessionId);
-
-            if (conversation) {
-              console.log('[GlassContext] Found saved conversation:', conversation.id);
-
-              // Fetch full conversation details including memories
-              const { fetchConversationDetail } = await import('@/lib/account-api');
-              const detail = await fetchConversationDetail(authTokenRef.current, conversation.id);
-
-              // Build ConversationAnalysis from the saved conversation
-              const resolvedScores = detail.scores ?? { ...DEFAULT_CONVERSATION_SCORES };
-              const analysis: ConversationAnalysis = {
-                sessionId: detail.sessionId,
-                conversationId: conversation.id,
-                scores: resolvedScores,
-                feedback: detail.feedback || '',
-                messages: detail.messages || [],
-                feedbackItems: detail.feedbackItems ?? [],
-                memories: detail.memories ?? [],
-                durationSeconds: detail.durationSeconds ?? null,
-                learningLang: detail.learningLang ?? null,
-                nativeLang: detail.nativeLang ?? null,
-                partner: detail.partner ?? null,
-              };
-
-              setConversationAnalysis(analysis);
-              setShowSummary(true);
-              // Keep status as 'analyzing' so the conversation screen remains visible behind the modal
-              // The modal will overlay on top of the conversation screen
-
-              // Reset the intentional disconnect flag now that analysis is complete
-              isIntentionalDisconnectRef.current = false;
-            } else if (attempts < maxAttempts) {
-              // Not found yet, continue polling
-              console.log(`[GlassContext] Conversation not ready yet, attempt ${attempts}/${maxAttempts}`);
-              setTimeout(poll, 1000);
-            } else {
-              // Timeout - just show toast and return to idle
-              console.log('[GlassContext] Polling timeout, conversation may still be processing');
-              setStatus({ value: 'idle' });
-              toast.success(t`Conversation saved`, {
-                description: t`Your conversation has been saved and is now available in History.`,
-              });
-              // Reset the flag on timeout
-              isIntentionalDisconnectRef.current = false;
-            }
-          } catch (error) {
-            console.error('[GlassContext] Error polling for conversation:', error);
-
-            if (attempts < maxAttempts) {
-              // Retry on error
-              setTimeout(poll, 1000);
-            } else {
-              // Give up after max attempts
-              setStatus({ value: 'idle' });
-              toast.success(t`Conversation saved`, {
-                description: t`Your conversation has been saved and is now available in History.`,
-              });
-              // Reset the flag on error timeout
-              isIntentionalDisconnectRef.current = false;
-            }
-          }
-        };
-
-        // Start polling after a short delay to give backend time to start processing
-        setTimeout(poll, 2000);
-      };
-
-      startPolling();
-    } else {
-      // No conversation to analyze (e.g., instant disconnect or no messages)
-      console.log('[GlassContext] Skipping analysis - returning to idle state');
-      setStatus({ value: 'idle' });
-      // Reset the flag only when not analyzing
-      isIntentionalDisconnectRef.current = false;
-    }
-
-    // Don't reset isIntentionalDisconnectRef here if we're analyzing
-    // It will be reset when summary is closed or after polling times out
-  }, []);
-
-  useEffect(() => {
-    disconnectRef.current = disconnect;
-  }, [disconnect]);
 
   // Mute/Unmute
   const mute = useCallback(() => {
@@ -2232,6 +2116,184 @@ export function GlassProvider({
     // Reset the flag
     isIntentionalDisconnectRef.current = false;
   }, [stopSpeaking]);
+
+  // Disconnect
+  const disconnect = useCallback(async () => {
+    console.log('[GlassContext] disconnect() called');
+    isIntentionalDisconnectRef.current = true;
+    console.log('[GlassContext] Set isIntentionalDisconnectRef = true');
+    allowReconnectRef.current = false;
+    fatalWsErrorRef.current = false;
+    clearReconnectTimer();
+    shouldAutoRecoverMicRef.current = false;
+    try {
+      const ws = wsRef.current;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'end_call' }));
+      }
+    } catch (err) {
+      console.error('[GlassContext] Failed to send end_call signal', err);
+    }
+    detachMicTrackMonitor();
+    const cleanupScreenShareListener = screenShareTrackCleanupRef.current;
+    if (cleanupScreenShareListener) {
+      screenShareTrackCleanupRef.current = null;
+      cleanupScreenShareListener();
+    }
+
+    if (elapsedTickRef.current) {
+      clearInterval(elapsedTickRef.current);
+      elapsedTickRef.current = null;
+    }
+
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    stopStreaming();
+    stopSpeaking();
+
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+
+    if (wsRef.current) {
+      console.log('[GlassContext] Closing WebSocket');
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach((track) => track.stop());
+      micStreamRef.current = null;
+    }
+
+    if (systemStreamRef.current) {
+      systemStreamRef.current.getTracks().forEach((track) => track.stop());
+      systemStreamRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    setMicFft(new Array(24).fill(0));
+    setSessionMode('live_call');
+    setConversationPartner(null);
+
+    const currentSessionId = sessionIdRef.current;
+    const currentMessages = messagesRef.current;
+    const userMessages = currentMessages.filter((m) => m.message.role === 'user');
+    const hasUserUtterances = userMessages.length > 0;
+
+    console.log('[GlassContext] Disconnect analysis check:', {
+      currentSessionId,
+      isIntentional: isIntentionalDisconnectRef.current,
+      totalMessages: currentMessages.length,
+      userMessages: userMessages.length,
+      hasUserUtterances,
+    });
+
+    if (currentSessionId && isIntentionalDisconnectRef.current) {
+      console.log('[GlassContext] Call ended. Conversation is being analyzed:', currentSessionId);
+      setStatus({ value: 'analyzing' });
+
+      const startPolling = async () => {
+        const maxAttempts = 20;
+        let attempts = 0;
+
+        const poll = async () => {
+          attempts++;
+
+          try {
+            if (!authTokenRef.current) {
+              console.log('[GlassContext] No auth token, skipping poll');
+              if (attempts < maxAttempts) {
+                setTimeout(poll, 1000);
+              } else {
+                setStatus({ value: 'idle' });
+                toast.success(t`Conversation saved`, {
+                  description: t`Your conversation has been saved and is now available in History.`,
+                });
+                isIntentionalDisconnectRef.current = false;
+              }
+              return;
+            }
+
+            const { fetchConversationSummaries } = await import('@/lib/account-api');
+            const response = await fetchConversationSummaries(authTokenRef.current, {
+              limit: 5,
+              offset: 0,
+            });
+
+            const conversation = response.conversations.find((conv: any) => conv.sessionId === currentSessionId);
+
+            if (conversation) {
+              console.log('[GlassContext] Found saved conversation:', conversation.id);
+              const { fetchConversationDetail } = await import('@/lib/account-api');
+              const detail = await fetchConversationDetail(authTokenRef.current, conversation.id);
+
+              const resolvedScores = detail.scores ?? { ...DEFAULT_CONVERSATION_SCORES };
+              const analysis: ConversationAnalysis = {
+                sessionId: detail.sessionId,
+                conversationId: conversation.id,
+                scores: resolvedScores,
+                feedback: detail.feedback || '',
+                messages: detail.messages || [],
+                feedbackItems: detail.feedbackItems ?? [],
+                memories: detail.memories ?? [],
+                durationSeconds: detail.durationSeconds ?? null,
+                learningLang: detail.learningLang ?? null,
+                nativeLang: detail.nativeLang ?? null,
+                partner: detail.partner ?? null,
+              };
+
+              setConversationAnalysis(analysis);
+              setShowSummary(true);
+              isIntentionalDisconnectRef.current = false;
+            } else if (attempts < maxAttempts) {
+              console.log(`[GlassContext] Conversation not ready yet, attempt ${attempts}/${maxAttempts}`);
+              setTimeout(poll, 1000);
+            } else {
+              console.log('[GlassContext] Polling timeout, conversation may still be processing');
+              setStatus({ value: 'idle' });
+              toast.success(t`Conversation saved`, {
+                description: t`Your conversation has been saved and is now available in History.`,
+              });
+              isIntentionalDisconnectRef.current = false;
+            }
+          } catch (error) {
+            console.error('[GlassContext] Error polling for conversation:', error);
+
+            if (attempts < maxAttempts) {
+              setTimeout(poll, 1000);
+            } else {
+              setStatus({ value: 'idle' });
+              toast.success(t`Conversation saved`, {
+                description: t`Your conversation has been saved and is now available in History.`,
+              });
+              isIntentionalDisconnectRef.current = false;
+            }
+          }
+        };
+
+        setTimeout(poll, 2000);
+      };
+
+      startPolling();
+    } else {
+      console.log('[GlassContext] Skipping analysis - returning to idle state');
+      setStatus({ value: 'idle' });
+      isIntentionalDisconnectRef.current = false;
+    }
+  }, [clearReconnectTimer, detachMicTrackMonitor, stopSpeaking, stopStreaming]);
+
+  useEffect(() => {
+    disconnectRef.current = disconnect;
+  }, [disconnect]);
 
   // Cleanup on unmount
   useEffect(() => {

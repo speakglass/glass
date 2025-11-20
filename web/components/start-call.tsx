@@ -209,6 +209,7 @@ export default function StartCall() {
   const [screenSharePreviewStream, setScreenSharePreviewStream] = useState<MediaStream | null>(null);
   const screenShareStreamRef = useRef<MediaStream | null>(null);
   const screenShareVideoRef = useRef<HTMLVideoElement | null>(null);
+  const step4CardRef = useRef<HTMLDivElement | null>(null);
   const [isRequestingScreenShare, setIsRequestingScreenShare] = useState(false);
   const [screenShareError, setScreenShareError] = useState<'denied' | 'cancelled' | 'failed' | 'no_audio' | null>(null);
   const conversationLimit = snapshot?.limits?.conversations || null;
@@ -233,8 +234,8 @@ export default function StartCall() {
     selectedMode === 'roleplay'
       ? Boolean(selectedPartnerId)
       : selectedMode === 'live_call'
-        ? Boolean(screenSharePreviewStream)
-        : false;
+      ? Boolean(screenSharePreviewStream)
+      : false;
   const partnersQueryEnabled = !!token && !!currentLearningLang;
   const {
     data: partnersData,
@@ -449,6 +450,12 @@ export default function StartCall() {
     }
   }, [screenSharePreviewStream]);
 
+  useEffect(() => {
+    if (screenSharePreviewStream) {
+      step4CardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [screenSharePreviewStream]);
+
   const handleVoicePreview = useCallback(
     async (voiceId: string, sampleText: string) => {
       try {
@@ -498,9 +505,6 @@ export default function StartCall() {
       if (audioTracks.length === 0) {
         stream.getTracks().forEach((track) => track.stop());
         setScreenShareError('no_audio');
-        toast.error(t`Add your call audio`, {
-          description: t`Select the window/tab that plays your call and enable "Share system audio".`,
-        });
         return;
       }
       if (screenShareStreamRef.current) {
@@ -894,19 +898,11 @@ export default function StartCall() {
         : screenShareError === 'cancelled'
           ? t`Screen share was cancelled. Try again when you're ready.`
           : screenShareError === 'failed'
-            ? t`We couldn't capture your screen. Try a different window or browser.`
-            : screenShareError === 'no_audio'
-              ? t`No audio detected. Share the window that plays your call and enable audio.`
-              : null;
-    const StepHeader = ({
-      step,
-      title,
-      extra,
-    }: {
-      step: number;
-      title: ReactNode;
-      extra?: ReactNode;
-    }) => (
+        ? t`We couldn't capture your screen. Try a different window or browser.`
+        : screenShareError === 'no_audio'
+        ? t`No audio detected. Share the window that plays your call and enable audio.`
+        : null;
+    const StepHeader = ({ step, title, extra }: { step: number; title: ReactNode; extra?: ReactNode }) => (
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className={cn('text-[10px] font-semibold uppercase tracking-[0.25em] mb-0.5', stepLabelClass)}>
@@ -916,6 +912,14 @@ export default function StartCall() {
         </div>
         {extra}
       </div>
+    );
+
+    const step4CardClass = cn(
+      stepCardBase,
+      screenSharePreviewStream &&
+        (glassMode
+          ? 'border-emerald-300/70 shadow-[0_0_0_1px_rgba(16,185,129,0.45)] shadow-emerald-300/30'
+          : 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.2)]')
     );
 
     return (
@@ -941,15 +945,14 @@ export default function StartCall() {
             }
           />
           <p className={`${getTextClass('body')} leading-relaxed`}>
-            <Trans>Open Zoom, Discord, Meet, or any call app, join the room, and keep Glass open beside it.</Trans>
+            <Trans>Open Zoom, Discord, Meet, or any call app and join the room you're about to share.</Trans>
           </p>
         </div>
 
         <div className={step2CardClass}>
           <StepHeader step={2} title={<Trans>Share your whole screen with audio</Trans>} />
           <p className={`${getTextClass('body')} leading-relaxed`}>
-            <Trans>Select "Entire screen" (or "Screen + audio") when the browser prompt appears, so your call audio is
-            captured.</Trans>
+            <Trans>Share the screen where your call is already open, choose "Entire screen," and toggle "Also share system audio."</Trans>
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -958,7 +961,7 @@ export default function StartCall() {
               disabled={isRequestingScreenShare}
               className={cn('cursor-pointer', glassMode ? 'bg-white text-foreground hover:bg-white/90' : '')}
             >
-              {isRequestingScreenShare && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              {isRequestingScreenShare && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {screenSharePreviewStream ? <Trans>Change screen</Trans> : <Trans>Select screen</Trans>}
             </Button>
             {screenSharePreviewStream && (
@@ -972,28 +975,23 @@ export default function StartCall() {
               </Button>
             )}
           </div>
-          <div className={previewContainerClass}>
-            {screenSharePreviewStream ? (
-              <video
-                ref={screenShareVideoRef}
-                autoPlay
-                muted
-                playsInline
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-1 px-4 text-center text-xs">
-                <Trans>Your shared window will appear here once selected.</Trans>
-              </div>
-            )}
-          </div>
+          {screenSharePreviewStream && (
+            <div className={previewContainerClass}>
+              <video ref={screenShareVideoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+            </div>
+          )}
           {screenSharePreviewStream && (
             <p className="text-[11px] font-semibold text-emerald-500">
-              <Trans>Screen sharing ready. Keep that window unmuted so Glass can listen in.</Trans>
+              <Trans>Screen sharing ready. Keep it running so Glass can listen in.</Trans>
             </p>
           )}
           {screenShareStatus && (
-            <p className="text-[11px] text-amber-400">
+            <p
+              className={cn(
+                'text-[11px]',
+                screenShareError === 'denied' || screenShareError === 'no_audio' ? 'text-red-500' : 'text-amber-400'
+              )}
+            >
               {screenShareStatus}
             </p>
           )}
@@ -1002,11 +1000,11 @@ export default function StartCall() {
         <div className={stepCardBase}>
           <StepHeader step={3} title={<Trans>Clear your view</Trans>} />
           <p className={`${getTextClass('body')} leading-relaxed`}>
-            <Trans>Move or hide the "You're sharing" bar so it doesn't cover Glass or your notes.</Trans>
+            <Trans>Use the browser's “Hide” option on the sharing bar (see screenshot) so it doesn't cover Glass.</Trans>
           </p>
         </div>
 
-        <div className={stepCardBase}>
+        <div ref={step4CardRef} className={step4CardClass}>
           <StepHeader step={4} title={<Trans>Start the live call</Trans>} />
           <p className={`${getTextClass('body')} leading-relaxed`}>
             {screenSharePreviewStream ? (

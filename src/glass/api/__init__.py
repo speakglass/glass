@@ -9,6 +9,7 @@ from .partners import router as partners_router
 from .waitlist import router as waitlist_router
 from .voices import router as voices_router
 from .billing import router as billing_router
+from .contact import router as contact_router
 
 router = APIRouter()
 router.include_router(accounts_router)
@@ -19,6 +20,7 @@ router.include_router(waitlist_router)
 router.include_router(partners_router)
 router.include_router(voices_router)
 router.include_router(billing_router)
+router.include_router(contact_router)
 
 
 @router.get("/health")

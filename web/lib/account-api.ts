@@ -716,18 +716,18 @@ export async function createBillingPortalSession(
   };
 }
 
-export async function createBillingContactRequest(
+export async function createContactRequest(
   token: string,
-  payload: { name: string; email: string; company?: string; teamSize?: string; message: string }
+  payload: { name: string; email: string; company?: string; companySize?: string; message: string }
 ): Promise<{ success: boolean }> {
   const body = {
     name: payload.name,
     email: payload.email,
     company: payload.company ?? '',
-    team_size: payload.teamSize ?? '',
+    company_size: payload.companySize ?? '',
     message: payload.message,
   };
-  const data = await authedFetch<{ success: boolean }>('/billing/contact', token, {
+  const data = await authedFetch<{ success: boolean }>('/contact', token, {
     method: 'POST',
     body: JSON.stringify(body),
   });

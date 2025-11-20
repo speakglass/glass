@@ -82,111 +82,81 @@ def build_suggestion_prompt(
     last_partner_message: str | None = None,
     length_mode: str = "auto",
 ) -> tuple[str, str]:
-    """Build system and user prompts for conversation suggestions.
+    """Build system and user prompts for conversation suggestions."""
 
-    Returns:
-        (system_prompt, user_prompt)
-    """
-    # Determine length instruction based on mode
-    length_instruction = ""
-    if length_mode == "short":
-        length_instruction = "\n6. **Length**: EXACTLY 1 sentence only. No more, no less."
-    elif length_mode == "long":
-        length_instruction = "\n6. **Length**: MUST provide EXACTLY 4 complete sentences. This is for extended practice. Count carefully and provide all 4 sentences."
+    normalized_length_mode = (length_mode or "auto").lower()
+    length_mode_rule = {
+        "short": 'length_mode="short" (exactly 1 sentence).',
+        "long": 'length_mode="long" (exactly 4 sentences).',
+    }.get(normalized_length_mode, 'length_mode="auto" (any natural length is fine).')
 
-    system_prompt = f"""You are a language learning assistant helping a learner practice {target_lang}.
+    system_prompt = dedent(
+        f"""
+        You are a conversation coach that helps learners speak naturally in {target_lang}.
+        Your goal is simple: produce the most natural and contextually appropriate sentence the learner could say next.
 
-# Your Task
-Suggest a natural, contextually appropriate response in {target_lang} for the learner to say next.
+        ## Core Behavior
+        - Always propose a fully natural sentence, not a literal translation.
+        - Expand even 1-2 word hints into a complete sentence, interpreting the intended meaning.
+        - If no hint exists, follow the natural conversation flow.
+        - Use user profile facts only when directly relevant; never force them in.
+        - Maintain realistic tone, cultural appropriateness, and conversational smoothness.
+        - Match the learner's level (simpler grammar if needed).
 
-# Suggestion Guidelines (Priority Order)
-1. **User hint first**: If user provides specific hint/topic, PRIORITIZE it over conversation flow
-   - User hint means they want to change topic or say something specific
-   - Even if hint is unrelated to current conversation, follow the hint
-2. **Flow-based**: If no hint, follow the natural conversation flow
-3. **Level-appropriate**: Match the user's proficiency level
-4. **Conversational**: Keep it natural and realistic
-5. **Context-aware**: Use provided context only when genuinely relevant.{length_instruction}
+        ## Priority Order
+        1. User hint (interpret intent, expand to full sentence)
+        2. Conversation flow
+        3. User profile facts (optional, only if relevant)
+        4. Naturalness and clarity
 
-# Output Format
-Return JSON with suggestion and translation:
-- target_text: The suggested phrase in {target_lang}
-- native_translation: Translation in {native_lang}"""
+        ## Length Rules
+        - When length_mode="short": exactly 1 sentence.
+        - When length_mode="long": exactly 4 sentences.
 
-    # Build user prompt sections
-    sections = []
-
-    # Section 1: User hint (highest priority)
-    if user_hint:
-        sections.append(
-            dedent(
-                f"""
-            # ⚠️ USER'S SPECIFIC REQUEST (HIGHEST PRIORITY)
-            The user wants to say: "{user_hint}"
-            
-            **IMPORTANT**: Base your suggestion on this hint, even if it changes the topic.
-            The user is explicitly asking for help with this specific expression or topic.
+        ## Output
+        Return ONLY valid JSON:
+        {{
+          "target_text": "Natural sentence in {target_lang}",
+          "native_translation": "Translation in {native_lang}"
+        }}
         """
-            ).strip()
-        )
+    ).strip()
 
-    # Section 2: Recent conversation
+    def _format_block(label: str, content: str) -> str:
+        return f"## {label}\n{content.strip() if content.strip() else 'None'}"
+
+    hint_text = (user_hint or "").strip()
+    hint_block = _format_block("User Hint", hint_text or "None")
+
+    conversation_text = ""
     if recent_conversation:
-        conversation_header = "# Recent Conversation (For Context)"
-        if user_hint:
-            conversation_header += "\n_Note: User wants to change topic/say something specific (see above)_"
-        sections.append(conversation_header + "\n" + "\n".join(recent_conversation))
+        conversation_text = "\n".join(line.strip() for line in recent_conversation if line and line.strip())
+    conversation_block = _format_block("Recent Conversation", conversation_text or "None")
 
-    # Section 3: Partner's latest message (for quick reference)
-    if last_partner_message:
-        sections.append("# Partner's Last Message\n" + last_partner_message)
+    partner_text = (last_partner_message or "").strip() or "None"
+    partner_block = _format_block("Partner's Last Message", partner_text)
 
-    # Section 4: Task instruction
-    length_requirement = ""
-    if length_mode == "short":
-        length_requirement = "\n\n**CRITICAL LENGTH REQUIREMENT**: Provide EXACTLY 1 sentence. No more, no less."
-    elif length_mode == "long":
-        length_requirement = "\n\n**CRITICAL LENGTH REQUIREMENT**: Provide EXACTLY 4 complete sentences. Count them carefully. This is mandatory for extended practice."
-
-    if user_hint:
-        task = dedent(
-            f"""
-            # Your Task
-            Create a suggestion based on the user's request: "{user_hint}"
-            
-            The suggestion should:
-            1. Match what the user wants to say (their hint)
-            2. Be in natural {target_lang}
-            3. Appropriate for the context (topic change is OK){length_requirement}
-            
-            Return JSON format:
-            ```json
-            {{
-              "target_text": "Suggested phrase in {target_lang} based on user's hint",
-              "native_translation": "Translation in {native_lang}"
-            }}
-            ```
-        """
-        ).strip()
+    instructions: list[str] = [
+        "Generate the next thing the learner should say in "
+        f"{target_lang} using the rules in the system prompt.",
+    ]
+    if hint_text:
+        instructions.append("Interpret the user hint as their intended meaning and expand it into a full sentence.")
     else:
-        task = dedent(
-            f"""
-            # Your Task
-            Suggest what the learner should say next in {target_lang}, following the conversation flow.{length_requirement}
-            
-            Return JSON format:
-            ```json
-            {{
-              "target_text": "Suggested phrase in {target_lang}",
-              "native_translation": "Translation in {native_lang}"
-            }}
-            ```
-        """
-        ).strip()
+        instructions.append("No hint provided - follow the existing conversation flow naturally.")
 
-    sections.append(task)
+    instructions.append(f"Apply the required length mode: {length_mode_rule}")
+    instructions.append("Return ONLY the JSON object described earlier.")
 
-    user_prompt = "\n\n".join(sections)
+    user_prompt = "\n\n".join(
+        [
+            hint_block,
+            conversation_block,
+            partner_block,
+            "## What to Produce\n" + "\n".join(instructions),
+        ]
+    )
+
     return system_prompt, user_prompt
 
 

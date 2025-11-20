@@ -60,7 +60,7 @@ export function proxy(request: NextRequest) {
   const pathWithoutLocale = pathname.split('/').slice(2).join('/');
 
   // Define auth pages (pages that don't require authentication)
-  const authPages = ['login', 'signup', 'forgot-password', 'reset-password'];
+  const authPages = ['login', 'signup', 'forgot-password', 'reset-password', 'verify-email', 'verify-email-sent'];
   const isAuthPage = authPages.some((page) => pathWithoutLocale.startsWith(page));
 
   // Check authentication early
@@ -70,7 +70,7 @@ export function proxy(request: NextRequest) {
   if (!isValidLocale(pathnameLocale)) {
     const preferredLocale = getPreferredLocale(request);
     // If not authenticated and trying to access a non-auth page, redirect to login
-    if (!authenticated && !pathname.match(/\/(login|signup|forgot-password|reset-password)/)) {
+    if (!authenticated && !pathname.match(/\/(login|signup|forgot-password|reset-password|verify-email|verify-email-sent)/)) {
       const loginUrl = new URL(`/${preferredLocale}/login`, request.url);
       return NextResponse.redirect(loginUrl);
     }

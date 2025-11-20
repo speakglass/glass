@@ -6,11 +6,11 @@ import logging
 from datetime import datetime, timezone
 from typing import Literal
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from ..auth.jwt import AuthenticatedUser, require_authenticated_user
+from ..utils.discord import send_discord_notification
 
 logger = logging.getLogger(__name__)
 
@@ -84,29 +84,17 @@ async def submit_feedback(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(
-                webhook,
-                json={"embeds": [embed]},
-                headers={"Content-Type": "application/json"},
-            )
-    except httpx.HTTPError as exc:
+        await send_discord_notification(
+            webhook,
+            embeds=[embed],
+            fail_silently=False,
+        )
+    except Exception as exc:
         logger.exception("Failed to send feedback to Discord")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Failed to forward feedback",
         ) from exc
-
-    if resp.status_code >= 300:
-        logger.error(
-            "Discord webhook rejected feedback: %s %s",
-            resp.status_code,
-            resp.text,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Failed to forward feedback",
-        )
 
     logger.info("Feedback submitted by %s (%s)", user.user_id, user.email)
     return FeedbackResponse(success=True)

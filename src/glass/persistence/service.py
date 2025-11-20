@@ -918,6 +918,14 @@ async def count_conversations(
         return result or 0
 
 
+async def count_total_users(db: PersistenceDatabase) -> int:
+    """Return total number of registered account users."""
+    async_session_factory = db.session()
+    async with async_session_factory() as session:
+        result = await session.scalar(select(func.count()).select_from(AccountUser))
+        return int(result or 0)
+
+
 async def get_conversation_detail(
     db: PersistenceDatabase,
     *,

@@ -20,16 +20,26 @@ import { useAccountSession } from '@/contexts/account-session-context';
 import {
   createCheckoutSession,
   createBillingPortalSession,
-  createBillingContactRequest,
+  createContactRequest,
   BillingPlanKey,
 } from '@/lib/account-api';
-import { Loader2, CheckIcon } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
 import { t } from '@lingui/core/macro';
 import { toast } from 'sonner';
 import { useLocale } from '@/hooks/use-locale';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.speakglass.com';
+
+function CheckIcon() {
+  return (
+    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 dark:bg-blue-500/10">
+      <svg className="w-3 h-3 text-primary dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+  );
+}
 
 type ButtonVariant = ComponentProps<typeof Button>['variant'];
 
@@ -333,7 +343,7 @@ export function BillingContent() {
   const [contactLoading, setContactLoading] = useState(false);
   const [contactForm, setContactForm] = useState({
     company: '',
-    teamSize: '',
+    companySize: '',
     message: '',
   });
   const billingDisabled = snapshot?.billing?.selfHosted || !snapshot?.billing?.enabled;
@@ -418,16 +428,16 @@ export function BillingContent() {
         setContactLoading(false);
         return;
       }
-      await createBillingContactRequest(token, {
+      await createContactRequest(token, {
         name,
         email,
         company: contactForm.company.trim() || undefined,
-        teamSize: contactForm.teamSize || undefined,
+        companySize: contactForm.companySize || undefined,
         message: contactForm.message.trim(),
       });
       toast.success(t`We'll be in touch shortly`);
       setContactDialogOpen(false);
-      setContactForm({ company: '', teamSize: '', message: '' });
+      setContactForm({ company: '', companySize: '', message: '' });
     } catch (error) {
       console.error('[Billing] Failed to send contact request', error);
       toast.error(t`Unable to submit request`);
@@ -491,7 +501,11 @@ export function BillingContent() {
               {scheduledCancelAt ? (
                 <Trans>Plan ends on {scheduledCancelAt}</Trans>
               ) : planRenewalLabel ? (
-                isCancelled ? <Trans>Plan ends on {planRenewalLabel}</Trans> : <Trans>Renews on {planRenewalLabel}</Trans>
+                isCancelled ? (
+                  <Trans>Plan ends on {planRenewalLabel}</Trans>
+                ) : (
+                  <Trans>Renews on {planRenewalLabel}</Trans>
+                )
               ) : isFreePlan ? (
                 <Trans>The Free plan never expires. Upgrade anytime for unlimited history.</Trans>
               ) : (
@@ -567,10 +581,7 @@ export function BillingContent() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              <Trans>We'll reach out to {snapshot?.user?.email || t`your account email`}.</Trans>
-            </p>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="mt-2 grid gap-3 md:grid-cols-2">
               <div className="space-y-1">
                 <Label>
                   <Trans>Company</Trans>
@@ -586,8 +597,8 @@ export function BillingContent() {
                   <Trans>Company size</Trans>
                 </Label>
                 <Select
-                  value={contactForm.teamSize}
-                  onValueChange={(value) => setContactForm((prev) => ({ ...prev, teamSize: value }))}
+                  value={contactForm.companySize}
+                  onValueChange={(value) => setContactForm((prev) => ({ ...prev, companySize: value }))}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={t`Select size`} />

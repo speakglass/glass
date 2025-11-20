@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-import httpx
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+
+from ..utils.discord import send_discord_notification
 
 router = APIRouter()
 
@@ -31,13 +32,14 @@ async def waitlist_endpoint(request: Request, payload: WaitlistRequest) -> dict:
             {"name": "Email", "value": email, "inline": False},
         ],
     }
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
+    try:
+        await send_discord_notification(
             webhook,
-            json={"content": "**Waitlist signup**", "embeds": [embed]},
-            headers={"Content-Type": "application/json"},
+            content="**Waitlist signup**",
+            embeds=[embed],
+            fail_silently=False,
         )
-        if resp.status_code >= 300:
-            raise HTTPException(status_code=502, detail="Failed to notify waitlist")
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Failed to notify waitlist") from exc
 
     return {"success": True}

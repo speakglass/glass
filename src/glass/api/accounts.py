@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -8,6 +10,7 @@ from ..persistence.service import (
     create_local_user,
     create_password_reset_token,
     create_verification_token,
+    count_total_users,
     get_user_by_email,
     get_user_by_id,
     mark_onboarding_completed,
@@ -17,6 +20,9 @@ from ..persistence.service import (
     verify_reset_token,
 )
 from ..auth.passwords import hash_password, verify_password
+from ..utils.discord import send_discord_notification
+
+logger = logging.getLogger(__name__)
 
 LEARNING_LEVELS = {"zero", "beginner", "elementary", "intermediate", "advanced"}
 
@@ -104,6 +110,25 @@ async def register_account(request: Request, payload: RegisterRequest) -> Authen
         password_hash=password_hash,
         name=payload.name,
     )
+    # Notify Discord about new signup (best-effort)
+    try:
+        total_users = await count_total_users(db)
+        await send_discord_notification(
+            settings.discord_webhook_url,
+            embeds=[
+                {
+                    "title": "🆕 New Signup",
+                    "color": 0x6366F1,
+                    "fields": [
+                        {"name": "Email", "value": user.email, "inline": False},
+                        {"name": "Name", "value": user.name or "—", "inline": True},
+                        {"name": "User #", "value": f"#{total_users:,}", "inline": True},
+                    ],
+                }
+            ],
+        )
+    except Exception:
+        logger.exception("Failed to send signup notification")
     
     # Send verification email if Resend is configured
     if email_service.enabled:
@@ -124,8 +149,7 @@ async def register_account(request: Request, payload: RegisterRequest) -> Authen
             )
         except Exception as e:
             # Log error but don't block registration
-            import logging
-            logging.getLogger(__name__).error(f"Failed to send verification email: {e}")
+            logger.error("Failed to send verification email: %s", e)
     
     # If no email service or OAuth user, mark as verified
     if not email_service.enabled or not password_hash:

@@ -188,6 +188,15 @@ async def iter_multiplexed_audio(
                             asyncio.create_task(_handle_tts_request(
                                 pipeline, websocket, text, voice_id, language, source, request_id
                             ))
+                    elif msg_type == "end_call":
+                        LOGGER.info("Client requested end_call, closing session")
+                        if pipeline is not None:
+                            setattr(pipeline, "client_requested_end", True)
+                        try:
+                            await websocket.close(code=1000)
+                        except Exception:
+                            pass
+                        break
                 except (json.JSONDecodeError, KeyError):
                     pass
             
