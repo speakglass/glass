@@ -81,6 +81,8 @@ def build_suggestion_prompt(
     recent_conversation: list[str] | None,
     last_partner_message: str | None = None,
     length_mode: str = "auto",
+    partner_name: str | None = None,
+    user_name: str | None = None,
 ) -> tuple[str, str]:
     """Build system and user prompts for conversation suggestions."""
 
@@ -90,37 +92,67 @@ def build_suggestion_prompt(
         "long": 'length_mode="long" (exactly 4 sentences).',
     }.get(normalized_length_mode, 'length_mode="auto" (any natural length is fine).')
 
-    system_prompt = dedent(
-        f"""
-        Conversation coach for {target_lang} users (native: {native_lang}).
-        
-        Your task: Suggest what the USER should say next in {target_lang}.
-        DO NOT suggest what the partner should say - only suggest the user's response.
+    # Build conversation context if available
+    context_parts = []
+    if user_name:
+        context_parts.append(f"You're coaching {user_name}")
+    if partner_name:
+        context_parts.append(f"talking with {partner_name}")
 
-        Behavior:
-        - Expand hints into full natural sentences for the user to say
-        - Follow conversation flow - suggest the user's natural reply
-        - Be culturally appropriate
+    conversation_context = ""
+    if context_parts:
+        conversation_context = "\n\n" + " ".join(context_parts) + "."
 
-        Priority: hint > flow > naturalness
-
-        Length: {length_mode_rule}
-        """
-    ).strip()
-
-    sections = []
-
-    # User hint (if provided)
     hint_text = (user_hint or "").strip()
-    if hint_text:
-        sections.append(f"Hint: {hint_text}")
 
-    # Recent conversation
-    if recent_conversation:
-        recent_lines = recent_conversation[-5:] if len(recent_conversation) > 5 else recent_conversation
-        conversation_text = "\n".join(line.strip() for line in recent_lines if line and line.strip())
-        if conversation_text:
-            sections.append(f"Recent:\n{conversation_text}")
+    # Build different prompts based on whether hint is provided
+    if hint_text:
+        # When hint exists: Focus ONLY on expanding the hint
+        system_prompt = dedent(
+            f"""
+            Conversation coach for {target_lang} users (native: {native_lang}).{conversation_context}
+            
+            Task: Turn the user's hint into a complete, natural {target_lang} sentence.
+            
+            Rules:
+            - Even if it's just a word/phrase, expand it into a FULL sentence
+            - Keep the user's intended meaning exactly - don't change what they want to say
+            - Use conversation context ONLY for tone/formality, NOT to override their intent
+            
+            Length: {length_mode_rule}
+            """
+        ).strip()
+
+        sections = [f"User wants to express:\n{hint_text}"]
+
+        # Add minimal context only for style reference
+        if recent_conversation:
+            recent_lines = recent_conversation[-3:] if len(recent_conversation) > 3 else recent_conversation
+            conversation_text = "\n".join(line.strip() for line in recent_lines if line and line.strip())
+            if conversation_text:
+                sections.append(f"Conversation style reference (for tone/formality only):\n{conversation_text}")
+
+    else:
+        # When no hint: Suggest based on conversation flow
+        system_prompt = dedent(
+            f"""
+            Conversation coach for {target_lang} users (native: {native_lang}).{conversation_context}
+            
+            Your task: Suggest what the USER should say next in {target_lang}.
+            
+            Analyze the conversation flow and suggest a natural, appropriate response.
+            Be culturally appropriate and match the conversation tone.
+            
+            Length: {length_mode_rule}
+            """
+        ).strip()
+
+        sections = []
+        if recent_conversation:
+            recent_lines = recent_conversation[-5:] if len(recent_conversation) > 5 else recent_conversation
+            conversation_text = "\n".join(line.strip() for line in recent_lines if line and line.strip())
+            if conversation_text:
+                sections.append(f"Recent conversation:\n{conversation_text}")
 
     user_prompt = "\n\n".join(sections) if sections else "Start the conversation."
 
@@ -274,6 +306,8 @@ def build_ai_response_prompt(
 
 Native {target_lang} speaker having a natural conversation.
 
+CRITICAL: You MUST respond ONLY in {target_lang}. Never use {native_lang} or any other language.
+
 Priority:
 1. Answer what they're asking directly
 2. Follow the conversation flow naturally
@@ -382,7 +416,6 @@ def build_analysis_feedback_prompt(
     native_lang_name: str,
     conversation_summary: str = "",
     user_message_count: int = 0,
-    transcript: str = "",
 ) -> str:
     """Build prompt for overall conversation feedback based on individual feedback items.
 
@@ -391,31 +424,33 @@ def build_analysis_feedback_prompt(
     """
     has_feedback = bool(feedback_summary and feedback_summary.strip())
 
-    if has_feedback:
-        # When there are feedback items - use them
+    if user_message_count == 0:
+        context = "You didn't speak during this session."
+    elif has_feedback:
+        # When there are feedback items
         context = f"""What you talked about:
 {conversation_summary or 'General conversation'}
 
 You sent {user_message_count} messages.
 
-Feedback items from the conversation:
+Feedback items (up to 20 most important):
 {feedback_summary}"""
     else:
-        # When no feedback - provide actual transcript for evaluation
-        if user_message_count == 0:
-            context = "You didn't speak during this session."
-        elif user_message_count < 3:
+        # When no feedback - just conversation summary
+        if user_message_count < 3:
             context = f"""You only sent {user_message_count} message{'s' if user_message_count > 1 else ''}.
 
-Conversation transcript:
-{transcript or conversation_summary or 'Brief exchange'}"""
+What you talked about:
+{conversation_summary or 'Brief exchange'}
+
+No corrections needed - great job!"""
         else:
             context = f"""You sent {user_message_count} messages - great participation!
 
-Conversation transcript:
-{transcript}
+What you talked about:
+{conversation_summary or 'Active conversation'}
 
-No corrections were given during the conversation - evaluate their natural communication!"""
+No corrections needed - your {learning_lang_name} was natural and clear!"""
 
     return dedent(
         f"""

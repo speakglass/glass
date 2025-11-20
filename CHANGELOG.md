@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.10](https://github.com/speakglass/glass/compare/v0.1.9...v0.1.10) (2025-11-20)
+
+
+### Features
+
+* **assistant:** add partner name context to suggestion prompts ([6fd93e5](https://github.com/speakglass/glass/commit/6fd93e561742233ab475e488759098706a5ac4a1))
+* **prompts:** add user name context to suggestion prompts ([c4fb56e](https://github.com/speakglass/glass/commit/c4fb56e1ad117948b48daec52d571e3ba8626c4a))
+* **prompts:** enhance suggestion prompt rules and context handling ([8ccd1ee](https://github.com/speakglass/glass/commit/8ccd1ee4b341c679941a1d09dd4ac549460a9dce))
+
+
+### Code Refactoring
+
+* **assistant:** remove transcript generation from feedback analysis ([29bd17c](https://github.com/speakglass/glass/commit/29bd17cc82fc02289a1bed61bdba8f0976076589))
+
 ## [0.1.9](https://github.com/speakglass/glass/compare/v0.1.8...v0.1.9) (2025-11-20)
 
 

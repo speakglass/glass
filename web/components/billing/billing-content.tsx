@@ -33,11 +33,9 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.speakglass.com';
 
 function CheckIcon() {
   return (
-    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 dark:bg-blue-500/10">
-      <svg className="w-3 h-3 text-primary dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-      </svg>
-    </div>
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+    </svg>
   );
 }
 
@@ -66,6 +64,13 @@ interface PricingPlan {
   popular?: boolean;
 }
 
+interface FeatureComparisonRow {
+  feature: string;
+  free: boolean | string;
+  pro: boolean | string;
+  enterprise: boolean | string;
+}
+
 const normalizePlanKey = (plan?: string | null): BillingTier => {
   const normalized = (plan ?? 'free').toLowerCase();
   if (normalized === 'monthly' || normalized === 'yearly') return 'pro';
@@ -87,11 +92,14 @@ const getPricingPlans = (locale: string, isYearly: boolean): PricingPlan[] => [
     price: '$0',
     billingInfo: t`Free for everyone`,
     features: [
+      { text: t`Live Call` },
       { text: t`AI Roleplay` },
-      { text: t`Real-time suggestions` },
-      { text: t`Real-time feedback` },
-      { text: t`Call summary (fluency/accuracy)` },
-      { text: t`Save up to 5 call summaries` },
+      { text: t`Real-Time Suggestion` },
+      { text: t`Real-Time Feedback` },
+      { text: t`Post-Call Feedback` },
+      { text: t`Personalized Memory` },
+      { text: t`Conversation History` },
+      { text: t`Community Support` },
     ],
   },
   {
@@ -102,10 +110,12 @@ const getPricingPlans = (locale: string, isYearly: boolean): PricingPlan[] => [
     billingInfo: isYearly ? t`Billed yearly` : t`Billed monthly`,
     showBillingToggle: true,
     features: [
-      { text: t`All free features` },
-      { text: t`Personalized Memory` },
-      { text: t`Advanced Real-time suggestions based on your Memory` },
-      { text: t`Save unlimited call summaries` },
+      { text: t`Everything in Free` },
+      { text: t`Unlimited Memory` },
+      { text: t`Unlimited Conversation History` },
+      { text: t`Data Retention Guarantee` },
+      { text: t`Email Support` },
+      { text: t`Priority Response` },
     ],
     cta: isYearly ? t`Upgrade yearly` : t`Upgrade monthly`,
     requiresCheckout: true,
@@ -116,10 +126,105 @@ const getPricingPlans = (locale: string, isYearly: boolean): PricingPlan[] => [
     name: t`Enterprise`,
     price: t`Contact us`,
     billingInfo: t`Annual billing only`,
-    features: [{ text: t`Everything in Pro` }, { text: t`Team onboarding` }, { text: t`Priority support` }],
+    features: [
+      { text: t`Everything in Pro` },
+      { text: t`Team Management` },
+      { text: t`Usage Analytics` },
+      { text: t`SLA Guarantee` },
+      { text: t`Dedicated Support` },
+      { text: t`Fastest Response` },
+      { text: t`Enterprise Onboarding` },
+    ],
     cta: t`Contact sales`,
     requiresContact: true,
     ctaVariant: 'secondary',
+  },
+];
+
+const getFeatureComparison = (): FeatureComparisonRow[] => [
+  {
+    feature: t`Live Call`,
+    free: true,
+    pro: true,
+    enterprise: true,
+  },
+  {
+    feature: t`AI Roleplay`,
+    free: true,
+    pro: true,
+    enterprise: true,
+  },
+  {
+    feature: t`Real-Time Suggestion`,
+    free: true,
+    pro: true,
+    enterprise: true,
+  },
+  {
+    feature: t`Real-Time Feedback`,
+    free: true,
+    pro: true,
+    enterprise: true,
+  },
+  {
+    feature: t`Post-Call Feedback`,
+    free: true,
+    pro: true,
+    enterprise: true,
+  },
+  {
+    feature: t`Personalized Memory`,
+    free: t`Up to 500`,
+    pro: t`Unlimited`,
+    enterprise: t`Unlimited`,
+  },
+  {
+    feature: t`Conversation History`,
+    free: t`Up to 5`,
+    pro: t`Unlimited`,
+    enterprise: t`Unlimited`,
+  },
+  {
+    feature: t`Data Retention Guarantee`,
+    free: false,
+    pro: true,
+    enterprise: true,
+  },
+  {
+    feature: t`Support`,
+    free: t`Community`,
+    pro: t`Email`,
+    enterprise: t`Dedicated`,
+  },
+  {
+    feature: t`Response Time`,
+    free: t`Standard`,
+    pro: t`Priority`,
+    enterprise: t`Fastest`,
+  },
+  {
+    feature: t`Team Management`,
+    free: false,
+    pro: false,
+    enterprise: true,
+  },
+  {
+    feature: t`Usage Analytics`,
+    free: false,
+    pro: false,
+    enterprise: true,
+  },
+  {
+    feature: t`SLA Guarantee`,
+    free: false,
+    pro: false,
+    enterprise: true,
+  },
+  {
+    feature: t`Enterprise Onboarding`,
+    free: false,
+    pro: false,
+    enterprise: true,
   },
 ];
 
@@ -288,12 +393,14 @@ function CardContent({
         <ul className="space-y-4">
           {plan.features.map((feature, index) => (
             <li key={index} className="flex items-start gap-3">
-              <span className="text-primary mt-0.5 shrink-0">
+              <span className="text-blue-500 mt-0.5 shrink-0">
                 <CheckIcon />
               </span>
               <span className="text-emphasis text-[13px]">
                 {feature.underlined ? (
-                  <span className="underline decoration-1 underline-offset-2 decoration-white/30">{feature.text}</span>
+                  <span className="underline decoration-1 underline-offset-2 decoration-black/30 dark:decoration-white/30">
+                    {feature.text}
+                  </span>
                 ) : (
                   feature.text
                 )}
@@ -335,6 +442,30 @@ function CardContent({
   );
 }
 
+function FeatureTableRow({ row }: { row: FeatureComparisonRow }) {
+  const renderCell = (value: boolean | string, highlight = false) => {
+    if (typeof value === 'boolean') {
+      return value ? (
+        <div className="flex justify-center text-blue-500">
+          <CheckIcon />
+        </div>
+      ) : (
+        <span className="text-subtle text-lg">✗</span>
+      );
+    }
+    return <span className={`text-xs md:text-sm ${highlight ? 'text-emphasis' : 'text-subtle'}`}>{value}</span>;
+  };
+
+  return (
+    <tr className="border-b border-black/5 dark:border-white/10">
+      <td className="py-4 px-2 md:px-4 text-xs md:text-sm text-subtle">{row.feature}</td>
+      <td className="py-4 px-1 md:px-3 text-center">{renderCell(row.free)}</td>
+      <td className="py-4 px-1 md:px-3 text-center bg-black/5 dark:bg-white/5">{renderCell(row.pro, true)}</td>
+      <td className="py-4 px-1 md:px-3 text-center">{renderCell(row.enterprise, true)}</td>
+    </tr>
+  );
+}
+
 export function BillingContent() {
   const { snapshot, token, status } = useAccountSession();
   const [loadingPlan, setLoadingPlan] = useState<BillingPlanKey | null>(null);
@@ -353,6 +484,7 @@ export function BillingContent() {
   const locale = useLocale();
   const [isYearly, setIsYearly] = useState(true);
   const pricingPlans = getPricingPlans(locale, isYearly);
+  const featureComparison = getFeatureComparison();
   const currentPlanKey = normalizePlanKey(snapshot?.billing?.plan);
   const isFreePlan = currentPlanKey === 'free';
   const planIntervalLabel = getPlanIntervalLabel(snapshot?.billing?.planInterval);
@@ -567,6 +699,42 @@ export function BillingContent() {
               planLocked={PLAN_RANK[currentPlanKey] >= PLAN_RANK[plan.planKey]}
             />
           ))}
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-border/60 bg-card/60 px-4 py-8 md:px-8 md:py-12">
+        <div className="flex flex-col items-center justify-center text-center mb-8">
+          <h3 className="text-3xl font-semibold text-emphasis mb-3">
+            <Trans>Compare plans</Trans>
+          </h3>
+          <p className="text-subtle text-base">
+            <Trans>See all features across plans and find what works best for you.</Trans>
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-black/5 dark:border-white/10">
+                <th className="text-left py-4 px-2 md:px-4 text-sm md:text-base font-semibold text-foreground bg-card/95 w-1/4">
+                  {t`Feature`}
+                </th>
+                <th className="text-center py-4 px-1 md:px-3 text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
+                  {t`Free`}
+                </th>
+                <th className="text-center py-4 px-1 md:px-3 text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
+                  {t`Pro`}
+                </th>
+                <th className="text-center py-4 px-1 md:px-3 text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
+                  {t`Enterprise`}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {featureComparison.map((row, index) => (
+                <FeatureTableRow key={index} row={row} />
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
