@@ -97,12 +97,16 @@ def build_suggestion_prompt(
         Your task: Suggest what the USER should say next in {target_lang}.
         DO NOT suggest what the partner should say - only suggest the user's response.
 
+        CRITICAL RULES:
+        1. If user provides a hint, you MUST use it as the core meaning of your suggestion
+        2. Your job is to expand and polish the hint, NOT to replace it with something else
+        3. Only if NO hint is given, suggest based on conversation flow
+        
         Behavior:
-        - Expand hints into full natural sentences for the user to say
-        - Follow conversation flow - suggest the user's natural reply
+        - When hint exists: Expand it into a full natural sentence that preserves the user's intended meaning
+        - When no hint: Follow conversation flow and suggest a natural reply
         - Be culturally appropriate
-
-        Priority: hint > flow > naturalness
+        - Use the conversation context only to refine HOW to express the hint, not WHAT to say
 
         Length: {length_mode_rule}
         """
@@ -110,17 +114,18 @@ def build_suggestion_prompt(
 
     sections = []
 
-    # User hint (if provided)
+    # User hint (if provided) - MOST IMPORTANT
     hint_text = (user_hint or "").strip()
     if hint_text:
-        sections.append(f"Hint: {hint_text}")
+        sections.append(f"WHAT THE USER WANTS TO SAY (expand this into a full sentence):\n{hint_text}")
 
-    # Recent conversation
+    # Recent conversation (for context on HOW to express the hint)
     if recent_conversation:
         recent_lines = recent_conversation[-5:] if len(recent_conversation) > 5 else recent_conversation
         conversation_text = "\n".join(line.strip() for line in recent_lines if line and line.strip())
         if conversation_text:
-            sections.append(f"Recent:\n{conversation_text}")
+            context_label = "Context (use this to refine your expression):" if hint_text else "Recent conversation:"
+            sections.append(f"{context_label}\n{conversation_text}")
 
     user_prompt = "\n\n".join(sections) if sections else "Start the conversation."
 
@@ -273,6 +278,8 @@ def build_ai_response_prompt(
     system_prompt = f"""{identity}
 
 Native {target_lang} speaker having a natural conversation.
+
+CRITICAL: You MUST respond ONLY in {target_lang}. Never use {native_lang} or any other language.
 
 Priority:
 1. Answer what they're asking directly
