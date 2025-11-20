@@ -20,7 +20,9 @@ import { t } from '@lingui/core/macro';
 
 export type Memory = MemoryType;
 
-const renderPlaceholder = () => <span className="text-xs text-muted-foreground">—</span>;
+const renderPlaceholder = () => (
+  <span className="text-xs text-muted-foreground">—</span>
+);
 
 const formatReadableLabel = (value: string) => {
   const normalized = value.replace(/[_-]+/g, ' ').trim();
@@ -43,7 +45,10 @@ export const createColumns = (
     header: ({ table }) => (
       <div className="flex items-center justify-center w-8">
         <Checkbox
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
+          }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label={t`Select all`}
         />
@@ -67,7 +72,11 @@ export const createColumns = (
     size: 140,
     header: ({ column }) => {
       return (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')} className="-ml-4">
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="-ml-4"
+        >
           <Trans>Created at</Trans>
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
@@ -80,8 +89,12 @@ export const createColumns = (
       }
       return (
         <div className="text-xs leading-tight w-32 min-w-[120px]">
-          <div className="font-medium text-foreground/80">{date.toLocaleDateString()}</div>
-          <div className="text-muted-foreground">{date.toLocaleTimeString()}</div>
+          <div className="font-medium text-foreground/80">
+            {date.toLocaleDateString()}
+          </div>
+          <div className="text-muted-foreground">
+            {date.toLocaleTimeString()}
+          </div>
         </div>
       );
     },
@@ -104,7 +117,9 @@ export const createColumns = (
     header: () => <Trans>Memory</Trans>,
     cell: ({ row, table }) => {
       const text = row.getValue('text') as string;
-      const meta = table.options.meta as { onViewMemory?: (memory: Memory) => void };
+      const meta = table.options.meta as {
+        onViewMemory?: (memory: Memory) => void;
+      };
 
       return (
         <div className="max-w-[600px] py-2">
@@ -149,7 +164,9 @@ export const createColumns = (
     cell: ({ row, table }) => {
       const summary = row.getValue('summary') as string | null;
       if (!summary) return renderPlaceholder();
-      const meta = table.options.meta as { onViewMemory?: (memory: Memory) => void };
+      const meta = table.options.meta as {
+        onViewMemory?: (memory: Memory) => void;
+      };
       return (
         <p
           className="text-sm text-muted-foreground max-w-[520px] line-clamp-3 cursor-pointer hover:text-foreground/80 transition-colors"
@@ -167,9 +184,17 @@ export const createColumns = (
     cell: ({ row }) => {
       const retention = String(row.getValue('retention') || '');
       const label = retention ? formatReadableLabel(retention) : t`Unknown`;
-      const variant = retention === 'permanent' ? 'default' : retention === 'short_term' ? 'secondary' : 'outline';
+      const variant =
+        retention === 'permanent'
+          ? 'default'
+          : retention === 'short_term'
+          ? 'secondary'
+          : 'outline';
       return (
-        <Badge variant={variant as 'default' | 'secondary' | 'outline'} className="text-xs w-fit">
+        <Badge
+          variant={variant as 'default' | 'secondary' | 'outline'}
+          className="text-xs w-fit"
+        >
           {label}
         </Badge>
       );
@@ -180,21 +205,32 @@ export const createColumns = (
     size: 140,
     header: ({ column }) => {
       return (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')} className="-ml-4">
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="-ml-4"
+        >
           <Trans>Expires</Trans>
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
     cell: ({ row }) => {
-      const expiration = row.getValue('retentionExpiresAt') as Date | null | undefined;
+      const expiration = row.getValue('retentionExpiresAt') as
+        | Date
+        | null
+        | undefined;
       if (!expiration) {
         return <div className="text-sm text-muted-foreground">-</div>;
       }
       return (
         <div className="text-xs leading-tight w-32 min-w-[120px]">
-          <div className="font-medium text-foreground/80">{expiration.toLocaleDateString()}</div>
-          <div className="text-muted-foreground">{expiration.toLocaleTimeString()}</div>
+          <div className="font-medium text-foreground/80">
+            {expiration.toLocaleDateString()}
+          </div>
+          <div className="text-muted-foreground">
+            {expiration.toLocaleTimeString()}
+          </div>
         </div>
       );
     },
@@ -220,7 +256,11 @@ export const createColumns = (
     accessorKey: 'entities',
     header: () => <Trans>Entities</Trans>,
     cell: ({ row }) => {
-      const entities = (row.getValue('entities') as Array<{ label: string; value: string }> | null) ?? [];
+      const entities =
+        (row.getValue('entities') as Array<{
+          label: string;
+          value: string;
+        }> | null) ?? [];
       if (!entities.length) return renderPlaceholder();
       return (
         <div className="flex flex-wrap gap-1 max-w-[320px]">
@@ -291,7 +331,10 @@ export const createColumns = (
               <Trans>Edit</Trans>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onDelete(memory)}>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => onDelete(memory)}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               <Trans>Delete</Trans>
             </DropdownMenuItem>
