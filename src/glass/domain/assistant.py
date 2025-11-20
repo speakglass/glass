@@ -332,6 +332,7 @@ class LearningAssistant:
         recent_conversation: RecentConversation,
         user_hint: str | None = None,
         last_partner_message: str | None = None,
+        partner_name: str | None = None,
     ) -> None:
         """Emit a suggestion for what to say next."""
         try:
@@ -358,6 +359,7 @@ class LearningAssistant:
                         recent_conversation=recent_conv_texts,
                         last_partner_message=last_partner_message,
                         length_mode=self.suggest_length_mode,
+                        partner_name=partner_name,
                     )
 
                     LOGGER.info(f"[Suggestion] SYSTEM:\n{system_prompt}\n\nUSER:\n{user_prompt}")

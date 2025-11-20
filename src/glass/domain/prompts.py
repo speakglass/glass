@@ -81,6 +81,7 @@ def build_suggestion_prompt(
     recent_conversation: list[str] | None,
     last_partner_message: str | None = None,
     length_mode: str = "auto",
+    partner_name: str | None = None,
 ) -> tuple[str, str]:
     """Build system and user prompts for conversation suggestions."""
 
@@ -90,9 +91,14 @@ def build_suggestion_prompt(
         "long": 'length_mode="long" (exactly 4 sentences).',
     }.get(normalized_length_mode, 'length_mode="auto" (any natural length is fine).')
 
+    # Build partner context if available
+    partner_context = ""
+    if partner_name:
+        partner_context = f"\n\nYou're talking with {partner_name}."
+
     system_prompt = dedent(
         f"""
-        Conversation coach for {target_lang} users (native: {native_lang}).
+        Conversation coach for {target_lang} users (native: {native_lang}).{partner_context}
         
         Your task: Suggest what the USER should say next in {target_lang}.
         DO NOT suggest what the partner should say - only suggest the user's response.
