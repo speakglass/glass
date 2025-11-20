@@ -298,6 +298,7 @@ class ConversationSession:
                                 recent_conversation=augmented_lines,
                                 last_partner_message=ai_text,
                                 partner_name=self.roleplay.partner_name if self.mode == "roleplay" else None,
+                                user_name=self.roleplay.user_name if self.mode == "roleplay" else None,
                             )
                         )
 
@@ -673,6 +674,7 @@ class ConversationSession:
             last_partner_message=last_partner_message,
             length_mode=self.assistant.suggest_length_mode,
             partner_name=self.roleplay.partner_name if self.mode == "roleplay" else None,
+            user_name=self.roleplay.user_name if self.mode == "roleplay" else None,
         )
 
         from ..schemas import SuggestionResponse

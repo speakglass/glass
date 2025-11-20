@@ -45,34 +45,34 @@ script yet. This repo hosts both the FastAPI backend (speech → understanding �
 
 At runtime we only persist compact facts in `memory_records`. Each record stores:
 
-| Field | Purpose |
-| --- | --- |
+| Field                                      | Purpose                                                     |
+| ------------------------------------------ | ----------------------------------------------------------- |
 | `user_id`, `conversation_id`, `partner_id` | Scope (user-scoped, partner-scoped, or conversation-scoped) |
-| `category` | One of fact / preference / skill / context / rule |
-| `retention` | short_term / long_term / permanent (with optional expiry) |
-| `text`, `summary` | Canonical fact text plus optional headline |
-| `keywords`, `entities` | Lightweight search accelerators |
-| `importance` | Used to rank facts when building prompts |
+| `category`                                 | One of fact / preference / skill / context / rule           |
+| `retention`                                | short_term / long_term / permanent (with optional expiry)   |
+| `text`, `summary`                          | Canonical fact text plus optional headline                  |
+| `keywords`, `entities`                     | Lightweight search accelerators                             |
+| `importance`                               | Used to rank facts when building prompts                    |
 
 The classifier described in `src/glass/adapters/memory/classifier.py` ensures every fact is normalized and deduplicated before insert.
 
 All higher-level operations simply filter this table:
 
-| Operation | Query |
-| --- | --- |
-| “Tell me about the user” | `SELECT * FROM memory_records WHERE user_id = :user AND partner_id IS NULL ORDER BY importance DESC LIMIT N` |
-| “Remind me what this partner likes” | `... WHERE user_id = :user AND partner_id = :partner` |
-| “Give me the last session’s commitments” | `... WHERE conversation_id = :conversation ORDER BY updated_at DESC` |
+| Operation                                | Query                                                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| “Tell me about the user”                 | `SELECT * FROM memory_records WHERE user_id = :user AND partner_id IS NULL ORDER BY importance DESC LIMIT N` |
+| “Remind me what this partner likes”      | `... WHERE user_id = :user AND partner_id = :partner`                                                        |
+| “Give me the last session’s commitments” | `... WHERE conversation_id = :conversation ORDER BY updated_at DESC`                                         |
 
 That’s it—no extra persona/feedback tables required. Session history still streams through Redis/Postgres for context, but durable memory lives in one place, making it trivial to reason about and operate.
 
 ### Conceptual memory layers
 
-| Layer | Description | Lifetime |
-| --- | --- | --- |
-| Live context buffer | Deques in `ConversationMemory` + Redis for current session turns. Feeds prompts, never persisted long term. | Seconds–minutes |
-| Durable facts (`memory_records`) | Classified facts (fact / preference / skill / context / rule) with retention scoring. Drives personalization queries. | Days–forever (depending on retention) |
-| Session metadata (`account_conversations`) | Minimal rows noting session/partner/time for audit + history lists. No transcripts stored here. | Historical reference |
+| Layer                                      | Description                                                                                                           | Lifetime                              |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Live context buffer                        | Deques in `ConversationMemory` + Redis for current session turns. Feeds prompts, never persisted long term.           | Seconds–minutes                       |
+| Durable facts (`memory_records`)           | Classified facts (fact / preference / skill / context / rule) with retention scoring. Drives personalization queries. | Days–forever (depending on retention) |
+| Session metadata (`account_conversations`) | Minimal rows noting session/partner/time for audit + history lists. No transcripts stored here.                       | Historical reference                  |
 
 Every feature maps to one of these abstractions, which keeps the mental model simple: capture context in-memory, condense into facts, and jot down which session produced them.
 
@@ -126,15 +126,16 @@ docker compose up --build
 
 ## Roadmap
 
-| Item                                      | Status     | Notes                        |
-| ----------------------------------------- | ---------- | ---------------------------- |
-| Real-time feedback & sentence suggestions | ✅ Done    | Streaming via WebSocket      |
-| Screen audio capture for meetings         | ✅ Done    | Works with Zoom/Meet/Teams   |
-| Persistent memory/personalization         | ✅ Done    | Postgres + Redis memory core |
-| Docker/Compose support                    | ✅ Done    | Backend/Web images + compose |
-| Desktop app                               | 🚧 Planned | macOS app with full Glass UI |
-| Speaker diarization                       | 🚧 Planned | Multi-speaker labeling       |
-| Local-hosted model adapters (LLM/ASR/TTS) | 🚧 Planned | Self-hosted runtime          |
+| Item                                      | Status     | Notes                         |
+| ----------------------------------------- | ---------- | ----------------------------- |
+| Real-time feedback & sentence suggestions | ✅ Done    | Streaming via WebSocket       |
+| Screen audio capture for meetings         | ✅ Done    | Works with Zoom/Meet/Teams    |
+| Persistent memory/personalization         | ✅ Done    | Postgres + Redis memory core  |
+| Docker/Compose support                    | ✅ Done    | Backend/Web images + compose  |
+| pgvector semantic memory search           | 🚧 Planned | Vector-based memory retrieval |
+| Desktop app                               | 🚧 Planned | macOS app with full Glass UI  |
+| Speaker diarization                       | 🚧 Planned | Multi-speaker labeling        |
+| Local-hosted model adapters (LLM/ASR/TTS) | 🚧 Planned | Self-hosted runtime           |
 
 ## Contributing
 
