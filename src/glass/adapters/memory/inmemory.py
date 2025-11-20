@@ -39,23 +39,9 @@ class InMemoryMemoryAdapter:
                 return 0.0
         return 0.0
 
-    async def get_user_context_block(self, user_id: str, use_cache: bool = True) -> str:
+    async def get_user_context_block(self, user_id: str, *, limit: int = 20) -> str:  # noqa: ARG002
+        """Get user-level context (limit parameter ignored in in-memory implementation)."""
         return self._user_contexts.get(user_id, "")
-
-    def invalidate_user_cache(self, user_id: str) -> None:
-        self._user_contexts.pop(user_id, None)
-
-    async def get_context_for_prompt(
-        self, conversation_id: str, user_id: str, scope: str = "conversation", timeout: float = 3.0
-    ) -> str:
-        messages = list(self._conversation_messages.get(conversation_id, []))
-        user_ctx = self._user_contexts.get(user_id, "")
-        parts = []
-        if scope == "hybrid" and user_ctx:
-            parts.append(user_ctx)
-        if messages:
-            parts.append("\n".join(messages))
-        return "\n\n".join(parts).strip()
 
     async def ensure_user(
         self, user_id: str, email: str | None = None, first_name: str | None = None, last_name: str | None = None
@@ -95,8 +81,7 @@ class InMemoryMemoryAdapter:
 
     def _record_view(self, record: dict[str, Any]) -> dict[str, Any]:
         view = dict(record)
-        view["scope"] = self._coerce_scope(view.get("scope") or view.get("subject_role"))
-        view.pop("subject_role", None)
+        view["scope"] = self._coerce_scope(view.get("scope"))
         return view
 
     async def persist_memory_records(
@@ -116,7 +101,7 @@ class InMemoryMemoryAdapter:
             if not text:
                 continue
             record_id = self._next_record_id()
-            scope = self._coerce_scope(entry.get("scope") or entry.get("subject_role"))
+            scope = self._coerce_scope(entry.get("scope"))
             record = {
                 "id": record_id,
                 "user_id": user_id,

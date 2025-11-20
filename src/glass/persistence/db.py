@@ -7,7 +7,20 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ARRAY, JSON, BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text, func, Index, UniqueConstraint
+from sqlalchemy import (
+    ARRAY,
+    JSON,
+    BigInteger,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    func,
+    Index,
+    UniqueConstraint,
+)
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -30,18 +43,12 @@ class AccountUser(Base):
     email_verified: Mapped[bool] = mapped_column(default=False)
     verification_token: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
     verification_token_expires: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    last_login_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    onboarding_completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    onboarding_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # User language preferences
     learning_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
     native_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
@@ -59,20 +66,15 @@ class AccountUser(Base):
     conversations: Mapped[list["AccountConversation"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
-    partners: Mapped[list["ConversationPartner"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
-    )
+    partners: Mapped[list["ConversationPartner"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class ConversationPartner(Base):
     __tablename__ = "conversation_partners"
 
-    id: Mapped[str] = mapped_column(
-        String(64), primary_key=True, default=lambda: uuid.uuid4().hex
-    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: uuid.uuid4().hex)
     user_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("account_users.id", ondelete="CASCADE"),
-        nullable=True, index=True
+        String(64), ForeignKey("account_users.id", ondelete="CASCADE"), nullable=True, index=True
     )
     slug: Mapped[str] = mapped_column(String(64), index=True)
     learning_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
@@ -82,14 +84,10 @@ class ConversationPartner(Base):
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     voice_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     kind: Mapped[str] = mapped_column(String(16), nullable=False, default="roleplay")
-    extra_metadata: Mapped[dict[str, Any] | None] = mapped_column(
-        JSON(none_as_null=True), nullable=True
-    )
+    extra_metadata: Mapped[dict[str, Any] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_system: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
@@ -101,12 +99,9 @@ class AccountConversation(Base):
     __tablename__ = "account_conversations"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    user_id: Mapped[str] = mapped_column(
-        String(64), ForeignKey("account_users.id", ondelete="CASCADE"), index=True
-    )
+    user_id: Mapped[str] = mapped_column(String(64), ForeignKey("account_users.id", ondelete="CASCADE"), index=True)
     partner_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("conversation_partners.id", ondelete="SET NULL"),
-        nullable=True, index=True
+        String(64), ForeignKey("conversation_partners.id", ondelete="SET NULL"), nullable=True, index=True
     )
     title: Mapped[str | None] = mapped_column(Text, nullable=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -118,7 +113,9 @@ class AccountConversation(Base):
     last_message_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     message_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
     user: Mapped[AccountUser] = relationship(back_populates="conversations")
     partner: Mapped["ConversationPartner"] = relationship()
@@ -181,7 +178,9 @@ class ConversationMessage(Base):
     )
     user_id: Mapped[str] = mapped_column(String(64), ForeignKey("account_users.id", ondelete="CASCADE"), index=True)
     role: Mapped[str] = mapped_column(String(16), nullable=False)
-    partner_id: Mapped[str | None] = mapped_column(String(64), ForeignKey("conversation_partners.id", ondelete="SET NULL"), nullable=True)
+    partner_id: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("conversation_partners.id", ondelete="SET NULL"), nullable=True
+    )
     utterance_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     text: Mapped[str] = mapped_column(Text, nullable=False)
     lang_code: Mapped[str] = mapped_column(String(16), nullable=False)
@@ -275,7 +274,7 @@ class MemoryRecord(Base):
         index=True,
     )
     partner_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
-    subject_role: Mapped[str] = mapped_column(String(32), index=True)
+    scope: Mapped[str] = mapped_column(String(32), index=True)
     category: Mapped[str] = mapped_column(String(32), index=True)
     retention: Mapped[str] = mapped_column(String(32), index=True)
     importance: Mapped[int] = mapped_column(default=0)
@@ -290,26 +289,18 @@ class MemoryRecord(Base):
     )
     content_hash: Mapped[str] = mapped_column(String(64))
 
-    __table_args__ = (
-        Index("ix_memory_records_user_hash", "user_id", "content_hash", unique=True),
-    )
+    __table_args__ = (Index("ix_memory_records_user_hash", "user_id", "content_hash", unique=True),)
 
 
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 
-    id: Mapped[str] = mapped_column(
-        String(64), primary_key=True, default=lambda: uuid.uuid4().hex
-    )
-    user_id: Mapped[str] = mapped_column(
-        String(64), ForeignKey("account_users.id", ondelete="CASCADE"), index=True
-    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: uuid.uuid4().hex)
+    user_id: Mapped[str] = mapped_column(String(64), ForeignKey("account_users.id", ondelete="CASCADE"), index=True)
     token: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     used: Mapped[bool] = mapped_column(default=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # AccountMemory model removed - centralized memory service persists insights separately
@@ -322,6 +313,7 @@ class PersistenceDatabase:
         # Log database connection info (mask password for security)
         try:
             from urllib.parse import urlparse
+
             parsed = urlparse(url)
             if parsed.password:
                 masked_url = f"{parsed.scheme}://{parsed.username}:***@{parsed.hostname}:{parsed.port}{parsed.path}"
@@ -330,11 +322,9 @@ class PersistenceDatabase:
             LOGGER.info(f"🔧 Database URL configured: {masked_url}")
         except Exception:
             LOGGER.info("🔧 Database URL configured (parsing failed)")
-        
+
         self.engine = create_async_engine(url, future=True)
-        self._sessionmaker = async_sessionmaker(
-            self.engine, expire_on_commit=False, class_=AsyncSession
-        )
+        self._sessionmaker = async_sessionmaker(self.engine, expire_on_commit=False, class_=AsyncSession)
 
     async def init_models(self) -> None:
         """Initialize database models and apply migrations."""
@@ -343,18 +333,18 @@ class PersistenceDatabase:
             async with self.engine.begin() as conn:
                 # Create all tables
                 await conn.run_sync(Base.metadata.create_all)
-                
+
                 # Apply migrations for existing databases
                 await self._apply_migrations(conn)
-            
+
             LOGGER.info("✅ Database connected and initialized")
         except Exception as e:
             LOGGER.error(f"❌ Database connection or initialization failed: {e}")
             raise
-    
+
     async def _apply_migrations(self, conn) -> None:
         """Apply schema migrations for existing databases.
-        
+
         Note: For complex migrations, consider using Alembic.
         """
         ...

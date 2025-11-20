@@ -10,6 +10,7 @@ from . import prompts
 from ..utils.language import lang_code_to_name
 
 if TYPE_CHECKING:
+    from .memory import ConversationMemory
     from .ports import LLMPort
 
 LOGGER = logging.getLogger(__name__)
@@ -23,11 +24,13 @@ class Roleplay:
         session_id: str,
         llm: LLMPort,
         emit_callback,
+        memory: ConversationMemory | None = None,
     ):
         self.session_id = session_id
         self.llm = llm
         self._emit = emit_callback
-        
+        self.memory = memory
+
         # Configuration
         self.partner_name: str | None = None
         self.partner_description: str | None = None
@@ -36,46 +39,104 @@ class Roleplay:
         self.user_name: str | None = None
         self.learning_lang: str = "en"
         self.native_lang: str = "ko"
-        
+
         self._translations: dict[str, str] = {}
 
     def set_user_name(self, name: str | None) -> None:
         self.user_name = name.strip() if isinstance(name, str) and name.strip() else None
 
+    async def _update_conversation_summary(self) -> None:
+        """Update conversation summary in background (non-blocking)."""
+        if not self.memory:
+            return
+
+        try:
+            # Get conversation for summary (excludes most recent 6 messages)
+            # This ensures summary + recent_conversation are complementary without gaps
+            conversation_for_summary = self.memory.get_conversation_for_summary(exclude_recent=6)
+
+            # Format conversation for summary
+            conv_lines: list[str] = []
+            for message in conversation_for_summary:
+                role = (message.get("role") or "partner").lower()
+                # Skip Glass AI assistant messages (feedback/suggestions)
+                if role == "assistant":
+                    continue
+                speaker = "User" if role == "user" else "Partner"
+                text = (message.get("text") or "").strip()
+                if text:
+                    conv_lines.append(f"{speaker}: {text}")
+
+            if not conv_lines:
+                # Not enough conversation history to summarize yet
+                return
+
+            # Get existing summary
+            existing_summary = self.memory.get_conversation_context_summary()
+
+            # Generate updated summary
+            system_prompt, user_prompt = prompts.build_conversation_summary_prompt(
+                conversation_lines=conv_lines,
+                existing_summary=existing_summary if existing_summary else None,
+            )
+
+            LOGGER.info(f"[Conversation Summary] SYSTEM:\n{system_prompt}\n\nUSER:\n{user_prompt}")
+
+            new_summary = await self.llm.call(
+                prompt=user_prompt,
+                system=system_prompt,
+                temperature=0.3,
+            )
+
+            if new_summary and new_summary.strip():
+                self.memory.update_conversation_context_summary(new_summary.strip())
+                LOGGER.info(f"[Conversation Summary] Updated: {new_summary[:100]}...")
+
+        except Exception as e:
+            LOGGER.warning(f"[Conversation Summary] Failed to update: {e}")
+
     async def generate_ai_response(
         self,
         user_text: str,
         *,
-        recent_conversation: list[dict],
-        conversation_context: str = "",
-        interaction_context: str = "",
+        relationship_context: str = "",
     ) -> str:
         """Generate AI conversation partner response.
-        
+
         Args:
             user_text: User's message
-            recent_conversation: Recent conversation history
-            conversation_context: Partner-specific history/notes from past interactions
-            
+            relationship_context: Prior relationship memories with this partner
+
         Returns:
             AI response text
         """
         try:
             LOGGER.info("[Roleplay] Generating response")
-            
+
             target_lang = lang_code_to_name(self.learning_lang)
             native_lang = lang_code_to_name(self.native_lang)
-            
+
+            # Get recent conversation from memory
+            recent_conversation: list[dict] = []
+            if self.memory:
+                recent_conversation = self.memory.get_conversation_recent_history(limit=6)
+
             # Build prompt
             recent_conv_texts: list[str] = []
-            for message in recent_conversation[-6:]:
+            for message in recent_conversation:
                 role = (message.get("role") or "partner").lower()
+                # Skip Glass AI assistant messages (feedback/suggestions)
+                if role == "assistant":
+                    continue
                 if role == "user":
                     speaker = "User"
                     name = self.user_name
-                else:
-                    speaker = "You"
+                elif role == "partner":
+                    speaker = "Partner"
                     name = self.partner_name
+                else:
+                    # Skip unknown roles
+                    continue
                 text = (message.get("text") or "").strip()
                 if not text:
                     continue
@@ -83,6 +144,12 @@ class Roleplay:
                 recent_conv_texts.append(f"{label}: {text}")
             if not recent_conv_texts:
                 recent_conv_texts = ["(No recent conversation yet)"]
+
+            # Get conversation summary from memory
+            conversation_summary = ""
+            if self.memory:
+                conversation_summary = self.memory.get_conversation_context_summary()
+
             system_prompt, user_prompt = prompts.build_ai_response_prompt(
                 user_text=user_text,
                 partner_name=self.partner_name,
@@ -90,30 +157,26 @@ class Roleplay:
                 target_lang=target_lang,
                 native_lang=native_lang,
                 recent_conversation=recent_conv_texts,
-                conversation_context=conversation_context,
-                interaction_context=interaction_context or None,
+                conversation_summary=conversation_summary,
+                relationship_context=relationship_context,
                 user_name=self.user_name,
             )
-            LOGGER.debug(
-                "[RoleplayPrompt]\nSYSTEM:\n%s\n\nUSER:\n%s",
-                system_prompt,
-                user_prompt,
-            )
-            
+
+            LOGGER.info(f"[AI Response] SYSTEM:\n{system_prompt}\n\nUSER:\n{user_prompt}")
+
             # Generate response
             ai_response = await self.llm.call(
                 prompt=user_prompt,
                 system=system_prompt,
                 temperature=0.8,
-                max_tokens=300,
             )
-            
+
             if not ai_response or not ai_response.strip():
                 return ""
-            
+
             LOGGER.info(f"[Roleplay] Generated: {ai_response[:50]}...")
             return ai_response.strip()
-        
+
         except Exception as e:
             LOGGER.error(f"[Roleplay] Failed to generate response: {e}", exc_info=True)
             return ""
@@ -125,42 +188,37 @@ class Roleplay:
         event_type_transcript,
         event_type_translation,
         *,
-        recent_conversation: list[dict],
-        conversation_context: str = "",
-        interaction_context: str = "",
+        relationship_context: str = "",
         user_message_end_time: float | None = None,
     ) -> dict | None:
         """Generate and emit AI conversation turn.
-        
+
         Args:
             user_text: User's message
             user_utterance_id: User's utterance ID
             event_type_transcript: Transcript event type
             event_type_translation: Translation event type
-            recent_conversation: Recent conversation history
-            conversation_context: Partner-specific context/history
+            relationship_context: Prior relationship memories with this partner
             user_message_end_time: When user finished speaking
-            
+
         Returns:
             AI message dict for storage, or None if failed
         """
-        # Generate AI response
+        # Generate AI response (gets recent conversation and summary from memory internally)
         ai_response = await self.generate_ai_response(
             user_text,
-            recent_conversation=recent_conversation,
-            conversation_context=conversation_context,
-            interaction_context=interaction_context,
+            relationship_context=relationship_context,
         )
-        
+
         if not ai_response:
             return None
-        
+
         ai_utterance_id = str(uuid.uuid4())
-        
+
         # Calculate timing (AI responds shortly after user)
         ai_start_time = user_message_end_time + 0.5 if user_message_end_time is not None else 0.0
         ai_duration = len(ai_response) * 0.05  # ~0.05s per character
-        
+
         # Emit AI transcript with TTS flag and voice_id
         await self._emit(
             event_type_transcript,
@@ -181,43 +239,65 @@ class Roleplay:
             },
             source="ai",
         )
-        
-        # Translate AI response
-        ai_translation = None
-        try:
-            native_lang_name = lang_code_to_name(self.native_lang)
-            target_lang_name = lang_code_to_name(self.learning_lang)
-            
-            system_prompt, user_prompt = prompts.build_translation_prompt(
-                ai_response, target_lang_name, native_lang_name
-            )
-            ai_translation = await self.llm.call(
-                prompt=user_prompt,
-                system=system_prompt,
-                temperature=0.3,
-            )
-            
-            if ai_translation:
-                await self._emit(
-                    event_type_translation,
-                    {
-                        "utterance_id": ai_utterance_id,
-                        "text": ai_translation,
-                        "source_lang": self.learning_lang,
-                        "target_lang": self.native_lang,
-                    },
-                    source="ai",
+
+        # Translate AI response in parallel (non-blocking)
+        import asyncio
+
+        async def translate_and_emit():
+            """Background task to translate and emit translation."""
+            try:
+                native_lang_name = lang_code_to_name(self.native_lang)
+                target_lang_name = lang_code_to_name(self.learning_lang)
+
+                system_prompt, user_prompt = prompts.build_translation_prompt(
+                    ai_response, target_lang_name, native_lang_name
                 )
-                self._translations[ai_utterance_id] = ai_translation
-        except Exception as e:
-            LOGGER.warning(f"[Roleplay] Translation failed: {e}")
-        
+                ai_translation = await self.llm.call(
+                    prompt=user_prompt,
+                    system=system_prompt,
+                    temperature=0.3,
+                )
+
+                if ai_translation:
+                    await self._emit(
+                        event_type_translation,
+                        {
+                            "utterance_id": ai_utterance_id,
+                            "text": ai_translation,
+                            "source_lang": self.learning_lang,
+                            "target_lang": self.native_lang,
+                        },
+                        source="ai",
+                    )
+                    self._translations[ai_utterance_id] = ai_translation
+                    LOGGER.info(f"[Roleplay] Translation completed for {ai_utterance_id}")
+            except Exception as e:
+                LOGGER.warning(f"[Roleplay] Translation failed: {e}")
+
+        async def update_summary_background():
+            """Background task to update conversation summary (only if needed)."""
+            # Check if summary should be updated (efficient throttling)
+            if not self.memory or not self.memory.should_update_summary(
+                message_threshold=8,  # Update after 8 new messages
+                time_threshold=300.0,  # Or after 5 minutes
+            ):
+                return
+
+            # Wait a bit for the AI message to be added to memory
+            await asyncio.sleep(0.5)
+            # Update summary (gets recent conversation from memory internally)
+            await self._update_conversation_summary()
+
+        # Start translation and summary update in background (parallel with TTS)
+        asyncio.create_task(translate_and_emit())
+        asyncio.create_task(update_summary_background())
+
         LOGGER.info(f"[Roleplay] Completed turn for {user_utterance_id}")
-        
-        # Return message for storage
+
+        # Return message for storage (translation will be added later)
         return {
             "text": ai_response,
             "utterance_id": ai_utterance_id,
-            "translation": ai_translation,
+            "translation": None,  # Translation will come later via event
             "language": self.learning_lang,
         }

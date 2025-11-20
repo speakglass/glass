@@ -92,70 +92,37 @@ def build_suggestion_prompt(
 
     system_prompt = dedent(
         f"""
-        You are a conversation coach that helps learners speak naturally in {target_lang}.
-        Your goal is simple: produce the most natural and contextually appropriate sentence the learner could say next.
+        Conversation coach for {target_lang} users (native: {native_lang}).
+        
+        Your task: Suggest what the USER should say next in {target_lang}.
+        DO NOT suggest what the partner should say - only suggest the user's response.
 
-        ## Core Behavior
-        - Always propose a fully natural sentence, not a literal translation.
-        - Expand even 1-2 word hints into a complete sentence, interpreting the intended meaning.
-        - If no hint exists, follow the natural conversation flow.
-        - Use user profile facts only when directly relevant; never force them in.
-        - Maintain realistic tone, cultural appropriateness, and conversational smoothness.
-        - Match the learner's level (simpler grammar if needed).
+        Behavior:
+        - Expand hints into full natural sentences for the user to say
+        - Follow conversation flow - suggest the user's natural reply
+        - Be culturally appropriate
 
-        ## Priority Order
-        1. User hint (interpret intent, expand to full sentence)
-        2. Conversation flow
-        3. User profile facts (optional, only if relevant)
-        4. Naturalness and clarity
+        Priority: hint > flow > naturalness
 
-        ## Length Rules
-        - When length_mode="short": exactly 1 sentence.
-        - When length_mode="long": exactly 4 sentences.
-
-        ## Output
-        Return ONLY valid JSON:
-        {{
-          "target_text": "Natural sentence in {target_lang}",
-          "native_translation": "Translation in {native_lang}"
-        }}
+        Length: {length_mode_rule}
         """
     ).strip()
 
-    def _format_block(label: str, content: str) -> str:
-        return f"## {label}\n{content.strip() if content.strip() else 'None'}"
+    sections = []
 
+    # User hint (if provided)
     hint_text = (user_hint or "").strip()
-    hint_block = _format_block("User Hint", hint_text or "None")
-
-    conversation_text = ""
-    if recent_conversation:
-        conversation_text = "\n".join(line.strip() for line in recent_conversation if line and line.strip())
-    conversation_block = _format_block("Recent Conversation", conversation_text or "None")
-
-    partner_text = (last_partner_message or "").strip() or "None"
-    partner_block = _format_block("Partner's Last Message", partner_text)
-
-    instructions: list[str] = [
-        "Generate the next thing the learner should say in "
-        f"{target_lang} using the rules in the system prompt.",
-    ]
     if hint_text:
-        instructions.append("Interpret the user hint as their intended meaning and expand it into a full sentence.")
-    else:
-        instructions.append("No hint provided - follow the existing conversation flow naturally.")
+        sections.append(f"Hint: {hint_text}")
 
-    instructions.append(f"Apply the required length mode: {length_mode_rule}")
-    instructions.append("Return ONLY the JSON object described earlier.")
+    # Recent conversation
+    if recent_conversation:
+        recent_lines = recent_conversation[-5:] if len(recent_conversation) > 5 else recent_conversation
+        conversation_text = "\n".join(line.strip() for line in recent_lines if line and line.strip())
+        if conversation_text:
+            sections.append(f"Recent:\n{conversation_text}")
 
-    user_prompt = "\n\n".join(
-        [
-            hint_block,
-            conversation_block,
-            partner_block,
-            "## What to Produce\n" + "\n".join(instructions),
-        ]
-    )
+    user_prompt = "\n\n".join(sections) if sections else "Start the conversation."
 
     return system_prompt, user_prompt
 
@@ -178,40 +145,32 @@ def build_feedback_prompt(
     native_lang: str,
     recent_conversation: list[str],
     last_suggestion: dict | None = None,
-    conversation_context: str | None = None,
 ) -> tuple[str, str]:
     """Build system and user prompts for feedback.
+
+    Args:
+        user_text: User's utterance to evaluate
+        target_lang: Language being learned
+        native_lang: User's native language
+        recent_conversation: Recent conversation messages for context
+        last_suggestion: Previous suggestion for comparison
 
     Returns:
         (system_prompt, user_prompt)
     """
-    system_prompt = f"""You are a language teacher evaluating a learner's {target_lang} utterance.
+    system_prompt = f"""Language teacher evaluating {target_lang} learner utterances.
+Learner's native language: {native_lang}.
 
-# Your Task
-Provide direct, actionable feedback in {native_lang} when corrections are needed.
+Task: Provide direct feedback when needed.
 
-# Evaluation Criteria
-Assess these aspects:
-- Grammar and syntax
-- Vocabulary choice and usage
-- Pronunciation (sound-alike errors)
-- Natural expression
+Evaluate: grammar, vocabulary, pronunciation, natural expression.
 
-# Feedback Rules
-1. **Be direct**: State the error clearly, don't speculate about intent
-   - Good: "'move' is mispronounced as 'new'"
-   - Bad: "You might have wanted to say 'new'"
+Rules:
+1. Be direct: state errors clearly, don't speculate
+2. Distinguish: pronunciation error vs intentional choice
+3. Use error_type="none" when no correction needed
 
-2. **Distinguish error types**:
-   - Pronunciation error: User attempted suggested phrase but mispronounced (e.g., "tank you" → "thank you")
-   - Intentional choice: User said something completely different (evaluate what they said)
-
-3. **Output format**:
-   - ALWAYS respond with JSON containing error type, explanation, and correction
-   - Use error_type "none" when no correction is needed (leave other fields blank)
-
-# Tone
-Supportive but straightforward - focus on what's wrong, not what the user might have meant."""
+Tone: Supportive, straightforward."""
 
     # Build user prompt sections
     sections = []
@@ -238,43 +197,9 @@ Supportive but straightforward - focus on what's wrong, not what the user might 
         ).strip()
         sections.append(suggestion_info)
 
-    # Section 3: Conversation context
-    if recent_conversation or conversation_context:
-        context_parts = []
-        if recent_conversation:
-            context_parts.append("## Recent Conversation\n" + "\n".join(recent_conversation[-3:]))
-        if conversation_context:
-            context_parts.append(f"## Session Patterns\n{conversation_context}")
-        sections.append("# Additional Context (Use if relevant)\n\n" + "\n\n".join(context_parts))
-
-    # Section 4: Output format
-    output_format = dedent(
-        f"""
-        # Output Format
-        
-        Always return JSON:
-        ```json
-        {{
-          "error_type": "grammar | word_choice | pronunciation | politeness | fluency | none",
-          "reason_native": "Direct error explanation in {native_lang}",
-          "target_text": "Corrected version in {target_lang}"
-        }}
-        ```
-        
-        - Pick the most specific `error_type`. Use `"none"` ONLY when no correction is required.
-        - When `error_type` is `"none"`, leave `reason_native` and `target_text` as empty strings.
-        
-        ## Examples of Good Feedback (Direct Tone)
-        ✓ "'move'를 'new'로 잘못 발음했어요"
-        ✓ "'my'가 빠졌어요. 'my favorite dish'라고 해야 해요"
-        ✓ "'tank you'는 'thank you'로 발음해야 해요"
-        
-        ## Examples to Avoid (Don't Speculate)
-        ✗ "'new'라고 말하고 싶었던 것 같습니다"
-        ✗ "아마도 'my'를 말하려고 했던 것 같아요"
-    """
-    ).strip()
-    sections.append(output_format)
+    # Section 3: Context (only if relevant)
+    if recent_conversation:
+        sections.append("# Recent Messages\n" + "\n".join(recent_conversation[-4:]))
 
     user_prompt = "\n\n".join(sections)
     return system_prompt, user_prompt
@@ -316,72 +241,74 @@ def build_ai_response_prompt(
     target_lang: str,
     native_lang: str,
     recent_conversation: list[str],
-    conversation_context: str | None = None,
-    interaction_context: str | None = None,
+    conversation_summary: str = "",
+    relationship_context: str = "",
     user_name: str | None = None,
 ) -> tuple[str, str]:
     """Build system and user prompts for AI conversation partner response.
 
-    Uses memory-based approach: learns about the user and partner over time.
+    Args:
+        user_text: User's current message (for reference, not used in current implementation)
+        partner_name: AI partner's name
+        partner_description: AI partner's description/personality
+        target_lang: Language being learned
+        native_lang: User's native language (for reference, not used in current implementation)
+        recent_conversation: Last N formatted conversation messages
+        conversation_summary: Summary of conversation before the recent messages
+        relationship_context: Prior relationship memories with this partner
+        user_name: User's name (for reference, not used in current implementation)
 
     Returns:
         (system_prompt, user_prompt)
     """
     # Build character identity
     if partner_name:
-        identity_parts = [f"You are {partner_name}"]
         if partner_description:
-            identity_parts.append(f"({partner_description})")
-        identity = ", ".join(identity_parts) + "."
+            identity = f"You are {partner_name}, {partner_description}."
+        else:
+            identity = f"You are {partner_name}."
     else:
         identity = "You are a friendly conversation partner."
 
     system_prompt = f"""{identity}
 
-# Your Role
-- Native {target_lang} speaker having a casual chat
-- The current session summary tells you what's happened so far—build on it naturally
-- Previous session summaries (if any) describe earlier interactions with this person
-- If there's no history yet, treat this as a first meeting and learn about them
+Native {target_lang} speaker having a natural conversation.
 
-# Talk Style
-- Keep it to 1-2 natural sentences unless the user clearly wants more
-- Match their language level; be clear, warm, and encouraging
-- Share personal details gradually, when it feels natural
+Priority:
+1. Answer what they're asking directly
+2. Follow the conversation flow naturally
+3. Keep replies short (1-2 sentences)
 
-# Key Principles
-1. Respond to what they meant, not literal words
-2. Build relationships slowly—ask, listen, then share
-3. If names are unknown, ask politely instead of assuming
-4. Stay in character without dumping your biography"""
+Important:
+- Your character is background context only - don't force it into every response
+- When referring to "previous conversations" memories, make it clear they're from past interactions (e.g., "Last time we chatted...", "I remember we talked about...")
+- Focus on the CURRENT conversation primarily"""
 
-    # Build user prompt sections
+    # Build user prompt - prioritize recent conversation flow
     sections = []
 
-    if conversation_context:
-        context_summary = f"- User's name: {user_name}" if user_name else ""
-        summary_block = "\n".join(
-            filter(None, [context_summary, f"- Current session summary: {conversation_context}"])
-        )
-        sections.append("# Current Session Context\n" + summary_block)
-    else:
-        intro_lines = ["# Current Session Context"]
-        if user_name:
-            intro_lines.append(f"- User's name: {user_name}")
-        intro_lines.append("- No session history yet; start by getting to know them.")
-        sections.append("\n".join(intro_lines))
-
-    if interaction_context:
-        sections.append("# Previous Interactions\n" + interaction_context)
-
-    # Section 2: Conversation history
+    # 1. Recent messages (MOST IMPORTANT - this is the CURRENT conversation)
     if recent_conversation:
-        sections.append("# Recent Conversation\n" + "\n".join(recent_conversation[-5:]))  # Last 5 messages
+        sections.append("CURRENT conversation (respond to this):\n" + "\n".join(recent_conversation))
 
-    # Section 5: Response instruction
-    sections.append(
-        f"# Your Task\nReply in {target_lang} with 1-2 natural sentences, building on the context above. Keep it conversational and let the relationship evolve over time."
-    )
+    # 2. Background context (if available, keep brief)
+    background_parts = []
+
+    # Add user name if available
+    if user_name:
+        background_parts.append(f"Speaking with: {user_name}")
+
+    # Add conversation summary (current session context before recent messages)
+    if conversation_summary:
+        background_parts.append(f"Earlier in this session:\n{conversation_summary.strip()}")
+
+    # Add relationship context (memories from PREVIOUS conversations)
+    if relationship_context:
+        limited = relationship_context[:400] + "..." if len(relationship_context) > 400 else relationship_context
+        background_parts.append(f"From previous conversations:\n{limited}")
+
+    if background_parts:
+        sections.append("Background context (for reference only):\n" + "\n".join(background_parts))
 
     user_prompt = "\n\n".join(sections)
     return system_prompt, user_prompt
@@ -417,78 +344,96 @@ def build_pronunciation_prompt(
 
 
 def build_analysis_scores_prompt(
-    transcript: str,
     feedback_summary: str,
     learning_lang_name: str,
 ) -> str:
-    """Build prompt for conversation scoring analysis.
+    """Build prompt for conversation scoring based on feedback items.
 
     Returns:
         Complete prompt for analysis
     """
     return dedent(
         f"""
-        You are evaluating a language learning conversation. The user is learning {learning_lang_name}.
+        Score a {learning_lang_name} practice session (0-100 scale).
         
-        Conversation transcript:
-        {transcript}
+        Feedback items:
+        {feedback_summary or 'None'}
         
-        Feedback given during conversation:
-        {feedback_summary or 'No feedback was given.'}
+        Score for:
+        - fluency: Flow and ease
+        - accuracy: Grammar and vocabulary
+        - comprehensibility: Clarity
         
-        IMPORTANT: 
-        - This is SPOKEN conversation transcribed by speech-to-text. DO NOT criticize punctuation or capitalization
-        - Evaluate ONLY the learner's utterances (speaker 'user' / microphone-origin)
-        - If there are ZERO learner utterances, return all scores as 0
-        - Output STRICT JSON ONLY. Numbers must be numbers (not strings).
+        Scale:
+        90-100: Excellent (no/few minor errors)
+        75-89: Good (few errors, mostly clear)
+        60-74: Fair (several errors, still understandable)
+        40-59: Needs work (frequent errors)
+        0-39: Poor (severe communication issues)
         
-        Provide scores (0-100 scale):
-        - Fluency: How smoothly and naturally the user spoke
-        - Accuracy: Grammar, vocabulary, and pronunciation correctness
-        - Comprehensibility: How easy it was to understand the user
-        
-        Format:
-        {{
-          "fluency": <number 0-100>,
-          "accuracy": <number 0-100>,
-          "comprehensibility": <number 0-100>
-        }}
+        Logic: More errors = lower scores. Grammar errors hurt accuracy. Pronunciation hurts comprehensibility. No feedback = 85-95. No user utterances = 0.
     """
     ).strip()
 
 
 def build_analysis_feedback_prompt(
-    transcript: str,
     feedback_summary: str,
     learning_lang_name: str,
     native_lang_name: str,
+    conversation_summary: str = "",
+    user_message_count: int = 0,
+    transcript: str = "",
 ) -> str:
-    """Build prompt for conversation feedback analysis.
+    """Build prompt for overall conversation feedback based on individual feedback items.
 
     Returns:
         Complete prompt for analysis
     """
+    has_feedback = bool(feedback_summary and feedback_summary.strip())
+
+    if has_feedback:
+        # When there are feedback items - use them
+        context = f"""What you talked about:
+{conversation_summary or 'General conversation'}
+
+You sent {user_message_count} messages.
+
+Feedback items from the conversation:
+{feedback_summary}"""
+    else:
+        # When no feedback - provide actual transcript for evaluation
+        if user_message_count == 0:
+            context = "You didn't speak during this session."
+        elif user_message_count < 3:
+            context = f"""You only sent {user_message_count} message{'s' if user_message_count > 1 else ''}.
+
+Conversation transcript:
+{transcript or conversation_summary or 'Brief exchange'}"""
+        else:
+            context = f"""You sent {user_message_count} messages - great participation!
+
+Conversation transcript:
+{transcript}
+
+No corrections were given during the conversation - evaluate their natural communication!"""
+
     return dedent(
         f"""
-        You are a language teacher providing feedback on a conversation. The student is learning {learning_lang_name} and their native language is {native_lang_name}.
+        Write super friendly feedback for a {learning_lang_name} learner.
         
-        Conversation transcript:
-        {transcript}
+        CRITICAL: Write your ENTIRE response in {native_lang_name}.
         
-        Feedback given during conversation:
-        {feedback_summary or 'No feedback was given.'}
+        {context}
         
-        IMPORTANT:
-        - This is SPOKEN conversation transcribed by speech-to-text. DO NOT criticize punctuation or capitalization
-        - Focus on: vocabulary choice, grammar patterns, natural expression, conversation flow
-        - Evaluate ONLY the learner's utterances (speaker 'user' / microphone-origin)
-        - If there are ZERO learner utterances, return: "사용자 발화가 없어 평가할 수 없어요."
-        - Write in {native_lang_name}
-        - Be warm, encouraging, and natural, but concise (3-5 sentences)
-        - Discuss strengths and one or two concrete improvement tips
-        - Speak directly to the user in a supportive tone
+        Task: Write 3-5 warm, encouraging sentences like talking to a friend:
+        - Use casual, friendly tone (you're their supportive language buddy!)
+        - Reference what they talked about to make it personal
+        - If feedback exists: gently highlight patterns, suggest improvements warmly
+        - If no feedback: celebrate their natural communication and fluency
+        - If they barely spoke: encourage them to participate more next time
+        - Write directly without headings or markdown formatting
         
-        Write conversational feedback (plain text, not JSON):
+        Remember: Be SUPER friendly and write EVERYTHING in {native_lang_name}!
     """
     ).strip()
 
@@ -500,79 +445,33 @@ def build_delayed_feedback_prompt(
     native_lang_name: str,
     max_items: int = 3,
 ) -> str:
-    """Build prompt for post-session feedback when real-time feedback was disabled."""
+    """Build prompt for post-session feedback when real-time feedback was disabled.
+
+    Returns structured feedback using DelayedFeedbackResponse schema.
+    """
     formatted = user_utterances.strip() or "(no learner utterances)"
     return dedent(
         f"""
-        You are reviewing a speaking practice where real-time corrections were disabled.
-        The learner's target language is {learning_lang_name}; their native language is {native_lang_name}.
+        Language teacher reviewing {learning_lang_name} learner utterances.
+        Learner's native language: {native_lang_name}.
 
-        Evaluate ONLY the learner's utterances listed below (chronological order):
+        Utterances:
         {formatted}
 
-        Task:
-        - Identify up to {max_items} unclear, incorrect, or unnatural learner utterances worth correcting.
-        - Ignore partner speech and filler phrases that are already natural.
-        - Quote only the learner's own words when referencing an issue.
+        Task: Identify up to {max_items} utterances that need correction.
 
-        Respond in {native_lang_name} using this exact format (plain text, no JSON):
-        실시간 피드백이 꺼져 있어서 대신 핵심 교정을 정리했어요:
-
-        1) 🔍 "<short quote from the learner>"
-           - 문제: <brief explanation in {native_lang_name}>
-           - 자연스러운 표현: <corrected sentence in {learning_lang_name}>
-
-        2) …
-        (Continue numbering until you've listed the strongest issues, up to {max_items}. If there are fewer issues, include only the meaningful ones.)
-
-        Keep explanations friendly, specific, and concise.
-    """
-    ).strip()
-
-
-def build_memory_extraction_prompt(
-    conversation_excerpt: str,
-    native_lang_name: str,
-) -> tuple[str, str]:
-    """Build prompts for extracting durable memories from a finished conversation."""
-    system = dedent(
-        f"""
-        You are Glass Memory. Extract only durable, long-term facts explicitly stated in the conversation.
-
-        USER FACTS (highest priority):
-        Stable information about the user such as identity traits (not name), background, long-term preferences, routines, constraints, skills, or goals.
-
-        INTERACTION FACTS:
-        Long-term agreements, commitments, or follow-ups shared between the user and the partner that extend beyond this session.
-
-        # Durable vs Non-durable
-        Example (store): “I work night shifts.” (stable routine)
-        Example (discard): “I’m tired today.” (temporary state)
-
-        Do NOT store one-off events, emotions, greetings, or temporary plans.
-        Do NOT infer or guess. Only use explicit statements.
-        Prefer storing user facts over anything else.
-        Write all insights in {native_lang_name}.
-        """
-    ).strip()
-    user = dedent(
-        f"""
-        Conversation transcript:
-        {conversation_excerpt}
-
-        Return ONLY this JSON object:
-
-        {{ "user_insights": [...], "interaction_insights": [...] }}
+        Evaluate: grammar, vocabulary, pronunciation, natural expression.
 
         Rules:
-        - If a section has no durable facts, return an empty array.
-        - User insights take priority over interaction facts.
-        - Exclude all names and any personal identifiers.
-        - Include only explicit, long-term facts.
-        - Output ONLY the JSON object.
-        """
+        1. Be direct: state errors clearly, don't speculate
+        2. Focus on important errors worth correcting
+        3. Use error_type="none" only if utterance is already correct
+        4. Explain errors in {native_lang_name}
+        5. Provide corrected version in {learning_lang_name}
+
+        Return structured feedback for each utterance that needs improvement.
+    """
     ).strip()
-    return system, user
 
 
 def build_conversation_summary_prompt(
@@ -582,26 +481,56 @@ def build_conversation_summary_prompt(
     """Summarize conversation into concise briefing bullets with accumulated context."""
     system = dedent(
         """
-        You summarize conversations into short reminder bullets for an AI partner.
-        Keep it factual, under 3 lines, and capture ongoing context.
+        You maintain a cumulative conversation summary for an AI partner.
+        
+        Task: Merge existing summary with new conversation into a concise, comprehensive summary.
+        - Keep it under 3-4 bullet points
+        - Preserve important context from existing summary
+        - Add new relevant information from recent conversation
+        - Remove outdated or superseded information
+        - Stay factual and brief
+        
+        Output format: Write ONLY the bullet points with no headers, introductions, or extra text.
+        Start directly with "* " or "- " for each point.
         """
     ).strip()
+
+    # Limit to last 10 messages for efficiency
     excerpt = "\n".join(conversation_lines[-10:]) if conversation_lines else "(no recent conversation yet)"
 
-    previous = (
-        f"Existing summary:\n{existing_summary.strip()}\n\n"
-        if isinstance(existing_summary, str) and existing_summary.strip()
-        else ""
-    )
-    user = dedent(
-        f"""
-        {previous}Conversation snippet:
-        {excerpt}
+    # Limit existing summary to prevent prompt bloat
+    if isinstance(existing_summary, str) and existing_summary.strip():
+        limited_summary = existing_summary[:500] + "..." if len(existing_summary) > 500 else existing_summary
+        user = dedent(
+            f"""
+            Previous Summary:
+            {limited_summary.strip()}
+            
+            New Conversation:
+            {excerpt}
+            
+            Write updated summary as bullet points only (3-4 bullets):
+            - Merge previous context with new information
+            - Keep key facts, plans, commitments
+            - Add new topics or relationship dynamics
+            
+            Output ONLY bullets starting with "* " or "- ". No headers or extra text.
+            """
+        ).strip()
+    else:
+        # First summary - no existing context
+        user = dedent(
+            f"""
+            Conversation:
+            {excerpt}
+            
+            Write summary as bullet points only (3-4 bullets):
+            - What has been discussed
+            - Any plans or commitments
+            - Tone/relationship dynamics if relevant
+            
+            Output ONLY bullets starting with "* " or "- ". No headers or extra text.
+            """
+        ).strip()
 
-        Write up to 3 short bullet lines covering:
-        - What the user talked about or asked for
-        - Any commitments, plans, or follow-ups mentioned
-        - Optional tone/relationship cue if helpful
-        """
-    ).strip()
     return system, user

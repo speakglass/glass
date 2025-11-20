@@ -53,12 +53,7 @@ def _extract_translation(value: Any) -> tuple[str | None, str | None]:
         cleaned = value.strip()
         return (cleaned or None), None
     if isinstance(value, dict):
-        text = (
-            value.get("text")
-            or value.get("translation")
-            or value.get("target_text")
-            or value.get("value")
-        )
+        text = value.get("text") or value.get("translation") or value.get("target_text") or value.get("value")
         lang = value.get("language") or value.get("lang_code")
         cleaned = _clean_text(text)
         if not cleaned:
@@ -163,12 +158,8 @@ def _build_message_feedback_entries(
         if dedupe_key in seen:
             continue
         seen.add(dedupe_key)
-        feedback_type = _clean_text(
-            (suggestion.get("error_type") if suggestion else None) or raw.get("feedback_type")
-        )
-        severity = _clean_text(
-            (suggestion.get("severity") if suggestion else None) or raw.get("severity")
-        )
+        feedback_type = _clean_text((suggestion.get("error_type") if suggestion else None) or raw.get("feedback_type"))
+        severity = _clean_text((suggestion.get("severity") if suggestion else None) or raw.get("severity"))
         entry = MessageFeedback(
             conversation_id=conversation_id,
             message_id=message.id,
@@ -184,6 +175,8 @@ def _build_message_feedback_entries(
         )
         entries.append(entry)
     return entries
+
+
 _UNSET = object()
 
 
@@ -319,9 +312,7 @@ async def _generate_unique_slug(session, name: str) -> str:
     slug = base
     suffix = 2
     while True:
-        exists = await session.scalar(
-            select(ConversationPartner.id).where(ConversationPartner.slug == slug)
-        )
+        exists = await session.scalar(select(ConversationPartner.id).where(ConversationPartner.slug == slug))
         if not exists:
             return slug
         slug = f"{base}-{suffix}"
@@ -334,9 +325,7 @@ async def ensure_default_partners(db: PersistenceDatabase) -> None:
     async with async_session_factory() as session:
         updated = False
         for data in DEFAULT_PARTNERS:
-            existing = await session.scalar(
-                select(ConversationPartner).where(ConversationPartner.slug == data["slug"])
-            )
+            existing = await session.scalar(select(ConversationPartner).where(ConversationPartner.slug == data["slug"]))
             avatar_url = _build_avatar_url(data.get("avatar_asset"), data.get("avatar_url"))
             metadata = _build_template_metadata(data)
             desired_kind = data.get("kind") or ("live_call" if not data.get("voice_id") else "roleplay")
@@ -390,8 +379,7 @@ async def ensure_user_partner_templates(db: PersistenceDatabase, user_id: str) -
     async_session_factory = db.session()
     async with async_session_factory() as session:
         user_partners_result = await session.scalars(
-            select(ConversationPartner)
-            .where(
+            select(ConversationPartner).where(
                 ConversationPartner.user_id == user_id,
                 ConversationPartner.is_active.is_(True),
             )
@@ -452,17 +440,12 @@ async def list_partners(
     await ensure_user_partner_templates(db, user_id)
     async_session_factory = db.session()
     async with async_session_factory() as session:
-        stmt = (
-            select(ConversationPartner)
-            .where(
-                ConversationPartner.is_active.is_(True),
-                ConversationPartner.user_id == user_id,
-            )
+        stmt = select(ConversationPartner).where(
+            ConversationPartner.is_active.is_(True),
+            ConversationPartner.user_id == user_id,
         )
         if learning_lang:
-            stmt = stmt.where(
-                ConversationPartner.learning_lang == learning_lang
-            )
+            stmt = stmt.where(ConversationPartner.learning_lang == learning_lang)
         stmt = stmt.order_by(
             ConversationPartner.user_id.isnot(None),
             ConversationPartner.name.asc(),
@@ -570,9 +553,7 @@ async def get_partner_by_id(
             ConversationPartner.is_active.is_(True),
         )
         if user_id is not None:
-            stmt = stmt.where(
-                or_(ConversationPartner.user_id == user_id, ConversationPartner.user_id.is_(None))
-            )
+            stmt = stmt.where(or_(ConversationPartner.user_id == user_id, ConversationPartner.user_id.is_(None)))
         return await session.scalar(stmt)
 
 
@@ -682,15 +663,14 @@ async def ensure_user(
 ) -> AccountUser:
     """Create or update an account user from the authenticated claims."""
     import logging
+
     logger = logging.getLogger(__name__)
-    
+
     try:
         logger.info(f"[ensure_user] Starting for user_id={claims.user_id}, email={claims.email}")
         async_session_factory = db.session()
         async with async_session_factory() as session:
-            user = await session.scalar(
-                select(AccountUser).where(AccountUser.id == claims.user_id)
-            )
+            user = await session.scalar(select(AccountUser).where(AccountUser.id == claims.user_id))
             now = datetime.now(timezone.utc)
             if user:
                 logger.info(f"[ensure_user] User exists, updating: {claims.user_id}")
@@ -736,7 +716,7 @@ async def upsert_conversation(
     feedback_items: list[dict[str, Any]] | None = None,
 ) -> AccountConversation:
     """Persist a conversation summary for later review.
-    
+
     Note: extracted_info removed - durable memory is tracked separately.
     """
     async_session_factory = db.session()
@@ -778,9 +758,7 @@ async def upsert_conversation(
 
         await session.flush()
 
-        await session.execute(
-            delete(ConversationMessage).where(ConversationMessage.conversation_id == conversation_id)
-        )
+        await session.execute(delete(ConversationMessage).where(ConversationMessage.conversation_id == conversation_id))
         message_models, utterance_map = _build_conversation_messages(
             messages,
             conversation_id=conversation_id,
@@ -793,9 +771,7 @@ async def upsert_conversation(
             await session.flush()
         convo.message_count = len(message_models)
 
-        await session.execute(
-            delete(MessageFeedback).where(MessageFeedback.conversation_id == conversation_id)
-        )
+        await session.execute(delete(MessageFeedback).where(MessageFeedback.conversation_id == conversation_id))
         feedback_models = _build_message_feedback_entries(
             feedback_items,
             conversation_id=conversation_id,
@@ -849,15 +825,14 @@ async def list_recent_conversations(
             .options(selectinload(AccountConversation.evaluations))
             .where(AccountConversation.user_id == user_id)
         )
-        
+
         # Add search filter if provided
         if search:
             search_pattern = f"%{search}%"
             stmt = stmt.where(
-                (AccountConversation.title.ilike(search_pattern)) |
-                (AccountConversation.summary.ilike(search_pattern))
+                (AccountConversation.title.ilike(search_pattern)) | (AccountConversation.summary.ilike(search_pattern))
             )
-        
+
         ordering = func.coalesce(
             AccountConversation.last_message_at,
             AccountConversation.ended_at,
@@ -900,20 +875,15 @@ async def count_conversations(
     """Count total conversations for pagination."""
     async_session_factory = db.session()
     async with async_session_factory() as session:
-        stmt = (
-            select(func.count())
-            .select_from(AccountConversation)
-            .where(AccountConversation.user_id == user_id)
-        )
-        
+        stmt = select(func.count()).select_from(AccountConversation).where(AccountConversation.user_id == user_id)
+
         # Add search filter if provided
         if search:
             search_pattern = f"%{search}%"
             stmt = stmt.where(
-                (AccountConversation.title.ilike(search_pattern)) |
-                (AccountConversation.summary.ilike(search_pattern))
+                (AccountConversation.title.ilike(search_pattern)) | (AccountConversation.summary.ilike(search_pattern))
             )
-        
+
         result = await session.scalar(stmt)
         return result or 0
 
@@ -1037,9 +1007,7 @@ async def set_user_password(
 ) -> AccountUser:
     async_session_factory = db.session()
     async with async_session_factory() as session:
-        user = await session.scalar(
-            select(AccountUser).where(AccountUser.id == user_id)
-        )
+        user = await session.scalar(select(AccountUser).where(AccountUser.id == user_id))
         if user is None:
             raise ValueError("User not found")
         user.password_hash = password_hash
@@ -1059,7 +1027,7 @@ async def create_password_reset_token(
     """Create a password reset token for a user."""
     token = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
-    
+
     async_session_factory = db.session()
     async with async_session_factory() as session:
         reset_token = PasswordResetToken(
@@ -1079,21 +1047,17 @@ async def verify_reset_token(
     """Verify a password reset token and return the user if valid."""
     async_session_factory = db.session()
     async with async_session_factory() as session:
-        reset_token = await session.scalar(
-            select(PasswordResetToken).where(PasswordResetToken.token == token)
-        )
+        reset_token = await session.scalar(select(PasswordResetToken).where(PasswordResetToken.token == token))
         if not reset_token:
             return None
-        
+
         # Check if token is expired or already used
         now = datetime.now(timezone.utc)
         if reset_token.expires_at < now or reset_token.used:
             return None
-        
+
         # Get the user
-        user = await session.scalar(
-            select(AccountUser).where(AccountUser.id == reset_token.user_id)
-        )
+        user = await session.scalar(select(AccountUser).where(AccountUser.id == reset_token.user_id))
         return user
 
 
@@ -1104,9 +1068,7 @@ async def mark_token_as_used(
     """Mark a reset token as used."""
     async_session_factory = db.session()
     async with async_session_factory() as session:
-        reset_token = await session.scalar(
-            select(PasswordResetToken).where(PasswordResetToken.token == token)
-        )
+        reset_token = await session.scalar(select(PasswordResetToken).where(PasswordResetToken.token == token))
         if reset_token:
             reset_token.used = True
             await session.commit()
@@ -1210,16 +1172,14 @@ async def mark_onboarding_completed(
     """Mark onboarding as completed for a user and save language preferences."""
     async_session_factory = db.session()
     async with async_session_factory() as session:
-        user = await session.scalar(
-            select(AccountUser).where(AccountUser.id == user_id)
-        )
+        user = await session.scalar(select(AccountUser).where(AccountUser.id == user_id))
         if user is None:
             raise ValueError("User not found")
-        
+
         # Only set if not already completed
         if user.onboarding_completed_at is None:
             user.onboarding_completed_at = datetime.now(timezone.utc)
-        
+
         # Save language preferences
         if learning_lang:
             user.learning_lang = learning_lang
@@ -1227,7 +1187,7 @@ async def mark_onboarding_completed(
             user.native_lang = native_lang
         if language_level:
             user.language_level = language_level
-        
+
         await session.commit()
         await session.refresh(user)
         return user
@@ -1235,29 +1195,28 @@ async def mark_onboarding_completed(
 
 # ===== Email Verification =====
 
+
 async def create_verification_token(
     db: PersistenceDatabase,
     user_id: str,
 ) -> tuple[str, datetime]:
     """Create an email verification token for a user.
-    
+
     Returns:
         Tuple of (token, expires_at)
     """
     token = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
-    
+
     async_session_factory = db.session()
     async with async_session_factory() as session:
-        user = await session.scalar(
-            select(AccountUser).where(AccountUser.id == user_id)
-        )
+        user = await session.scalar(select(AccountUser).where(AccountUser.id == user_id))
         if user is None:
             raise ValueError("User not found")
-        
+
         user.verification_token = token
         user.verification_token_expires = expires_at
-        
+
         await session.commit()
         await session.refresh(user)
         return token, expires_at
@@ -1268,28 +1227,26 @@ async def verify_email_token(
     token: str,
 ) -> AccountUser | None:
     """Verify an email verification token and mark email as verified.
-    
+
     Returns:
         User if token is valid, None otherwise
     """
     async_session_factory = db.session()
     async with async_session_factory() as session:
-        user = await session.scalar(
-            select(AccountUser).where(AccountUser.verification_token == token)
-        )
-        
+        user = await session.scalar(select(AccountUser).where(AccountUser.verification_token == token))
+
         if user is None:
             return None
-        
+
         # Check if token is expired
         if user.verification_token_expires is None or user.verification_token_expires < datetime.now(timezone.utc):
             return None
-        
+
         # Mark email as verified and clear token
         user.email_verified = True
         user.verification_token = None
         user.verification_token_expires = None
-        
+
         await session.commit()
         await session.refresh(user)
         return user
@@ -1302,9 +1259,7 @@ async def get_user_by_verification_token(
     """Get a user by their verification token."""
     async_session_factory = db.session()
     async with async_session_factory() as session:
-        user = await session.scalar(
-            select(AccountUser).where(AccountUser.verification_token == token)
-        )
+        user = await session.scalar(select(AccountUser).where(AccountUser.verification_token == token))
         return user
 
 

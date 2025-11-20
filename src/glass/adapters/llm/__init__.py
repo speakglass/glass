@@ -20,14 +20,15 @@ class LLMAdapter(Protocol):
         system: str | None = None,
         model: str | None = None,
         temperature: float = 0.7,
-        max_tokens: int = 1000,
-        json_mode: bool = False,
-    ) -> str: ...
+        max_tokens: int | None = None,
+        response_schema: object | None = None,
+        schema_context: dict[str, str] | None = None,
+    ) -> str | dict: ...
 
 
 def build_llm_adapter(settings) -> LLMAdapter:
     """Build LLM adapter from settings.
-    
+
     The adapter uses the configured default model (openai_model) for most operations,
     and can be overridden per-call if needed (e.g., openai_analysis_model).
     """

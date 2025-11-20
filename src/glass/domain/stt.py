@@ -69,7 +69,6 @@ class SpeechRecognition:
                 yield item
 
         async def finalize_pending(source: str, *, reason: str) -> None:
-            LOGGER.debug("Finalizing transcript for %s (%s)", source, reason)
             pending = self._pending_transcripts.pop(source, None)
             if not pending:
                 pending = self._last_partial_payload.pop(source, None)
@@ -124,7 +123,7 @@ class SpeechRecognition:
                     try:
                         self._speech_activity_callback(chunk_source)
                     except Exception:
-                        LOGGER.debug("Speech activity callback failed for %s", chunk_source, exc_info=True)
+                        pass
 
                 text = (chunk.get("partial") or "").strip()
                 if text:
@@ -272,7 +271,7 @@ class SpeechRecognition:
                     try:
                         on_chunk(chunk)
                     except Exception:
-                        LOGGER.debug("on_chunk callback failed", exc_info=True)
+                        pass
                 for queue in queues:
                     await queue.put(chunk)
         finally:

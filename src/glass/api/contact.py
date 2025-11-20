@@ -37,7 +37,8 @@ async def submit_contact(
     """Accept contact/sales inquiries and forward to Discord."""
 
     webhook = request.app.state.app_state.settings.discord_webhook_url
-    if not webhook:
+    settings = request.app.state.app_state.settings
+    if not webhook and not settings.self_hosted:
         logger.error("Discord webhook not configured; cannot accept contact requests")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

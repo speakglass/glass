@@ -7,6 +7,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Iterable
 
 from . import prompts
+from ..schemas import ConversationScores, FeedbackResponse, SuggestionResponse
 from ..utils.language import lang_code_to_name
 
 if TYPE_CHECKING:
@@ -109,7 +110,6 @@ class LearningAssistant:
         *,
         recent_conversation: RecentConversation,
         user_context: str = "",
-        conversation_context: str = "",
         last_partner_message: str | None = None,
     ) -> None:
         """Process utterance: translation, feedback, and suggestions."""
@@ -122,9 +122,6 @@ class LearningAssistant:
             )
         )
 
-        print(f"conversation_context: {conversation_context}")
-
-        feedback_conversation_context = conversation_context
         if is_user and self.feedback_mode != "off":
             tasks.append(
                 asyncio.create_task(
@@ -134,7 +131,6 @@ class LearningAssistant:
                         source,
                         event_type_feedback,
                         recent_conversation=recent_conversation,
-                        conversation_context=feedback_conversation_context,
                     )
                 )
             )
@@ -162,7 +158,6 @@ class LearningAssistant:
         event_type_feedback,
         *,
         recent_conversation: RecentConversation,
-        conversation_context: str = "",
     ) -> None:
         """Emit feedback for a user utterance."""
         try:
@@ -180,100 +175,64 @@ class LearningAssistant:
 
             # Generate feedback (with last suggestion if available)
             recent_conv_texts = self._recent_conversation_texts(recent_conversation)
+            target_lang_name = lang_code_to_name(self.learning_lang)
+            native_lang_name = lang_code_to_name(self.native_lang)
             system_prompt, user_prompt = prompts.build_feedback_prompt(
                 user_text=text,
-                target_lang=lang_code_to_name(self.learning_lang),
-                native_lang=lang_code_to_name(self.native_lang),
+                target_lang=target_lang_name,
+                native_lang=native_lang_name,
                 recent_conversation=recent_conv_texts,
                 last_suggestion=self._last_suggestion,
-                conversation_context=conversation_context,
             )
-            feedback_text = await self.llm.call(
+
+            LOGGER.info(f"[Feedback] SYSTEM:\n{system_prompt}\n\nUSER:\n{user_prompt}")
+
+            response = await self.llm.call(
                 prompt=user_prompt,
                 system=system_prompt,
                 temperature=0.7,
-                max_tokens=500,
-                json_mode=True,
+                response_schema=FeedbackResponse,
+                schema_context={"TARGET": target_lang_name, "NATIVE": native_lang_name},
             )
 
             # Clear last suggestion after use (one-time comparison)
             if self._last_suggestion:
-                LOGGER.debug(f"[Feedback] Used suggestion: {self._last_suggestion.get('target_text', '')[:30]}")
                 self._last_suggestion = None
 
-            # Normalize NONE/empty for Always mode
-            normalized = (feedback_text or "").strip()
-            LOGGER.debug(f"[Feedback] Raw response: {normalized[:100]}")
+            # Parse structured response
+            if not isinstance(response, dict):
+                LOGGER.warning("[Feedback] Invalid response type, skipping")
+                return
 
-            # Parse structured JSON if present
-            display_text = None
-            structured_payload: dict | None = None
-            parsed_error_type: str | None = None
-            is_none_error = False
-            try:
-                import json as _json
-                import re
+            parsed_error_type = response.get("error_type", "none")
+            is_none_error = parsed_error_type == "none"
+            reason = response.get("reason_native", "").strip()
+            target_text = response.get("target_text", "").strip()
 
-                # Extract JSON from markdown code blocks if present (```json ... ```)
-                json_text = normalized
-                json_match = re.search(r"```(?:json)?\s*\n?([\s\S]*?)\n?```", normalized)
-                if json_match:
-                    json_text = json_match.group(1).strip()
-                    LOGGER.debug("[Feedback] Extracted JSON from code block")
+            # Build display text and payload
+            display_text = reason if reason else target_text
+            structured_payload: dict[str, Any] | None = None
 
-                parsed = _json.loads(json_text)
-                if isinstance(parsed, dict):
-                    reason = str(parsed.get("reason_native") or "").strip()
-                    target_text = str(parsed.get("target_text") or "").strip()
-                    parsed_error_type = str(parsed.get("error_type") or "").strip().lower() or None
-                    is_none_error = parsed_error_type == "none"
+            if not is_none_error and (target_text or reason):
+                payload: dict[str, Any] = {}
+                if target_text:
+                    payload["target_text"] = target_text
+                if reason:
+                    payload["reason_native"] = reason
+                if parsed_error_type:
+                    payload["error_type"] = parsed_error_type
+                payload.setdefault("language_code", self.learning_lang or "en")
+                structured_payload = payload
 
-                    LOGGER.debug(
-                        "[Feedback] Parsed JSON - type=%s, reason=%s, suggestion=%s",
-                        parsed_error_type or "unknown",
-                        reason[:50] if reason else "None",
-                        target_text[:50] if target_text else "None",
-                    )
+            feedback_text = display_text
+            normalized = feedback_text.strip()
 
-                    if not is_none_error:
-                        if reason:
-                            display_text = reason
-                        elif target_text:
-                            display_text = target_text
-                        payload: dict[str, Any] = {}
-                        if target_text:
-                            payload["target_text"] = target_text
-                        if reason:
-                            payload["reason_native"] = reason
-                        if parsed_error_type:
-                            payload["error_type"] = parsed_error_type
-                        if payload:
-                            payload.setdefault("language_code", self.learning_lang or self.default_lang)
-                            structured_payload = payload
-            except Exception as e:
-                # Not JSON; keep as-is
-                LOGGER.debug(f"[Feedback] Not JSON or parse failed: {str(e)}")
-                pass
-
-            if display_text:
-                feedback_text = display_text
-                normalized = feedback_text.strip()
-
-            if self.feedback_mode == "always" and (not normalized or normalized.upper() == "NONE" or is_none_error):
+            # Handle "always" mode with no feedback case
+            if self.feedback_mode == "always" and (not normalized or is_none_error):
                 feedback_text = self._default_affirmation(self.native_lang)
                 normalized = feedback_text.strip()
                 structured_payload = None
                 LOGGER.info(f"[Feedback] Using default affirmation: {feedback_text}")
-
-            # Ensure pronunciation for feedback corrections if needed
-            if structured_payload and structured_payload.get("target_text"):
-                structured_payload = await self._ensure_pronunciation(structured_payload)
-                # Preserve explicit error type for downstream consumers
-                if parsed_error_type:
-                    structured_payload.setdefault("error_type", parsed_error_type)
-                structured_payload.setdefault("language_code", self.learning_lang or self.default_lang)
-            elif parsed_error_type and structured_payload:
-                structured_payload.setdefault("error_type", parsed_error_type)
 
             # Emit based on mode
             should_emit = bool(normalized) and (
@@ -285,6 +244,16 @@ class LearningAssistant:
             )
 
             if should_emit:
+                # Ensure pronunciation for feedback corrections if needed (do this before emit)
+                if structured_payload and structured_payload.get("target_text"):
+                    structured_payload = await self._ensure_pronunciation(structured_payload)
+                    # Preserve explicit error type for downstream consumers
+                    if parsed_error_type:
+                        structured_payload.setdefault("error_type", parsed_error_type)
+                    structured_payload.setdefault("language_code", self.learning_lang or self.default_lang)
+                elif parsed_error_type and structured_payload:
+                    structured_payload.setdefault("error_type", parsed_error_type)
+
                 feedback_data: dict[str, Any] = {
                     "utterance_id": utterance_id,
                     "text": feedback_text,
@@ -315,20 +284,16 @@ class LearningAssistant:
                 response = await self.llm.call(
                     prompt=gate_prompt,
                     temperature=0.3,
-                    max_tokens=50,
                 )
-        except Exception as exc:
-            LOGGER.debug(f"[Feedback] Gate prompt failed, using heuristic: {exc}")
+        except Exception:
             return fallback
 
         normalized = (response or "").strip().upper()
         if "YES" in normalized:
             return True
         if "NO" in normalized:
-            LOGGER.debug(f"[Feedback] Gate returned NO; fallback heuristic={fallback}")
             return fallback
         # Ambiguous response -> rely on heuristics
-        LOGGER.debug(f"[Feedback] Gate ambiguous ('{normalized}'), using heuristic={fallback}")
         return fallback
 
     @staticmethod
@@ -394,17 +359,17 @@ class LearningAssistant:
                         last_partner_message=last_partner_message,
                         length_mode=self.suggest_length_mode,
                     )
+
+                    LOGGER.info(f"[Suggestion] SYSTEM:\n{system_prompt}\n\nUSER:\n{user_prompt}")
+
                     response = await self.llm.call(
                         prompt=user_prompt,
                         system=system_prompt,
                         temperature=0.7,
-                        max_tokens=500,
-                        json_mode=True,
+                        response_schema=SuggestionResponse,
+                        schema_context={"TARGET": target_lang_name, "NATIVE": native_lang_name},
                     )
-                    # Parse JSON response
-                    import json
-
-                    result = json.loads(response) if response else None
+                    result = response if isinstance(response, dict) else None
             except Exception as e:
                 LOGGER.error(f"[Suggestion] Failed: {e}", exc_info=True)
                 return
@@ -440,6 +405,7 @@ class LearningAssistant:
         all_feedback: list[dict],
         native_lang: str,
         learning_lang: str,
+        conversation_summary: str = "",
     ) -> dict:
         """Analyze conversation and return scores and feedback using parallel LLM calls.
 
@@ -457,33 +423,62 @@ class LearningAssistant:
             source = (message.get("source") or "").lower()
             return role == "user" or source == "mic" or source.startswith("mic")
 
-        # Check if there are any user utterances
-        has_user_utterances = any(_is_user_message(msg) for msg in full_conversation)
+        # Count user messages
+        user_message_count = sum(1 for msg in full_conversation if _is_user_message(msg))
+        has_user_utterances = user_message_count > 0
 
-        # Build transcript
-        def _speaker_label(message: dict) -> str:
-            role = (message.get("role") or message.get("speaker_role") or "").lower()
-            partner_id = (message.get("partner_id") or "").lower()
-            if role == "user":
-                return "You"
-            if role == "assistant" or partner_id == "glass":
-                return "Glass"
-            if role == "partner":
-                return "Partner"
-            return "Partner"
-
-        transcript_lines = []
-        for msg in full_conversation:
-            speaker_label = _speaker_label(msg)
-            text = msg.get("text", "")
-            transcript_lines.append(f"{speaker_label}: {text}")
-        transcript = "\n".join(transcript_lines)
-
-        # Build feedback summary
+        # Build feedback summary (prioritize important feedback items)
         feedback_summary = ""
+        has_feedback = False
         if all_feedback:
-            feedback_lines = [f"- {fb.get('text', '')}" for fb in all_feedback]
-            feedback_summary = "\n".join(feedback_lines)
+            # Sort by importance: grammar/word_choice > pronunciation > fluency > politeness
+            importance_order = {
+                "grammar": 5,
+                "word_choice": 4,
+                "pronunciation": 3,
+                "fluency": 2,
+                "politeness": 1,
+                "none": 0,
+            }
+
+            def get_importance(fb: dict) -> int:
+                fb_type = (fb.get("feedback_type") or "").lower()
+                suggestion = fb.get("suggestion") or {}
+                error_type = (suggestion.get("error_type") or fb_type or "").lower()
+                return importance_order.get(error_type, 0)
+
+            # Sort by importance, take top 20
+            sorted_feedback = sorted(all_feedback, key=get_importance, reverse=True)
+            top_feedback = sorted_feedback[:20]
+            feedback_lines = [f"- {fb.get('text', '')[:150]}" for fb in top_feedback if fb.get("text")]
+            if feedback_lines:
+                feedback_summary = "\n".join(feedback_lines)
+                has_feedback = True
+
+        # Build transcript for cases with no feedback
+        transcript = ""
+        if not has_feedback and has_user_utterances:
+
+            def _speaker_label(message: dict) -> str:
+                role = (message.get("role") or message.get("speaker_role") or "").lower()
+                if role == "user":
+                    return "You"
+                if role == "partner":
+                    return "Partner"
+                return "Other"
+
+            # Use last 20 messages for analysis
+            recent_messages = full_conversation[-20:] if len(full_conversation) > 20 else full_conversation
+            transcript_lines = []
+            for msg in recent_messages:
+                speaker = _speaker_label(msg)
+                text = (msg.get("text") or "").strip()
+                if not text:
+                    continue
+                # Truncate long messages
+                truncated = text[:150] + "..." if len(text) > 150 else text
+                transcript_lines.append(f"{speaker}: {truncated}")
+            transcript = "\n".join(transcript_lines)
 
         native_lang_name = lang_code_to_name(native_lang)
         learning_lang_name = lang_code_to_name(learning_lang)
@@ -508,8 +503,15 @@ class LearningAssistant:
         # Run two parallel LLM calls: scores + feedback
         # Memory extraction removed - handled centrally after the session
         tasks = [
-            self._analyze_scores(transcript, feedback_summary, native_lang_name, learning_lang_name),
-            self._analyze_feedback(transcript, feedback_summary, native_lang_name, learning_lang_name),
+            self._analyze_scores(feedback_summary, native_lang_name, learning_lang_name),
+            self._analyze_feedback(
+                feedback_summary,
+                native_lang_name,
+                learning_lang_name,
+                conversation_summary,
+                user_message_count,
+                transcript,
+            ),
         ]
 
         try:
@@ -542,12 +544,13 @@ class LearningAssistant:
         *,
         max_items: int = 3,
         history_window: int = 30,
-    ) -> str | None:
-        """Produce post-session feedback focusing only on learner utterances."""
+    ) -> list[dict] | None:
+        """Produce post-session feedback as structured feedback items (like real-time feedback)."""
         if not full_conversation:
             return None
 
-        user_entries: list[tuple[str, str | None]] = []
+        # Collect user messages with their utterance IDs
+        user_entries: list[tuple[str, str, str | None]] = []  # (utterance_id, text, translation)
         for msg in full_conversation:
             if not isinstance(msg, dict):
                 continue
@@ -555,25 +558,28 @@ class LearningAssistant:
             if role != "user":
                 continue
             text = (msg.get("text") or "").strip()
-            if not text:
+            utterance_id = msg.get("utterance_id")
+            if not text or not utterance_id:
                 continue
             translation_val = msg.get("translation")
             translation: str | None = None
             if isinstance(translation_val, str):
                 translation = translation_val.strip() or None
             elif isinstance(translation_val, dict):
-                translation = (
-                    (translation_val.get("text") or translation_val.get("target_text") or "").strip() or None
-                )
-            user_entries.append((text, translation))
+                translation = (translation_val.get("text") or translation_val.get("target_text") or "").strip() or None
+            user_entries.append((utterance_id, text, translation))
 
         if not user_entries:
             return None
 
+        # Take recent entries
         sample_window = max(history_window, max_items)
         recent_entries = user_entries[-sample_window:]
         formatted_lines: list[str] = []
-        for idx, (text, translation) in enumerate(recent_entries, start=1):
+        utterance_id_map: dict[int, str] = {}  # number -> utterance_id
+
+        for idx, (utterance_id, text, translation) in enumerate(recent_entries, start=1):
+            utterance_id_map[idx] = utterance_id
             snippet = text if len(text) <= 220 else f"{text[:217]}..."
             line = f"{idx}. {snippet}"
             if translation:
@@ -589,56 +595,91 @@ class LearningAssistant:
         )
 
         try:
+            from ..schemas import DelayedFeedbackResponse
+
             response = await self.llm.call(
                 prompt=prompt,
                 temperature=0.4,
-                max_tokens=600,
+                response_schema=DelayedFeedbackResponse,
+                schema_context={"TARGET": lang_code_to_name(learning_lang), "NATIVE": lang_code_to_name(native_lang)},
             )
         except Exception as exc:
             LOGGER.error(f"[Feedback] Delayed feedback generation failed: {exc}", exc_info=True)
             return None
 
-        normalized = (response or "").strip()
-        if not normalized:
+        # Convert structured response to feedback items (same format as real-time feedback)
+        if not isinstance(response, dict) or not response.get("items"):
             return None
-        return normalized
 
-    async def _analyze_scores(
-        self, transcript: str, feedback_summary: str, native_lang_name: str, learning_lang_name: str
-    ) -> dict:
-        """Analyze and score the conversation."""
-        prompt = prompts.build_analysis_scores_prompt(transcript, feedback_summary, learning_lang_name)
+        feedback_items: list[dict] = []
+        for item in response.get("items", []):
+            if item.get("error_type") == "none":
+                continue
+
+            num = item.get("utterance_number")
+            utterance_id = utterance_id_map.get(num)
+            if not utterance_id:
+                continue
+
+            error_type = item.get("error_type", "general")
+            reason_native = item.get("reason_native", "").strip()
+            target_text = item.get("target_text", "").strip()
+
+            if not reason_native:
+                continue
+
+            # Format as real-time feedback item structure
+            feedback_item = {
+                "utterance_id": utterance_id,
+                "text": reason_native,
+                "feedback_type": error_type,
+                "suggestion": {
+                    "error_type": error_type,
+                    "reason_native": reason_native,
+                    "target_text": target_text,
+                },
+            }
+            feedback_items.append(feedback_item)
+
+        return feedback_items if feedback_items else None
+
+    async def _analyze_scores(self, feedback_summary: str, native_lang_name: str, learning_lang_name: str) -> dict:
+        """Analyze and score based on feedback items."""
+        prompt = prompts.build_analysis_scores_prompt(feedback_summary, learning_lang_name)
 
         try:
             response = await self.llm.call(
                 prompt=prompt,
                 temperature=0.5,
-                max_tokens=200,
+                response_schema=ConversationScores,
             )
-            import json
-            import re
-
-            json_match = re.search(r"\{[\s\S]*?\}", response)
-            if json_match:
-                return json.loads(json_match.group())
+            if isinstance(response, dict):
+                return response
             return {"fluency": 70, "accuracy": 75, "comprehensibility": 80}
         except Exception as e:
             LOGGER.error(f"Failed to analyze scores: {e}", exc_info=True)
             return {"fluency": 0, "accuracy": 0, "comprehensibility": 0}
 
     async def _analyze_feedback(
-        self, transcript: str, feedback_summary: str, native_lang_name: str, learning_lang_name: str
+        self,
+        feedback_summary: str,
+        native_lang_name: str,
+        learning_lang_name: str,
+        conversation_summary: str = "",
+        user_message_count: int = 0,
+        transcript: str = "",
     ) -> str:
-        """Generate overall feedback for the conversation."""
+        """Generate overall feedback by synthesizing individual feedback items."""
         prompt = prompts.build_analysis_feedback_prompt(
-            transcript, feedback_summary, learning_lang_name, native_lang_name
+            feedback_summary, learning_lang_name, native_lang_name, conversation_summary, user_message_count, transcript
         )
+
+        LOGGER.info(f"[Overall Feedback Prompt]\n{prompt}")
 
         try:
             response = await self.llm.call(
                 prompt=prompt,
                 temperature=0.7,
-                max_tokens=500,
             )
             return response.strip()
         except Exception as e:
@@ -646,10 +687,6 @@ class LearningAssistant:
             return "Failed to generate feedback."
 
     # --- Small helpers to keep unified suggestion readable -----------------
-    @staticmethod
-    def _dedupe_key(anchor_utterance_id: str | None, kind: str) -> str:
-        return f"{(anchor_utterance_id or 'unknown')}:{kind}"
-
     def _dedupe_once(self, key: str) -> bool:
         if key in self._suggested_for:
             return False
@@ -662,24 +699,18 @@ class LearningAssistant:
         pron_levels = {"zero", "beginner", "elementary"}
         proficiency_level = (self.language_level or "").lower()
         require_pronunciation = proficiency_level in pron_levels
-        pronunciation_mode = self.pronunciation_mode if require_pronunciation else None
+        # Default to "native" mode if pronunciation is required but no mode is set
+        pronunciation_mode = (self.pronunciation_mode or "native") if require_pronunciation else None
         return target_lang_name, native_lang_name, pronunciation_mode
-
-    @staticmethod
-    def _merge_context_blocks(*blocks: str) -> str:
-        parts = [block.strip() for block in blocks if block and block.strip()]
-        return "\n\n".join(parts)
 
     async def _ensure_pronunciation(self, out: dict) -> dict:
         """Ensure pronunciation is attached when required."""
         try:
             target_lang_name, native_lang_name, pronunciation_mode = self._get_language_params()
-            LOGGER.debug(f"[Pronunciation] Check - level={self.language_level}, mode={pronunciation_mode}")
 
             if pronunciation_mode and isinstance(out, dict) and out.get("target_text"):
                 # If pronunciation missing, fetch it
                 if not out.get("pronunciation"):
-                    LOGGER.info(f"[Pronunciation] Generating for: {out['target_text'][:50]}...")
                     try:
                         system_prompt, user_prompt = prompts.build_pronunciation_prompt(
                             out["target_text"],
@@ -691,21 +722,15 @@ class LearningAssistant:
                             prompt=user_prompt,
                             system=system_prompt,
                             temperature=0.3,
-                            max_tokens=100,
                         )
                         if pron:
                             out["pronunciation"] = pron
-                            LOGGER.info(f"[Pronunciation] Generated: {pron[:50]}...")
                         else:
                             LOGGER.warning("[Pronunciation] Empty result from LLM")
                     except Exception as e:
                         LOGGER.error(f"[Pronunciation] Generation failed: {e}", exc_info=True)
-                else:
-                    LOGGER.debug(f"[Pronunciation] Already exists: {out.get('pronunciation', '')[:50]}")
             else:
-                if not pronunciation_mode:
-                    LOGGER.debug("[Pronunciation] Skipped - mode is None")
-                elif not out.get("target_text"):
+                if not out.get("target_text"):
                     LOGGER.warning("[Pronunciation] Skipped - no target_text")
         except Exception as e:
             LOGGER.error(f"[Pronunciation] Unexpected error: {e}", exc_info=True)

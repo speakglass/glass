@@ -212,7 +212,7 @@ async def audio_stream(
                             "inline": False,
                         },
                         {"name": "Session ID", "value": sid, "inline": True},
-                        {"name": "Mode", "value": mode or 'unknown', "inline": True},
+                        {"name": "Mode", "value": mode or "unknown", "inline": True},
                         {"name": "Languages", "value": f"{learning_lang} → {native_lang}", "inline": True},
                     ],
                     "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -388,24 +388,27 @@ async def _auto_save_conversation(app, session_id: str, user: AuthenticatedUser,
             title = title_result
 
         assistant = getattr(pipeline, "assistant", None)
-        delayed_feedback: str | None = None
-        if assistant and getattr(assistant, "feedback_mode", "auto") == "off":
-            try:
-                delayed_feedback = await assistant.generate_delayed_feedback(
-                    full_conversation,
-                    native_lang=native_lang,
-                    learning_lang=learning_lang_cfg,
-                )
-            except Exception as exc:
-                LOGGER.warning("[AutoSave] Unable to build delayed feedback: %s", exc)
-        if delayed_feedback:
-            analysis["feedback"] = delayed_feedback
-
         feedback_items: list[dict[str, Any]] | None = None
         if assistant:
+            # Get real-time feedback items
             raw_feedback = getattr(assistant, "all_feedback", None)
             if raw_feedback:
                 feedback_items = [dict(entry) for entry in raw_feedback if isinstance(entry, dict)]
+
+            # If feedback was off, generate delayed feedback and add to feedback_items
+            if getattr(assistant, "feedback_mode", "auto") == "off":
+                try:
+                    delayed_items = await assistant.generate_delayed_feedback(
+                        full_conversation,
+                        native_lang=native_lang,
+                        learning_lang=learning_lang_cfg,
+                    )
+                    if delayed_items:
+                        if feedback_items is None:
+                            feedback_items = []
+                        feedback_items.extend(delayed_items)
+                except Exception as exc:
+                    LOGGER.warning("[AutoSave] Unable to build delayed feedback: %s", exc)
 
         # Save to database
         # Note: Memory extraction is handled asynchronously (no extracted_info field)

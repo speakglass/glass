@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import logging
 import time
-from collections import deque
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Deque
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .ports import MemoryPort
@@ -21,30 +20,31 @@ class ConversationMemory:
         self,
         session_id: str,
         memory: MemoryPort,
-        context_window_size: int = 5,
     ) -> None:
         self.session_id = session_id
         self.memory = memory
-        self.context_window_size = context_window_size
         self.conversation_id: str = session_id
-        self._conversation_histories: dict[str, Deque[dict]] = {}
         self._conversation_context_summary: str = ""
-        # Conversation storage
+        # Conversation storage (unified)
         self.full_conversation: list[dict] = []
 
         # User context (loaded once at session start)
         self.user_id: str | None = None
         self.user_context_block: str = ""
-        self._ensure_conversation_history(self.conversation_id)
+
+        # Summary tracking
+        self._messages_since_last_summary: int = 0
+        self._last_summary_time: float = 0.0
 
     def upsert_message(self, msg: dict) -> None:
         """Add message in conversation history with canonical shape."""
         normalized = self._normalize_message(msg)
         if not normalized:
             return
-        # Keep references aligned so later translation attachments update both views.
         self.full_conversation.append(normalized)
-        self._ensure_conversation_history(self.conversation_id).append(normalized)
+
+        # Track messages for summary triggering
+        self._messages_since_last_summary += 1
 
     def append_glass_message(self, msg: dict) -> None:
         """Append Glass assistant message (feedback/suggestion) - no updates."""
@@ -68,19 +68,39 @@ class ConversationMemory:
                         continue
                     conv_msg["translation"] = translation
 
-    def get_conversation_recent_history(self, conversation_id: str | None = None) -> list[dict]:
-        """Get recent conversation limited to a specific conversation binding."""
-        cid = conversation_id or self.conversation_id
-        history = self._conversation_histories.get(cid)
-        if not history:
-            return []
-        return list(history)
+    def get_conversation_recent_history(self, conversation_id: str | None = None, limit: int = 10) -> list[dict]:
+        """Get recent conversation messages.
 
-    def has_conversation_history(self, conversation_id: str | None = None) -> bool:
-        """Check if we have in-session history for a specific conversation."""
-        cid = conversation_id or self.conversation_id
-        history = self._conversation_histories.get(cid)
-        return bool(history and len(history) > 0)
+        Args:
+            conversation_id: Conversation ID to fetch history for (currently unused, for future multi-conversation support)
+            limit: Maximum number of recent messages to return (default: 10)
+        """
+        if not self.full_conversation:
+            return []
+        # Return only the most recent messages for efficiency
+        return self.full_conversation[-limit:] if len(self.full_conversation) > limit else list(self.full_conversation)
+
+    def get_conversation_for_summary(self, conversation_id: str | None = None, exclude_recent: int = 6) -> list[dict]:
+        """Get conversation history for summarization, excluding the most recent messages.
+
+        This ensures summary and recent_conversation are complementary without gaps or overlap.
+
+        Args:
+            conversation_id: Conversation ID to fetch history for (currently unused, for future multi-conversation support)
+            exclude_recent: Number of most recent messages to exclude (default: 6)
+
+        Returns:
+            All messages except the most recent N
+        """
+        if not self.full_conversation:
+            return []
+
+        # If conversation is short, return empty (will be covered by recent_conversation anyway)
+        if len(self.full_conversation) <= exclude_recent:
+            return []
+
+        # Return all except the most recent N messages
+        return self.full_conversation[:-exclude_recent]
 
     def get_full_conversation(self) -> list[dict]:
         """Get complete conversation history."""
@@ -131,7 +151,7 @@ class ConversationMemory:
         """Load user-level context from memory at session start."""
         self.user_id = user_id
         try:
-            context_block = await self.memory.get_user_context_block(user_id, use_cache=True)
+            context_block = await self.memory.get_user_context_block(user_id)
             self.user_context_block = context_block or ""
 
             if self.user_context_block:
@@ -144,12 +164,14 @@ class ConversationMemory:
             LOGGER.warning(f"[MemoryProcessor] Failed to load context: {e}")
             self.user_context_block = ""
 
-    async def get_conversation_context(self, timeout: float = 2.0, *, refresh: bool = False) -> str:  # noqa: ARG002
-        """Get conversation-level context for current session."""
+    async def get_conversation_summary(self, timeout: float = 2.0, *, refresh: bool = False) -> str:  # noqa: ARG002
+        """Get accumulated conversation summary.
+
+        Returns the summary generated from conversation history, not the raw messages.
+        """
         if not self.user_id:
             return ""
-        history = self.get_conversation_recent_history(self.conversation_id)
-        return self._render_conversation_context(history)
+        return self.get_conversation_context_summary()
 
     # Delegate to underlying memory adapter
     async def ensure_user(
@@ -206,7 +228,6 @@ class ConversationMemory:
     def set_conversation_id(self, conversation_id: str | None) -> None:
         """Update the active memory conversation identifier."""
         self.conversation_id = conversation_id or self.session_id
-        self._ensure_conversation_history(self.conversation_id)
 
     def update_conversation_context_summary(self, summary: str | None) -> None:
         """Set an explicit summary for this conversation context."""
@@ -214,46 +235,65 @@ class ConversationMemory:
             return
         self._conversation_context_summary = summary.strip()
 
+        # Reset counters
+        self._messages_since_last_summary = 0
+        self._last_summary_time = time.time()
+
     def get_conversation_context_summary(self) -> str:
         """Return the currently cached conversation summary (may be empty)."""
         return self._conversation_context_summary
 
-    def _render_conversation_context(self, history: list[dict]) -> str:
-        """Convert recent in-session history to a lightweight context string."""
-        if not history:
-            return ""
-        lines: list[str] = []
-        for message in history[-6:]:
-            role = (message.get("role") or "partner").strip().lower()
-            speaker = "You" if role == "user" else "Partner"
-            text = (message.get("text") or "").strip()
-            if not text:
-                continue
-            lines.append(f"{speaker}: {text}")
-        return "\n".join(lines)
+    def should_update_summary(self, message_threshold: int = 8, time_threshold: float = 300.0) -> bool:
+        """Check if summary should be updated based on messages or time.
 
-    async def build_partner_context(
+        Args:
+            message_threshold: Update after this many new messages (default: 8)
+            time_threshold: Update after this many seconds (default: 300 = 5 minutes)
+
+        Returns:
+            True if summary should be updated
+        """
+        # Update if enough new messages
+        if self._messages_since_last_summary >= message_threshold:
+            return True
+
+        # Update if enough time has passed and there are new messages
+        if self._messages_since_last_summary > 0 and self._last_summary_time > 0:
+            elapsed = time.time() - self._last_summary_time
+            if elapsed >= time_threshold:
+                return True
+
+        return False
+
+    async def build_relationship_context(
         self,
         *,
         partner_id: str | None,
         important_limit: int = 3,
         recent_limit: int = 3,
     ) -> str:
-        """Build a context block using prior durable memories for the current partner."""
+        """Build relationship context from prior memories with this partner.
+
+        Includes all scopes: user, partner, interaction.
+        """
         if not self.user_id or not partner_id:
             return ""
+
         fetch_window = max(important_limit, recent_limit) * 2
         if fetch_window <= 0:
             fetch_window = 4
+
         try:
+            # Get all memories related to this partner (includes user/partner/interaction scopes)
             records = await self.memory.list_partner_memories(
                 user_id=self.user_id,
                 partner_id=partner_id,
                 limit=fetch_window,
             )
-        except Exception as exc:
-            LOGGER.debug("[Memory] Failed to load partner memories: %s", exc)
+        except Exception as e:
+            LOGGER.warning(f"[Memory] Failed to fetch partner memories: {e}")
             return ""
+
         if not records:
             return ""
 
@@ -280,7 +320,30 @@ class ConversationMemory:
                 summary = _summary(record)
                 if not summary or summary in seen:
                     continue
-                bucket.append(f"- {summary}")
+                # Limit each summary to 150 chars for prompt efficiency
+                truncated = summary[:150] + "..." if len(summary) > 150 else summary
+                scope = record.get("scope", "unknown")
+
+                # Add timestamp info for context
+                timestamp = _timestamp(record)
+                if timestamp > 0:
+                    from datetime import datetime, timezone
+
+                    dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+                    # Format as relative time (e.g., "2 days ago")
+                    now = datetime.now(timezone.utc)
+                    delta = now - dt
+                    if delta.days > 0:
+                        time_str = f"{delta.days} day{'s' if delta.days != 1 else ''} ago"
+                    elif delta.seconds >= 3600:
+                        hours = delta.seconds // 3600
+                        time_str = f"{hours} hour{'s' if hours != 1 else ''} ago"
+                    else:
+                        time_str = "today"
+                    bucket.append(f"- [{scope}, {time_str}] {truncated}")
+                else:
+                    bucket.append(f"- [{scope}] {truncated}")
+
                 seen.add(summary)
                 if len(bucket) >= limit:
                     break
@@ -312,11 +375,3 @@ class ConversationMemory:
             parts.append("Recent Interactions:\n" + "\n".join(recent))
 
         return "\n\n".join(parts).strip()
-
-    def _ensure_conversation_history(self, conversation_id: str) -> Deque[dict]:
-        """Ensure per-conversation recent history deque exists."""
-        history = self._conversation_histories.get(conversation_id)
-        if history is None:
-            history = deque(maxlen=self.context_window_size)
-            self._conversation_histories[conversation_id] = history
-        return history

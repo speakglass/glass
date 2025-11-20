@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Any, Sequence
 
 from ...domain.ports import LLMPort
+from ...schemas import MemoryExtractionResponse
 
 LOGGER = logging.getLogger(__name__)
 
@@ -15,28 +16,13 @@ LOGGER = logging.getLogger(__name__)
 LLM_MEMORY_EXTRACTOR_PROMPT = """
 You are Glass Memory. Extract durable facts from tutoring conversations.
 
-Input JSON has:
-{
-  "partner_name": "...",
-  "native_language_name": "...",
-  "recent_turns": [{"role": "user|partner", "text": "..."}],
-  "conversation_excerpt": "...",
-  "existing_memories": ["..."]
-}
-
-Return STRICT JSON with key "facts": an array of objects containing:
-- "text": concise statement grounded in the conversation (translate if needed so it matches the provided native_language_name)
-- "scope": "user" | "partner" | "interaction"
-- "speaker": "user" | "partner" (who said it)
-- "evidence": optional short quote or justification
-
 Guidelines:
-- Always express each fact in the provided native_language_name even when the conversation uses other languages.
-- Surface only information explicitly stated or reaffirmed in the transcript.
-- Use scope=user for user facts, partner for the partner's information, interaction for shared commitments/plans.
+- Extract ONLY information explicitly stated in the conversation transcript below.
+- Do NOT include or infer facts from partner metadata (name is provided for reference only).
+- Use scope=user for user facts, partner for partner's information revealed in conversation, interaction for shared commitments/plans.
 - Highlight stable preferences, skills, routines, goals. Ignore greetings or temporary feelings.
 - Limit to the 8 most relevant facts and avoid duplicates or anything already present in existing_memories.
-- Keep statements short for downstream classification. Output JSON only.
+- Keep statements short for downstream classification.
 """.strip()
 
 
@@ -124,37 +110,44 @@ async def extract_memory_candidates(
     if not turns and not excerpt:
         return []
 
-    payload = {
-        "partner_name": partner_label or "",
-        "native_language_name": native_language_name or "",
-        "recent_turns": turns,
-        "conversation_excerpt": excerpt,
-        "existing_memories": list(existing_memories or []),
-    }
+    # Build structured prompt
+    prompt_parts = [
+        "# Context (for reference only - do NOT extract facts from here)",
+        f"Partner name: {partner_label or 'Unknown'}",
+        f"Existing memories: {', '.join(existing_memories or ['None'])}",
+        "",
+        "# Conversation Transcript (extract facts from here)",
+        "Recent conversation turns:",
+        *[f"{turn['role'].title()}: {turn['text']}" for turn in turns[:10]],
+        "",
+        "Full excerpt:",
+        excerpt,
+    ]
+    prompt = "\n".join(prompt_parts)
 
-    prompt = json.dumps(payload, ensure_ascii=False)
     try:
+        # Build schema context with native language
+        schema_context = None
+        if native_language_name:
+            schema_context = {"NATIVE": native_language_name}
+
+        LOGGER.info(f"[Memory Extraction] SYSTEM:\n{LLM_MEMORY_EXTRACTOR_PROMPT}\n\nUSER:\n{prompt}")
+
         response = await llm.call(
             prompt=prompt,
             system=LLM_MEMORY_EXTRACTOR_PROMPT,
             temperature=0.1,
-            max_tokens=600,
-            json_mode=True,
+            response_schema=MemoryExtractionResponse,
+            schema_context=schema_context,
         )
     except Exception as exc:
         LOGGER.debug("[MemoryExtractor] LLM call failed: %s", exc)
         return []
 
-    if not response:
+    if not isinstance(response, dict):
         return []
 
-    try:
-        data = json.loads(response)
-    except Exception as exc:
-        LOGGER.debug("[MemoryExtractor] Invalid JSON: %s", exc)
-        return []
-
-    facts = data.get("facts") or data.get("entries") or data.get("memories")
+    facts = response.get("facts", [])
     if not isinstance(facts, list):
         return []
 
@@ -162,14 +155,14 @@ async def extract_memory_candidates(
     for fact in facts:
         if not isinstance(fact, dict):
             continue
-        text = _clean_text(fact.get("text") or fact.get("statement") or fact.get("value"))
+        text = _clean_text(fact.get("text"))
         if not text:
             continue
-        speaker = _normalize_speaker(fact.get("speaker") or fact.get("role"))
-        scope = _normalize_scope(fact.get("scope") or fact.get("subject"), speaker=speaker)
+        speaker = _normalize_speaker(fact.get("speaker"))
+        scope = _normalize_scope(fact.get("scope"), speaker=speaker)
         if not scope:
             continue
-        evidence = _clean_text(fact.get("evidence") or fact.get("quote"))
+        evidence = _clean_text(fact.get("evidence"))
         candidates.append(MemoryExtractionCandidate(text=text, scope=scope, speaker=speaker, evidence=evidence))
         if len(candidates) >= 8:
             break

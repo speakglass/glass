@@ -34,7 +34,6 @@ class ConversationSession:
         tts: TTSPort | None = None,
         events: EventsPort | None,
         llm_semaphore: asyncio.Semaphore | None = None,
-        context_window_size: int = 5,
         default_lang: str = "en",
     ) -> None:
         self.session_id = session_id
@@ -54,26 +53,26 @@ class ConversationSession:
             handle_transcript_callback=self._handle_transcript,
             speech_activity_callback=self._handle_speech_activity,
         )
-        
+
         self.assistant = LearningAssistant(
             session_id=session_id,
             llm=llm,
             emit_callback=self._emit,
             llm_gate=self._llm_gate,
         )
-        
+
         self.memory = ConversationMemory(
             session_id=session_id,
             memory=memory,
-            context_window_size=context_window_size,
         )
         self.conversation_id: str = session_id
         self.memory.set_conversation_id(self.conversation_id)
-        
+
         self.roleplay = Roleplay(
             session_id=session_id,
             llm=llm,
             emit_callback=self._emit,
+            memory=self.memory,
         )
         self.roleplay.partner_id = None
         self.partner_profile: dict[str, Any] | None = None
@@ -82,11 +81,12 @@ class ConversationSession:
         self.user_profile: dict[str, Any] | None = None
         self._last_conversation_summary_update: float = 0.0
         self._conversation_summary_task: asyncio.Task | None = None
-        
+
         # TTS processor (optional)
         self.synthesis: TTSProcessor | None = None
         if tts:
             from ..config import get_settings
+
             settings = get_settings()
             self.synthesis = SpeechSynthesis(
                 session_id=session_id,
@@ -103,12 +103,12 @@ class ConversationSession:
     ) -> None:
         """Process an incoming audio stream."""
         asr_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=8)
-        
+
         tasks = [
             asyncio.create_task(
                 self.speech_recognition.process_stream(
-                    asr_queue, 
-                    source=source, 
+                    asr_queue,
+                    source=source,
                     language=self.assistant.learning_lang,
                     event_type_transcript=EventType.TRANSCRIPT_FINAL,
                     event_type_partial=EventType.TRANSCRIPT_INTERIM,
@@ -149,7 +149,7 @@ class ConversationSession:
         # Determine if this utterance came from the microphone (user) for downstream logic
         source_label = (source or "").lower()
         is_mic = bool(source_label == "mic" or source_label.startswith("mic_"))
-        
+
         # Auto-assign speaker based on source if not explicitly provided
         if not speaker:
             if source and source == "mic":
@@ -167,7 +167,7 @@ class ConversationSession:
 
         if not is_mic and speaker == "user":
             is_mic = True
-        
+
         metadata = self._build_message_identity(is_user=is_mic, speaker=speaker, source=source)
         memory_msg = self._format_memory_message(
             text=text,
@@ -177,9 +177,9 @@ class ConversationSession:
         )
         self.memory.upsert_message(memory_msg)
         self._schedule_conversation_summary_update()
-        
+
         self.lang = lang or self.lang
-        
+
         # Trigger LLM processing only when speech is final (utterance complete)
         if speech_final:
             if is_mic:
@@ -211,7 +211,6 @@ class ConversationSession:
         """Process final utterance (orchestrates memory, LLM, and roleplay)."""
         # Get context from memory processor
         user_context = self.memory.user_context_block
-        conversation_context = await self.memory.get_conversation_context()
         recent_conversation = self.memory.get_conversation_recent_history(self.conversation_id)
         target_lang_code = (self.assistant.learning_lang or self.default_lang).lower()
         utterance_lang_code = (source_lang or target_lang_code).lower()
@@ -234,17 +233,16 @@ class ConversationSession:
             event_type_suggestion=EventType.SUGGESTION,
             recent_conversation=formatted_recent,
             user_context=user_context,
-            conversation_context=formatted_recent_conversation or conversation_context,
             last_partner_message=last_partner_message,
         )
-        
+
         if is_user:
             if self.mode == "roleplay":
                 user_message_end_time = None
                 if start is not None and duration is not None:
                     user_message_end_time = start + duration
 
-                partner_context_block = await self.memory.build_partner_context(
+                partner_context_block = await self.memory.build_relationship_context(
                     partner_id=self.partner_id,
                     important_limit=4,
                     recent_limit=4,
@@ -258,9 +256,7 @@ class ConversationSession:
                         user_utterance_id=utterance_id,
                         event_type_transcript=EventType.TRANSCRIPT_FINAL,
                         event_type_translation=EventType.TRANSLATION,
-                        recent_conversation=recent_conversation,
-                        conversation_context=conversation_context,
-                        interaction_context=partner_context_block,
+                        relationship_context=partner_context_block,
                         user_message_end_time=user_message_end_time,
                     )
                 )
@@ -304,7 +300,6 @@ class ConversationSession:
                             )
                         )
 
-
     async def _emit(
         self,
         event_type: EventType,
@@ -322,11 +317,11 @@ class ConversationSession:
                     payload.get("text"),
                 )
             evt_source = (payload.get("source") if isinstance(payload, dict) else None) or source or None
-            
+
             # Store Glass learning assistant feedback/suggestions for memory
             if evt_source == "glass" and event_type in (EventType.FEEDBACK, EventType.SUGGESTION):
                 msg_text = (payload.get("text") if isinstance(payload, dict) else None) or ""
-                utterance_id = (payload.get("utterance_id") if isinstance(payload, dict) else None)
+                utterance_id = payload.get("utterance_id") if isinstance(payload, dict) else None
                 assistant_type = event_type.value
                 translation_text: str | None = None
                 if event_type == EventType.FEEDBACK and isinstance(payload, dict):
@@ -352,8 +347,7 @@ class ConversationSession:
                 )
                 # Glass messages are append-only (no updates)
                 self.memory.append_glass_message(glass_msg)
-                LOGGER.debug(f"[Memory] Stored Glass {event_type.value}: {msg_text[:50]}...")
-                
+
                 # Track feedback for roleplay context
                 if event_type == EventType.FEEDBACK:
                     self.roleplay.add_feedback(msg_text)
@@ -409,7 +403,7 @@ class ConversationSession:
         """Add an additional events port (e.g. when a new WebSocket connects)."""
         if events is not None and events not in self.events_ports:
             self.events_ports.append(events)
-    
+
     def detach_events(self, events: EventsPort) -> None:
         """Remove an events port (e.g. when a WebSocket disconnects)."""
         if events in self.events_ports:
@@ -420,17 +414,17 @@ class ConversationSession:
         """Set the feedback mode: 'always', 'auto', or 'off'."""
         self.assistant.feedback_mode = mode
         LOGGER.info(f"Session {self.session_id} feedback mode set to: {mode}")
-    
+
     def set_suggest_mode(self, mode: str) -> None:
         """Set the suggestion mode: 'always', 'auto', or 'off'."""
         self.assistant.suggest_mode = mode
         LOGGER.info(f"Session {self.session_id} suggest mode set to: {mode}")
-    
+
     def set_suggest_length_mode(self, mode: str) -> None:
         """Set the suggestion length mode: 'auto', 'short' (1 sentence), or 'long' (4 sentences)."""
         self.assistant.suggest_length_mode = mode
         LOGGER.info(f"Session {self.session_id} suggest length mode set to: {mode}")
-    
+
     def _build_message_identity(
         self,
         *,
@@ -577,13 +571,12 @@ class ConversationSession:
                     prompt=user_prompt,
                     system=system_prompt,
                     temperature=0.1,
-                    max_tokens=180,
                 )
             if summary and summary.strip():
                 self.memory.update_conversation_context_summary(summary.strip())
                 self._last_conversation_summary_update = now
-        except Exception as exc:
-            LOGGER.debug("[ConversationSummary] Failed to refresh: %s", exc)
+        except Exception:
+            pass
         finally:
             self._conversation_summary_task = None
 
@@ -591,12 +584,18 @@ class ConversationSession:
         snippets: list[str] = []
         for message in history:
             role = (message.get("role") or "partner").lower()
+            # Skip Glass AI assistant messages (feedback/suggestions)
+            if role == "assistant":
+                continue
             if role == "user":
                 speaker = "User"
                 name = (self.user_profile or {}).get("name")
-            else:
-                speaker = "You"
+            elif role == "partner":
+                speaker = "Partner"
                 name = self.partner_profile.get("name") if self.partner_profile else None
+            else:
+                # Skip unknown roles
+                continue
             speaker_label = f"{speaker} ({name})" if name else speaker
             text = (message.get("text") or "").strip()
             if text:
@@ -613,7 +612,7 @@ class ConversationSession:
         LOGGER.info(
             f"Session {self.session_id} profile updated: language_level={language_level}, pronunciation_mode={pronunciation_mode}"
         )
-    
+
     async def set_session_config(
         self,
         learning_lang: str,
@@ -639,19 +638,18 @@ class ConversationSession:
             f"Session {self.session_id} config - learning: {learning_lang}, native: {native_lang}, "
             f"mode: {mode}, partner: {partner_label} ({partner_desc})"
         )
-    
+
     # --- LLM-Related Methods (Delegated to LLMProcessor) -----------------
     async def generate_suggestion(self, user_hint: str | None = None) -> dict:
         """Generate a suggestion based on conversation context.
-        
+
         Args:
             user_hint: Optional hint from user (e.g., keywords, partial sentence)
-        
+
         Returns:
             dict with target_text, native_translation, pronunciation
         """
-        LOGGER.info(f"[Manual Suggestion] Starting with length_mode={self.assistant.suggest_length_mode}")
-        
+
         recent_conversation = self.memory.get_conversation_recent_history(self.conversation_id)
         formatted_recent = self._format_conversation_snippets(recent_conversation)
         last_partner_message = None
@@ -660,11 +658,11 @@ class ConversationSession:
             if role == "partner":
                 last_partner_message = msg.get("text")
                 break
-        
+
         # Generate suggestion via LLM processor (without emitting)
         target_lang_name = lang_code_to_name(self.assistant.learning_lang)
         native_lang_name = lang_code_to_name(self.assistant.native_lang)
-        
+
         recent_conv_texts = formatted_recent
         system_prompt, user_prompt = prompts.build_suggestion_prompt(
             target_lang=target_lang_name,
@@ -674,41 +672,48 @@ class ConversationSession:
             last_partner_message=last_partner_message,
             length_mode=self.assistant.suggest_length_mode,
         )
-        
+
+        from ..schemas import SuggestionResponse
+
         response = await self.assistant.llm.call(
             prompt=user_prompt,
             system=system_prompt,
             temperature=0.7,
-            max_tokens=500,
-            json_mode=True,
+            response_schema=SuggestionResponse,
+            schema_context={"TARGET": target_lang_name, "NATIVE": native_lang_name},
         )
-        
-        result = json.loads(response) if response else None
-        
+
+        result = response if isinstance(response, dict) else None
+
         if result:
             # Ensure pronunciation if needed
             suggestion = await self.assistant._ensure_pronunciation(result)
+            LOGGER.info(f"[Manual Suggestion] Generated: {suggestion.get('target_text', '')[:50]}...")
             return suggestion
+
+        LOGGER.warning("[Manual Suggestion] No valid result from LLM")
         return {"target_text": ""}
 
     async def analyze_conversation(self) -> dict:
         """Analyze the full conversation and return scores and overall feedback."""
         full_conversation = self.memory.get_full_conversation()
+        conversation_summary = self.memory.get_conversation_context_summary()
         return await self.assistant.analyze_conversation(
             full_conversation,
             self.assistant.all_feedback,
             self.assistant.native_lang,
             self.assistant.learning_lang,
+            conversation_summary,
         )
-    
+
     def set_user_id(self, user_id: str | None) -> None:
         """Set user ID for memory operations."""
         self.memory.user_id = user_id
-    
+
     async def load_user_context(self, user_id: str) -> None:
         """Load user context from memory at session start."""
         await self.memory.load_user_context(user_id)
-    
+
     async def initialize_for_user(
         self,
         user_id: str,
@@ -721,7 +726,7 @@ class ConversationSession:
         partner: dict[str, Any] | None = None,
     ) -> None:
         """Initialize session for a user.
-        
+
         Handles all setup required when a user connects:
         - Set user ID for memory operations
         - Ensure user exists in memory system (with name/email)
@@ -740,15 +745,15 @@ class ConversationSession:
             "avatar_url": avatar_url,
         }
         self.roleplay.set_user_name(name)
-        
+
         # Parse name for better memory graph construction
         first_name = None
         last_name = None
         if name:
             name_parts = name.split()
             first_name = name_parts[0]
-            last_name = ' '.join(name_parts[1:]) if len(name_parts) > 1 else None
-        
+            last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else None
+
         # Ensure user exists in memory system
         await self.memory.ensure_user(
             user_id=user_id,
@@ -756,47 +761,30 @@ class ConversationSession:
             first_name=first_name,
             last_name=last_name,
         )
-        
+
         # Set session configuration
         await self.set_session_config(learning_lang, native_lang, mode, partner=partner)
-        
-        # Load user context (facts, preferences, history)
+
+        # Load user context
         await self.load_user_context(user_id)
 
-        # Prefetch conversation context once per session
-        await asyncio.gather(self.memory.get_conversation_context(refresh=True), return_exceptions=True)
-        
         # Trigger initial AI greeting in roleplay mode and persist it
         if mode == "roleplay":
             try:
-                partner_context_block = await self.memory.build_partner_context(
+                # Load relationship context (conversation summary not needed yet - no messages)
+                relationship_context_block = await self.memory.build_relationship_context(
                     partner_id=self.partner_id,
                     important_limit=4,
                     recent_limit=4,
                 )
-                if partner_context_block:
-                    preview = partner_context_block[:500].replace("\n", "\\n")
-                    LOGGER.info(
-                        "[Roleplay] Initial partner context loaded (%d chars): %s%s",
-                        len(partner_context_block),
-                        preview,
-                        "..." if len(partner_context_block) > 500 else "",
-                    )
-                else:
-                    LOGGER.info("[Roleplay] No prior partner interactions for user %s", user_id)
-                recent_conversation: list[dict[str, Any]] = []
-                if self.memory.has_conversation_history(self.conversation_id):
-                    recent_conversation = self.memory.get_conversation_recent_history(self.conversation_id)
-                current_conversation_summary = await self.memory.get_conversation_context()
 
+                # First greeting
                 ai_msg = await self.roleplay.emit_ai_turn(
                     user_text="[START]",
                     user_utterance_id="initial",
                     event_type_transcript=EventType.TRANSCRIPT_FINAL,
                     event_type_translation=EventType.TRANSLATION,
-                    recent_conversation=recent_conversation,
-                    conversation_context=current_conversation_summary,
-                    interaction_context=partner_context_block,
+                    relationship_context=relationship_context_block,
                 )
                 if ai_msg:
                     partner_label = (self.partner_profile or {}).get("name") or "partner"

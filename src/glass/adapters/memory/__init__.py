@@ -24,9 +24,6 @@ def build_memory_adapter(settings, *, database=None, redis_client=None, llm_adap
             raise ValueError("PersistenceDatabase instance is required for Postgres memory adapter.")
         return PostgresMemoryAdapter(
             database=database,
-            redis_client=redis_client,
-            cache_ttl=int(getattr(settings, "memory_cache_ttl", 180) or 180),
-            conversation_context_window=int(getattr(settings, "context_window_size", 5) or 5),
             llm=llm_adapter,
         )
     if provider == "inmemory":

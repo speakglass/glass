@@ -31,6 +31,8 @@ dependencies = [
     "bcrypt>=4.0",
     "azure-storage-blob>=12.19",
     "stripe>=10.0",
+    "google-genai>=1.0.0",
+    "openai>=1.0.0",
 ]
 
 [tool.setuptools.packages.find]

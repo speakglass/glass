@@ -61,9 +61,6 @@ class Settings(BaseSettings):
     resend_verification_template_id: str | None = None
     resend_password_reset_template_id: str | None = None
 
-    # Conversation window for LLM context (messages to keep in fast cache)
-    context_window_size: int = 5
-
     # Redis (shared caching / background tasks)
     redis_url: str | None = None
 

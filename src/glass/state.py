@@ -17,7 +17,8 @@ from .persistence.db import PersistenceDatabase
 from .services.email import EmailService
 from .services.billing import StripeService
 
-LOGGER = logging.getLogger(__name__)    
+LOGGER = logging.getLogger(__name__)
+
 
 class SessionManager:
     """Registry for session pipelines."""
@@ -29,7 +30,6 @@ class SessionManager:
         llm_adapter,
         memory_adapter,
         tts_adapter=None,
-        context_window_size: int = 5,
         redis_client=None,
         pending_memory_ttl: int = 900,
     ) -> None:
@@ -37,7 +37,6 @@ class SessionManager:
         self.llm_adapter = llm_adapter
         self.memory_adapter = memory_adapter
         self.tts_adapter = tts_adapter
-        self.context_window_size = context_window_size
         self._pipelines: dict[str, ConversationSession] = {}
         self._lock = asyncio.Lock()
         self._pending_memory_conversations: set[str] = set()
@@ -55,7 +54,6 @@ class SessionManager:
                     memory=self.memory_adapter,
                     tts=self.tts_adapter,
                     events=events_port or NullEventsAdapter(),
-                    context_window_size=self.context_window_size,
                 )
                 self._pipelines[session_id] = pipeline
             else:
@@ -121,21 +119,23 @@ class AppState:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self._redis = None
-        
+
         if settings.redis_url:
             # Log Redis connection info (mask password for security)
             try:
                 from urllib.parse import urlparse
+
                 parsed = urlparse(settings.redis_url)
                 masked_url = f"{parsed.scheme}://***@{parsed.hostname}:{parsed.port}{parsed.path}"
                 LOGGER.info(f"🔧 Redis URL configured: {masked_url}")
             except Exception:
                 LOGGER.info("🔧 Redis URL configured (parsing failed)")
-            
+
             try:
                 from urllib.parse import urlparse
                 from redis.asyncio import Redis
                 import redis
+
                 parsed = urlparse(settings.redis_url)
                 LOGGER.info("Connecting to Redis using single-node client")
                 # Test connection on startup (fail-fast)
@@ -160,11 +160,12 @@ class AppState:
                 # Log detailed error info
                 try:
                     from urllib.parse import urlparse
+
                     parsed = urlparse(settings.redis_url)
                     error_detail = f"host={parsed.hostname}, port={parsed.port}, scheme={parsed.scheme}"
                 except Exception:
                     error_detail = "URL parsing failed"
-                
+
                 LOGGER.error(f"❌ Redis connection failed ({error_detail}): {e}")
         self.database = PersistenceDatabase(settings.database_url)
         asr_adapter = build_asr_adapter(settings)
@@ -181,7 +182,6 @@ class AppState:
             llm_adapter=llm_adapter,
             memory_adapter=memory_adapter,
             tts_adapter=tts_adapter,
-            context_window_size=int(settings.context_window_size or 5),
             redis_client=self._redis,
         )
         # Email service for verification and password reset

@@ -106,7 +106,7 @@ Title:"""
         title = await llm_adapter.call(
             prompt=prompt,
             temperature=0.5,
-            max_tokens=60,
+            max_tokens=2048,
         )
         title = (title or "").strip().strip('"').strip("'").strip()
 
@@ -168,7 +168,7 @@ JSON:
         response = await llm_adapter.call(
             prompt=prompt,
             temperature=0.2,
-            max_tokens=200,
+            max_tokens=4096,
         )
         if not response:
             return None
@@ -236,8 +236,10 @@ def derive_conversation_title(started_at: datetime | None) -> str:
 def _serialize_partner(partner: ConversationPartner | None) -> dict[str, Any] | None:
     if not partner:
         return None
-    kind = partner.kind if getattr(partner, "kind", None) in {"roleplay", "live_call"} else (
-        "live_call" if not partner.voice_id else "roleplay"
+    kind = (
+        partner.kind
+        if getattr(partner, "kind", None) in {"roleplay", "live_call"}
+        else ("live_call" if not partner.voice_id else "roleplay")
     )
     return {
         "id": partner.id,

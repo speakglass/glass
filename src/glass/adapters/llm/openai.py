@@ -34,12 +34,14 @@ class OpenAILLMAdapter:
         system: str | None = None,
         model: str | None = None,
         temperature: float = 0.7,
-        max_tokens: int = 1000,
-        json_mode: bool = False,
-    ) -> str:
-        """Call OpenAI chat completions API.
+        max_tokens: int | None = None,
+        response_schema: object | None = None,
+        schema_context: dict[str, str] | None = None,
+    ) -> str | dict:
+        """Call OpenAI API with optional structured outputs.
 
-        Supports standard OpenAI models via chat completions API.
+        When response_schema is provided, automatically uses structured outputs
+        via the Responses API for guaranteed JSON conformance.
 
         Args:
             prompt: Simple string prompt or list of messages
@@ -47,110 +49,88 @@ class OpenAILLMAdapter:
             system: System prompt (prepended to messages)
             model: Model name (default: gpt-4.1-mini)
             temperature: Sampling temperature 0-2
-            max_tokens: Max response tokens
-            json_mode: Force JSON response
+            max_tokens: Max response tokens (None = no limit, let model/prompt decide)
+            response_schema: Optional Pydantic model for structured output
+
+        Returns:
+            str: Response text when response_schema is None
+            dict: Parsed structured data when response_schema is provided
 
         Usage:
-            # Simple prompt
-            await llm.call("Translate this", system="You are a translator")
+            # Simple text
+            result = await llm.call("Translate this", system="You are a translator")
+            # result: str
 
-            # With messages
-            await llm.call(messages=[{"role": "user", "content": "Hello"}])
+            # Structured output
+            from pydantic import BaseModel
 
-            # Multi-turn
-            await llm.call(messages=[
-                {"role": "user", "content": "Hi"},
-                {"role": "assistant", "content": "Hello!"},
-                {"role": "user", "content": "How are you?"}
-            ])
+            class Answer(BaseModel):
+                steps: list[str]
+                result: str
+
+            result = await llm.call("Solve 8x + 7 = -23", response_schema=Answer)
+            # result: dict = {"steps": [...], "result": "..."}
         """
+        from openai import AsyncOpenAI
+
+        client = AsyncOpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url,
+            timeout=self.timeout,
+        )
+
         chosen_model = model or self.model
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
+
+        # Build messages
+        input_messages: list[dict[str, str]] = []
+        if system:
+            input_messages.append({"role": "system", "content": system})
+
+        if messages:
+            input_messages.extend(messages)
+        elif prompt:
+            if isinstance(prompt, list):
+                input_messages.extend(prompt)
+            else:
+                input_messages.append({"role": "user", "content": prompt})
+        else:
+            LOGGER.error("Either 'prompt' or 'messages' must be provided")
+            return {} if response_schema else ""
 
         try:
-            # Build input for Responses API
-            # Responses API uses 'input' instead of 'messages'
-            prelude_messages: list[dict[str, str]] = []
-            if system:
-                prelude_messages.append({"role": "system", "content": system})
-            if json_mode:
-                # Lower-case "json" to satisfy OpenAI Responses API requirement
-                prelude_messages.append(
-                    {
-                        "role": "system",
-                        "content": "Respond only with strict json output and return valid json.",
-                    }
+            if response_schema:
+                # Note: schema_context substitution not yet supported for OpenAI
+                # OpenAI Responses API requires Pydantic models directly
+                if schema_context:
+                    LOGGER.debug(
+                        "[OpenAI] schema_context provided but not yet supported for OpenAI adapter. "
+                        "Language context should be clear from system prompt."
+                    )
+
+                # Use Structured Outputs via Responses API
+                response = await client.responses.parse(
+                    model=chosen_model,
+                    input=input_messages,
+                    text_format=response_schema,
                 )
 
-            if messages:
-                # Use messages array directly as input
-                input_data = messages.copy()
-                if prelude_messages:
-                    input_data = prelude_messages + input_data
-            elif prompt:
-                if isinstance(prompt, list):
-                    input_data = prompt.copy()
-                    if prelude_messages:
-                        input_data = prelude_messages + input_data
-                else:
-                    # Simple string prompt
-                    if prelude_messages:
-                        input_data = prelude_messages + [{"role": "user", "content": prompt}]
-                    else:
-                        input_data = prompt
-            else:
-                LOGGER.error("Either 'prompt' or 'messages' must be provided")
-                return ""
+                if response.output_parsed:
+                    return response.output_parsed.model_dump()
+                return {}
 
-            # Responses API payload
-            payload = {
+            # Standard chat completion
+            kwargs = {
                 "model": chosen_model,
-                "input": input_data,
-                "max_output_tokens": max_tokens,
+                "messages": input_messages,
                 "temperature": temperature,
             }
+            # Only set max_tokens if explicitly provided
+            if max_tokens is not None:
+                kwargs["max_tokens"] = max_tokens
 
-            if json_mode:
-                # For structured outputs in Responses API
-                payload["text"] = {"format": {"type": "json_object"}}
-
-            # GPT-5 specific: add reasoning effort
-            if chosen_model.startswith("gpt-5"):
-                payload["reasoning"] = {"effort": "low"}
-
-            async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
-                response = await client.post("/responses", json=payload, headers=headers)
-                if response.status_code != 200:
-                    error_detail = response.text
-                    LOGGER.error(f"OpenAI API error [{response.status_code}]: {error_detail}")
-                    LOGGER.debug(f"Request payload: {payload}")
-                response.raise_for_status()
-                data = response.json()
-
-            # Extract text from responses API format
-            # Check for output_text helper property first (if available in SDK)
-            if "output_text" in data:
-                return data["output_text"].strip()
-
-            # Otherwise parse output array manually
-            output = data.get("output", [])
-            if not isinstance(output, list):
-                return ""
-
-            parts = []
-            for segment in output:
-                if isinstance(segment, dict):
-                    # Look for message type items
-                    if segment.get("type") == "message":
-                        for fragment in segment.get("content", []):
-                            if isinstance(fragment, dict) and fragment.get("type") == "output_text":
-                                parts.append(fragment.get("text", ""))
-
-            return " ".join(part.strip() for part in parts if part).strip()
+            completion = await client.chat.completions.create(**kwargs)
+            return completion.choices[0].message.content or ""
 
         except Exception as e:
             LOGGER.error(f"OpenAI API call failed [model={chosen_model}]: {e}", exc_info=True)
-            return ""
+            return {} if response_schema else ""

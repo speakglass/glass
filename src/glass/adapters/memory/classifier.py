@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from ...domain.ports import LLMPort
+from ...schemas import MemoryClassificationResponse
 from ...utils.language import lang_code_to_name
 
 LOGGER = logging.getLogger(__name__)
@@ -20,20 +20,9 @@ VALID_RETENTIONS = {"short_term", "long_term", "permanent"}
 LLM_SYSTEM_PROMPT = """
 You are Glass Memory — classify durable conversational facts.
 
-Output JSON with keys:
-{
-  "category": "fact|preference|skill|context|rule",
-  "retention": "short_term|long_term|permanent",
-  "importance": 0-100,
-  "summary": "<optional headline>",
-  "keywords": ["..."],
-  "entities": [{"label": "...", "value": "..."}],
-  "expires_in_days": null or positive number
-}
-
 Guidelines:
 - Use short_term only when the information clearly expires within a week; otherwise long_term or permanent.
-- importance indicates how helpful the fact is for personalization.
+- importance indicates how helpful the fact is for personalization (0-100).
 - keywords/entities should be concise anchors for retrieval.
 """
 
@@ -63,40 +52,28 @@ async def classify_memory(
     if not normalized:
         raise ValueError("Memory text cannot be empty")
 
-    summary_lang_instruction = ""
+    # Build prompt and schema context
+    prompt = f"Scope: {scope or 'user'}\n" f"Memory text:\n{normalized}"
+
+    schema_context = None
     if native_language:
         lang_name = lang_code_to_name(native_language)
-        summary_lang_instruction = (
-            f"The user's native language is {lang_name}. "
-            "Write the `summary` field using this language even if the memory text is in another language."
-        )
+        schema_context = {"NATIVE": lang_name}
 
-    language_block = f"{summary_lang_instruction.strip()}\n\n" if summary_lang_instruction else ""
+    LOGGER.info(f"[Memory Classification] SYSTEM:\n{LLM_SYSTEM_PROMPT}\n\nUSER:\n{prompt}")
 
-    prompt = (
-        f"Scope: {scope or 'user'}\n"
-        f"Memory text:\n{normalized}\n\n"
-        f"{language_block}"
-        "Respond with JSON only."
-    )
     response = await llm.call(
         prompt=prompt,
         system=LLM_SYSTEM_PROMPT,
         temperature=0.1,
-        max_tokens=400,
-        json_mode=True,
+        response_schema=MemoryClassificationResponse,
+        schema_context=schema_context,
     )
-    if not response:
-        raise RuntimeError("LLM returned empty response for memory classification")
 
-    try:
-        payload = json.loads(response)
-    except Exception as exc:
-        LOGGER.error("[MemoryClassifier] Invalid JSON response: %s", exc)
-        raise
+    if not isinstance(response, dict):
+        raise RuntimeError("LLM returned invalid response for memory classification")
 
-    if not isinstance(payload, dict):
-        raise RuntimeError("LLM response must be a JSON object")
+    payload = response
 
     category = _coerce_choice(payload.get("category"), VALID_CATEGORIES, default="fact")
     retention = _coerce_choice(payload.get("retention"), VALID_RETENTIONS, default="long_term")

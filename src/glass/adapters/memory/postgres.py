@@ -1,8 +1,7 @@
-"""Postgres-backed memory adapter with Redis caching."""
+"""Postgres-backed memory adapter."""
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -14,7 +13,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from ...domain.ports import LLMPort
 from ...persistence.db import MemoryRecord, PersistenceDatabase
-from .classifier import MemoryClassification, classify_memory
+from .classifier import classify_memory
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,26 +39,13 @@ def _normalize_partner_id(partner_id: Any | None) -> str | None:
 VALID_SCOPES = {"user", "partner", "interaction"}
 
 
-def _canonical_scope(value: Any) -> str | None:
+def _normalize_scope(value: Any) -> str:
+    """Normalize scope to one of: user, partner, interaction."""
     if isinstance(value, str):
         lowered = value.strip().lower()
-        if lowered == "relationship":
-            return "interaction"
         if lowered in VALID_SCOPES:
             return lowered
-    return None
-
-
-def _resolve_scope(*values: Any) -> str:
-    for value in values:
-        normalized = _canonical_scope(value)
-        if normalized:
-            return normalized
     return "user"
-
-
-def _scope_from_db(value: Any) -> str:
-    return _resolve_scope(value)
 
 
 def _normalize_category(value: Any) -> str:
@@ -158,23 +144,15 @@ def _build_content_hash(
 
 
 class PostgresMemoryAdapter:
-    """Implements MemoryPort using SQL + Redis caches."""
+    """Implements MemoryPort using Postgres."""
 
     def __init__(
         self,
         *,
         database: PersistenceDatabase,
-        redis_client=None,
-        cache_ttl: int = 180,
-        conversation_context_window: int = 12,
         llm: LLMPort | None = None,
     ) -> None:
         self.database = database
-        self.redis = redis_client
-        self.cache_ttl = cache_ttl
-        self.conversation_context_window = conversation_context_window
-        self._local_user_cache: dict[str, tuple[str, float]] = {}
-        self._local_conversation_cache: dict[str, tuple[str, float]] = {}
         if llm is None:
             raise ValueError("LLM adapter is required for PostgresMemoryAdapter")
         self.llm = llm
@@ -189,66 +167,13 @@ class PostgresMemoryAdapter:
         """Ensure a user exists for memory operations (Postgres path is a no-op)."""
         return
 
-    # ------------- Cache helpers -------------
-    async def _cache_get(self, key: str) -> str | None:
-        if not self.redis:
-            return None
-        try:
-            cached = await self.redis.get(key)  # type: ignore[union-attr]
-            return cached or None
-        except Exception:
-            return None
+    async def get_user_context_block(self, user_id: str, *, limit: int = 20) -> str:
+        """Get user-scoped memory context.
 
-    async def _cache_set(self, key: str, value: str) -> None:
-        if not self.redis:
-            return
-        try:
-            await self.redis.set(key, value, ex=self.cache_ttl)  # type: ignore[union-attr]
-        except Exception:
-            return
-
-    async def _cache_delete(self, key: str) -> None:
-        if not self.redis:
-            return
-        try:
-            await self.redis.delete(key)  # type: ignore[union-attr]
-        except Exception:
-            return
-
-    def _schedule_cache_delete(self, key: str) -> None:
-        if not self.redis:
-            return
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            return
-        loop.create_task(self._cache_delete(key))
-
-    def invalidate_user_cache(self, user_id: str) -> None:
-        self._local_user_cache.pop(user_id, None)
-        self._schedule_cache_delete(f"glass:memory:user:{user_id}")
-
-    def invalidate_conversation_cache(self, conversation_id: str) -> None:
-        self._local_conversation_cache.pop(conversation_id, None)
-        self._schedule_cache_delete(f"glass:memory:conversation:{conversation_id}")
-
-    async def _invalidate_conversation_cache(self, conversation_id: str) -> None:
-        self._local_conversation_cache.pop(conversation_id, None)
-        await self._cache_delete(f"glass:memory:conversation:{conversation_id}")
-
-    # ------------- Context builders -------------
-    async def get_user_context_block(self, user_id: str, use_cache: bool = True) -> str:
-        if use_cache and user_id in self._local_user_cache:
-            cached, ts = self._local_user_cache[user_id]
-            if _now().timestamp() - ts < self.cache_ttl:
-                return cached
-        cache_key = f"glass:memory:user:{user_id}"
-        if use_cache:
-            cached = await self._cache_get(cache_key)
-            if cached:
-                self._local_user_cache[user_id] = (cached, _now().timestamp())
-                return cached
-
+        Args:
+            user_id: User ID
+            limit: Maximum number of records to retrieve (default: 20)
+        """
         async_session = self.database.session()
         async with async_session() as session:
             records_stmt = (
@@ -257,12 +182,15 @@ class PostgresMemoryAdapter:
                     MemoryRecord.user_id == user_id,
                     MemoryRecord.conversation_id.is_(None),
                     MemoryRecord.partner_id.is_(None),
-                    MemoryRecord.subject_role == "user",
+                    MemoryRecord.scope == "user",
                 )
                 .order_by(MemoryRecord.importance.desc(), MemoryRecord.updated_at.desc())
-                .limit(50)
+                .limit(limit)
             )
             records = (await session.scalars(records_stmt)).all()
+
+        if not records:
+            return ""
 
         record_lines: list[str] = []
         for record in records:
@@ -272,82 +200,8 @@ class PostgresMemoryAdapter:
                 line += f" ({record.summary})"
             record_lines.append(line)
 
-        facts_block = "\n".join(record_lines)
-        context = facts_block.strip()
-        if context:
-            self._local_user_cache[user_id] = (context, _now().timestamp())
-            await self._cache_set(cache_key, context)
-        return context
+        return "\n".join(record_lines)
 
-    async def _build_conversation_context(self, conversation_id: str, user_id: str) -> str:
-        async_session = self.database.session()
-        async with async_session() as session:
-            record_stmt = (
-                select(MemoryRecord)
-                .where(
-                    MemoryRecord.user_id == user_id,
-                    MemoryRecord.conversation_id == conversation_id,
-                )
-                .order_by(MemoryRecord.importance.desc(), MemoryRecord.updated_at.desc())
-                .limit(self.conversation_context_window)
-            )
-            records = (await session.scalars(record_stmt)).all()
-
-        if not records:
-            return ""
-
-        lines: list[str] = []
-        for record in records:
-            subject = record.subject_role.capitalize()
-            summary = record.summary or ""
-            snippet = summary if summary else record.text
-            lines.append(f"{subject}: {snippet}")
-        return "\n".join(lines).strip()
-
-    async def get_context_for_prompt(
-        self,
-        conversation_id: str,
-        user_id: str,
-        scope: str = "conversation",
-        timeout: float = 3.0,
-    ) -> str:
-        cache_key = f"glass:memory:conversation:{conversation_id}"
-        now_ts = _now().timestamp()
-        if scope == "conversation":
-            cached_entry = self._local_conversation_cache.get(conversation_id)
-            if cached_entry and now_ts - cached_entry[1] < self.cache_ttl:
-                return cached_entry[0]
-            cached = await self._cache_get(cache_key)
-            if cached:
-                self._local_conversation_cache[conversation_id] = (cached, now_ts)
-                return cached
-
-            try:
-                context = await asyncio.wait_for(
-                    self._build_conversation_context(conversation_id, user_id), timeout=timeout
-                )
-            except asyncio.TimeoutError:
-                context = ""
-            if context:
-                self._local_conversation_cache[conversation_id] = (context, now_ts)
-                await self._cache_set(cache_key, context)
-            return context
-
-        if scope == "hybrid":
-            results = await asyncio.gather(
-                self.get_context_for_prompt(conversation_id, user_id, scope="conversation", timeout=timeout),
-                self.get_user_context_block(user_id, use_cache=True),
-                return_exceptions=True,
-            )
-            thread_ctx = "" if isinstance(results[0], Exception) else results[0]
-            user_ctx = "" if isinstance(results[1], Exception) else results[1]
-            combined = "\n\n".join(part for part in [user_ctx, thread_ctx] if part)
-            return combined.strip()
-
-        # default fallback
-        return await self.get_context_for_prompt(conversation_id, user_id, scope="conversation", timeout=timeout)
-
-    # ------------- Persistence helpers -------------
     async def persist_memory_records(
         self,
         *,
@@ -371,7 +225,6 @@ class PostgresMemoryAdapter:
             ended_at=ended_at,
             conversation_id=conversation_id,
         )
-        self.invalidate_user_cache(user_id)
 
     async def _store_records_from_entries(
         self,
@@ -387,32 +240,31 @@ class PostgresMemoryAdapter:
     ) -> None:
         timestamp = _now()
         payloads: list[dict[str, Any]] = []
-        affected_conversations: set[str] = set()
 
         async def _build_structured_payload(entry: dict[str, Any]) -> dict[str, Any] | None:
             text = _clean_text(entry.get("text"))
             if not text:
                 return None
 
+            # Determine scope: user, partner, or interaction
+            scope = _normalize_scope(entry.get("scope"))
+
+            # Check if entry has pre-classified fields
             has_structured_fields = all(key in entry for key in ("category", "retention", "importance"))
+
             if has_structured_fields:
+                # Use provided classification
                 record_partner = _normalize_partner_id(entry.get("partner_id")) or partner_id
-                entry_conversation_id = entry.get("conversation_id") or entry.get("thread_id")
-                scope_hint = entry.get("thread_scope") or entry.get("conversation_scope")
-                scope_hint_normalized = _canonical_scope(scope_hint)
-                if entry_conversation_id is None:
-                    entry_conversation_id = None if scope_hint_normalized == "user" else conversation_id
-                scope = _resolve_scope(entry.get("scope"), entry.get("subject_role"), scope_hint_normalized)
+                entry_conversation_id = entry.get("conversation_id") or conversation_id
                 category = _normalize_category(entry.get("category"))
                 retention = _normalize_retention(entry.get("retention"))
                 importance = _normalize_importance(entry.get("importance"))
                 summary = _normalize_summary(entry.get("summary"))
                 keywords = _coerce_keywords(entry.get("keywords"))
                 entities = _coerce_entities(entry.get("entities"))
-                retention_expires_at = entry.get("retention_expires_at") or entry.get("expires_at")
-                retention_expires_at = _parse_retention_expiry(retention_expires_at)
+                retention_expires_at = _parse_retention_expiry(entry.get("retention_expires_at"))
             else:
-                scope = _resolve_scope(entry.get("scope"), entry.get("subject_role"))
+                # Classify with LLM
                 classification = await classify_memory(
                     llm=self.llm,
                     user_id=user_id,
@@ -433,7 +285,7 @@ class PostgresMemoryAdapter:
             payload = {
                 "user_id": user_id,
                 "partner_id": record_partner,
-                "subject_role": scope,
+                "scope": scope,
                 "category": category,
                 "retention": retention,
                 "importance": importance,
@@ -454,7 +306,6 @@ class PostgresMemoryAdapter:
             }
             if entry_conversation_id:
                 payload["conversation_id"] = entry_conversation_id
-                affected_conversations.add(entry_conversation_id)
             return payload
 
         for entry in entries:
@@ -476,7 +327,7 @@ class PostgresMemoryAdapter:
                 "entities": stmt.excluded.entities,
                 "partner_id": stmt.excluded.partner_id,
                 "conversation_id": stmt.excluded.conversation_id,
-                "subject_role": stmt.excluded.subject_role,
+                "scope": stmt.excluded.scope,
                 "retention_expires_at": stmt.excluded.retention_expires_at,
                 "updated_at": stmt.excluded.updated_at,
             }
@@ -486,9 +337,6 @@ class PostgresMemoryAdapter:
             )
             await session.execute(stmt)
             await session.commit()
-
-        for convo_id in affected_conversations:
-            await self._invalidate_conversation_cache(convo_id)
 
     async def list_user_memories(
         self,
@@ -510,7 +358,7 @@ class PostgresMemoryAdapter:
         items = [
             {
                 "id": row.id,
-                "scope": _scope_from_db(row.subject_role),
+                "scope": row.scope,
                 "category": row.category,
                 "retention": row.retention,
                 "importance": row.importance,
@@ -554,7 +402,7 @@ class PostgresMemoryAdapter:
                 "id": row.id,
                 "text": row.text,
                 "category": row.category,
-                "scope": _scope_from_db(row.subject_role),
+                "scope": row.scope,
                 "retention": row.retention,
                 "importance": row.importance,
                 "summary": row.summary,
@@ -600,7 +448,7 @@ class PostgresMemoryAdapter:
                 "text": row.text,
                 "summary": row.summary,
                 "category": row.category,
-                "scope": _scope_from_db(row.subject_role),
+                "scope": row.scope,
                 "importance": row.importance,
                 "partner_id": row.partner_id,
                 "conversation_id": row.conversation_id,
@@ -630,7 +478,7 @@ class PostgresMemoryAdapter:
             "user_id": user_id,
             "partner_id": None,
             "conversation_id": conversation_id,
-            "subject_role": "user",
+            "scope": "user",
             "category": classification.category,
             "retention": classification.retention,
             "importance": classification.importance,
@@ -660,14 +508,14 @@ class PostgresMemoryAdapter:
                     "text": stmt.excluded.text,
                     "keywords": stmt.excluded.keywords,
                     "entities": stmt.excluded.entities,
-                    "subject_role": stmt.excluded.subject_role,
+                    "scope": stmt.excluded.scope,
                     "conversation_id": stmt.excluded.conversation_id,
                     "retention_expires_at": stmt.excluded.retention_expires_at,
                     "updated_at": stmt.excluded.updated_at,
                 },
             ).returning(
                 MemoryRecord.id,
-                MemoryRecord.subject_role,
+                MemoryRecord.scope,
                 MemoryRecord.category,
                 MemoryRecord.text,
                 MemoryRecord.retention,
@@ -685,10 +533,9 @@ class PostgresMemoryAdapter:
             row = result.mappings().first()
             if not row:
                 raise RuntimeError("Failed to create memory record")
-        self.invalidate_user_cache(user_id)
         return {
             "id": row["id"],
-            "scope": _scope_from_db(row["subject_role"]),
+            "scope": row["scope"],
             "category": row["category"],
             "text": row["text"],
             "retention": row["retention"],
@@ -715,20 +562,20 @@ class PostgresMemoryAdapter:
         session_factory = self.database.session()
         async with session_factory() as session:
             result = await session.execute(
-                select(MemoryRecord.subject_role).where(
+                select(MemoryRecord.scope).where(
                     MemoryRecord.id == record_id,
                     MemoryRecord.user_id == user_id,
                 )
             )
-            subject_role_value = result.scalar_one_or_none()
-        if not subject_role_value:
+            scope_value = result.scalar_one_or_none()
+        if not scope_value:
             raise ValueError("Memory record not found")
-        scope_hint = _scope_from_db(subject_role_value)
+        scope = _normalize_scope(scope_value)
         classification = await classify_memory(
             llm=self.llm,
             user_id=user_id,
             text=text,
-            scope=scope_hint,
+            scope=scope,
         )
         async with session_factory() as session:
             stmt = (
@@ -747,7 +594,7 @@ class PostgresMemoryAdapter:
                 )
                 .returning(
                     MemoryRecord.id,
-                    MemoryRecord.subject_role,
+                    MemoryRecord.scope,
                     MemoryRecord.category,
                     MemoryRecord.text,
                     MemoryRecord.retention,
@@ -767,10 +614,9 @@ class PostgresMemoryAdapter:
                 await session.rollback()
                 raise ValueError("Memory not found")
             await session.commit()
-        self.invalidate_user_cache(user_id)
         return {
             "id": row["id"],
-            "scope": _scope_from_db(row["subject_role"]),
+            "scope": row["scope"],
             "category": row["category"],
             "text": row["text"],
             "retention": row["retention"],
@@ -795,7 +641,4 @@ class PostgresMemoryAdapter:
             stmt = delete(MemoryRecord).where(MemoryRecord.id == record_id, MemoryRecord.user_id == user_id)
             result = await session.execute(stmt)
             await session.commit()
-        deleted = result.rowcount > 0
-        if deleted:
-            self.invalidate_user_cache(user_id)
-        return deleted
+        return result.rowcount > 0

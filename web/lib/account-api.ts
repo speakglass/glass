@@ -173,43 +173,13 @@ export interface ConversationMemoriesResponse {
   processing: boolean; // True if extraction is still processing
 }
 
-export interface ConversationContextRange {
-  start?: string | null;
-  end?: string | null;
-}
-
-export interface ConversationContextItem {
-  type: 'fact' | 'entity' | 'episode' | 'unknown' | 'context';
-  label?: string | null;
-  text: string;
-  range?: ConversationContextRange | null;
-}
-
 export interface VoicePreviewResponse {
   audioBase64: string;
   mimeType: string;
 }
 
-export interface ConversationContextResponse {
-  items: ConversationContextItem[];
-  rawContext?: string | null;
-}
-
 interface ConversationCreateResponseApi {
   conversation_id: string;
-}
-
-interface ConversationContextResponseApi {
-  items: {
-    type: string;
-    label?: string | null;
-    text: string;
-    range?: {
-      start?: string | null;
-      end?: string | null;
-    } | null;
-  }[];
-  raw_context?: string | null;
 }
 
 interface VoicePreviewResponseApi {
@@ -535,15 +505,15 @@ function mapBilling(data: BillingSnapshotApi | undefined): BillingSnapshot {
       enabled: false,
       active: true,
       selfHosted: true,
-    billingExempt: true,
-    status: null,
-    plan: null,
-    planInterval: null,
-    currentPeriodEnd: null,
-    cancelAt: null,
-    cancelAtPeriodEnd: null,
-  };
-}
+      billingExempt: true,
+      status: null,
+      plan: null,
+      planInterval: null,
+      currentPeriodEnd: null,
+      cancelAt: null,
+      cancelAtPeriodEnd: null,
+    };
+  }
   return {
     enabled: data.enabled,
     active: data.active,
@@ -906,23 +876,6 @@ export async function fetchConversationMemories(
   return {
     memories: data.memories.map(mapMemory),
     processing: data.processing,
-  };
-}
-
-export async function fetchConversationContext(
-  token: string,
-  conversationId: string
-): Promise<ConversationContextResponse> {
-  const data = await authedFetch<ConversationContextResponseApi>(`/conversations/${conversationId}/context`, token);
-  return {
-    items:
-      data.items?.map((item) => ({
-        type: (item.type as ConversationContextItem['type']) || 'unknown',
-        label: item.label,
-        text: item.text,
-        range: item.range,
-      })) ?? [],
-    rawContext: data.raw_context ?? null,
   };
 }
 
