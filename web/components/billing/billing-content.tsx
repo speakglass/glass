@@ -583,7 +583,7 @@ export function BillingContent() {
               </div>
               <div className="space-y-1">
                 <Label>
-                  <Trans>Team size</Trans>
+                  <Trans>Company size</Trans>
                 </Label>
                 <Select
                   value={contactForm.teamSize}
@@ -604,13 +604,13 @@ export function BillingContent() {
             </div>
             <div className="space-y-1">
               <Label>
-                <Trans>Message</Trans>
+                <Trans>Tell us about your requirements</Trans>
               </Label>
               <Textarea
                 value={contactForm.message}
                 onChange={(event) => setContactForm((prev) => ({ ...prev, message: event.target.value }))}
                 rows={4}
-                placeholder={t`How can we help?`}
+                placeholder={t`I'm interested in Glass for my team...`}
               />
             </div>
           </div>
