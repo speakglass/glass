@@ -455,31 +455,6 @@ class LearningAssistant:
                 feedback_summary = "\n".join(feedback_lines)
                 has_feedback = True
 
-        # Build transcript for cases with no feedback
-        transcript = ""
-        if not has_feedback and has_user_utterances:
-
-            def _speaker_label(message: dict) -> str:
-                role = (message.get("role") or message.get("speaker_role") or "").lower()
-                if role == "user":
-                    return "You"
-                if role == "partner":
-                    return "Partner"
-                return "Other"
-
-            # Use last 20 messages for analysis
-            recent_messages = full_conversation[-20:] if len(full_conversation) > 20 else full_conversation
-            transcript_lines = []
-            for msg in recent_messages:
-                speaker = _speaker_label(msg)
-                text = (msg.get("text") or "").strip()
-                if not text:
-                    continue
-                # Truncate long messages
-                truncated = text[:150] + "..." if len(text) > 150 else text
-                transcript_lines.append(f"{speaker}: {truncated}")
-            transcript = "\n".join(transcript_lines)
-
         native_lang_name = lang_code_to_name(native_lang)
         learning_lang_name = lang_code_to_name(learning_lang)
 
@@ -510,7 +485,6 @@ class LearningAssistant:
                 learning_lang_name,
                 conversation_summary,
                 user_message_count,
-                transcript,
             ),
         ]
 
@@ -667,11 +641,10 @@ class LearningAssistant:
         learning_lang_name: str,
         conversation_summary: str = "",
         user_message_count: int = 0,
-        transcript: str = "",
     ) -> str:
         """Generate overall feedback by synthesizing individual feedback items."""
         prompt = prompts.build_analysis_feedback_prompt(
-            feedback_summary, learning_lang_name, native_lang_name, conversation_summary, user_message_count, transcript
+            feedback_summary, learning_lang_name, native_lang_name, conversation_summary, user_message_count
         )
 
         LOGGER.info(f"[Overall Feedback Prompt]\n{prompt}")
