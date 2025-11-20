@@ -5,7 +5,7 @@ import { Loader2, Phone, UserRound, MoreHorizontal, AlertTriangle, Trash2 } from
 import LiquidGlass from './liquid-glass';
 import { toast } from 'sonner';
 import { useRef, useState, useEffect, useCallback } from 'react';
-import type { ComponentType, SVGProps } from 'react';
+import type { ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from './ui/button';
 import { cn } from '@/utils';
@@ -24,7 +24,6 @@ import {
 import { PartnerVoiceSelector } from '@/components/partner-voice-selector';
 import { ROLEPLAY_VOICE_OPTIONS } from '@/lib/roleplay-voices';
 import { useVoicePreviewPlayer } from '@/hooks/use-voice-preview';
-import DiscordLogo from './logos/discord';
 import { PartnerAvatar } from '@/components/partner-avatar';
 import {
   DropdownMenu,
@@ -55,18 +54,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
 type SetupStep = 'start' | 'languages' | 'level' | 'mode' | 'scenario' | 'instructions' | 'connecting';
-type LiveCallPlatform = 'discord' | 'zoom' | 'google_meet' | 'teams' | 'other';
-type LiveCallPlatformOption = {
-  id: LiveCallPlatform;
-  label: string;
-  iconSrc?: string;
-  iconAlt?: string;
-  iconBg?: string;
-  fallbackIcon?: string;
-  iconComponent?: ComponentType<SVGProps<SVGSVGElement>>;
-  iconClassName?: string;
+type DisplayMediaVideoOptions = MediaTrackConstraints & {
+  displaySurface?: 'monitor' | 'window' | 'application' | 'browser';
+  preferCurrentTab?: boolean;
+  selfBrowserSurface?: 'include' | 'exclude';
+  systemAudio?: 'include' | 'exclude';
 };
-
 interface LanguageOption {
   code: string;
   name: string;
@@ -137,46 +130,6 @@ const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = {
     es: { target: 'Merci beaucoup', pronunciation: 'mersi boku', translation: 'Muchas gracias' },
   },
 };
-
-const DISCORD_CHANNEL_URL = 'https://discord.gg/GxJwcgnchM';
-
-const LIVE_CALL_PLATFORM_OPTIONS: LiveCallPlatformOption[] = [
-  {
-    id: 'discord',
-    label: 'Discord',
-    iconComponent: (props) => <DiscordLogo {...props} />,
-    iconAlt: 'Discord logo',
-    iconBg: 'bg-[#5865F2]/15',
-    iconClassName: 'text-[#5865F2]',
-  },
-  {
-    id: 'zoom',
-    label: 'Zoom',
-    iconSrc: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Zoom_Communications_Logo.svg',
-    iconAlt: 'Zoom logo',
-    iconBg: 'bg-[#0B5CFF]/10',
-  },
-  {
-    id: 'google_meet',
-    label: 'Google Meet',
-    iconSrc: 'https://upload.wikimedia.org/wikipedia/commons/9/9b/Google_Meet_icon_%282020%29.svg',
-    iconAlt: 'Google Meet logo',
-    iconBg: 'bg-[#0F9D58]/10',
-  },
-  {
-    id: 'teams',
-    label: 'Microsoft Teams',
-    iconSrc: 'https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg',
-    iconAlt: 'Microsoft Teams logo',
-    iconBg: 'bg-[#5946B2]/10',
-  },
-  {
-    id: 'other',
-    label: 'Other',
-    fallbackIcon: '✨',
-    iconBg: 'bg-muted/60',
-  },
-];
 
 const DEFAULT_ROLEPLAY_VOICE_ID = ROLEPLAY_VOICE_OPTIONS[0]?.id ?? '';
 
@@ -251,9 +204,13 @@ export default function StartCall() {
       editPartnerAvatarInputRef.current.value = '';
     }
   }, []);
-  const [selectedPlatform, setSelectedPlatform] = useState<LiveCallPlatform>('discord');
   const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [screenSharePreviewStream, setScreenSharePreviewStream] = useState<MediaStream | null>(null);
+  const screenShareStreamRef = useRef<MediaStream | null>(null);
+  const screenShareVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [isRequestingScreenShare, setIsRequestingScreenShare] = useState(false);
+  const [screenShareError, setScreenShareError] = useState<'denied' | 'cancelled' | 'failed' | 'no_audio' | null>(null);
   const conversationLimit = snapshot?.limits?.conversations || null;
   const limitEnabled = Boolean(conversationLimit?.enabled && conversationLimit?.limit);
   const limitMax = conversationLimit?.limit ?? null;
@@ -261,9 +218,23 @@ export default function StartCall() {
   const limitDisplayUsed = limitMax !== null ? Math.min(limitUsed, limitMax) : limitUsed;
   const limitUsageLabel = limitMax !== null ? `${limitDisplayUsed}/${limitMax}` : null;
   const limitBlocked = Boolean(limitEnabled && conversationLimit?.blocked);
+  const stopOwnedScreenShare = useCallback(() => {
+    const stream = screenShareStreamRef.current;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      screenShareStreamRef.current = null;
+    }
+    setScreenSharePreviewStream(null);
+  }, []);
 
   const isConnecting = status.value === 'connecting' || step === 'connecting';
   const glassMode = settings.glassMode ?? false;
+  const canStartCall =
+    selectedMode === 'roleplay'
+      ? Boolean(selectedPartnerId)
+      : selectedMode === 'live_call'
+        ? Boolean(screenSharePreviewStream)
+        : false;
   const partnersQueryEnabled = !!token && !!currentLearningLang;
   const {
     data: partnersData,
@@ -311,6 +282,16 @@ export default function StartCall() {
       el.removeEventListener('scroll', handleScroll);
     };
   }, [roleplayPartners, partnersLoading, updatePartnerListGradient]);
+
+  useEffect(() => {
+    return () => {
+      const stream = screenShareStreamRef.current;
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+        screenShareStreamRef.current = null;
+      }
+    };
+  }, []);
 
   // Removed: Auto-start language selection moved to onboarding flow
 
@@ -417,8 +398,10 @@ export default function StartCall() {
       }
       setSelectedMode(null);
       setSelectedPartnerId('');
+      stopOwnedScreenShare();
+      setScreenShareError(null);
     }
-  }, [status.value, snapshot]);
+  }, [status.value, snapshot, stopOwnedScreenShare]);
 
   const handleLanguageSelect = (type: 'learning' | 'native', code: string) => {
     const newLanguages = {
@@ -438,10 +421,33 @@ export default function StartCall() {
     if (mode === 'roleplay') {
       setStep('scenario');
     } else {
-      setSelectedPlatform('discord');
       setStep('instructions');
     }
   };
+
+  useEffect(() => {
+    if (selectedMode !== 'live_call') {
+      stopOwnedScreenShare();
+      setScreenShareError(null);
+    }
+  }, [selectedMode, stopOwnedScreenShare]);
+
+  useEffect(() => {
+    const video = screenShareVideoRef.current;
+    if (!video) {
+      return;
+    }
+    if (screenSharePreviewStream) {
+      video.srcObject = screenSharePreviewStream;
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {});
+      }
+    } else {
+      video.pause?.();
+      video.srcObject = null;
+    }
+  }, [screenSharePreviewStream]);
 
   const handleVoicePreview = useCallback(
     async (voiceId: string, sampleText: string) => {
@@ -460,6 +466,66 @@ export default function StartCall() {
     },
     [playPreview]
   );
+
+  const handleScreenShareSelect = useCallback(async () => {
+    if (isRequestingScreenShare) {
+      return;
+    }
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getDisplayMedia) {
+      toast.error(t`Screen sharing is not supported in this browser`, {
+        description: t`Try using the latest version of Chrome, Edge, or Firefox.`,
+      });
+      return;
+    }
+    setIsRequestingScreenShare(true);
+    setScreenShareError(null);
+    try {
+      const videoConstraints: DisplayMediaVideoOptions = {
+        frameRate: 15,
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        displaySurface: 'monitor',
+        preferCurrentTab: false,
+        selfBrowserSurface: 'exclude',
+        systemAudio: 'include',
+      };
+
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+        video: videoConstraints,
+      });
+      const audioTracks = stream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        stream.getTracks().forEach((track) => track.stop());
+        setScreenShareError('no_audio');
+        toast.error(t`Add your call audio`, {
+          description: t`Select the window/tab that plays your call and enable "Share system audio".`,
+        });
+        return;
+      }
+      if (screenShareStreamRef.current) {
+        screenShareStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
+      screenShareStreamRef.current = stream;
+      setScreenSharePreviewStream(stream);
+    } catch (error: any) {
+      if (error?.name === 'NotAllowedError') {
+        setScreenShareError('denied');
+      } else if (error?.name === 'AbortError') {
+        setScreenShareError('cancelled');
+      } else {
+        setScreenShareError('failed');
+        console.error('[StartCall] Failed to capture screen', error);
+      }
+    } finally {
+      setIsRequestingScreenShare(false);
+    }
+  }, [isRequestingScreenShare]);
+
+  const handleRemoveScreenShare = useCallback(() => {
+    stopOwnedScreenShare();
+    setScreenShareError(null);
+  }, [stopOwnedScreenShare]);
 
   const openCreatePartnerModal = () => {
     if (!token) {
@@ -722,11 +788,27 @@ export default function StartCall() {
       }
     }
 
+    let screenStreamForSession: MediaStream | null = null;
+    if (selectedMode === 'live_call') {
+      const pendingScreenStream = screenShareStreamRef.current;
+      if (!pendingScreenStream) {
+        toast.error(t`Share your call first`, {
+          description: t`Use "Select screen" in Step 2 so Glass can capture the call audio.`,
+        });
+        return;
+      }
+      screenStreamForSession = pendingScreenStream;
+      screenShareStreamRef.current = null;
+      setScreenSharePreviewStream(null);
+      setScreenShareError(null);
+    }
+
     const config: SessionConfig = {
       languages,
       mode: selectedMode,
       partnerId: partnerForSession?.id || partnerIdForSession || null,
       partner: partnerForSession,
+      screenStream: screenStreamForSession,
     };
 
     if (limitEnabled) {
@@ -770,118 +852,172 @@ export default function StartCall() {
     router.push(`/${langSegment}/history`);
   };
 
-  const renderPlatformInstructions = () => {
-    const stepsClass = cn('list-decimal list-inside space-y-1.5 text-sm leading-relaxed', getTextClass('subtitle'));
+  const CALL_PLATFORM_ICONS = [
+    {
+      alt: 'Zoom',
+      src: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Zoom_Communications_Logo.svg',
+    },
+    {
+      alt: 'Discord',
+      src: 'https://upload.wikimedia.org/wikipedia/en/9/98/Discord_logo.svg',
+    },
+    {
+      alt: 'Google Meet',
+      src: 'https://upload.wikimedia.org/wikipedia/commons/9/9b/Google_Meet_icon_%282020%29.svg',
+    },
+    {
+      alt: 'Teams',
+      src: 'https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg',
+    },
+  ];
 
-    switch (selectedPlatform) {
-      case 'discord':
-        return (
-          <div className="space-y-3">
-            <ol className={stepsClass}>
-              <li>
-                <Trans>
-                  Join our{' '}
-                  <a
-                    href={DISCORD_CHANNEL_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline underline-offset-4 font-medium"
+  const renderLiveCallSteps = () => {
+    const stepCardBase = cn(
+      'rounded-2xl border p-3 sm:p-4 space-y-2.5 transition-colors text-xs sm:text-sm',
+      glassMode ? 'bg-white/10 border-white/20' : 'bg-muted/60 border-border/60'
+    );
+    const stepLabelClass = glassMode ? 'text-white/60' : 'text-muted-foreground/70';
+    const step2CardClass = cn(
+      stepCardBase,
+      !screenSharePreviewStream &&
+        (glassMode
+          ? 'border-emerald-300/70 shadow-[0_0_0_1px_rgba(16,185,129,0.45)]'
+          : 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]')
+    );
+    const previewContainerClass = cn(
+      'rounded-xl border border-dashed overflow-hidden flex items-center justify-center h-28 sm:h-32',
+      glassMode ? 'border-white/25 bg-white/5 text-white/70' : 'border-border/70 bg-muted/40 text-muted-foreground'
+    );
+    const screenShareStatus =
+      screenShareError === 'denied'
+        ? t`Screen sharing permission was blocked. Allow access to continue.`
+        : screenShareError === 'cancelled'
+          ? t`Screen share was cancelled. Try again when you're ready.`
+          : screenShareError === 'failed'
+            ? t`We couldn't capture your screen. Try a different window or browser.`
+            : screenShareError === 'no_audio'
+              ? t`No audio detected. Share the window that plays your call and enable audio.`
+              : null;
+    const StepHeader = ({
+      step,
+      title,
+      extra,
+    }: {
+      step: number;
+      title: ReactNode;
+      extra?: ReactNode;
+    }) => (
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className={cn('text-[10px] font-semibold uppercase tracking-[0.25em] mb-0.5', stepLabelClass)}>
+            <Trans>Step {step}</Trans>
+          </p>
+          <div className={`${getTextClass('title')} text-sm font-semibold`}>{title}</div>
+        </div>
+        {extra}
+      </div>
+    );
+
+    return (
+      <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1 w-full">
+        <div className={stepCardBase}>
+          <StepHeader
+            step={1}
+            title={<Trans>Join your call</Trans>}
+            extra={
+              <div className="hidden sm:flex items-center gap-1.5 opacity-80">
+                {CALL_PLATFORM_ICONS.map((icon) => (
+                  <div
+                    key={icon.alt}
+                    className={cn(
+                      'h-6 w-6 rounded-full bg-background/60 border border-border/60 flex items-center justify-center',
+                      glassMode ? 'bg-white/15 border-white/25' : ''
+                    )}
                   >
-                    Discord voice channel
-                  </a>{' '}
-                  (or your own server).
-                </Trans>
-              </li>
-              <li>
-                <Trans>Back in Glass, press Start Call.</Trans>
-              </li>
-              <li>
-                <Trans>Choose the Discord window (or desktop) and enable system audio.</Trans>
-              </li>
-              <li>
-                <Trans>Keep Glass open to get live help during your call.</Trans>
-              </li>
-            </ol>
+                    <img src={icon.src} alt={icon.alt} className="h-4 w-4 object-contain" />
+                  </div>
+                ))}
+              </div>
+            }
+          />
+          <p className={`${getTextClass('body')} leading-relaxed`}>
+            <Trans>Open Zoom, Discord, Meet, or any call app, join the room, and keep Glass open beside it.</Trans>
+          </p>
+        </div>
+
+        <div className={step2CardClass}>
+          <StepHeader step={2} title={<Trans>Share your whole screen with audio</Trans>} />
+          <p className={`${getTextClass('body')} leading-relaxed`}>
+            <Trans>Select "Entire screen" (or "Screen + audio") when the browser prompt appears, so your call audio is
+            captured.</Trans>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              onClick={handleScreenShareSelect}
+              disabled={isRequestingScreenShare}
+              className={cn('cursor-pointer', glassMode ? 'bg-white text-foreground hover:bg-white/90' : '')}
+            >
+              {isRequestingScreenShare && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              {screenSharePreviewStream ? <Trans>Change screen</Trans> : <Trans>Select screen</Trans>}
+            </Button>
+            {screenSharePreviewStream && (
+              <Button
+                size="sm"
+                variant={glassMode ? 'ghost' : 'outline'}
+                onClick={handleRemoveScreenShare}
+                className="cursor-pointer"
+              >
+                <Trans>Remove</Trans>
+              </Button>
+            )}
           </div>
-        );
-      case 'zoom':
-        return (
-          <div className="space-y-3">
-            <ol className={stepsClass}>
-              <li>
-                <Trans>Join or start your Zoom meeting.</Trans>
-              </li>
-              <li>
-                <Trans>Back in Glass, press Start Call.</Trans>
-              </li>
-              <li>
-                <Trans>Choose the Zoom window (or desktop) and enable system audio.</Trans>
-              </li>
-              <li>
-                <Trans>Keep Glass open to get live help during your call.</Trans>
-              </li>
-            </ol>
+          <div className={previewContainerClass}>
+            {screenSharePreviewStream ? (
+              <video
+                ref={screenShareVideoRef}
+                autoPlay
+                muted
+                playsInline
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-1 px-4 text-center text-xs">
+                <Trans>Your shared window will appear here once selected.</Trans>
+              </div>
+            )}
           </div>
-        );
-      case 'google_meet':
-        return (
-          <div className="space-y-3">
-            <ol className={stepsClass}>
-              <li>
-                <Trans>Join the Google Meet room.</Trans>
-              </li>
-              <li>
-                <Trans>Back in Glass, press Start Call.</Trans>
-              </li>
-              <li>
-                <Trans>Select the Chrome tab with Meet, toggle Share tab audio, and confirm.</Trans>
-              </li>
-              <li>
-                <Trans>Keep Glass open to get live help during your call.</Trans>
-              </li>
-            </ol>
-          </div>
-        );
-      case 'teams':
-        return (
-          <div className="space-y-3">
-            <ol className={stepsClass}>
-              <li>
-                <Trans>Join your Microsoft Teams meeting.</Trans>
-              </li>
-              <li>
-                <Trans>Back in Glass, press Start Call.</Trans>
-              </li>
-              <li>
-                <Trans>Choose the Teams window (or desktop) and enable system audio.</Trans>
-              </li>
-              <li>
-                <Trans>Keep Glass open to get live help during your call.</Trans>
-              </li>
-            </ol>
-          </div>
-        );
-      case 'other':
-      default:
-        return (
-          <div className="space-y-3">
-            <ol className={stepsClass}>
-              <li>
-                <Trans>Join the call in your preferred platform.</Trans>
-              </li>
-              <li>
-                <Trans>Back in Glass, press Start Call.</Trans>
-              </li>
-              <li>
-                <Trans>Pick the window/tab for that platform and turn on system or tab audio.</Trans>
-              </li>
-              <li>
-                <Trans>Keep Glass open to get live help during your call.</Trans>
-              </li>
-            </ol>
-          </div>
-        );
-    }
+          {screenSharePreviewStream && (
+            <p className="text-[11px] font-semibold text-emerald-500">
+              <Trans>Screen sharing ready. Keep that window unmuted so Glass can listen in.</Trans>
+            </p>
+          )}
+          {screenShareStatus && (
+            <p className="text-[11px] text-amber-400">
+              {screenShareStatus}
+            </p>
+          )}
+        </div>
+
+        <div className={stepCardBase}>
+          <StepHeader step={3} title={<Trans>Clear your view</Trans>} />
+          <p className={`${getTextClass('body')} leading-relaxed`}>
+            <Trans>Move or hide the "You're sharing" bar so it doesn't cover Glass or your notes.</Trans>
+          </p>
+        </div>
+
+        <div className={stepCardBase}>
+          <StepHeader step={4} title={<Trans>Start the live call</Trans>} />
+          <p className={`${getTextClass('body')} leading-relaxed`}>
+            {screenSharePreviewStream ? (
+              <Trans>Press Start Call below to connect. Glass will use your mic plus the shared audio.</Trans>
+            ) : (
+              <Trans>Once your screen is shared, the Start Call button will unlock.</Trans>
+            )}
+          </p>
+        </div>
+      </div>
+    );
   };
 
   // Redirect to onboarding if not completed
@@ -1333,60 +1469,7 @@ export default function StartCall() {
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <p className={cn('text-[11px] font-semibold', getTextClass('muted'))}>
-                          <Trans>Choose your platform</Trans>
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {LIVE_CALL_PLATFORM_OPTIONS.map((option) => {
-                            const isActive = option.id === selectedPlatform;
-                            return (
-                              <button
-                                key={option.id}
-                                type="button"
-                                onClick={() => setSelectedPlatform(option.id)}
-                                aria-pressed={isActive}
-                                className={cn(
-                                  'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] sm:text-xs transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-1 outline-none',
-                                  glassMode
-                                    ? 'border-white/25 text-white/70 hover:text-white hover:border-white/60 focus-visible:ring-white/40'
-                                    : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/60 focus-visible:ring-foreground/30',
-                                  isActive &&
-                                    (glassMode
-                                      ? 'bg-white text-foreground border-white shadow-sm'
-                                      : 'bg-primary/10 text-primary border-primary/70 shadow-sm')
-                                )}
-                              >
-                                <span
-                                  className={cn(
-                                    'flex h-5 w-5 items-center justify-center rounded-full border text-[10px]',
-                                    glassMode
-                                      ? 'border-white/20 bg-white/10 text-white'
-                                      : 'border-border bg-background text-foreground/70',
-                                    option.iconBg
-                                  )}
-                                >
-                                  {option.iconComponent ? (
-                                    <option.iconComponent className={cn('h-3.5 w-3.5', option.iconClassName)} />
-                                  ) : option.iconSrc ? (
-                                    <img
-                                      src={option.iconSrc}
-                                      alt={option.iconAlt || option.label}
-                                      className="h-3.5 w-3.5 object-contain"
-                                    />
-                                  ) : (
-                                    <span>{option.fallbackIcon}</span>
-                                  )}
-                                </span>
-                                <span>{option.label}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      {renderPlatformInstructions()}
-                    </div>
+                    renderLiveCallSteps()
                   )}
                 </div>
 
@@ -1397,10 +1480,10 @@ export default function StartCall() {
                   <Button
                     variant="default"
                     onClick={handleStartCall}
-                    disabled={!selectedPartnerId}
+                    disabled={!canStartCall}
                     className={cn(
                       'cursor-pointer rounded-full px-6 py-2 sm:px-7 sm:py-2.5 inline-flex items-center gap-1.5 font-semibold tracking-tight text-white bg-emerald-500 hover:bg-emerald-600',
-                      !selectedPartnerId && 'opacity-50 cursor-not-allowed'
+                      !canStartCall && 'opacity-50 cursor-not-allowed'
                     )}
                   >
                     <Phone className="size-4 opacity-80" strokeWidth={2.25} />
