@@ -98,8 +98,8 @@ msgstr "精度"
 msgid "Actions"
 msgstr "アクション"
 
-#: components/billing/billing-content.tsx:146
-#: components/billing/billing-content.tsx:160
+#: components/billing/billing-content.tsx:251
+#: components/billing/billing-content.tsx:265
 msgid "Active"
 msgstr "アクティブ"
 
@@ -127,10 +127,6 @@ msgstr "新しいメモリを追加"
 msgid "Advanced"
 msgstr "上級"
 
-#: components/billing/billing-content.tsx:107
-msgid "Advanced Real-time suggestions based on your Memory"
-msgstr "メモリーに基づく高度なリアルタイム提案"
-
 #: lib/onboarding-tours.tsx:85
 msgid "After each conversation"
 msgstr "各会話の後"
@@ -141,7 +137,8 @@ msgid ""
 "pronunciation, and vocabulary. So you keep improving naturally."
 msgstr "会話が終わるたびに、あなたの文法、発音、語彙についてフィードバックをお届けします。それにより、自然と上達していきます。"
 
-#: components/billing/billing-content.tsx:90
+#: components/billing/billing-content.tsx:96
+#: components/billing/billing-content.tsx:152
 #: components/start-call.tsx:1141
 #: components/start-call.tsx:1439
 msgid "AI Roleplay"
@@ -150,10 +147,6 @@ msgstr "AIロールプレイ"
 #: components/memory/memory-dialog.tsx:80
 msgid "AI will organize and categorize this automatically."
 msgstr "AIがこれを自動的に整理し、分類します。"
-
-#: components/billing/billing-content.tsx:105
-msgid "All free features"
-msgstr "すべての無料機能"
 
 #: components/signup-form.tsx:252
 msgid "Already have an account? <0>Sign in</0>"
@@ -176,7 +169,7 @@ msgstr "会話を分析中です"
 msgid "Analyzing conversation to extract memories..."
 msgstr "会話を分析して記憶を抽出しています…"
 
-#: components/billing/billing-content.tsx:118
+#: components/billing/billing-content.tsx:128
 msgid "Annual billing only"
 msgstr "年額請求のみ"
 
@@ -248,11 +241,11 @@ msgstr "初心者"
 msgid "Below Average"
 msgstr "平均以下"
 
-#: components/billing/billing-content.tsx:102
+#: components/billing/billing-content.tsx:110
 msgid "Billed monthly"
 msgstr "毎月請求"
 
-#: components/billing/billing-content.tsx:102
+#: components/billing/billing-content.tsx:110
 msgid "Billed yearly"
 msgstr "年額プラン"
 
@@ -261,7 +254,7 @@ msgstr "年額プラン"
 msgid "Billing"
 msgstr "請求書"
 
-#: components/billing/billing-content.tsx:508
+#: components/billing/billing-content.tsx:644
 msgid "Billing active."
 msgstr "請求中です。"
 
@@ -269,7 +262,7 @@ msgstr "請求中です。"
 msgid "Billing details can be updated anytime from the billing dashboard."
 msgstr "請求情報は請求ダッシュボードからいつでも更新できます。"
 
-#: components/billing/billing-content.tsx:470
+#: components/billing/billing-content.tsx:602
 msgid "Billing is not available"
 msgstr "請求機能は利用できません"
 
@@ -288,11 +281,7 @@ msgstr "「続行」をクリックすると、<0>利用規約</0>および<1>�
 msgid "Call Summary"
 msgstr "会話のまとめ"
 
-#: components/billing/billing-content.tsx:93
-msgid "Call summary (fluency/accuracy)"
-msgstr "通話の要約（流暢性/正確性）"
-
-#: components/billing/billing-content.tsx:626
+#: components/billing/billing-content.tsx:798
 #: components/call-summary.tsx:1505
 #: components/history/conversation-history.tsx:1746
 #: components/history/conversation-history.tsx:1877
@@ -303,7 +292,7 @@ msgstr "通話の要約（流暢性/正確性）"
 msgid "Cancel"
 msgstr "キャンセル"
 
-#: components/billing/billing-content.tsx:156
+#: components/billing/billing-content.tsx:261
 msgid "Canceled"
 msgstr "キャンセルされました"
 
@@ -332,7 +321,7 @@ msgstr "メールを確認してください"
 msgid "Checking your plan…"
 msgstr "プランを確認しています…"
 
-#: components/billing/billing-content.tsx:548
+#: components/billing/billing-content.tsx:684
 msgid ""
 "Choose monthly or yearly billing and unlock Glass features tailored to your "
 "team."
@@ -387,21 +376,30 @@ msgstr "閉じる"
 msgid "Columns"
 msgstr "列"
 
+#: components/billing/billing-content.tsx:195
 #: components/nav.tsx:87
 msgid "Community"
 msgstr "コミュニティ"
 
-#: components/billing/billing-content.tsx:583
+#: components/billing/billing-content.tsx:102
+msgid "Community Support"
+msgstr "コミュニティサポート"
+
+#: components/billing/billing-content.tsx:755
 msgid "Company"
 msgstr "会社"
 
-#: components/billing/billing-content.tsx:588
+#: components/billing/billing-content.tsx:760
 msgid "Company name"
 msgstr "会社名"
 
-#: components/billing/billing-content.tsx:593
+#: components/billing/billing-content.tsx:765
 msgid "Company size"
 msgstr "会社の規模"
+
+#: components/billing/billing-content.tsx:708
+msgid "Compare plans"
+msgstr "プランを比較"
 
 #: components/call-summary.tsx:1095
 #: components/history/conversation-history.tsx:1499
@@ -417,12 +415,12 @@ msgstr "パスワードの確認"
 msgid "Connecting..."
 msgstr "接続中..."
 
-#: components/billing/billing-content.tsx:120
-#: components/billing/billing-content.tsx:573
+#: components/billing/billing-content.tsx:138
+#: components/billing/billing-content.tsx:745
 msgid "Contact sales"
 msgstr "営業にお問い合わせください"
 
-#: components/billing/billing-content.tsx:117
+#: components/billing/billing-content.tsx:127
 msgid "Contact us"
 msgstr "お問い合わせ"
 
@@ -439,6 +437,8 @@ msgstr "会話が削除されました"
 msgid "Conversation history"
 msgstr "会話履歴"
 
+#: components/billing/billing-content.tsx:101
+#: components/billing/billing-content.tsx:182
 #: components/call-summary.tsx:1348
 #: components/history/conversation-history.tsx:1643
 msgid "Conversation History"
@@ -501,9 +501,9 @@ msgstr "作成日時"
 msgid "Creating account..."
 msgstr "アカウントを作成しています..."
 
-#: components/billing/billing-content.tsx:319
-#: components/billing/billing-content.tsx:324
-#: components/billing/billing-content.tsx:485
+#: components/billing/billing-content.tsx:426
+#: components/billing/billing-content.tsx:431
+#: components/billing/billing-content.tsx:617
 msgid "Current plan"
 msgstr "現在のプラン"
 
@@ -526,6 +526,19 @@ msgstr "Glassの体験をカスタマイズする"
 #: components/settings.tsx:378
 msgid "Dark"
 msgstr "ダーク"
+
+#: components/billing/billing-content.tsx:116
+#: components/billing/billing-content.tsx:188
+msgid "Data Retention Guarantee"
+msgstr "データ保管保証"
+
+#: components/billing/billing-content.tsx:197
+msgid "Dedicated"
+msgstr "専任"
+
+#: components/billing/billing-content.tsx:134
+msgid "Dedicated Support"
+msgstr "専任サポート"
 
 #: components/call-summary.tsx:1516
 #: components/history/conversation-history.tsx:1326
@@ -652,11 +665,16 @@ msgstr "パートナーを編集"
 msgid "Elementary"
 msgstr "初級"
 
+#: components/billing/billing-content.tsx:196
 #: components/forgot-password-form.tsx:94
 #: components/login-form.tsx:105
 #: components/signup-form.tsx:188
 msgid "Email"
 msgstr "メール"
+
+#: components/billing/billing-content.tsx:117
+msgid "Email Support"
+msgstr "メールサポート"
 
 #: components/verify-email-form.tsx:112
 msgid "Email verified!"
@@ -706,16 +724,26 @@ msgstr "メールアドレスを入力してください。リセットリンク
 msgid "Enter your new password below"
 msgstr "新しいパスワードを入力してください"
 
-#: components/billing/billing-content.tsx:116
-#: components/billing/billing-content.tsx:138
+#: components/billing/billing-content.tsx:126
+#: components/billing/billing-content.tsx:243
+#: components/billing/billing-content.tsx:728
 msgid "Enterprise"
 msgstr "エンタープライズ"
+
+#: components/billing/billing-content.tsx:136
+#: components/billing/billing-content.tsx:224
+msgid "Enterprise Onboarding"
+msgstr "エンタープライズオンボーディング"
 
 #: components/memory/columns.tsx:221
 msgid "Entities"
 msgstr "エンティティ"
 
-#: components/billing/billing-content.tsx:119
+#: components/billing/billing-content.tsx:113
+msgid "Everything in Free"
+msgstr "無料プランの全機能"
+
+#: components/billing/billing-content.tsx:130
 msgid "Everything in Pro"
 msgstr "Proのすべて"
 
@@ -802,6 +830,18 @@ msgstr "タイトルの更新に失敗しました"
 msgid "Failed to upload image"
 msgstr "画像のアップロードに失敗しました"
 
+#: components/billing/billing-content.tsx:203
+msgid "Fastest"
+msgstr "最優先"
+
+#: components/billing/billing-content.tsx:135
+msgid "Fastest Response"
+msgstr "最優先対応"
+
+#: components/billing/billing-content.tsx:719
+msgid "Feature"
+msgstr "機能"
+
 #: components/bottom-panel.tsx:161
 #: components/bottom-panel.tsx:451
 #: components/feedback.tsx:75
@@ -819,9 +859,10 @@ msgstr "流暢さ"
 msgid "Forgot your password?"
 msgstr "パスワードをお忘れですか？"
 
-#: components/billing/billing-content.tsx:86
-#: components/billing/billing-content.tsx:127
-#: components/billing/billing-content.tsx:131
+#: components/billing/billing-content.tsx:91
+#: components/billing/billing-content.tsx:232
+#: components/billing/billing-content.tsx:236
+#: components/billing/billing-content.tsx:722
 msgid "Free"
 msgstr "無料"
 
@@ -831,7 +872,7 @@ msgid ""
 "for unlimited history."
 msgstr "無料アカウントでは最大10件までの会話を保存できます。古い通話を削除するか、アップグレードして履歴を無制限に保存しましょう。"
 
-#: components/billing/billing-content.tsx:88
+#: components/billing/billing-content.tsx:93
 msgid "Free for everyone"
 msgstr "すべての方に無料"
 
@@ -978,7 +1019,7 @@ msgid ""
 "conversations."
 msgstr "実際の会話を通じて、新しい言語の習得をお手伝いします。"
 
-#: components/billing/billing-content.tsx:620
+#: components/billing/billing-content.tsx:792
 msgid "I'm interested in Glass for my team..."
 msgstr "私のチームのためにGlassに興味があります…"
 
@@ -996,8 +1037,8 @@ msgstr "メールが見つからない場合は、迷惑メールフォルダを
 msgid "Importance"
 msgstr "重要性"
 
-#: components/billing/billing-content.tsx:146
-#: components/billing/billing-content.tsx:160
+#: components/billing/billing-content.tsx:251
+#: components/billing/billing-content.tsx:265
 msgid "Inactive"
 msgstr "非アクティブ"
 
@@ -1074,12 +1115,14 @@ msgstr "聞き取り中です。準備ができたら話しかけてください
 msgid "Listening… say anything when you're ready."
 msgstr "聞き取り中です。準備ができたら、何でも話してください。"
 
+#: components/billing/billing-content.tsx:95
+#: components/billing/billing-content.tsx:146
 #: components/start-call.tsx:1201
 #: components/start-call.tsx:1439
 msgid "Live Call"
 msgstr "ライブ通話"
 
-#: components/billing/billing-content.tsx:453
+#: components/billing/billing-content.tsx:585
 msgid "Loading billing…"
 msgstr "請求情報を読み込み中…"
 
@@ -1141,7 +1184,7 @@ msgstr "請求管理"
 msgid "Manage history"
 msgstr "履歴を管理"
 
-#: components/billing/billing-content.tsx:532
+#: components/billing/billing-content.tsx:668
 msgid "Manage subscription"
 msgstr "サブスクリプション管理"
 
@@ -1212,7 +1255,7 @@ msgstr "認証がありません"
 msgid "Missing conversation"
 msgstr "会話が見つかりません"
 
-#: components/billing/billing-content.tsx:427
+#: components/billing/billing-content.tsx:559
 msgid "Missing email in profile"
 msgstr "プロフィールにメールアドレスがありません"
 
@@ -1225,7 +1268,7 @@ msgstr "プロフィールにメールアドレスがありません"
 msgid "Missing partner information"
 msgstr "パートナー情報が不足しています"
 
-#: components/billing/billing-content.tsx:169
+#: components/billing/billing-content.tsx:274
 msgid "Monthly"
 msgstr "毎月"
 
@@ -1272,7 +1315,7 @@ msgstr "新しいパスワード"
 msgid "Next →"
 msgstr "次へ →"
 
-#: components/billing/billing-content.tsx:394
+#: components/billing/billing-content.tsx:526
 msgid "No active subscription to manage"
 msgstr "管理中のアクティブなサブスクリプションはありません"
 
@@ -1426,15 +1469,16 @@ msgstr "パートナーが更新されました"
 msgid "Password"
 msgstr "パスワード"
 
-#: components/billing/billing-content.tsx:153
+#: components/billing/billing-content.tsx:258
 msgid "Past due"
 msgstr "期限切れ"
 
-#: components/billing/billing-content.tsx:101
+#: components/billing/billing-content.tsx:109
 msgid "per month"
 msgstr "月額"
 
-#: components/billing/billing-content.tsx:106
+#: components/billing/billing-content.tsx:100
+#: components/billing/billing-content.tsx:176
 msgid "Personalized Memory"
 msgstr "パーソナライズされたメモリ"
 
@@ -1450,15 +1494,15 @@ msgstr "写真"
 msgid "Photo updated"
 msgstr "写真が更新されました"
 
-#: components/billing/billing-content.tsx:504
+#: components/billing/billing-content.tsx:637
 msgid "Plan ends on {planRenewalLabel}"
 msgstr "プランは{planRenewalLabel}に終了します"
 
-#: components/billing/billing-content.tsx:502
+#: components/billing/billing-content.tsx:634
 msgid "Plan ends on {scheduledCancelAt}"
 msgstr "プランの終了日: {scheduledCancelAt}"
 
-#: components/billing/billing-content.tsx:419
+#: components/billing/billing-content.tsx:551
 msgid "Please complete the required fields"
 msgstr "必須項目を入力してください"
 
@@ -1480,9 +1524,9 @@ msgid ""
 "Meet, Teams)."
 msgstr "Zoom、Google Meet、Teamsなどの通話プラットフォームからオーディオ付きで画面を共有してください。"
 
-#: components/billing/billing-content.tsx:371
-#: components/billing/billing-content.tsx:390
-#: components/billing/billing-content.tsx:415
+#: components/billing/billing-content.tsx:503
+#: components/billing/billing-content.tsx:522
+#: components/billing/billing-content.tsx:547
 #: components/start-call.tsx:837
 msgid "Please sign in again"
 msgstr "再度サインインしてください。"
@@ -1503,6 +1547,11 @@ msgstr "セッションの読み込みを待ってから、もう一度お試し
 msgid "Please wait while we verify your email address"
 msgstr "メールアドレスを確認していますので、しばらくお待ちください"
 
+#: components/billing/billing-content.tsx:99
+#: components/billing/billing-content.tsx:170
+msgid "Post-Call Feedback"
+msgstr "通話後のフィードバック"
+
 #: components/start-call.tsx:1144
 msgid "Practice Conversations"
 msgstr "会話練習"
@@ -1517,20 +1566,25 @@ msgid ""
 "audio."
 msgstr "以下の「Start Call」を押して接続してください。Glass はあなたのマイクと共有オーディオを使用します。"
 
-#: components/billing/billing-content.tsx:542
+#: components/billing/billing-content.tsx:678
 msgid "Pricing"
 msgstr "料金体系"
 
-#: components/billing/billing-content.tsx:119
-msgid "Priority support"
-msgstr "優先サポート"
+#: components/billing/billing-content.tsx:202
+msgid "Priority"
+msgstr "優先"
+
+#: components/billing/billing-content.tsx:118
+msgid "Priority Response"
+msgstr "優先対応"
 
 #: app/[lang]/(app)/billing/success/page.tsx:67
 msgid "Priority support is available through the in-app help menu."
 msgstr "優先サポートはアプリ内のヘルプメニューからご利用いただけます。"
 
-#: components/billing/billing-content.tsx:99
-#: components/billing/billing-content.tsx:135
+#: components/billing/billing-content.tsx:107
+#: components/billing/billing-content.tsx:240
+#: components/billing/billing-content.tsx:725
 msgid "Pro"
 msgstr "プロ"
 
@@ -1542,13 +1596,15 @@ msgstr "発音"
 msgid "Quick actions"
 msgstr "クイックアクション"
 
-#: components/billing/billing-content.tsx:92
-msgid "Real-time feedback"
+#: components/billing/billing-content.tsx:98
+#: components/billing/billing-content.tsx:164
+msgid "Real-Time Feedback"
 msgstr "リアルタイムフィードバック"
 
-#: components/billing/billing-content.tsx:91
-msgid "Real-time suggestions"
-msgstr "リアルタイムの提案"
+#: components/billing/billing-content.tsx:97
+#: components/billing/billing-content.tsx:158
+msgid "Real-Time Suggestion"
+msgstr "リアルタイム提案"
 
 #: components/start-call.tsx:1166
 msgid "RECOMMENDED"
@@ -1570,7 +1626,7 @@ msgstr "削除"
 msgid "Remove insight"
 msgstr "インサイトを削除"
 
-#: components/billing/billing-content.tsx:504
+#: components/billing/billing-content.tsx:639
 msgid "Renews on {planRenewalLabel}"
 msgstr "{planRenewalLabel} に更新されます"
 
@@ -1593,6 +1649,10 @@ msgstr "パスワードをリセットしてください"
 #: components/reset-password-form.tsx:135
 msgid "Resetting..."
 msgstr "リセットしています..."
+
+#: components/billing/billing-content.tsx:200
+msgid "Response Time"
+msgstr "応答時間"
 
 #: components/memory/columns.tsx:166
 msgid "Retention"
@@ -1634,14 +1694,6 @@ msgstr "保存"
 msgid "Save Call"
 msgstr "通話を保存"
 
-#: components/billing/billing-content.tsx:108
-msgid "Save unlimited call summaries"
-msgstr "無制限の通話概要を保存"
-
-#: components/billing/billing-content.tsx:94
-msgid "Save up to 5 call summaries"
-msgstr "通話概要を最大5件保存可能"
-
 #: components/start-call.tsx:1784
 #: contexts/glass-context.tsx:1670
 msgid "Saved call limit reached"
@@ -1659,7 +1711,7 @@ msgstr "保存中..."
 msgid "Saving…"
 msgstr "保存中…"
 
-#: components/billing/billing-content.tsx:545
+#: components/billing/billing-content.tsx:681
 msgid "Scale with the right plan"
 msgstr "適切なプランでスケールアップ"
 
@@ -1703,6 +1755,10 @@ msgstr "思い出を検索..."
 #: components/history/conversation-history.tsx:1168
 msgid "Search partners"
 msgstr "検索パートナー"
+
+#: components/billing/billing-content.tsx:711
+msgid "See all features across plans and find what works best for you."
+msgstr "プランごとの全機能を確認し、あなたに最適なプランを見つけましょう。"
 
 #: components/history/conversation-history.tsx:346
 #: components/history/conversation-history.tsx:539
@@ -1752,7 +1808,7 @@ msgstr "行を選択"
 msgid "Select screen"
 msgstr "画面を選択"
 
-#: components/billing/billing-content.tsx:600
+#: components/billing/billing-content.tsx:772
 msgid "Select size"
 msgstr "サイズを選択"
 
@@ -1776,7 +1832,7 @@ msgstr "送信"
 msgid "Send Feedback"
 msgstr "フィードバックを送信"
 
-#: components/billing/billing-content.tsx:630
+#: components/billing/billing-content.tsx:802
 msgid "Send request"
 msgstr "リクエストを送信"
 
@@ -1843,10 +1899,19 @@ msgstr "サインアウトしています..."
 msgid "Skip tour"
 msgstr "ツアーをスキップ"
 
+#: components/billing/billing-content.tsx:133
+#: components/billing/billing-content.tsx:218
+msgid "SLA Guarantee"
+msgstr "SLA保証"
+
 #: components/bottom-panel.tsx:235
 #: components/onboarding/bottom-panel-demo.tsx:104
 msgid "Spanish"
 msgstr "スペイン語"
+
+#: components/billing/billing-content.tsx:201
+msgid "Standard"
+msgstr "通常"
 
 #: components/nav.tsx:71
 msgid "Star on GitHub"
@@ -1885,19 +1950,24 @@ msgstr "このインサイトを要約してください…"
 msgid "Summary"
 msgstr "概要"
 
+#: components/billing/billing-content.tsx:194
+msgid "Support"
+msgstr "サポート"
+
 #: components/settings.tsx:212
 msgid "System default"
 msgstr "システムデフォルト"
 
-#: components/billing/billing-content.tsx:119
-msgid "Team onboarding"
-msgstr "チームのオンボーディング"
+#: components/billing/billing-content.tsx:131
+#: components/billing/billing-content.tsx:206
+msgid "Team Management"
+msgstr "チーム管理"
 
-#: components/billing/billing-content.tsx:576
+#: components/billing/billing-content.tsx:748
 msgid "Tell us a little about your team and we’ll reach out shortly."
 msgstr "あなたのチームについて少し教えてください。すぐにご連絡いたします。"
 
-#: components/billing/billing-content.tsx:614
+#: components/billing/billing-content.tsx:786
 msgid "Tell us about your requirements"
 msgstr "ご要望をお聞かせください"
 
@@ -1914,7 +1984,7 @@ msgstr ""
 "Glassのワークスペースをアップグレードしていただき、ありがとうございます。ご契約は有効になりましたので、領収書はメールでお送りします。ロールプレイを"
 "始めたり、請求情報を管理したりすることがいつでも可能です。"
 
-#: components/billing/billing-content.tsx:506
+#: components/billing/billing-content.tsx:642
 msgid "The Free plan never expires. Upgrade anytime for unlimited history."
 msgstr "無料プランは期限がありません。履歴を無制限にするには、いつでもアップグレード可能です。"
 
@@ -1941,7 +2011,7 @@ msgstr "この操作を行うと、選択された{0}件のメモリーが完全
 msgid "this conversation"
 msgstr "この会話"
 
-#: components/billing/billing-content.tsx:473
+#: components/billing/billing-content.tsx:605
 msgid ""
 "This Glass instance is running in self-hosted mode, so upgrades aren't "
 "required."
@@ -1972,7 +2042,7 @@ msgstr "これにより、選択したメモリがナレッジグラフから永
 msgid "Title updated"
 msgstr "タイトルが更新されました"
 
-#: components/billing/billing-content.tsx:151
+#: components/billing/billing-content.tsx:256
 msgid "Trial"
 msgstr "トライアル"
 
@@ -2011,11 +2081,11 @@ msgstr "パートナーを削除できません"
 msgid "Unable to load memories right now."
 msgstr "現在、メモリーを読み込めません。"
 
-#: components/billing/billing-content.tsx:407
+#: components/billing/billing-content.tsx:539
 msgid "Unable to open billing portal"
 msgstr "請求ポータルを開くことができません"
 
-#: components/billing/billing-content.tsx:382
+#: components/billing/billing-content.tsx:514
 #: components/start-call.tsx:848
 msgid "Unable to open checkout"
 msgstr "チェックアウトを開けませんでした。"
@@ -2044,7 +2114,7 @@ msgstr "通話を開始できませんでした"
 msgid "Unable to start conversation"
 msgstr "会話を開始できません"
 
-#: components/billing/billing-content.tsx:443
+#: components/billing/billing-content.tsx:575
 msgid "Unable to submit request"
 msgstr "リクエストを送信できませんでした"
 
@@ -2057,13 +2127,36 @@ msgstr "モバイルでは利用できません"
 msgid "Unknown"
 msgstr "不明"
 
+#: components/billing/billing-content.tsx:178
+#: components/billing/billing-content.tsx:179
+#: components/billing/billing-content.tsx:184
+#: components/billing/billing-content.tsx:185
+msgid "Unlimited"
+msgstr "無制限"
+
 #: app/[lang]/(app)/billing/success/page.tsx:59
 msgid "Unlimited call summaries are enabled right away."
 msgstr "通話のサマリーがすぐに無制限で利用可能です。"
 
+#: components/billing/billing-content.tsx:115
+msgid "Unlimited Conversation History"
+msgstr "無制限の会話履歴"
+
+#: components/billing/billing-content.tsx:114
+msgid "Unlimited Memory"
+msgstr "無制限メモリ"
+
 #: components/history/conversation-history.tsx:1107
 msgid "Untitled Conversation"
 msgstr "無題の会話"
+
+#: components/billing/billing-content.tsx:183
+msgid "Up to 5"
+msgstr "最大5件"
+
+#: components/billing/billing-content.tsx:177
+msgid "Up to 500"
+msgstr "最大500件"
 
 #: components/memory/memory-dialog.tsx:97
 msgid "Update"
@@ -2082,8 +2175,8 @@ msgstr "更新中..."
 msgid "Upgrade"
 msgstr "アップグレード"
 
-#: components/billing/billing-content.tsx:110
-#: components/billing/billing-content.tsx:367
+#: components/billing/billing-content.tsx:120
+#: components/billing/billing-content.tsx:499
 msgid "Upgrade monthly"
 msgstr "月額プランをアップグレード"
 
@@ -2095,10 +2188,15 @@ msgstr "プランをアップグレードする"
 msgid "Upgrade to keep unlimited conversation history."
 msgstr "無制限の会話履歴を利用するにはアップグレードしてください。"
 
-#: components/billing/billing-content.tsx:110
-#: components/billing/billing-content.tsx:367
+#: components/billing/billing-content.tsx:120
+#: components/billing/billing-content.tsx:499
 msgid "Upgrade yearly"
 msgstr "年次アップグレード"
+
+#: components/billing/billing-content.tsx:132
+#: components/billing/billing-content.tsx:212
+msgid "Usage Analytics"
+msgstr "使用状況分析"
 
 #: components/start-call.tsx:800
 msgid "Use \"Select screen\" in Step 2 so Glass can capture the call audio."
@@ -2130,7 +2228,7 @@ msgstr "音声ストリームの初期化に失敗しました。もう一度お
 msgid "We couldn't capture your screen. Try a different window or browser."
 msgstr "画面をキャプチャできませんでした。別のウィンドウやブラウザを試してください。"
 
-#: components/billing/billing-content.tsx:461
+#: components/billing/billing-content.tsx:593
 msgid "We couldn't load your account details. Please refresh and try again."
 msgstr "アカウント情報を読み込めませんでした。ページを更新して再試行してください。"
 
@@ -2144,7 +2242,7 @@ msgid ""
 "again."
 msgstr "セッションを開始できませんでした。インターネット接続を確認して、もう一度お試しください。"
 
-#: components/billing/billing-content.tsx:438
+#: components/billing/billing-content.tsx:570
 msgid "We'll be in touch shortly"
 msgstr "担当者よりすぐにご連絡いたします。"
 
@@ -2182,7 +2280,7 @@ msgstr "どの言語を学びたいですか？"
 msgid "Would delete {0} memories"
 msgstr "{0}件のメモリーを削除します"
 
-#: components/billing/billing-content.tsx:171
+#: components/billing/billing-content.tsx:276
 msgid "Yearly"
 msgstr "毎年"
 
@@ -2271,6 +2369,10 @@ msgstr "ゼロ"
 #~ msgid "4. Start talking and let Glass assist you"
 #~ msgstr "4. 話し始めて、Glassにサポートしてもらいましょう"
 
+#: components/billing/billing-content.tsx:107
+#~ msgid "Advanced Real-time suggestions based on your Memory"
+#~ msgstr "メモリーに基づく高度なリアルタイム提案"
+
 #: components/memory/memory-dialog.tsx:82
 #~ msgid "AI will automatically organize and categorize this information"
 #~ msgstr "AIがこの情報を自動的に整理し、カテゴリ分けします。"
@@ -2284,6 +2386,10 @@ msgstr "ゼロ"
 #: components/start-call.tsx:721
 #~ msgid "Airport Check-in"
 #~ msgstr "空港チェックイン"
+
+#: components/billing/billing-content.tsx:105
+#~ msgid "All free features"
+#~ msgstr "すべての無料機能"
 
 #: components/memory/memory-table.tsx:116
 #~ msgid "Are you sure you want to delete {0} memories?"
@@ -2304,6 +2410,10 @@ msgstr "ゼロ"
 #: components/user-menu.tsx:128
 #~ msgid "Bonus minutes"
 #~ msgstr "ボーナス通話分"
+
+#: components/billing/billing-content.tsx:93
+#~ msgid "Call summary (fluency/accuracy)"
+#~ msgstr "通話の要約（流暢性/正確性）"
 
 #: components/start-call.tsx:741
 #~ msgid "Casual Chat"
@@ -2523,9 +2633,21 @@ msgstr "ゼロ"
 #~ msgid "Pick the window/tab for that platform and turn on system or tab audio."
 #~ msgstr "そのプラットフォームのウィンドウまたはタブを選択し、システムまたはタブのオーディオをオンにしてください。"
 
+#: components/billing/billing-content.tsx:119
+#~ msgid "Priority support"
+#~ msgstr "優先サポート"
+
 #: components/start-call.tsx:547
 #~ msgid "Professional conversation"
 #~ msgstr "ビジネス会話"
+
+#: components/billing/billing-content.tsx:92
+#~ msgid "Real-time feedback"
+#~ msgstr "リアルタイムフィードバック"
+
+#: components/billing/billing-content.tsx:91
+#~ msgid "Real-time suggestions"
+#~ msgstr "リアルタイムの提案"
 
 #: app/[lang]/time-limit/page.tsx:44
 #~ msgid "Request more time from the host in the community"
@@ -2534,6 +2656,14 @@ msgstr "ゼロ"
 #: components/start-call.tsx:726
 #~ msgid "Restaurant"
 #~ msgstr "レストラン"
+
+#: components/billing/billing-content.tsx:108
+#~ msgid "Save unlimited call summaries"
+#~ msgstr "無制限の通話概要を保存"
+
+#: components/billing/billing-content.tsx:94
+#~ msgid "Save up to 5 call summaries"
+#~ msgstr "通話概要を最大5件保存可能"
 
 #: components/billing/billing-content.tsx:75
 #~ msgid "Saved calls"
@@ -2571,6 +2701,10 @@ msgstr "ゼロ"
 #: components/memory/columns.tsx:124
 #~ msgid "Subject role"
 #~ msgstr "担当者の役割"
+
+#: components/billing/billing-content.tsx:119
+#~ msgid "Team onboarding"
+#~ msgstr "チームのオンボーディング"
 
 #: components/start-call.tsx:548
 #~ msgid "Telephone etiquette"
