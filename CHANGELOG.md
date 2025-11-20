@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.9](https://github.com/speakglass/glass/compare/v0.1.8...v0.1.9) (2025-11-20)
+
+
+### Features
+
+* **api:** add contact inquiry endpoint and Discord notifications ([e41f0cb](https://github.com/speakglass/glass/commit/e41f0cb6be878514be79ad57aabe3470c580898b))
+* **api:** implement new memory adapters and extraction helpers ([3888628](https://github.com/speakglass/glass/commit/38886288e4e39ab4bc0330f27effccf9aeca9943))
+* **api:** update memory management and billing features ([4c76202](https://github.com/speakglass/glass/commit/4c76202ad9489263f24cbb7be4cfd834de0d2942))
+* **config:** update .env.example for Gemini LLM integration ([ca0e2b6](https://github.com/speakglass/glass/commit/ca0e2b678f32fe994cc06a120fbc7b39bea7f85b))
+* **deps:** add Google GenAI and OpenAI dependencies ([2b60ca8](https://github.com/speakglass/glass/commit/2b60ca80775449c9f81c60a659261a4351bfd20a))
+* **docs:** update README and configuration for Gemini 2.5 Flash integration ([f531bc3](https://github.com/speakglass/glass/commit/f531bc3a60245866270a1de3aef5f3ac72cbf5ce))
+* **ui:** enhance conversation capacity management in StartCall component ([d665061](https://github.com/speakglass/glass/commit/d665061b01145dfc6cb3643019c961921958b7e7))
+* **ui:** implement screen sharing functionality in StartCall component ([099976f](https://github.com/speakglass/glass/commit/099976f41d54be2c6878a65b7e67f5db170972a0))
+* **ui:** update billing form fields and improve user prompts ([dafc228](https://github.com/speakglass/glass/commit/dafc228ba3b6d7dd3ce8fc24cc0859cd81b91f4c))
+
 ## [0.1.8](https://github.com/speakglass/glass/compare/v0.1.7...v0.1.8) (2025-11-18)
 
 
