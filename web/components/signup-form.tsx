@@ -264,11 +264,21 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
       <FieldDescription className="px-6 text-center text-balance">
         <Trans>
           By clicking continue, you agree to our{' '}
-          <a href="#" className="underline hover:text-primary">
+          <a
+            href="https://www.speakglass.com/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-primary"
+          >
             Terms of Service
           </a>{' '}
           and{' '}
-          <a href="#" className="underline hover:text-primary">
+          <a
+            href="https://www.speakglass.com/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-primary"
+          >
             Privacy Policy
           </a>
           .
