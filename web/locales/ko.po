@@ -71,11 +71,11 @@ msgstr "{secs}초"
 msgid "{totalConversations, plural, one {# conversation} other {# conversations}}"
 msgstr "{totalConversations, plural, one {#개의 대화} other {#개의 대화}}"
 
-#: components/memory/memory-table.tsx:209
+#: components/memory/memory-table.tsx:207
 msgid "{totalMemories, plural, one {# matching memory} other {# matching memories}}"
 msgstr "{totalMemories, plural, one {#개의 일치하는 메모리} other {#개의 일치하는 메모리들}}"
 
-#: components/memory/memory-table.tsx:213
+#: components/memory/memory-table.tsx:211
 msgid "{totalMemories, plural, one {# total memory} other {# total memories}}"
 msgstr "{totalMemories, plural, one {총 #개의 메모리} other {총 #개의 메모리}}"
 
@@ -92,7 +92,7 @@ msgstr "← 뒤로"
 msgid "Accuracy"
 msgstr "정확도"
 
-#: components/memory/columns.tsx:318
+#: components/memory/columns.tsx:286
 msgid "Actions"
 msgstr "작업"
 
@@ -167,7 +167,7 @@ msgstr "대화를 분석하여 메모리를 정리하는 중..."
 
 #: components/billing/billing-content.tsx:144
 msgid "Annual billing only"
-msgstr "연간 결제만 가능합니다"
+msgstr "연간 결제"
 
 #: components/history/conversation-history.tsx:1872
 msgid "Are you sure you want to delete \"{partnerDeleteTarget}\"? This cannot be undone."
@@ -234,11 +234,11 @@ msgstr "평균 이하"
 
 #: components/billing/billing-content.tsx:126
 msgid "Billed monthly"
-msgstr "매월 청구됩니다"
+msgstr "월간 결제"
 
 #: components/billing/billing-content.tsx:126
 msgid "Billed yearly"
-msgstr "매년 청구됩니다"
+msgstr "연간 결게"
 
 #: app/[lang]/(app)/billing/page.tsx:29
 #: components/user-menu.tsx:105
@@ -275,7 +275,7 @@ msgstr "대화 요약"
 #: components/history/conversation-history.tsx:1746
 #: components/history/conversation-history.tsx:1877
 #: components/memory/memory-dialog.tsx:94
-#: components/memory/memory-table.tsx:322
+#: components/memory/memory-table.tsx:320
 #: components/memory/memory-table.tsx:357
 #: components/start-call.tsx:2157
 msgid "Cancel"
@@ -285,7 +285,7 @@ msgstr "취소"
 msgid "Canceled"
 msgstr "취소됨"
 
-#: components/memory/columns.tsx:104
+#: components/memory/columns.tsx:91
 msgid "Category"
 msgstr "카테고리"
 
@@ -342,11 +342,11 @@ msgstr "편집하려면 클릭"
 msgid "Click to edit..."
 msgstr "편집하려면 클릭..."
 
-#: components/memory/columns.tsx:129
+#: components/memory/columns.tsx:116
 msgid "Click to view full content"
 msgstr "전체 내용을 보려면 클릭하세요"
 
-#: components/memory/columns.tsx:174
+#: components/memory/columns.tsx:161
 msgid "Click to view full summary"
 msgstr "전체 요약 보기"
 
@@ -431,7 +431,7 @@ msgstr "대화 내역"
 msgid "Conversation History"
 msgstr "대화 기록"
 
-#: components/memory/columns.tsx:290
+#: components/memory/columns.tsx:258
 msgid "Conversation ID"
 msgstr "대화 ID"
 
@@ -446,7 +446,7 @@ msgstr "대화 상대가 설정되었어요"
 msgid "Conversation saved"
 msgstr "대화가 저장되었어요"
 
-#: components/memory/columns.tsx:327
+#: components/memory/columns.tsx:295
 msgid "Copy"
 msgstr "복사"
 
@@ -480,7 +480,7 @@ msgstr "파트너 생성"
 msgid "Create your own conversation partner"
 msgstr "나만의 대화 상대 만들기"
 
-#: components/memory/columns.tsx:80
+#: components/memory/columns.tsx:71
 msgid "Created at"
 msgstr "생성 일자"
 
@@ -531,9 +531,9 @@ msgstr "전담 지원"
 #: components/history/conversation-history.tsx:1326
 #: components/history/conversation-history.tsx:1755
 #: components/history/conversation-history.tsx:1888
-#: components/memory/columns.tsx:339
+#: components/memory/columns.tsx:304
 #: components/memory/data-table.tsx:142
-#: components/memory/memory-table.tsx:326
+#: components/memory/memory-table.tsx:324
 #: components/memory/memory-table.tsx:361
 #: components/start-call.tsx:1677
 #: components/start-call.tsx:2170
@@ -548,7 +548,7 @@ msgstr "새 통화를 녹음하려면, 저장된 통화를 삭제하거나 업�
 msgid "Delete conversation"
 msgstr "대화 삭제"
 
-#: components/memory/memory-table.tsx:308
+#: components/memory/memory-table.tsx:306
 msgid "Delete memory?"
 msgstr "메모리를 삭제하시겠어요?"
 
@@ -567,27 +567,27 @@ msgstr "파트너 삭제"
 msgid "Delete partner?"
 msgstr "파트너를 삭제하시겠어요?"
 
-#: components/memory/memory-table.tsx:343
+#: components/memory/memory-table.tsx:341
 msgid "Delete selected memories?"
 msgstr "선택한 메모리를 삭제하시겠어요?"
 
 #. placeholder {0}: variables.length
-#: components/memory/memory-table.tsx:109
+#: components/memory/memory-table.tsx:107
 msgid "Deleted {0} memories"
 msgstr "{0}개의 메모리가 삭제되었습니다"
 
 #. placeholder {0}: result.deleted
 #. placeholder {1}: result.failed.length
-#: components/memory/memory-table.tsx:106
+#: components/memory/memory-table.tsx:104
 msgid "Deleted {0} memories, but {1} could not be removed. Please retry later."
 msgstr "{0}개의 메모리는 삭제되었지만, {1}개는 삭제되지 않았어요. 나중에 다시 시도해 주세요."
 
 #. placeholder {0}: memoryIds.length
-#: components/memory/memory-table.tsx:100
+#: components/memory/memory-table.tsx:98
 msgid "Deleting {0} selected memories..."
 msgstr "선택한 {0}개의 메모리 삭제 중..."
 
-#: components/memory/memory-table.tsx:76
+#: components/memory/memory-table.tsx:74
 msgid "Deleting memory..."
 msgstr "메모리 삭제 중..."
 
@@ -595,7 +595,7 @@ msgstr "메모리 삭제 중..."
 msgid "Deleting selected memories..."
 msgstr "선택한 메모리 삭제 중..."
 
-#: components/memory/memory-table.tsx:316
+#: components/memory/memory-table.tsx:314
 msgid "Deleting..."
 msgstr "삭제 중..."
 
@@ -628,7 +628,7 @@ msgstr "예를 들어, 저는 산에서 하이킹하는 것을 좋아해요, 제
 #: components/history/conversation-history.tsx:1197
 #: components/history/conversation-history.tsx:1269
 #: components/history/conversation-history.tsx:1793
-#: components/memory/columns.tsx:331
+#: components/memory/columns.tsx:299
 #: components/start-call.tsx:1667
 #: components/start-call.tsx:1944
 #: components/start-call.tsx:2062
@@ -720,7 +720,7 @@ msgstr "엔터프라이즈"
 msgid "Enterprise Onboarding"
 msgstr "기업 온보딩"
 
-#: components/memory/columns.tsx:257
+#: components/memory/columns.tsx:225
 msgid "Entities"
 msgstr "엔터티"
 
@@ -736,7 +736,7 @@ msgstr "Pro의 모든 기능"
 msgid "Excellent"
 msgstr "훌륭함"
 
-#: components/memory/columns.tsx:213
+#: components/memory/columns.tsx:188
 msgid "Expires"
 msgstr "만료일"
 
@@ -746,7 +746,7 @@ msgid "Failed to assign partner"
 msgstr "파트너를 설정하지 못했어요"
 
 #. placeholder {0}: error.message
-#: components/memory/memory-table.tsx:138
+#: components/memory/memory-table.tsx:136
 msgid "Failed to create memory: {0}"
 msgstr "메모리 생성 실패: {0}"
 
@@ -762,12 +762,12 @@ msgid "Failed to delete conversation"
 msgstr "대화를 삭제하지 못했어요"
 
 #. placeholder {0}: error.message
-#: components/memory/memory-table.tsx:114
+#: components/memory/memory-table.tsx:112
 msgid "Failed to delete memories: {0}"
 msgstr "메모리를 삭제하는 데 실패했습니다: {0}"
 
 #. placeholder {0}: error.message
-#: components/memory/memory-table.tsx:84
+#: components/memory/memory-table.tsx:82
 msgid "Failed to delete memory: {0}"
 msgstr "메모리 삭제 실패: {0}"
 
@@ -793,7 +793,7 @@ msgid "Failed to submit feedback. Please try again."
 msgstr "피드백을 제출하지 못했어요. 다시 시도해 주세요."
 
 #. placeholder {0}: error.message
-#: components/memory/memory-table.tsx:154
+#: components/memory/memory-table.tsx:152
 msgid "Failed to update memory: {0}"
 msgstr "메모리를 업데이트하지 못했어요.: {0}"
 
@@ -1008,7 +1008,7 @@ msgstr "<0>{email}</0>로 등록된 계정이 있다면 곧 비밀번호 재설�
 msgid "If you don't see the email, check your spam folder."
 msgstr "이메일이 보이지 않으면 스팸 메일함을 확인해 보세요."
 
-#: components/memory/columns.tsx:152
+#: components/memory/columns.tsx:139
 msgid "Importance"
 msgstr "중요도"
 
@@ -1043,7 +1043,7 @@ msgstr "방금 전에"
 msgid "Just type a few words in your language. I'll turn them into a full sentence you can speak."
 msgstr "내 언어로 단어 몇 개만 입력해보세요. 제가 말할 수 있는 자연스러운 문장으로 만들어드릴게요."
 
-#: components/memory/columns.tsx:240
+#: components/memory/columns.tsx:208
 msgid "Keywords"
 msgstr "키워드"
 
@@ -1108,7 +1108,7 @@ msgid "Loading memories"
 msgstr "메모리 불러오는 중"
 
 #: components/call-summary.tsx:1237
-#: components/memory/memory-table.tsx:221
+#: components/memory/memory-table.tsx:219
 msgid "Loading memories..."
 msgstr "메모리 불러오는 중..."
 
@@ -1167,7 +1167,7 @@ msgstr "구독 관리"
 #: components/call-summary.tsx:1210
 #: components/history/conversation-history.tsx:1592
 #: components/history/conversation-history.tsx:1609
-#: components/memory/columns.tsx:117
+#: components/memory/columns.tsx:104
 #: components/memory/memory-dialog.tsx:53
 #: components/user-menu.tsx:98
 msgid "Memory"
@@ -1177,11 +1177,11 @@ msgstr "메모리"
 msgid "Memory cannot be empty."
 msgstr "메모리를 비워 둘 수 없어요."
 
-#: components/memory/columns.tsx:323
+#: components/memory/columns.tsx:291
 msgid "Memory copied to clipboard"
 msgstr "메모리가 클립보드에 복사됐어요."
 
-#: components/memory/memory-table.tsx:132
+#: components/memory/memory-table.tsx:130
 msgid "Memory created successfully"
 msgstr "메모리를 추가했어요"
 
@@ -1189,7 +1189,7 @@ msgstr "메모리를 추가했어요"
 msgid "Memory deleted"
 msgstr "메모리가 삭제됐어요"
 
-#: components/memory/memory-table.tsx:80
+#: components/memory/memory-table.tsx:78
 msgid "Memory deleted successfully"
 msgstr "메모리가 삭제됐어요"
 
@@ -1197,7 +1197,7 @@ msgstr "메모리가 삭제됐어요"
 msgid "Memory updated"
 msgstr "메모리가 업데이트됐어요."
 
-#: components/memory/memory-table.tsx:149
+#: components/memory/memory-table.tsx:147
 msgid "Memory updated successfully"
 msgstr "메모리가 업데이트됐어요."
 
@@ -1352,7 +1352,7 @@ msgstr "끄기"
 msgid "Once your screen is shared, the Start Call button will unlock."
 msgstr "화면을 공유하면 통화 시작 버튼이 활성화됩니다."
 
-#: components/memory/columns.tsx:312
+#: components/memory/columns.tsx:280
 msgid "Open menu"
 msgstr "메뉴 열기"
 
@@ -1419,7 +1419,7 @@ msgstr "파트너 생성됨"
 msgid "Partner deleted"
 msgstr "파트너가 삭제되었습니다."
 
-#: components/memory/columns.tsx:281
+#: components/memory/columns.tsx:249
 msgid "Partner ID"
 msgstr "파트너 ID"
 
@@ -1446,7 +1446,7 @@ msgstr "연체됨"
 
 #: components/billing/billing-content.tsx:125
 msgid "per month"
-msgstr "월 별"
+msgstr "/월"
 
 #: components/billing/billing-content.tsx:116
 #: components/billing/billing-content.tsx:192
@@ -1621,7 +1621,7 @@ msgstr "재설정 중..."
 msgid "Response Time"
 msgstr "응답 시간"
 
-#: components/memory/columns.tsx:183
+#: components/memory/columns.tsx:170
 msgid "Retention"
 msgstr "유지"
 
@@ -1682,7 +1682,7 @@ msgstr "저장 중…"
 msgid "Scale with the right plan"
 msgstr "적합한 요금제로 확장하세요"
 
-#: components/memory/columns.tsx:139
+#: components/memory/columns.tsx:126
 msgid "Scope"
 msgstr "범위"
 
@@ -1759,7 +1759,7 @@ msgstr "파트너 선택"
 msgid "Select a partner to see details."
 msgstr "파트너를 선택하여 세부 정보를 확인하세요."
 
-#: components/memory/columns.tsx:53
+#: components/memory/columns.tsx:48
 msgid "Select all"
 msgstr "모두 선택하기"
 
@@ -1767,7 +1767,7 @@ msgstr "모두 선택하기"
 msgid "Select an existing partner or create a new one."
 msgstr "기존 파트너를 선택하거나 새로 만들어 주세요."
 
-#: components/memory/columns.tsx:62
+#: components/memory/columns.tsx:57
 msgid "Select row"
 msgstr "행 선택"
 
@@ -1836,7 +1836,7 @@ msgstr "오디오와 함께 전체 화면 공유하기"
 msgid "Short"
 msgstr "짧음"
 
-#: components/memory/memory-table.tsx:250
+#: components/memory/memory-table.tsx:248
 msgid "Showing the latest {MEMORY_VISIBLE_LIMIT} memories"
 msgstr "최신 {MEMORY_VISIBLE_LIMIT}개의 메모리 표시 중"
 
@@ -1911,7 +1911,7 @@ msgstr "추천 답변"
 msgid "Summarize this insight..."
 msgstr "이 통찰을 요약하세요..."
 
-#: components/memory/columns.tsx:163
+#: components/memory/columns.tsx:150
 msgid "Summary"
 msgstr "요약"
 
@@ -1961,7 +1961,7 @@ msgid "This action cannot be undone."
 msgstr "이 작업은 취소할 수 없습니다."
 
 #. placeholder {0}: memoriesToDelete?.length ?? 0
-#: components/memory/memory-table.tsx:346
+#: components/memory/memory-table.tsx:344
 msgid "This action will permanently delete {0} selected memories. This cannot be undone."
 msgstr "이 작업을 수행하면 선택한 {0}개의 메모리가 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다."
 
@@ -1977,7 +1977,7 @@ msgstr "이 Glass 인스턴스는 자체 호스팅 모드로 실행 중이므로
 msgid "this partner"
 msgstr "이 파트너"
 
-#: components/memory/memory-table.tsx:235
+#: components/memory/memory-table.tsx:233
 msgid "This table highlights the latest {MEMORY_VISIBLE_LIMIT} memories. Older ones stay archived, so use the search field whenever you want to surface something specific."
 msgstr "이 표는 최신 {MEMORY_VISIBLE_LIMIT}개의 메모리를 보여줍니다. 오래된 메모리는 보관되어 있으니, 특정한 메모리를 찾고 싶을 때는 검색 창을 사용하세요."
 
@@ -1985,7 +1985,7 @@ msgstr "이 표는 최신 {MEMORY_VISIBLE_LIMIT}개의 메모리를 보여줍니
 msgid "This will permanently remove the partner and cannot be undone."
 msgstr "이 작업은 파트너를 영구적으로 제거하며, 되돌릴 수 없습니다."
 
-#: components/memory/memory-table.tsx:311
+#: components/memory/memory-table.tsx:309
 msgid "This will permanently remove the selected memory from your knowledge graph."
 msgstr "선택한 메모리를 지식 그래프에서 영구적으로 삭제합니다."
 
@@ -2073,8 +2073,8 @@ msgstr "요청을 제출할 수 없습니다."
 msgid "Unavailable on mobile"
 msgstr "모바일에서는 사용할 수 없습니다"
 
-#: components/memory/columns.tsx:107
-#: components/memory/columns.tsx:186
+#: components/memory/columns.tsx:94
+#: components/memory/columns.tsx:173
 msgid "Unknown"
 msgstr "알 수 없음"
 

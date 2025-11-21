@@ -71,11 +71,11 @@ msgstr "{secs}秒"
 msgid "{totalConversations, plural, one {# conversation} other {# conversations}}"
 msgstr "{totalConversations, plural, one {# 件の会話} other {# 件の会話}}"
 
-#: components/memory/memory-table.tsx:209
+#: components/memory/memory-table.tsx:207
 msgid "{totalMemories, plural, one {# matching memory} other {# matching memories}}"
 msgstr "{totalMemories, plural, one {# 件の該当する思い出} other {# 件の該当する思い出}}"
 
-#: components/memory/memory-table.tsx:213
+#: components/memory/memory-table.tsx:211
 msgid "{totalMemories, plural, one {# total memory} other {# total memories}}"
 msgstr "{totalMemories, plural, one {合計 # 件のメモリー} other {合計 # 件のメモリー}}"
 
@@ -92,7 +92,7 @@ msgstr "← 戻る"
 msgid "Accuracy"
 msgstr "精度"
 
-#: components/memory/columns.tsx:318
+#: components/memory/columns.tsx:286
 msgid "Actions"
 msgstr "アクション"
 
@@ -275,7 +275,7 @@ msgstr "会話のまとめ"
 #: components/history/conversation-history.tsx:1746
 #: components/history/conversation-history.tsx:1877
 #: components/memory/memory-dialog.tsx:94
-#: components/memory/memory-table.tsx:322
+#: components/memory/memory-table.tsx:320
 #: components/memory/memory-table.tsx:357
 #: components/start-call.tsx:2157
 msgid "Cancel"
@@ -285,7 +285,7 @@ msgstr "キャンセル"
 msgid "Canceled"
 msgstr "キャンセルされました"
 
-#: components/memory/columns.tsx:104
+#: components/memory/columns.tsx:91
 msgid "Category"
 msgstr "カテゴリー"
 
@@ -342,11 +342,11 @@ msgstr "クリックして編集"
 msgid "Click to edit..."
 msgstr "クリックして編集..."
 
-#: components/memory/columns.tsx:129
+#: components/memory/columns.tsx:116
 msgid "Click to view full content"
 msgstr "クリックして全コンテンツを表示"
 
-#: components/memory/columns.tsx:174
+#: components/memory/columns.tsx:161
 msgid "Click to view full summary"
 msgstr "クリックして全文を表示"
 
@@ -431,7 +431,7 @@ msgstr "会話履歴"
 msgid "Conversation History"
 msgstr "会話履歴"
 
-#: components/memory/columns.tsx:290
+#: components/memory/columns.tsx:258
 msgid "Conversation ID"
 msgstr "会話ID"
 
@@ -446,7 +446,7 @@ msgstr "会話パートナーが割り当てられました"
 msgid "Conversation saved"
 msgstr "会話が保存されました"
 
-#: components/memory/columns.tsx:327
+#: components/memory/columns.tsx:295
 msgid "Copy"
 msgstr "コピー"
 
@@ -480,7 +480,7 @@ msgstr "パートナーを作成"
 msgid "Create your own conversation partner"
 msgstr "あなた自身の会話パートナーを作成する"
 
-#: components/memory/columns.tsx:80
+#: components/memory/columns.tsx:71
 msgid "Created at"
 msgstr "作成日時"
 
@@ -531,9 +531,9 @@ msgstr "専任サポート"
 #: components/history/conversation-history.tsx:1326
 #: components/history/conversation-history.tsx:1755
 #: components/history/conversation-history.tsx:1888
-#: components/memory/columns.tsx:339
+#: components/memory/columns.tsx:304
 #: components/memory/data-table.tsx:142
-#: components/memory/memory-table.tsx:326
+#: components/memory/memory-table.tsx:324
 #: components/memory/memory-table.tsx:361
 #: components/start-call.tsx:1677
 #: components/start-call.tsx:2170
@@ -548,7 +548,7 @@ msgstr "保存されている通話を削除するか、アップグレードし
 msgid "Delete conversation"
 msgstr "会話を削除する"
 
-#: components/memory/memory-table.tsx:308
+#: components/memory/memory-table.tsx:306
 msgid "Delete memory?"
 msgstr "メモリを削除しますか？"
 
@@ -567,27 +567,27 @@ msgstr "パートナーを削除"
 msgid "Delete partner?"
 msgstr "パートナーを削除しますか？"
 
-#: components/memory/memory-table.tsx:343
+#: components/memory/memory-table.tsx:341
 msgid "Delete selected memories?"
 msgstr "選択したメモリーを削除しますか？"
 
 #. placeholder {0}: variables.length
-#: components/memory/memory-table.tsx:109
+#: components/memory/memory-table.tsx:107
 msgid "Deleted {0} memories"
 msgstr "{0}件の思い出を削除しました"
 
 #. placeholder {0}: result.deleted
 #. placeholder {1}: result.failed.length
-#: components/memory/memory-table.tsx:106
+#: components/memory/memory-table.tsx:104
 msgid "Deleted {0} memories, but {1} could not be removed. Please retry later."
 msgstr "{0}件のメモリーを削除しましたが、{1}件は削除できませんでした。後でもう一度お試しください。"
 
 #. placeholder {0}: memoryIds.length
-#: components/memory/memory-table.tsx:100
+#: components/memory/memory-table.tsx:98
 msgid "Deleting {0} selected memories..."
 msgstr "{0}件の選択されたメモリーを削除しています..."
 
-#: components/memory/memory-table.tsx:76
+#: components/memory/memory-table.tsx:74
 msgid "Deleting memory..."
 msgstr "メモリを削除しています…"
 
@@ -595,7 +595,7 @@ msgstr "メモリを削除しています…"
 msgid "Deleting selected memories..."
 msgstr "選択したメモリーを削除しています..."
 
-#: components/memory/memory-table.tsx:316
+#: components/memory/memory-table.tsx:314
 msgid "Deleting..."
 msgstr "削除中…"
 
@@ -628,7 +628,7 @@ msgstr "例えば、山でのハイキングが好きです。好きな食べ物
 #: components/history/conversation-history.tsx:1197
 #: components/history/conversation-history.tsx:1269
 #: components/history/conversation-history.tsx:1793
-#: components/memory/columns.tsx:331
+#: components/memory/columns.tsx:299
 #: components/start-call.tsx:1667
 #: components/start-call.tsx:1944
 #: components/start-call.tsx:2062
@@ -720,7 +720,7 @@ msgstr "エンタープライズ"
 msgid "Enterprise Onboarding"
 msgstr "エンタープライズオンボーディング"
 
-#: components/memory/columns.tsx:257
+#: components/memory/columns.tsx:225
 msgid "Entities"
 msgstr "エンティティ"
 
@@ -736,7 +736,7 @@ msgstr "Proのすべて"
 msgid "Excellent"
 msgstr "とても良い"
 
-#: components/memory/columns.tsx:213
+#: components/memory/columns.tsx:188
 msgid "Expires"
 msgstr "期限切れ"
 
@@ -746,7 +746,7 @@ msgid "Failed to assign partner"
 msgstr "パートナーの割り当てに失敗しました"
 
 #. placeholder {0}: error.message
-#: components/memory/memory-table.tsx:138
+#: components/memory/memory-table.tsx:136
 msgid "Failed to create memory: {0}"
 msgstr "メモリの作成に失敗しました: {0}"
 
@@ -762,12 +762,12 @@ msgid "Failed to delete conversation"
 msgstr "会話の削除に失敗しました"
 
 #. placeholder {0}: error.message
-#: components/memory/memory-table.tsx:114
+#: components/memory/memory-table.tsx:112
 msgid "Failed to delete memories: {0}"
 msgstr "メモリーの削除に失敗しました: {0}"
 
 #. placeholder {0}: error.message
-#: components/memory/memory-table.tsx:84
+#: components/memory/memory-table.tsx:82
 msgid "Failed to delete memory: {0}"
 msgstr "メモリの削除に失敗しました: {0}"
 
@@ -793,7 +793,7 @@ msgid "Failed to submit feedback. Please try again."
 msgstr "フィードバックの送信に失敗しました。もう一度お試しください。"
 
 #. placeholder {0}: error.message
-#: components/memory/memory-table.tsx:154
+#: components/memory/memory-table.tsx:152
 msgid "Failed to update memory: {0}"
 msgstr "メモリの更新に失敗しました: {0}"
 
@@ -1008,7 +1008,7 @@ msgstr "<0>{email}</0>のアカウントが存在する場合、パスワード�
 msgid "If you don't see the email, check your spam folder."
 msgstr "メールが見つからない場合は、迷惑メールフォルダを確認してください。"
 
-#: components/memory/columns.tsx:152
+#: components/memory/columns.tsx:139
 msgid "Importance"
 msgstr "重要性"
 
@@ -1043,7 +1043,7 @@ msgstr "たった今"
 msgid "Just type a few words in your language. I'll turn them into a full sentence you can speak."
 msgstr "自分の言語で単語を少し入力するだけで、すぐに使える自然な文章にしてお届けします。"
 
-#: components/memory/columns.tsx:240
+#: components/memory/columns.tsx:208
 msgid "Keywords"
 msgstr "キーワード"
 
@@ -1108,7 +1108,7 @@ msgid "Loading memories"
 msgstr "メモリーを読み込み中"
 
 #: components/call-summary.tsx:1237
-#: components/memory/memory-table.tsx:221
+#: components/memory/memory-table.tsx:219
 msgid "Loading memories..."
 msgstr "メモリーを読み込み中…"
 
@@ -1167,7 +1167,7 @@ msgstr "サブスクリプション管理"
 #: components/call-summary.tsx:1210
 #: components/history/conversation-history.tsx:1592
 #: components/history/conversation-history.tsx:1609
-#: components/memory/columns.tsx:117
+#: components/memory/columns.tsx:104
 #: components/memory/memory-dialog.tsx:53
 #: components/user-menu.tsx:98
 msgid "Memory"
@@ -1177,11 +1177,11 @@ msgstr "メモリー"
 msgid "Memory cannot be empty."
 msgstr "メモリを空にすることはできません。"
 
-#: components/memory/columns.tsx:323
+#: components/memory/columns.tsx:291
 msgid "Memory copied to clipboard"
 msgstr "メモリがクリップボードにコピーされました"
 
-#: components/memory/memory-table.tsx:132
+#: components/memory/memory-table.tsx:130
 msgid "Memory created successfully"
 msgstr "メモリが正常に作成されました"
 
@@ -1189,7 +1189,7 @@ msgstr "メモリが正常に作成されました"
 msgid "Memory deleted"
 msgstr "メモリが消去されました"
 
-#: components/memory/memory-table.tsx:80
+#: components/memory/memory-table.tsx:78
 msgid "Memory deleted successfully"
 msgstr "メモリが正常に削除されました"
 
@@ -1197,7 +1197,7 @@ msgstr "メモリが正常に削除されました"
 msgid "Memory updated"
 msgstr "メモリが更新されました"
 
-#: components/memory/memory-table.tsx:149
+#: components/memory/memory-table.tsx:147
 msgid "Memory updated successfully"
 msgstr "メモリが正常に更新されました"
 
@@ -1352,7 +1352,7 @@ msgstr "オフ"
 msgid "Once your screen is shared, the Start Call button will unlock."
 msgstr "画面を共有すると、通話開始ボタンが有効になります。"
 
-#: components/memory/columns.tsx:312
+#: components/memory/columns.tsx:280
 msgid "Open menu"
 msgstr "メニューを開く"
 
@@ -1419,7 +1419,7 @@ msgstr "パートナーが作成しました"
 msgid "Partner deleted"
 msgstr "パートナーが削除されました"
 
-#: components/memory/columns.tsx:281
+#: components/memory/columns.tsx:249
 msgid "Partner ID"
 msgstr "パートナーID"
 
@@ -1621,7 +1621,7 @@ msgstr "リセットしています..."
 msgid "Response Time"
 msgstr "応答時間"
 
-#: components/memory/columns.tsx:183
+#: components/memory/columns.tsx:170
 msgid "Retention"
 msgstr "リテンション"
 
@@ -1682,7 +1682,7 @@ msgstr "保存中…"
 msgid "Scale with the right plan"
 msgstr "適切なプランでスケールアップ"
 
-#: components/memory/columns.tsx:139
+#: components/memory/columns.tsx:126
 msgid "Scope"
 msgstr "スコープ"
 
@@ -1759,7 +1759,7 @@ msgstr "パートナーを選択"
 msgid "Select a partner to see details."
 msgstr "パートナーを選んで詳細を表示してください。"
 
-#: components/memory/columns.tsx:53
+#: components/memory/columns.tsx:48
 msgid "Select all"
 msgstr "すべて選択"
 
@@ -1767,7 +1767,7 @@ msgstr "すべて選択"
 msgid "Select an existing partner or create a new one."
 msgstr "既存のパートナーを選択するか、新しく作成してください。"
 
-#: components/memory/columns.tsx:62
+#: components/memory/columns.tsx:57
 msgid "Select row"
 msgstr "行を選択"
 
@@ -1836,7 +1836,7 @@ msgstr "画面全体と音声を共有"
 msgid "Short"
 msgstr "短い"
 
-#: components/memory/memory-table.tsx:250
+#: components/memory/memory-table.tsx:248
 msgid "Showing the latest {MEMORY_VISIBLE_LIMIT} memories"
 msgstr "最新の{MEMORY_VISIBLE_LIMIT}件のメモリーを表示しています"
 
@@ -1911,7 +1911,7 @@ msgstr "おすすめの回答"
 msgid "Summarize this insight..."
 msgstr "このインサイトを要約してください…"
 
-#: components/memory/columns.tsx:163
+#: components/memory/columns.tsx:150
 msgid "Summary"
 msgstr "概要"
 
@@ -1961,7 +1961,7 @@ msgid "This action cannot be undone."
 msgstr "この操作は取り消せません。"
 
 #. placeholder {0}: memoriesToDelete?.length ?? 0
-#: components/memory/memory-table.tsx:346
+#: components/memory/memory-table.tsx:344
 msgid "This action will permanently delete {0} selected memories. This cannot be undone."
 msgstr "この操作を行うと、選択された{0}件のメモリーが完全に削除されます。この操作は元に戻すことができません。"
 
@@ -1977,7 +1977,7 @@ msgstr "このGlassインスタンスはセルフホストモードで稼働し�
 msgid "this partner"
 msgstr "このパートナー"
 
-#: components/memory/memory-table.tsx:235
+#: components/memory/memory-table.tsx:233
 msgid "This table highlights the latest {MEMORY_VISIBLE_LIMIT} memories. Older ones stay archived, so use the search field whenever you want to surface something specific."
 msgstr "このテーブルでは、最新の{MEMORY_VISIBLE_LIMIT}件のメモリを表示しています。古いものはアーカイブされますので、特定のメモリを見つけたい時は検索フィールドをご利用ください。"
 
@@ -1985,7 +1985,7 @@ msgstr "このテーブルでは、最新の{MEMORY_VISIBLE_LIMIT}件のメモ�
 msgid "This will permanently remove the partner and cannot be undone."
 msgstr "パートナーを完全に削除します。この操作は元に戻せません。"
 
-#: components/memory/memory-table.tsx:311
+#: components/memory/memory-table.tsx:309
 msgid "This will permanently remove the selected memory from your knowledge graph."
 msgstr "これにより、選択したメモリがナレッジグラフから永久に削除されます。"
 
@@ -2073,8 +2073,8 @@ msgstr "リクエストを送信できませんでした"
 msgid "Unavailable on mobile"
 msgstr "モバイルでは利用できません"
 
-#: components/memory/columns.tsx:107
-#: components/memory/columns.tsx:186
+#: components/memory/columns.tsx:94
+#: components/memory/columns.tsx:173
 msgid "Unknown"
 msgstr "不明"
 

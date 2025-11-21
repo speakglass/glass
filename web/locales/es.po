@@ -71,11 +71,11 @@ msgstr "{secs}s"
 msgid "{totalConversations, plural, one {# conversation} other {# conversations}}"
 msgstr "{totalConversations, plural, one {# conversación} other {# conversaciones}}"
 
-#: components/memory/memory-table.tsx:209
+#: components/memory/memory-table.tsx:207
 msgid "{totalMemories, plural, one {# matching memory} other {# matching memories}}"
 msgstr "{totalMemories, plural, one {# memoria coincidente} other {# memorias coincidentes}}"
 
-#: components/memory/memory-table.tsx:213
+#: components/memory/memory-table.tsx:211
 msgid "{totalMemories, plural, one {# total memory} other {# total memories}}"
 msgstr "{totalMemories, plural, one {# memoria total} other {# memorias totales}}"
 
@@ -92,7 +92,7 @@ msgstr "← Volver"
 msgid "Accuracy"
 msgstr "Precisión"
 
-#: components/memory/columns.tsx:318
+#: components/memory/columns.tsx:286
 msgid "Actions"
 msgstr "Acciones"
 
@@ -275,7 +275,7 @@ msgstr "Resumen de llamada"
 #: components/history/conversation-history.tsx:1746
 #: components/history/conversation-history.tsx:1877
 #: components/memory/memory-dialog.tsx:94
-#: components/memory/memory-table.tsx:322
+#: components/memory/memory-table.tsx:320
 #: components/memory/memory-table.tsx:357
 #: components/start-call.tsx:2157
 msgid "Cancel"
@@ -285,7 +285,7 @@ msgstr "Cancelar"
 msgid "Canceled"
 msgstr "Cancelado"
 
-#: components/memory/columns.tsx:104
+#: components/memory/columns.tsx:91
 msgid "Category"
 msgstr "Categoría"
 
@@ -342,11 +342,11 @@ msgstr "Haga clic para editar"
 msgid "Click to edit..."
 msgstr "Haz clic para editar..."
 
-#: components/memory/columns.tsx:129
+#: components/memory/columns.tsx:116
 msgid "Click to view full content"
 msgstr "Haz clic para ver el contenido completo"
 
-#: components/memory/columns.tsx:174
+#: components/memory/columns.tsx:161
 msgid "Click to view full summary"
 msgstr "Haz clic para ver el resumen completo"
 
@@ -431,7 +431,7 @@ msgstr "Historial de conversaciones"
 msgid "Conversation History"
 msgstr "Historial de conversación"
 
-#: components/memory/columns.tsx:290
+#: components/memory/columns.tsx:258
 msgid "Conversation ID"
 msgstr "ID de conversación"
 
@@ -446,7 +446,7 @@ msgstr "Conversación asignada a un compañero"
 msgid "Conversation saved"
 msgstr "Conversación guardada"
 
-#: components/memory/columns.tsx:327
+#: components/memory/columns.tsx:295
 msgid "Copy"
 msgstr "Copiar"
 
@@ -480,7 +480,7 @@ msgstr "Crear socio"
 msgid "Create your own conversation partner"
 msgstr "Crea tu propio compañero de conversación"
 
-#: components/memory/columns.tsx:80
+#: components/memory/columns.tsx:71
 msgid "Created at"
 msgstr "Creado el"
 
@@ -531,9 +531,9 @@ msgstr "Soporte Dedicado"
 #: components/history/conversation-history.tsx:1326
 #: components/history/conversation-history.tsx:1755
 #: components/history/conversation-history.tsx:1888
-#: components/memory/columns.tsx:339
+#: components/memory/columns.tsx:304
 #: components/memory/data-table.tsx:142
-#: components/memory/memory-table.tsx:326
+#: components/memory/memory-table.tsx:324
 #: components/memory/memory-table.tsx:361
 #: components/start-call.tsx:1677
 #: components/start-call.tsx:2170
@@ -548,7 +548,7 @@ msgstr "Elimina una llamada guardada o mejora tu plan para seguir grabando nueva
 msgid "Delete conversation"
 msgstr "Eliminar conversación"
 
-#: components/memory/memory-table.tsx:308
+#: components/memory/memory-table.tsx:306
 msgid "Delete memory?"
 msgstr "¿Eliminar memoria?"
 
@@ -567,27 +567,27 @@ msgstr "Eliminar socio"
 msgid "Delete partner?"
 msgstr "¿Eliminar socio?"
 
-#: components/memory/memory-table.tsx:343
+#: components/memory/memory-table.tsx:341
 msgid "Delete selected memories?"
 msgstr "¿Eliminar recuerdos seleccionados?"
 
 #. placeholder {0}: variables.length
-#: components/memory/memory-table.tsx:109
+#: components/memory/memory-table.tsx:107
 msgid "Deleted {0} memories"
 msgstr "Se eliminaron {0} recuerdos"
 
 #. placeholder {0}: result.deleted
 #. placeholder {1}: result.failed.length
-#: components/memory/memory-table.tsx:106
+#: components/memory/memory-table.tsx:104
 msgid "Deleted {0} memories, but {1} could not be removed. Please retry later."
 msgstr "Se eliminaron {0} recuerdos, pero {1} no se pudieron borrar. Por favor, inténtalo de nuevo más tarde."
 
 #. placeholder {0}: memoryIds.length
-#: components/memory/memory-table.tsx:100
+#: components/memory/memory-table.tsx:98
 msgid "Deleting {0} selected memories..."
 msgstr "Eliminando {0} recuerdos seleccionados..."
 
-#: components/memory/memory-table.tsx:76
+#: components/memory/memory-table.tsx:74
 msgid "Deleting memory..."
 msgstr "Eliminando memoria..."
 
@@ -595,7 +595,7 @@ msgstr "Eliminando memoria..."
 msgid "Deleting selected memories..."
 msgstr "Eliminando recuerdos seleccionados..."
 
-#: components/memory/memory-table.tsx:316
+#: components/memory/memory-table.tsx:314
 msgid "Deleting..."
 msgstr "Eliminando..."
 
@@ -628,7 +628,7 @@ msgstr "Por ejemplo, me encanta hacer senderismo en las montañas, mi comida fav
 #: components/history/conversation-history.tsx:1197
 #: components/history/conversation-history.tsx:1269
 #: components/history/conversation-history.tsx:1793
-#: components/memory/columns.tsx:331
+#: components/memory/columns.tsx:299
 #: components/start-call.tsx:1667
 #: components/start-call.tsx:1944
 #: components/start-call.tsx:2062
@@ -720,7 +720,7 @@ msgstr "Empresa"
 msgid "Enterprise Onboarding"
 msgstr "Incorporación empresarial"
 
-#: components/memory/columns.tsx:257
+#: components/memory/columns.tsx:225
 msgid "Entities"
 msgstr "Entidades"
 
@@ -736,7 +736,7 @@ msgstr "Todo en Pro"
 msgid "Excellent"
 msgstr "Excelente"
 
-#: components/memory/columns.tsx:213
+#: components/memory/columns.tsx:188
 msgid "Expires"
 msgstr "Expira"
 
@@ -746,7 +746,7 @@ msgid "Failed to assign partner"
 msgstr "No se pudo asignar al socio"
 
 #. placeholder {0}: error.message
-#: components/memory/memory-table.tsx:138
+#: components/memory/memory-table.tsx:136
 msgid "Failed to create memory: {0}"
 msgstr "Error al crear la memoria: {0}"
 
@@ -762,12 +762,12 @@ msgid "Failed to delete conversation"
 msgstr "No se pudo eliminar la conversación"
 
 #. placeholder {0}: error.message
-#: components/memory/memory-table.tsx:114
+#: components/memory/memory-table.tsx:112
 msgid "Failed to delete memories: {0}"
 msgstr "No se pudieron eliminar los recuerdos: {0}"
 
 #. placeholder {0}: error.message
-#: components/memory/memory-table.tsx:84
+#: components/memory/memory-table.tsx:82
 msgid "Failed to delete memory: {0}"
 msgstr "No se pudo eliminar la memoria: {0}"
 
@@ -793,7 +793,7 @@ msgid "Failed to submit feedback. Please try again."
 msgstr "No se pudo enviar la retroalimentación. Por favor, inténtalo de nuevo."
 
 #. placeholder {0}: error.message
-#: components/memory/memory-table.tsx:154
+#: components/memory/memory-table.tsx:152
 msgid "Failed to update memory: {0}"
 msgstr "No se pudo actualizar la memoria: {0}"
 
@@ -1008,7 +1008,7 @@ msgstr "Si existe una cuenta para <0>{email}</0>, recibirás un enlace para rest
 msgid "If you don't see the email, check your spam folder."
 msgstr "Si no ves el correo electrónico, revisa tu carpeta de spam."
 
-#: components/memory/columns.tsx:152
+#: components/memory/columns.tsx:139
 msgid "Importance"
 msgstr "Importancia"
 
@@ -1043,7 +1043,7 @@ msgstr "justo ahora"
 msgid "Just type a few words in your language. I'll turn them into a full sentence you can speak."
 msgstr "Solo escribe unas pocas palabras en tu idioma. Las convertiré en una oración completa que puedas decir."
 
-#: components/memory/columns.tsx:240
+#: components/memory/columns.tsx:208
 msgid "Keywords"
 msgstr "Palabras clave"
 
@@ -1108,7 +1108,7 @@ msgid "Loading memories"
 msgstr "Cargando recuerdos"
 
 #: components/call-summary.tsx:1237
-#: components/memory/memory-table.tsx:221
+#: components/memory/memory-table.tsx:219
 msgid "Loading memories..."
 msgstr "Cargando recuerdos..."
 
@@ -1167,7 +1167,7 @@ msgstr "Administrar suscripción"
 #: components/call-summary.tsx:1210
 #: components/history/conversation-history.tsx:1592
 #: components/history/conversation-history.tsx:1609
-#: components/memory/columns.tsx:117
+#: components/memory/columns.tsx:104
 #: components/memory/memory-dialog.tsx:53
 #: components/user-menu.tsx:98
 msgid "Memory"
@@ -1177,11 +1177,11 @@ msgstr "Memoria"
 msgid "Memory cannot be empty."
 msgstr "La memoria no puede estar vacía."
 
-#: components/memory/columns.tsx:323
+#: components/memory/columns.tsx:291
 msgid "Memory copied to clipboard"
 msgstr "Memoria copiada al portapapeles"
 
-#: components/memory/memory-table.tsx:132
+#: components/memory/memory-table.tsx:130
 msgid "Memory created successfully"
 msgstr "Memoria creada con éxito"
 
@@ -1189,7 +1189,7 @@ msgstr "Memoria creada con éxito"
 msgid "Memory deleted"
 msgstr "Memoria eliminada"
 
-#: components/memory/memory-table.tsx:80
+#: components/memory/memory-table.tsx:78
 msgid "Memory deleted successfully"
 msgstr "Memoria eliminada con éxito"
 
@@ -1197,7 +1197,7 @@ msgstr "Memoria eliminada con éxito"
 msgid "Memory updated"
 msgstr "Memoria actualizada"
 
-#: components/memory/memory-table.tsx:149
+#: components/memory/memory-table.tsx:147
 msgid "Memory updated successfully"
 msgstr "Memoria actualizada con éxito"
 
@@ -1352,7 +1352,7 @@ msgstr "Desactivado"
 msgid "Once your screen is shared, the Start Call button will unlock."
 msgstr "Una vez que compartas tu pantalla, el botón Iniciar Llamada se activará."
 
-#: components/memory/columns.tsx:312
+#: components/memory/columns.tsx:280
 msgid "Open menu"
 msgstr "Abrir menú"
 
@@ -1419,7 +1419,7 @@ msgstr "Socio creado"
 msgid "Partner deleted"
 msgstr "Socio eliminado"
 
-#: components/memory/columns.tsx:281
+#: components/memory/columns.tsx:249
 msgid "Partner ID"
 msgstr "ID de socio"
 
@@ -1621,7 +1621,7 @@ msgstr "Restableciendo..."
 msgid "Response Time"
 msgstr "Tiempo de respuesta"
 
-#: components/memory/columns.tsx:183
+#: components/memory/columns.tsx:170
 msgid "Retention"
 msgstr "Retención"
 
@@ -1682,7 +1682,7 @@ msgstr "Guardando…"
 msgid "Scale with the right plan"
 msgstr "Escala con el plan adecuado"
 
-#: components/memory/columns.tsx:139
+#: components/memory/columns.tsx:126
 msgid "Scope"
 msgstr "Alcance"
 
@@ -1759,7 +1759,7 @@ msgstr "Selecciona un socio"
 msgid "Select a partner to see details."
 msgstr "Selecciona un socio para ver los detalles."
 
-#: components/memory/columns.tsx:53
+#: components/memory/columns.tsx:48
 msgid "Select all"
 msgstr "Seleccionar todo"
 
@@ -1767,7 +1767,7 @@ msgstr "Seleccionar todo"
 msgid "Select an existing partner or create a new one."
 msgstr "Seleccione un socio existente o cree uno nuevo."
 
-#: components/memory/columns.tsx:62
+#: components/memory/columns.tsx:57
 msgid "Select row"
 msgstr "Seleccionar fila"
 
@@ -1836,7 +1836,7 @@ msgstr "Comparte toda tu pantalla con audio"
 msgid "Short"
 msgstr "Corto"
 
-#: components/memory/memory-table.tsx:250
+#: components/memory/memory-table.tsx:248
 msgid "Showing the latest {MEMORY_VISIBLE_LIMIT} memories"
 msgstr "Mostrando las últimas {MEMORY_VISIBLE_LIMIT} memorias"
 
@@ -1911,7 +1911,7 @@ msgstr "Respuesta sugerida"
 msgid "Summarize this insight..."
 msgstr "Resuma esta información..."
 
-#: components/memory/columns.tsx:163
+#: components/memory/columns.tsx:150
 msgid "Summary"
 msgstr "Resumen"
 
@@ -1961,7 +1961,7 @@ msgid "This action cannot be undone."
 msgstr "Esta acción no se puede deshacer."
 
 #. placeholder {0}: memoriesToDelete?.length ?? 0
-#: components/memory/memory-table.tsx:346
+#: components/memory/memory-table.tsx:344
 msgid "This action will permanently delete {0} selected memories. This cannot be undone."
 msgstr "Esta acción eliminará de forma permanente {0} recuerdos seleccionados. Esto no se puede deshacer."
 
@@ -1977,7 +1977,7 @@ msgstr "Esta instancia de Glass está operando en modo autohospedado, por lo que
 msgid "this partner"
 msgstr "este socio"
 
-#: components/memory/memory-table.tsx:235
+#: components/memory/memory-table.tsx:233
 msgid "This table highlights the latest {MEMORY_VISIBLE_LIMIT} memories. Older ones stay archived, so use the search field whenever you want to surface something specific."
 msgstr "Esta tabla destaca las últimas {MEMORY_VISIBLE_LIMIT} memorias. Las más antiguas permanecen archivadas, así que utiliza el campo de búsqueda cuando quieras encontrar algo específico."
 
@@ -1985,7 +1985,7 @@ msgstr "Esta tabla destaca las últimas {MEMORY_VISIBLE_LIMIT} memorias. Las má
 msgid "This will permanently remove the partner and cannot be undone."
 msgstr "Esto eliminará al socio de forma permanente y no se podrá deshacer."
 
-#: components/memory/memory-table.tsx:311
+#: components/memory/memory-table.tsx:309
 msgid "This will permanently remove the selected memory from your knowledge graph."
 msgstr "Esto eliminará permanentemente la memoria seleccionada de tu gráfico de conocimiento."
 
@@ -2073,8 +2073,8 @@ msgstr "No se puede enviar la solicitud"
 msgid "Unavailable on mobile"
 msgstr "No disponible en dispositivos móviles"
 
-#: components/memory/columns.tsx:107
-#: components/memory/columns.tsx:186
+#: components/memory/columns.tsx:94
+#: components/memory/columns.tsx:173
 msgid "Unknown"
 msgstr "Desconocido"
 
