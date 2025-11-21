@@ -8,7 +8,7 @@ import { fetchOnboardingStatus, completeOnboarding } from '@/lib/account-api';
 import type { LearningLevel } from '@/types/learning-level';
 import { isLearningLevel } from '@/types/learning-level';
 
-type SessionData = {
+export type SessionData = {
   token: string;
   snapshot: AccountSnapshot;
   onboardingStatus: OnboardingStatus;

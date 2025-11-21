@@ -1,5 +1,5 @@
 import { useGlass, LanguageSettings, SessionConfig } from '@/contexts/glass-context';
-import { useAccountSession } from '@/contexts/account-session-context';
+import { useAccountSession, type SessionData } from '@/contexts/account-session-context';
 import { AnimatePresence, motion } from 'motion/react';
 import { Loader2, Phone, UserRound, MoreHorizontal, AlertTriangle, Trash2 } from 'lucide-react';
 import LiquidGlass from './liquid-glass';
@@ -20,6 +20,7 @@ import {
   updatePartner,
   deletePartner,
   createCheckoutSession,
+  fetchAccountSnapshot,
 } from '@/lib/account-api';
 import { PartnerVoiceSelector } from '@/components/partner-voice-selector';
 import { ROLEPLAY_VOICE_OPTIONS } from '@/lib/roleplay-voices';
@@ -817,22 +818,44 @@ export default function StartCall() {
     if (!limitEnabled) {
       return true;
     }
-    try {
-      const latestSnapshot = (await refresh()) ?? snapshot;
-      const latestLimit = latestSnapshot?.limits?.conversations ?? conversationLimit;
-      if (latestLimit?.limit && latestLimit.used >= latestLimit.limit) {
-        setQuotaDialogOpen(true);
+
+    let latestSnapshot = snapshot;
+    if (token) {
+      try {
+        latestSnapshot = await fetchAccountSnapshot(token);
+        if (latestSnapshot) {
+          const snapshotForCache = latestSnapshot;
+          queryClient.setQueryData<SessionData | undefined>(['accountSession'], (previous) => {
+            if (!previous) {
+              return previous;
+            }
+            return { ...previous, snapshot: snapshotForCache };
+          });
+        }
+      } catch (error) {
+        console.error('[StartCall] Failed to fetch snapshot for limit check', error);
+      }
+    }
+
+    if (!latestSnapshot) {
+      try {
+        latestSnapshot = (await refresh()) ?? snapshot;
+      } catch (error) {
+        console.error('[StartCall] Failed to refresh before proceeding', error);
+        toast.error(t`Unable to start call`, {
+          description: t`Please try again in a moment.`,
+        });
         return false;
       }
-      return true;
-    } catch (error) {
-      console.error('[StartCall] Failed to refresh before proceeding', error);
-      toast.error(t`Unable to start call`, {
-        description: t`Please try again in a moment.`,
-      });
+    }
+
+    const latestLimit = latestSnapshot?.limits?.conversations ?? conversationLimit;
+    if (latestLimit?.limit && latestLimit.used >= latestLimit.limit) {
+      setQuotaDialogOpen(true);
       return false;
     }
-  }, [limitEnabled, refresh, snapshot, conversationLimit]);
+    return true;
+  }, [limitEnabled, token, refresh, snapshot, conversationLimit, queryClient]);
 
   const handleInitialStart = () => {
     if (limitEnabled) {
