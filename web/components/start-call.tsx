@@ -314,7 +314,11 @@ export default function StartCall() {
     queryKey: ['partners', token, currentLearningLang],
     queryFn: () => fetchPartners(token!, currentLearningLang),
     enabled: partnersQueryEnabled,
-    staleTime: 60 * 1000,
+    staleTime: Infinity, // Never mark as stale to prevent automatic refetches
+    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
   });
   const partnersLoading = partnersQueryEnabled ? partnersQueryLoading || partnersFetching : true;
   const roleplayPartners: ConversationPartner[] = (partnersData ?? []).filter((partner) => partner.kind === 'roleplay');
@@ -1334,7 +1338,10 @@ export default function StartCall() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className={'flex flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5'}
+                className={cn(
+                  'flex flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5',
+                  isStartingCall && 'pointer-events-none'
+                )}
               >
                 <div className={'text-center'}>
                   <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
