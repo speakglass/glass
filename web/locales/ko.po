@@ -96,8 +96,8 @@ msgstr "정확도"
 msgid "Actions"
 msgstr "작업"
 
-#: components/billing/billing-content.tsx:251
-#: components/billing/billing-content.tsx:265
+#: components/billing/billing-content.tsx:267
+#: components/billing/billing-content.tsx:281
 msgid "Active"
 msgstr "활성화됨"
 
@@ -133,8 +133,8 @@ msgstr "대화가 끝나면"
 msgid "After each conversation, I'll give you feedback on your grammar, pronunciation, and vocabulary. So you keep improving naturally."
 msgstr "대화가 끝날 때마다 문법, 발음, 어휘에 대한 피드백을 드려요. 대화를 반복할수록 실력이 자연스럽게 향상돼요."
 
-#: components/billing/billing-content.tsx:96
-#: components/billing/billing-content.tsx:152
+#: components/billing/billing-content.tsx:112
+#: components/billing/billing-content.tsx:168
 #: components/start-call.tsx:1405
 #: components/start-call.tsx:1775
 msgid "AI Roleplay"
@@ -165,7 +165,7 @@ msgstr "대화 분석 중"
 msgid "Analyzing conversation to extract memories..."
 msgstr "대화를 분석하여 메모리를 정리하는 중..."
 
-#: components/billing/billing-content.tsx:128
+#: components/billing/billing-content.tsx:144
 msgid "Annual billing only"
 msgstr "연간 결제만 가능합니다"
 
@@ -232,11 +232,11 @@ msgstr "초보자"
 msgid "Below Average"
 msgstr "평균 이하"
 
-#: components/billing/billing-content.tsx:110
+#: components/billing/billing-content.tsx:126
 msgid "Billed monthly"
 msgstr "매월 청구됩니다"
 
-#: components/billing/billing-content.tsx:110
+#: components/billing/billing-content.tsx:126
 msgid "Billed yearly"
 msgstr "매년 청구됩니다"
 
@@ -245,7 +245,7 @@ msgstr "매년 청구됩니다"
 msgid "Billing"
 msgstr "결제"
 
-#: components/billing/billing-content.tsx:644
+#: components/billing/billing-content.tsx:732
 msgid "Billing active."
 msgstr "결제가 활성화되었습니다."
 
@@ -253,7 +253,7 @@ msgstr "결제가 활성화되었습니다."
 msgid "Billing details can be updated anytime from the billing dashboard."
 msgstr "청구 내역은 청구 대시보드에서 언제든지 업데이트할 수 있습니다."
 
-#: components/billing/billing-content.tsx:602
+#: components/billing/billing-content.tsx:682
 msgid "Billing is not available"
 msgstr "청구 기능을 사용할 수 없습니다."
 
@@ -270,7 +270,7 @@ msgstr "계속을 클릭하면, 저희의 <0>이용 약관</0>과 <1>개인정�
 msgid "Call Summary"
 msgstr "대화 요약"
 
-#: components/billing/billing-content.tsx:798
+#: components/billing/billing-content.tsx:915
 #: components/call-summary.tsx:1505
 #: components/history/conversation-history.tsx:1746
 #: components/history/conversation-history.tsx:1877
@@ -281,7 +281,7 @@ msgstr "대화 요약"
 msgid "Cancel"
 msgstr "취소"
 
-#: components/billing/billing-content.tsx:261
+#: components/billing/billing-content.tsx:277
 msgid "Canceled"
 msgstr "취소됨"
 
@@ -310,7 +310,7 @@ msgstr "이메일을 확인하세요"
 msgid "Checking your plan…"
 msgstr "플랜 확인 중…"
 
-#: components/billing/billing-content.tsx:684
+#: components/billing/billing-content.tsx:774
 msgid "Choose monthly or yearly billing and unlock Glass features tailored to your team."
 msgstr "월별 또는 연간 구독을 선택하고 팀에 맞춤화된 Glass 기능을 활용하세요."
 
@@ -363,28 +363,28 @@ msgstr "닫기"
 msgid "Columns"
 msgstr "열"
 
-#: components/billing/billing-content.tsx:195
+#: components/billing/billing-content.tsx:211
 #: components/nav.tsx:87
 msgid "Community"
 msgstr "커뮤니티"
 
-#: components/billing/billing-content.tsx:102
+#: components/billing/billing-content.tsx:118
 msgid "Community Support"
 msgstr "커뮤니티 지원"
 
-#: components/billing/billing-content.tsx:755
+#: components/billing/billing-content.tsx:856
 msgid "Company"
 msgstr "회사"
 
-#: components/billing/billing-content.tsx:760
+#: components/billing/billing-content.tsx:866
 msgid "Company name"
 msgstr "회사 이름"
 
-#: components/billing/billing-content.tsx:765
+#: components/billing/billing-content.tsx:871
 msgid "Company size"
 msgstr "회사 규모"
 
-#: components/billing/billing-content.tsx:708
+#: components/billing/billing-content.tsx:805
 msgid "Compare plans"
 msgstr "요금제 비교하기"
 
@@ -402,12 +402,12 @@ msgstr "비밀번호 확인"
 msgid "Connecting..."
 msgstr "연결 중..."
 
-#: components/billing/billing-content.tsx:138
-#: components/billing/billing-content.tsx:745
+#: components/billing/billing-content.tsx:154
+#: components/billing/billing-content.tsx:844
 msgid "Contact sales"
 msgstr "영업팀 문의"
 
-#: components/billing/billing-content.tsx:127
+#: components/billing/billing-content.tsx:143
 msgid "Contact us"
 msgstr "문의하기"
 
@@ -424,8 +424,8 @@ msgstr "대화가 삭제되었습니다."
 msgid "Conversation history"
 msgstr "대화 내역"
 
-#: components/billing/billing-content.tsx:101
-#: components/billing/billing-content.tsx:182
+#: components/billing/billing-content.tsx:117
+#: components/billing/billing-content.tsx:198
 #: components/call-summary.tsx:1348
 #: components/history/conversation-history.tsx:1643
 msgid "Conversation History"
@@ -488,9 +488,9 @@ msgstr "생성 일자"
 msgid "Creating account..."
 msgstr "계정을 생성하는 중..."
 
-#: components/billing/billing-content.tsx:426
-#: components/billing/billing-content.tsx:431
-#: components/billing/billing-content.tsx:617
+#: components/billing/billing-content.tsx:465
+#: components/billing/billing-content.tsx:475
+#: components/billing/billing-content.tsx:700
 msgid "Current plan"
 msgstr "현재 요금제"
 
@@ -514,16 +514,16 @@ msgstr "Glass를 나에게 맞게 설정해 보세요"
 msgid "Dark"
 msgstr "어두운"
 
-#: components/billing/billing-content.tsx:116
-#: components/billing/billing-content.tsx:188
+#: components/billing/billing-content.tsx:132
+#: components/billing/billing-content.tsx:204
 msgid "Data Retention Guarantee"
 msgstr "데이터 보존 보증"
 
-#: components/billing/billing-content.tsx:197
+#: components/billing/billing-content.tsx:213
 msgid "Dedicated"
 msgstr "전담"
 
-#: components/billing/billing-content.tsx:134
+#: components/billing/billing-content.tsx:150
 msgid "Dedicated Support"
 msgstr "전담 지원"
 
@@ -650,14 +650,14 @@ msgstr "파트너 편집"
 msgid "Elementary"
 msgstr "초등"
 
-#: components/billing/billing-content.tsx:196
+#: components/billing/billing-content.tsx:212
 #: components/forgot-password-form.tsx:94
 #: components/login-form.tsx:105
 #: components/signup-form.tsx:188
 msgid "Email"
 msgstr "이메일"
 
-#: components/billing/billing-content.tsx:117
+#: components/billing/billing-content.tsx:133
 msgid "Email Support"
 msgstr "이메일 지원"
 
@@ -709,14 +709,14 @@ msgstr "이메일 주소를 입력하면 재설정 링크를 보내드릴게요.
 msgid "Enter your new password below"
 msgstr "아래에 새로운 비밀번호를 입력해 주세요"
 
-#: components/billing/billing-content.tsx:126
-#: components/billing/billing-content.tsx:243
-#: components/billing/billing-content.tsx:728
+#: components/billing/billing-content.tsx:142
+#: components/billing/billing-content.tsx:259
+#: components/billing/billing-content.tsx:827
 msgid "Enterprise"
 msgstr "엔터프라이즈"
 
-#: components/billing/billing-content.tsx:136
-#: components/billing/billing-content.tsx:224
+#: components/billing/billing-content.tsx:152
+#: components/billing/billing-content.tsx:240
 msgid "Enterprise Onboarding"
 msgstr "기업 온보딩"
 
@@ -724,11 +724,11 @@ msgstr "기업 온보딩"
 msgid "Entities"
 msgstr "엔터티"
 
-#: components/billing/billing-content.tsx:113
+#: components/billing/billing-content.tsx:129
 msgid "Everything in Free"
 msgstr "무료의 모든 기능"
 
-#: components/billing/billing-content.tsx:130
+#: components/billing/billing-content.tsx:146
 msgid "Everything in Pro"
 msgstr "Pro의 모든 기능"
 
@@ -815,15 +815,15 @@ msgstr "제목을 업데이트하지 못했어요."
 msgid "Failed to upload image"
 msgstr "이미지 업로드 실패"
 
-#: components/billing/billing-content.tsx:203
+#: components/billing/billing-content.tsx:219
 msgid "Fastest"
 msgstr "최우선"
 
-#: components/billing/billing-content.tsx:135
+#: components/billing/billing-content.tsx:151
 msgid "Fastest Response"
 msgstr "최우선 대응"
 
-#: components/billing/billing-content.tsx:719
+#: components/billing/billing-content.tsx:818
 msgid "Feature"
 msgstr "기능"
 
@@ -844,10 +844,10 @@ msgstr "유창함"
 msgid "Forgot your password?"
 msgstr "비밀번호를 잊으셨나요?"
 
-#: components/billing/billing-content.tsx:91
-#: components/billing/billing-content.tsx:232
-#: components/billing/billing-content.tsx:236
-#: components/billing/billing-content.tsx:722
+#: components/billing/billing-content.tsx:107
+#: components/billing/billing-content.tsx:248
+#: components/billing/billing-content.tsx:252
+#: components/billing/billing-content.tsx:821
 msgid "Free"
 msgstr "무료"
 
@@ -855,7 +855,7 @@ msgstr "무료"
 msgid "Free accounts can keep up to 10 conversations. Delete old calls or upgrade for unlimited history."
 msgstr "무료 계정은 최대 10개의 대화를 저장할 수 있어요. 오래된 기록을 삭제하거나 무제한 기록을 위해 업그레이드하세요."
 
-#: components/billing/billing-content.tsx:93
+#: components/billing/billing-content.tsx:109
 msgid "Free for everyone"
 msgstr "모두에게 무료"
 
@@ -996,7 +996,7 @@ msgstr "실제 대화를 학습 자료로 만들어드려요. 대화 기록과 �
 msgid "I'm here to help you communicate and learn a new language through real conversations."
 msgstr "실제 대화를 통해 언어를 배우고 자연스럽게 소통할 수 있도록 도와드릴게요."
 
-#: components/billing/billing-content.tsx:792
+#: components/billing/billing-content.tsx:905
 msgid "I'm interested in Glass for my team..."
 msgstr "팀에서 Glass를 사용하고 싶습니다..."
 
@@ -1012,8 +1012,8 @@ msgstr "이메일이 보이지 않으면 스팸 메일함을 확인해 보세요
 msgid "Importance"
 msgstr "중요도"
 
-#: components/billing/billing-content.tsx:251
-#: components/billing/billing-content.tsx:265
+#: components/billing/billing-content.tsx:267
+#: components/billing/billing-content.tsx:281
 msgid "Inactive"
 msgstr "비활성화됨"
 
@@ -1088,14 +1088,14 @@ msgstr "지금 듣고 있어요. 준비되면 편하게 말해보세요."
 msgid "Listening… say anything when you're ready."
 msgstr "지금 듣고 있어요. 준비되면 편하게 말해보세요."
 
-#: components/billing/billing-content.tsx:95
-#: components/billing/billing-content.tsx:146
+#: components/billing/billing-content.tsx:111
+#: components/billing/billing-content.tsx:162
 #: components/start-call.tsx:1469
 #: components/start-call.tsx:1777
 msgid "Live Call"
 msgstr "라이브 통화"
 
-#: components/billing/billing-content.tsx:585
+#: components/billing/billing-content.tsx:663
 msgid "Loading billing…"
 msgstr "요금 정보를 불러오는 중…"
 
@@ -1157,7 +1157,7 @@ msgstr "결제 관리"
 msgid "Manage history"
 msgstr "기록 관리"
 
-#: components/billing/billing-content.tsx:668
+#: components/billing/billing-content.tsx:758
 msgid "Manage subscription"
 msgstr "구독 관리"
 
@@ -1228,7 +1228,7 @@ msgstr "인증이 필요해요"
 msgid "Missing conversation"
 msgstr "대화를 찾을 수 없어요"
 
-#: components/billing/billing-content.tsx:559
+#: components/billing/billing-content.tsx:637
 msgid "Missing email in profile"
 msgstr "프로필에 이메일이 등록되어 있지 않아요"
 
@@ -1241,7 +1241,7 @@ msgstr "프로필에 이메일이 등록되어 있지 않아요"
 msgid "Missing partner information"
 msgstr "파트너 정보를 찾을 수 없어요"
 
-#: components/billing/billing-content.tsx:274
+#: components/billing/billing-content.tsx:290
 msgid "Monthly"
 msgstr "월별"
 
@@ -1288,7 +1288,7 @@ msgstr "새 비밀번호"
 msgid "Next →"
 msgstr "다음 →"
 
-#: components/billing/billing-content.tsx:526
+#: components/billing/billing-content.tsx:604
 msgid "No active subscription to manage"
 msgstr "관리할 활성 구독이 없습니다."
 
@@ -1440,16 +1440,16 @@ msgstr "파트너가 업데이트되었습니다."
 msgid "Password"
 msgstr "비밀번호"
 
-#: components/billing/billing-content.tsx:258
+#: components/billing/billing-content.tsx:274
 msgid "Past due"
 msgstr "연체됨"
 
-#: components/billing/billing-content.tsx:109
+#: components/billing/billing-content.tsx:125
 msgid "per month"
 msgstr "월 별"
 
-#: components/billing/billing-content.tsx:100
-#: components/billing/billing-content.tsx:176
+#: components/billing/billing-content.tsx:116
+#: components/billing/billing-content.tsx:192
 msgid "Personalized Memory"
 msgstr "맞춤 메모리"
 
@@ -1465,15 +1465,15 @@ msgstr "사진"
 msgid "Photo updated"
 msgstr "사진이 업데이트되었습니다."
 
-#: components/billing/billing-content.tsx:637
+#: components/billing/billing-content.tsx:722
 msgid "Plan ends on {planRenewalLabel}"
 msgstr "{planRenewalLabel}에 플랜 만료"
 
-#: components/billing/billing-content.tsx:634
+#: components/billing/billing-content.tsx:719
 msgid "Plan ends on {scheduledCancelAt}"
 msgstr "{scheduledCancelAt}에 종료됩니다"
 
-#: components/billing/billing-content.tsx:551
+#: components/billing/billing-content.tsx:629
 msgid "Please complete the required fields"
 msgstr "필수 항목을 완료해 주세요"
 
@@ -1493,9 +1493,9 @@ msgstr "페이지를 새로고침한 후 다시 시도해 주세요."
 msgid "Please share your screen with audio from your call platform (Zoom, Google Meet, Teams)."
 msgstr "화상 통화 플랫폼(Zoom, Google Meet, Teams)에서 오디오와 함께 화면을 공유해 주세요."
 
-#: components/billing/billing-content.tsx:503
-#: components/billing/billing-content.tsx:522
-#: components/billing/billing-content.tsx:547
+#: components/billing/billing-content.tsx:581
+#: components/billing/billing-content.tsx:600
+#: components/billing/billing-content.tsx:625
 #: components/start-call.tsx:1006
 msgid "Please sign in again"
 msgstr "다시 로그인해 주세요"
@@ -1516,8 +1516,8 @@ msgstr "세션이 로드될 때까지 기다렸다가 다시 시도해 주세요
 msgid "Please wait while we verify your email address"
 msgstr "이메일 주소를 확인 중입니다. 잠시만 기다려 주세요."
 
-#: components/billing/billing-content.tsx:99
-#: components/billing/billing-content.tsx:170
+#: components/billing/billing-content.tsx:115
+#: components/billing/billing-content.tsx:186
 msgid "Post-Call Feedback"
 msgstr "통화 후 피드백"
 
@@ -1533,15 +1533,15 @@ msgstr "작업 공간을 준비하는 중…"
 msgid "Press Start Call below to connect. Glass will use your mic plus the shared audio."
 msgstr "아래의 Start Call을 눌러 연결하세요. Glass는 마이크와 공유된 오디오를 사용할 것입니다."
 
-#: components/billing/billing-content.tsx:678
+#: components/billing/billing-content.tsx:768
 msgid "Pricing"
 msgstr "가격 책정"
 
-#: components/billing/billing-content.tsx:202
+#: components/billing/billing-content.tsx:218
 msgid "Priority"
 msgstr "우선"
 
-#: components/billing/billing-content.tsx:118
+#: components/billing/billing-content.tsx:134
 msgid "Priority Response"
 msgstr "우선 대응"
 
@@ -1549,9 +1549,9 @@ msgstr "우선 대응"
 msgid "Priority support is available through the in-app help menu."
 msgstr "앱 내 도움말 메뉴에서 우선 지원을 받을 수 있습니다."
 
-#: components/billing/billing-content.tsx:107
-#: components/billing/billing-content.tsx:240
-#: components/billing/billing-content.tsx:725
+#: components/billing/billing-content.tsx:123
+#: components/billing/billing-content.tsx:256
+#: components/billing/billing-content.tsx:824
 msgid "Pro"
 msgstr "프로"
 
@@ -1563,13 +1563,13 @@ msgstr "발음 표기"
 msgid "Quick actions"
 msgstr "빠른 작업"
 
-#: components/billing/billing-content.tsx:98
-#: components/billing/billing-content.tsx:164
+#: components/billing/billing-content.tsx:114
+#: components/billing/billing-content.tsx:180
 msgid "Real-Time Feedback"
 msgstr "실시간 피드백"
 
-#: components/billing/billing-content.tsx:97
-#: components/billing/billing-content.tsx:158
+#: components/billing/billing-content.tsx:113
+#: components/billing/billing-content.tsx:174
 msgid "Real-Time Suggestion"
 msgstr "실시간 제안"
 
@@ -1593,7 +1593,7 @@ msgstr "제거"
 msgid "Remove insight"
 msgstr "인사이트 삭제"
 
-#: components/billing/billing-content.tsx:639
+#: components/billing/billing-content.tsx:724
 msgid "Renews on {planRenewalLabel}"
 msgstr "{planRenewalLabel}에 갱신됩니다."
 
@@ -1617,7 +1617,7 @@ msgstr "비밀번호 재설정"
 msgid "Resetting..."
 msgstr "재설정 중..."
 
-#: components/billing/billing-content.tsx:200
+#: components/billing/billing-content.tsx:216
 msgid "Response Time"
 msgstr "응답 시간"
 
@@ -1678,7 +1678,7 @@ msgstr "저장 중..."
 msgid "Saving…"
 msgstr "저장 중…"
 
-#: components/billing/billing-content.tsx:681
+#: components/billing/billing-content.tsx:771
 msgid "Scale with the right plan"
 msgstr "적합한 요금제로 확장하세요"
 
@@ -1723,7 +1723,7 @@ msgstr "메모리 검색..."
 msgid "Search partners"
 msgstr "검색 파트너"
 
-#: components/billing/billing-content.tsx:711
+#: components/billing/billing-content.tsx:808
 msgid "See all features across plans and find what works best for you."
 msgstr "모든 요금제의 기능을 확인하고, 가장 적합한 것을 찾아보세요."
 
@@ -1775,7 +1775,7 @@ msgstr "행 선택"
 msgid "Select screen"
 msgstr "화면 선택"
 
-#: components/billing/billing-content.tsx:772
+#: components/billing/billing-content.tsx:880
 msgid "Select size"
 msgstr "크기 선택"
 
@@ -1799,7 +1799,7 @@ msgstr "보내기"
 msgid "Send Feedback"
 msgstr "피드백 보내기"
 
-#: components/billing/billing-content.tsx:802
+#: components/billing/billing-content.tsx:919
 msgid "Send request"
 msgstr "요청 보내기"
 
@@ -1864,8 +1864,8 @@ msgstr "로그아웃 중입니다..."
 msgid "Skip tour"
 msgstr "건너뛰기"
 
-#: components/billing/billing-content.tsx:133
-#: components/billing/billing-content.tsx:218
+#: components/billing/billing-content.tsx:149
+#: components/billing/billing-content.tsx:234
 msgid "SLA Guarantee"
 msgstr "SLA 보증"
 
@@ -1874,7 +1874,7 @@ msgstr "SLA 보증"
 msgid "Spanish"
 msgstr "스페인어"
 
-#: components/billing/billing-content.tsx:201
+#: components/billing/billing-content.tsx:217
 msgid "Standard"
 msgstr "일반"
 
@@ -1915,7 +1915,7 @@ msgstr "이 통찰을 요약하세요..."
 msgid "Summary"
 msgstr "요약"
 
-#: components/billing/billing-content.tsx:194
+#: components/billing/billing-content.tsx:210
 msgid "Support"
 msgstr "지원"
 
@@ -1923,16 +1923,16 @@ msgstr "지원"
 msgid "System default"
 msgstr "시스템 기본 설정"
 
-#: components/billing/billing-content.tsx:131
-#: components/billing/billing-content.tsx:206
+#: components/billing/billing-content.tsx:147
+#: components/billing/billing-content.tsx:222
 msgid "Team Management"
 msgstr "팀 관리"
 
-#: components/billing/billing-content.tsx:748
+#: components/billing/billing-content.tsx:847
 msgid "Tell us a little about your team and we’ll reach out shortly."
 msgstr "팀에 대해 간단히 알려주시면 곧 연락드릴게요."
 
-#: components/billing/billing-content.tsx:786
+#: components/billing/billing-content.tsx:894
 msgid "Tell us about your requirements"
 msgstr "요청 사항을 알려주세요"
 
@@ -1944,7 +1944,7 @@ msgstr "의견을 보내주셔서 감사합니다!"
 msgid "Thanks for upgrading your Glass workspace. Your subscription is active and your receipts will arrive via email. You can start roleplaying or manage your billing details whenever you like."
 msgstr "Glass 워크스페이스를 업그레이드해 주셔서 감사합니다. 구독이 활성화되었으며 영수증은 이메일로 발송됩니다. 언제든지 롤플레이를 시작하거나 요금 세부 정보를 관리할 수 있습니다."
 
-#: components/billing/billing-content.tsx:642
+#: components/billing/billing-content.tsx:727
 msgid "The Free plan never expires. Upgrade anytime for unlimited history."
 msgstr "무료 플랜은 만료되지 않아요. 업그레이드 시 저장된 메모리를 무제한으로 활용하실 수 있어요."
 
@@ -1969,7 +1969,7 @@ msgstr "이 작업을 수행하면 선택한 {0}개의 메모리가 영구적으
 msgid "this conversation"
 msgstr "이 대화"
 
-#: components/billing/billing-content.tsx:605
+#: components/billing/billing-content.tsx:685
 msgid "This Glass instance is running in self-hosted mode, so upgrades aren't required."
 msgstr "이 Glass 인스턴스는 자체 호스팅 모드로 실행 중이므로 업그레이드가 필요하지 않습니다."
 
@@ -1993,7 +1993,7 @@ msgstr "선택한 메모리를 지식 그래프에서 영구적으로 삭제합�
 msgid "Title updated"
 msgstr "제목이 업데이트되었습니다"
 
-#: components/billing/billing-content.tsx:256
+#: components/billing/billing-content.tsx:272
 msgid "Trial"
 msgstr "체험판"
 
@@ -2032,11 +2032,11 @@ msgstr "파트너를 삭제할 수 없습니다."
 msgid "Unable to load memories right now."
 msgstr "지금 메모리를 불러올 수 없습니다."
 
-#: components/billing/billing-content.tsx:539
+#: components/billing/billing-content.tsx:617
 msgid "Unable to open billing portal"
 msgstr "결제 포털을 열 수 없습니다"
 
-#: components/billing/billing-content.tsx:514
+#: components/billing/billing-content.tsx:592
 #: components/start-call.tsx:1017
 msgid "Unable to open checkout"
 msgstr "결제 창을 열 수 없습니다"
@@ -2065,7 +2065,7 @@ msgstr "통화를 시작할 수 없습니다."
 msgid "Unable to start conversation"
 msgstr "대화를 시작할 수 없습니다."
 
-#: components/billing/billing-content.tsx:575
+#: components/billing/billing-content.tsx:653
 msgid "Unable to submit request"
 msgstr "요청을 제출할 수 없습니다."
 
@@ -2078,10 +2078,10 @@ msgstr "모바일에서는 사용할 수 없습니다"
 msgid "Unknown"
 msgstr "알 수 없음"
 
-#: components/billing/billing-content.tsx:178
-#: components/billing/billing-content.tsx:179
-#: components/billing/billing-content.tsx:184
-#: components/billing/billing-content.tsx:185
+#: components/billing/billing-content.tsx:194
+#: components/billing/billing-content.tsx:195
+#: components/billing/billing-content.tsx:200
+#: components/billing/billing-content.tsx:201
 msgid "Unlimited"
 msgstr "무제한"
 
@@ -2089,11 +2089,11 @@ msgstr "무제한"
 msgid "Unlimited call summaries are enabled right away."
 msgstr "무제한 통화 요약이 즉시 활성화되었습니다."
 
-#: components/billing/billing-content.tsx:115
+#: components/billing/billing-content.tsx:131
 msgid "Unlimited Conversation History"
 msgstr "대화 기록 무제한"
 
-#: components/billing/billing-content.tsx:114
+#: components/billing/billing-content.tsx:130
 msgid "Unlimited Memory"
 msgstr "무제한 메모리"
 
@@ -2101,11 +2101,11 @@ msgstr "무제한 메모리"
 msgid "Untitled Conversation"
 msgstr "제목 없는 대화"
 
-#: components/billing/billing-content.tsx:183
+#: components/billing/billing-content.tsx:199
 msgid "Up to 5"
 msgstr "최대 5건"
 
-#: components/billing/billing-content.tsx:177
+#: components/billing/billing-content.tsx:193
 msgid "Up to 500"
 msgstr "최대 500건"
 
@@ -2126,8 +2126,8 @@ msgstr "업데이트 중..."
 msgid "Upgrade"
 msgstr "업그레이드"
 
-#: components/billing/billing-content.tsx:120
-#: components/billing/billing-content.tsx:499
+#: components/billing/billing-content.tsx:136
+#: components/billing/billing-content.tsx:577
 msgid "Upgrade monthly"
 msgstr "월간 업그레이드"
 
@@ -2139,13 +2139,13 @@ msgstr "업그레이드 플랜"
 msgid "Upgrade to keep unlimited conversation history."
 msgstr "업그레이드하면 무제한 대화 기록을 저장할 수 있습니다."
 
-#: components/billing/billing-content.tsx:120
-#: components/billing/billing-content.tsx:499
+#: components/billing/billing-content.tsx:136
+#: components/billing/billing-content.tsx:577
 msgid "Upgrade yearly"
 msgstr "연간 업그레이드"
 
-#: components/billing/billing-content.tsx:132
-#: components/billing/billing-content.tsx:212
+#: components/billing/billing-content.tsx:148
+#: components/billing/billing-content.tsx:228
 msgid "Usage Analytics"
 msgstr "사용량 분석"
 
@@ -2177,7 +2177,7 @@ msgstr "음성 스트림 초기화를 실패했습니다. 다시 시도해 주�
 msgid "We couldn't capture your screen. Try a different window or browser."
 msgstr "화면을 캡처할 수 없습니다. 다른 창이나 브라우저를 시도해 보세요."
 
-#: components/billing/billing-content.tsx:593
+#: components/billing/billing-content.tsx:671
 msgid "We couldn't load your account details. Please refresh and try again."
 msgstr "계정 정보를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요."
 
@@ -2189,7 +2189,7 @@ msgstr "히스토리를 불러올 수 없습니다. 새로고침 후 다시 시�
 msgid "We had trouble starting your session. Please check your internet and try again."
 msgstr "세션을 시작하는 데 문제가 발생했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요."
 
-#: components/billing/billing-content.tsx:570
+#: components/billing/billing-content.tsx:648
 msgid "We'll be in touch shortly"
 msgstr "곧 연락드리겠습니다."
 
@@ -2227,7 +2227,7 @@ msgstr "어떤 언어를 배우고 싶으신가요?"
 msgid "Would delete {0} memories"
 msgstr "{0}개의 메모리를 삭제하시겠습니까?"
 
-#: components/billing/billing-content.tsx:276
+#: components/billing/billing-content.tsx:292
 msgid "Yearly"
 msgstr "연간"
 

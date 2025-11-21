@@ -87,6 +87,7 @@ services:
       - ./web/types:/app/types
       - ./web/auth.ts:/app/auth.ts
       - ./web/public:/app/public
+      - ./web/locales:/app/locales
 
 volumes:
   pgdata:

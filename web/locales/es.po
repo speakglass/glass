@@ -96,8 +96,8 @@ msgstr "Precisión"
 msgid "Actions"
 msgstr "Acciones"
 
-#: components/billing/billing-content.tsx:251
-#: components/billing/billing-content.tsx:265
+#: components/billing/billing-content.tsx:267
+#: components/billing/billing-content.tsx:281
 msgid "Active"
 msgstr "Activo"
 
@@ -133,8 +133,8 @@ msgstr "Después de cada conversación"
 msgid "After each conversation, I'll give you feedback on your grammar, pronunciation, and vocabulary. So you keep improving naturally."
 msgstr "Después de cada conversación, te daré comentarios sobre tu gramática, pronunciación y vocabulario."
 
-#: components/billing/billing-content.tsx:96
-#: components/billing/billing-content.tsx:152
+#: components/billing/billing-content.tsx:112
+#: components/billing/billing-content.tsx:168
 #: components/start-call.tsx:1405
 #: components/start-call.tsx:1775
 msgid "AI Roleplay"
@@ -165,7 +165,7 @@ msgstr "Analizando la conversación"
 msgid "Analyzing conversation to extract memories..."
 msgstr "Analizando la conversación para extraer recuerdos..."
 
-#: components/billing/billing-content.tsx:128
+#: components/billing/billing-content.tsx:144
 msgid "Annual billing only"
 msgstr "Solo facturación anual"
 
@@ -232,11 +232,11 @@ msgstr "Principiante"
 msgid "Below Average"
 msgstr "Por debajo del promedio"
 
-#: components/billing/billing-content.tsx:110
+#: components/billing/billing-content.tsx:126
 msgid "Billed monthly"
 msgstr "Facturado mensualmente"
 
-#: components/billing/billing-content.tsx:110
+#: components/billing/billing-content.tsx:126
 msgid "Billed yearly"
 msgstr "Facturado anualmente"
 
@@ -245,7 +245,7 @@ msgstr "Facturado anualmente"
 msgid "Billing"
 msgstr "Facturación"
 
-#: components/billing/billing-content.tsx:644
+#: components/billing/billing-content.tsx:732
 msgid "Billing active."
 msgstr "Facturación activada."
 
@@ -253,7 +253,7 @@ msgstr "Facturación activada."
 msgid "Billing details can be updated anytime from the billing dashboard."
 msgstr "Los detalles de facturación se pueden actualizar en cualquier momento desde el panel de facturación."
 
-#: components/billing/billing-content.tsx:602
+#: components/billing/billing-content.tsx:682
 msgid "Billing is not available"
 msgstr "La facturación no está disponible"
 
@@ -270,7 +270,7 @@ msgstr "Al hacer clic en continuar, aceptas nuestros <0>Términos de servicio</0
 msgid "Call Summary"
 msgstr "Resumen de llamada"
 
-#: components/billing/billing-content.tsx:798
+#: components/billing/billing-content.tsx:915
 #: components/call-summary.tsx:1505
 #: components/history/conversation-history.tsx:1746
 #: components/history/conversation-history.tsx:1877
@@ -281,7 +281,7 @@ msgstr "Resumen de llamada"
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: components/billing/billing-content.tsx:261
+#: components/billing/billing-content.tsx:277
 msgid "Canceled"
 msgstr "Cancelado"
 
@@ -310,7 +310,7 @@ msgstr "Revisa tu correo electrónico"
 msgid "Checking your plan…"
 msgstr "Comprobando tu plan…"
 
-#: components/billing/billing-content.tsx:684
+#: components/billing/billing-content.tsx:774
 msgid "Choose monthly or yearly billing and unlock Glass features tailored to your team."
 msgstr "Elige la facturación mensual o anual y desbloquea las funciones de Glass diseñadas para tu equipo."
 
@@ -363,28 +363,28 @@ msgstr "Cerrar"
 msgid "Columns"
 msgstr "Columnas"
 
-#: components/billing/billing-content.tsx:195
+#: components/billing/billing-content.tsx:211
 #: components/nav.tsx:87
 msgid "Community"
 msgstr "Comunidad"
 
-#: components/billing/billing-content.tsx:102
+#: components/billing/billing-content.tsx:118
 msgid "Community Support"
 msgstr "Soporte de la comunidad"
 
-#: components/billing/billing-content.tsx:755
+#: components/billing/billing-content.tsx:856
 msgid "Company"
 msgstr "Empresa"
 
-#: components/billing/billing-content.tsx:760
+#: components/billing/billing-content.tsx:866
 msgid "Company name"
 msgstr "Nombre de la empresa"
 
-#: components/billing/billing-content.tsx:765
+#: components/billing/billing-content.tsx:871
 msgid "Company size"
 msgstr "Tamaño de la empresa"
 
-#: components/billing/billing-content.tsx:708
+#: components/billing/billing-content.tsx:805
 msgid "Compare plans"
 msgstr "Comparar planes"
 
@@ -402,12 +402,12 @@ msgstr "Confirmar contraseña"
 msgid "Connecting..."
 msgstr "Conectando..."
 
-#: components/billing/billing-content.tsx:138
-#: components/billing/billing-content.tsx:745
+#: components/billing/billing-content.tsx:154
+#: components/billing/billing-content.tsx:844
 msgid "Contact sales"
 msgstr "Contactar con ventas"
 
-#: components/billing/billing-content.tsx:127
+#: components/billing/billing-content.tsx:143
 msgid "Contact us"
 msgstr "Contáctanos"
 
@@ -424,8 +424,8 @@ msgstr "Conversación eliminada"
 msgid "Conversation history"
 msgstr "Historial de conversaciones"
 
-#: components/billing/billing-content.tsx:101
-#: components/billing/billing-content.tsx:182
+#: components/billing/billing-content.tsx:117
+#: components/billing/billing-content.tsx:198
 #: components/call-summary.tsx:1348
 #: components/history/conversation-history.tsx:1643
 msgid "Conversation History"
@@ -488,9 +488,9 @@ msgstr "Creado el"
 msgid "Creating account..."
 msgstr "Creando cuenta..."
 
-#: components/billing/billing-content.tsx:426
-#: components/billing/billing-content.tsx:431
-#: components/billing/billing-content.tsx:617
+#: components/billing/billing-content.tsx:465
+#: components/billing/billing-content.tsx:475
+#: components/billing/billing-content.tsx:700
 msgid "Current plan"
 msgstr "Plan actual"
 
@@ -514,16 +514,16 @@ msgstr "Personaliza tu experiencia con Glass"
 msgid "Dark"
 msgstr "Oscuro"
 
-#: components/billing/billing-content.tsx:116
-#: components/billing/billing-content.tsx:188
+#: components/billing/billing-content.tsx:132
+#: components/billing/billing-content.tsx:204
 msgid "Data Retention Guarantee"
 msgstr "Garantía de retención de datos"
 
-#: components/billing/billing-content.tsx:197
+#: components/billing/billing-content.tsx:213
 msgid "Dedicated"
 msgstr "Dedicado"
 
-#: components/billing/billing-content.tsx:134
+#: components/billing/billing-content.tsx:150
 msgid "Dedicated Support"
 msgstr "Soporte Dedicado"
 
@@ -650,14 +650,14 @@ msgstr "Editar socio"
 msgid "Elementary"
 msgstr "Primaria"
 
-#: components/billing/billing-content.tsx:196
+#: components/billing/billing-content.tsx:212
 #: components/forgot-password-form.tsx:94
 #: components/login-form.tsx:105
 #: components/signup-form.tsx:188
 msgid "Email"
 msgstr "Correo electrónico"
 
-#: components/billing/billing-content.tsx:117
+#: components/billing/billing-content.tsx:133
 msgid "Email Support"
 msgstr "Soporte por correo electrónico"
 
@@ -709,14 +709,14 @@ msgstr "Ingresa tu dirección de correo electrónico y te enviaremos un enlace p
 msgid "Enter your new password below"
 msgstr "Ingresa tu nueva contraseña a continuación"
 
-#: components/billing/billing-content.tsx:126
-#: components/billing/billing-content.tsx:243
-#: components/billing/billing-content.tsx:728
+#: components/billing/billing-content.tsx:142
+#: components/billing/billing-content.tsx:259
+#: components/billing/billing-content.tsx:827
 msgid "Enterprise"
 msgstr "Empresa"
 
-#: components/billing/billing-content.tsx:136
-#: components/billing/billing-content.tsx:224
+#: components/billing/billing-content.tsx:152
+#: components/billing/billing-content.tsx:240
 msgid "Enterprise Onboarding"
 msgstr "Incorporación empresarial"
 
@@ -724,11 +724,11 @@ msgstr "Incorporación empresarial"
 msgid "Entities"
 msgstr "Entidades"
 
-#: components/billing/billing-content.tsx:113
+#: components/billing/billing-content.tsx:129
 msgid "Everything in Free"
 msgstr "Todo lo que incluye la versión gratuita"
 
-#: components/billing/billing-content.tsx:130
+#: components/billing/billing-content.tsx:146
 msgid "Everything in Pro"
 msgstr "Todo en Pro"
 
@@ -815,15 +815,15 @@ msgstr "No se pudo actualizar el título"
 msgid "Failed to upload image"
 msgstr "Error al subir la imagen"
 
-#: components/billing/billing-content.tsx:203
+#: components/billing/billing-content.tsx:219
 msgid "Fastest"
 msgstr "Máxima prioridad"
 
-#: components/billing/billing-content.tsx:135
+#: components/billing/billing-content.tsx:151
 msgid "Fastest Response"
 msgstr "Respuesta prioritaria absoluta"
 
-#: components/billing/billing-content.tsx:719
+#: components/billing/billing-content.tsx:818
 msgid "Feature"
 msgstr "Función"
 
@@ -844,10 +844,10 @@ msgstr "Fluidez"
 msgid "Forgot your password?"
 msgstr "¿Olvidaste tu contraseña?"
 
-#: components/billing/billing-content.tsx:91
-#: components/billing/billing-content.tsx:232
-#: components/billing/billing-content.tsx:236
-#: components/billing/billing-content.tsx:722
+#: components/billing/billing-content.tsx:107
+#: components/billing/billing-content.tsx:248
+#: components/billing/billing-content.tsx:252
+#: components/billing/billing-content.tsx:821
 msgid "Free"
 msgstr "Gratis"
 
@@ -855,7 +855,7 @@ msgstr "Gratis"
 msgid "Free accounts can keep up to 10 conversations. Delete old calls or upgrade for unlimited history."
 msgstr "Las cuentas gratuitas pueden guardar hasta 10 conversaciones. Elimina llamadas antiguas o actualiza para obtener un historial ilimitado."
 
-#: components/billing/billing-content.tsx:93
+#: components/billing/billing-content.tsx:109
 msgid "Free for everyone"
 msgstr "Gratis para todos"
 
@@ -996,7 +996,7 @@ msgstr "Convertiré tus conversaciones reales en material de aprendizaje. Puedes
 msgid "I'm here to help you communicate and learn a new language through real conversations."
 msgstr "Estoy aquí para ayudarte a comunicarte y aprender un nuevo idioma a través de conversaciones reales."
 
-#: components/billing/billing-content.tsx:792
+#: components/billing/billing-content.tsx:905
 msgid "I'm interested in Glass for my team..."
 msgstr "Estoy interesado en Glass para mi equipo..."
 
@@ -1012,8 +1012,8 @@ msgstr "Si no ves el correo electrónico, revisa tu carpeta de spam."
 msgid "Importance"
 msgstr "Importancia"
 
-#: components/billing/billing-content.tsx:251
-#: components/billing/billing-content.tsx:265
+#: components/billing/billing-content.tsx:267
+#: components/billing/billing-content.tsx:281
 msgid "Inactive"
 msgstr "Inactivo"
 
@@ -1088,14 +1088,14 @@ msgstr "Escuchando. Habla cuando estés listo."
 msgid "Listening… say anything when you're ready."
 msgstr "Escuchando... puedes hablar cuando quieras."
 
-#: components/billing/billing-content.tsx:95
-#: components/billing/billing-content.tsx:146
+#: components/billing/billing-content.tsx:111
+#: components/billing/billing-content.tsx:162
 #: components/start-call.tsx:1469
 #: components/start-call.tsx:1777
 msgid "Live Call"
 msgstr "Llamada en Vivo"
 
-#: components/billing/billing-content.tsx:585
+#: components/billing/billing-content.tsx:663
 msgid "Loading billing…"
 msgstr "Cargando facturación…"
 
@@ -1157,7 +1157,7 @@ msgstr "Administrar facturación"
 msgid "Manage history"
 msgstr "Administrar historial"
 
-#: components/billing/billing-content.tsx:668
+#: components/billing/billing-content.tsx:758
 msgid "Manage subscription"
 msgstr "Administrar suscripción"
 
@@ -1228,7 +1228,7 @@ msgstr "Falta de autenticación"
 msgid "Missing conversation"
 msgstr "Conversación no encontrada"
 
-#: components/billing/billing-content.tsx:559
+#: components/billing/billing-content.tsx:637
 msgid "Missing email in profile"
 msgstr "Falta el correo electrónico en el perfil"
 
@@ -1241,7 +1241,7 @@ msgstr "Falta el correo electrónico en el perfil"
 msgid "Missing partner information"
 msgstr "Falta información del socio"
 
-#: components/billing/billing-content.tsx:274
+#: components/billing/billing-content.tsx:290
 msgid "Monthly"
 msgstr "Mensual"
 
@@ -1288,7 +1288,7 @@ msgstr "Nueva contraseña"
 msgid "Next →"
 msgstr "Siguiente →"
 
-#: components/billing/billing-content.tsx:526
+#: components/billing/billing-content.tsx:604
 msgid "No active subscription to manage"
 msgstr "No hay ninguna suscripción activa para gestionar"
 
@@ -1440,16 +1440,16 @@ msgstr "Socio actualizado"
 msgid "Password"
 msgstr "Contraseña"
 
-#: components/billing/billing-content.tsx:258
+#: components/billing/billing-content.tsx:274
 msgid "Past due"
 msgstr "Vencido"
 
-#: components/billing/billing-content.tsx:109
+#: components/billing/billing-content.tsx:125
 msgid "per month"
 msgstr "por mes"
 
-#: components/billing/billing-content.tsx:100
-#: components/billing/billing-content.tsx:176
+#: components/billing/billing-content.tsx:116
+#: components/billing/billing-content.tsx:192
 msgid "Personalized Memory"
 msgstr "Memoria personalizada"
 
@@ -1465,15 +1465,15 @@ msgstr "Foto"
 msgid "Photo updated"
 msgstr "Foto actualizada"
 
-#: components/billing/billing-content.tsx:637
+#: components/billing/billing-content.tsx:722
 msgid "Plan ends on {planRenewalLabel}"
 msgstr "El plan finaliza el {planRenewalLabel}"
 
-#: components/billing/billing-content.tsx:634
+#: components/billing/billing-content.tsx:719
 msgid "Plan ends on {scheduledCancelAt}"
 msgstr "El plan finaliza el {scheduledCancelAt}"
 
-#: components/billing/billing-content.tsx:551
+#: components/billing/billing-content.tsx:629
 msgid "Please complete the required fields"
 msgstr "Por favor, completa los campos obligatorios"
 
@@ -1493,9 +1493,9 @@ msgstr "Por favor, actualiza la página e inténtalo de nuevo."
 msgid "Please share your screen with audio from your call platform (Zoom, Google Meet, Teams)."
 msgstr "Por favor, comparte tu pantalla con audio desde tu plataforma de llamadas (Zoom, Google Meet, Teams)."
 
-#: components/billing/billing-content.tsx:503
-#: components/billing/billing-content.tsx:522
-#: components/billing/billing-content.tsx:547
+#: components/billing/billing-content.tsx:581
+#: components/billing/billing-content.tsx:600
+#: components/billing/billing-content.tsx:625
 #: components/start-call.tsx:1006
 msgid "Please sign in again"
 msgstr "Por favor, inicia sesión nuevamente"
@@ -1516,8 +1516,8 @@ msgstr "Por favor, espera a que se cargue la sesión y vuelve a intentar."
 msgid "Please wait while we verify your email address"
 msgstr "Por favor, espera mientras verificamos tu dirección de correo electrónico."
 
-#: components/billing/billing-content.tsx:99
-#: components/billing/billing-content.tsx:170
+#: components/billing/billing-content.tsx:115
+#: components/billing/billing-content.tsx:186
 msgid "Post-Call Feedback"
 msgstr "Comentarios posteriores a la llamada"
 
@@ -1533,15 +1533,15 @@ msgstr "Preparando tu espacio de trabajo…"
 msgid "Press Start Call below to connect. Glass will use your mic plus the shared audio."
 msgstr "Presiona Iniciar Llamada a continuación para conectarte. Glass utilizará tu micrófono junto con el audio compartido."
 
-#: components/billing/billing-content.tsx:678
+#: components/billing/billing-content.tsx:768
 msgid "Pricing"
 msgstr "Precios"
 
-#: components/billing/billing-content.tsx:202
+#: components/billing/billing-content.tsx:218
 msgid "Priority"
 msgstr "Prioritaria"
 
-#: components/billing/billing-content.tsx:118
+#: components/billing/billing-content.tsx:134
 msgid "Priority Response"
 msgstr "Respuesta prioritaria"
 
@@ -1549,9 +1549,9 @@ msgstr "Respuesta prioritaria"
 msgid "Priority support is available through the in-app help menu."
 msgstr "El soporte prioritario está disponible a través del menú de ayuda en la aplicación."
 
-#: components/billing/billing-content.tsx:107
-#: components/billing/billing-content.tsx:240
-#: components/billing/billing-content.tsx:725
+#: components/billing/billing-content.tsx:123
+#: components/billing/billing-content.tsx:256
+#: components/billing/billing-content.tsx:824
 msgid "Pro"
 msgstr "Pro"
 
@@ -1563,13 +1563,13 @@ msgstr "Pronunciación"
 msgid "Quick actions"
 msgstr "Acciones rápidas"
 
-#: components/billing/billing-content.tsx:98
-#: components/billing/billing-content.tsx:164
+#: components/billing/billing-content.tsx:114
+#: components/billing/billing-content.tsx:180
 msgid "Real-Time Feedback"
 msgstr "Retroalimentación en tiempo real"
 
-#: components/billing/billing-content.tsx:97
-#: components/billing/billing-content.tsx:158
+#: components/billing/billing-content.tsx:113
+#: components/billing/billing-content.tsx:174
 msgid "Real-Time Suggestion"
 msgstr "Sugerencia en tiempo real"
 
@@ -1593,7 +1593,7 @@ msgstr "Eliminar"
 msgid "Remove insight"
 msgstr "Eliminar información"
 
-#: components/billing/billing-content.tsx:639
+#: components/billing/billing-content.tsx:724
 msgid "Renews on {planRenewalLabel}"
 msgstr "Se renueva el {planRenewalLabel}"
 
@@ -1617,7 +1617,7 @@ msgstr "Restablece tu contraseña"
 msgid "Resetting..."
 msgstr "Restableciendo..."
 
-#: components/billing/billing-content.tsx:200
+#: components/billing/billing-content.tsx:216
 msgid "Response Time"
 msgstr "Tiempo de respuesta"
 
@@ -1678,7 +1678,7 @@ msgstr "Guardando..."
 msgid "Saving…"
 msgstr "Guardando…"
 
-#: components/billing/billing-content.tsx:681
+#: components/billing/billing-content.tsx:771
 msgid "Scale with the right plan"
 msgstr "Escala con el plan adecuado"
 
@@ -1723,7 +1723,7 @@ msgstr "Buscar recuerdos..."
 msgid "Search partners"
 msgstr "Socios de búsqueda"
 
-#: components/billing/billing-content.tsx:711
+#: components/billing/billing-content.tsx:808
 msgid "See all features across plans and find what works best for you."
 msgstr "Consulta todas las características de los planes y encuentra la que mejor se adapte a tus necesidades."
 
@@ -1775,7 +1775,7 @@ msgstr "Seleccionar fila"
 msgid "Select screen"
 msgstr "Seleccionar pantalla"
 
-#: components/billing/billing-content.tsx:772
+#: components/billing/billing-content.tsx:880
 msgid "Select size"
 msgstr "Seleccionar tamaño"
 
@@ -1799,7 +1799,7 @@ msgstr "Enviar"
 msgid "Send Feedback"
 msgstr "Enviar comentarios"
 
-#: components/billing/billing-content.tsx:802
+#: components/billing/billing-content.tsx:919
 msgid "Send request"
 msgstr "Enviar solicitud"
 
@@ -1864,8 +1864,8 @@ msgstr "Cerrando sesión..."
 msgid "Skip tour"
 msgstr "Omitir introducción"
 
-#: components/billing/billing-content.tsx:133
-#: components/billing/billing-content.tsx:218
+#: components/billing/billing-content.tsx:149
+#: components/billing/billing-content.tsx:234
 msgid "SLA Guarantee"
 msgstr "Garantía de SLA"
 
@@ -1874,7 +1874,7 @@ msgstr "Garantía de SLA"
 msgid "Spanish"
 msgstr "Español"
 
-#: components/billing/billing-content.tsx:201
+#: components/billing/billing-content.tsx:217
 msgid "Standard"
 msgstr "Estándar"
 
@@ -1915,7 +1915,7 @@ msgstr "Resuma esta información..."
 msgid "Summary"
 msgstr "Resumen"
 
-#: components/billing/billing-content.tsx:194
+#: components/billing/billing-content.tsx:210
 msgid "Support"
 msgstr "Soporte"
 
@@ -1923,16 +1923,16 @@ msgstr "Soporte"
 msgid "System default"
 msgstr "Predeterminado del sistema"
 
-#: components/billing/billing-content.tsx:131
-#: components/billing/billing-content.tsx:206
+#: components/billing/billing-content.tsx:147
+#: components/billing/billing-content.tsx:222
 msgid "Team Management"
 msgstr "Gestión de equipos"
 
-#: components/billing/billing-content.tsx:748
+#: components/billing/billing-content.tsx:847
 msgid "Tell us a little about your team and we’ll reach out shortly."
 msgstr "Cuéntanos un poco sobre tu equipo y nos pondremos en contacto pronto."
 
-#: components/billing/billing-content.tsx:786
+#: components/billing/billing-content.tsx:894
 msgid "Tell us about your requirements"
 msgstr "Cuéntanos tus requisitos"
 
@@ -1944,7 +1944,7 @@ msgstr "¡Gracias por tus comentarios!"
 msgid "Thanks for upgrading your Glass workspace. Your subscription is active and your receipts will arrive via email. You can start roleplaying or manage your billing details whenever you like."
 msgstr "Gracias por actualizar tu espacio de trabajo en Glass. Tu suscripción está activa y recibirás los recibos por correo electrónico. Puedes comenzar a jugar de rol o gestionar los detalles de facturación cuando lo desees."
 
-#: components/billing/billing-content.tsx:642
+#: components/billing/billing-content.tsx:727
 msgid "The Free plan never expires. Upgrade anytime for unlimited history."
 msgstr "El plan gratuito nunca vence. Mejora en cualquier momento para obtener historial ilimitado."
 
@@ -1969,7 +1969,7 @@ msgstr "Esta acción eliminará de forma permanente {0} recuerdos seleccionados.
 msgid "this conversation"
 msgstr "esta conversación"
 
-#: components/billing/billing-content.tsx:605
+#: components/billing/billing-content.tsx:685
 msgid "This Glass instance is running in self-hosted mode, so upgrades aren't required."
 msgstr "Esta instancia de Glass está operando en modo autohospedado, por lo que no se requieren actualizaciones."
 
@@ -1993,7 +1993,7 @@ msgstr "Esto eliminará permanentemente la memoria seleccionada de tu gráfico d
 msgid "Title updated"
 msgstr "Título actualizado"
 
-#: components/billing/billing-content.tsx:256
+#: components/billing/billing-content.tsx:272
 msgid "Trial"
 msgstr "Prueba"
 
@@ -2032,11 +2032,11 @@ msgstr "No se puede eliminar al socio"
 msgid "Unable to load memories right now."
 msgstr "No se pueden cargar los recuerdos en este momento."
 
-#: components/billing/billing-content.tsx:539
+#: components/billing/billing-content.tsx:617
 msgid "Unable to open billing portal"
 msgstr "No se puede abrir el portal de facturación."
 
-#: components/billing/billing-content.tsx:514
+#: components/billing/billing-content.tsx:592
 #: components/start-call.tsx:1017
 msgid "Unable to open checkout"
 msgstr "No se puede abrir la caja"
@@ -2065,7 +2065,7 @@ msgstr "No se pudo iniciar la llamada"
 msgid "Unable to start conversation"
 msgstr "No se puede iniciar la conversación"
 
-#: components/billing/billing-content.tsx:575
+#: components/billing/billing-content.tsx:653
 msgid "Unable to submit request"
 msgstr "No se puede enviar la solicitud"
 
@@ -2078,10 +2078,10 @@ msgstr "No disponible en dispositivos móviles"
 msgid "Unknown"
 msgstr "Desconocido"
 
-#: components/billing/billing-content.tsx:178
-#: components/billing/billing-content.tsx:179
-#: components/billing/billing-content.tsx:184
-#: components/billing/billing-content.tsx:185
+#: components/billing/billing-content.tsx:194
+#: components/billing/billing-content.tsx:195
+#: components/billing/billing-content.tsx:200
+#: components/billing/billing-content.tsx:201
 msgid "Unlimited"
 msgstr "Ilimitado"
 
@@ -2089,11 +2089,11 @@ msgstr "Ilimitado"
 msgid "Unlimited call summaries are enabled right away."
 msgstr "Los resúmenes de llamadas ilimitados se activan de inmediato."
 
-#: components/billing/billing-content.tsx:115
+#: components/billing/billing-content.tsx:131
 msgid "Unlimited Conversation History"
 msgstr "Historial de conversaciones ilimitado"
 
-#: components/billing/billing-content.tsx:114
+#: components/billing/billing-content.tsx:130
 msgid "Unlimited Memory"
 msgstr "Memoria ilimitada"
 
@@ -2101,11 +2101,11 @@ msgstr "Memoria ilimitada"
 msgid "Untitled Conversation"
 msgstr "Conversación sin título"
 
-#: components/billing/billing-content.tsx:183
+#: components/billing/billing-content.tsx:199
 msgid "Up to 5"
 msgstr "Hasta 5"
 
-#: components/billing/billing-content.tsx:177
+#: components/billing/billing-content.tsx:193
 msgid "Up to 500"
 msgstr "Hasta 500"
 
@@ -2126,8 +2126,8 @@ msgstr "Actualizando..."
 msgid "Upgrade"
 msgstr "Actualizar"
 
-#: components/billing/billing-content.tsx:120
-#: components/billing/billing-content.tsx:499
+#: components/billing/billing-content.tsx:136
+#: components/billing/billing-content.tsx:577
 msgid "Upgrade monthly"
 msgstr "Actualiza mensualmente"
 
@@ -2139,13 +2139,13 @@ msgstr "Actualizar plan"
 msgid "Upgrade to keep unlimited conversation history."
 msgstr "Actualiza para mantener el historial de conversaciones ilimitado."
 
-#: components/billing/billing-content.tsx:120
-#: components/billing/billing-content.tsx:499
+#: components/billing/billing-content.tsx:136
+#: components/billing/billing-content.tsx:577
 msgid "Upgrade yearly"
 msgstr "Actualizar anualmente"
 
-#: components/billing/billing-content.tsx:132
-#: components/billing/billing-content.tsx:212
+#: components/billing/billing-content.tsx:148
+#: components/billing/billing-content.tsx:228
 msgid "Usage Analytics"
 msgstr "Análisis de uso"
 
@@ -2177,7 +2177,7 @@ msgstr "No se pudo inicializar la transmisión de voz. Por favor, inténtalo de 
 msgid "We couldn't capture your screen. Try a different window or browser."
 msgstr "No pudimos capturar tu pantalla. Intenta con una ventana o navegador diferente."
 
-#: components/billing/billing-content.tsx:593
+#: components/billing/billing-content.tsx:671
 msgid "We couldn't load your account details. Please refresh and try again."
 msgstr "No pudimos cargar los detalles de tu cuenta. Por favor, actualiza la página e inténtalo de nuevo."
 
@@ -2189,7 +2189,7 @@ msgstr "No pudimos cargar tu historial. Actualiza la página e inténtalo de nue
 msgid "We had trouble starting your session. Please check your internet and try again."
 msgstr "Hubo un problema al iniciar tu sesión. Revisa tu conexión a Internet e inténtalo de nuevo."
 
-#: components/billing/billing-content.tsx:570
+#: components/billing/billing-content.tsx:648
 msgid "We'll be in touch shortly"
 msgstr "Nos pondremos en contacto contigo pronto."
 
@@ -2227,7 +2227,7 @@ msgstr "¿Qué idioma te gustaría aprender?"
 msgid "Would delete {0} memories"
 msgstr "Eliminaría {0} memorias"
 
-#: components/billing/billing-content.tsx:276
+#: components/billing/billing-content.tsx:292
 msgid "Yearly"
 msgstr "Anual"
 
