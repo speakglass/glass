@@ -854,56 +854,63 @@ export default function StartCall() {
       return;
     }
 
-    const partnerIdForSession = selectedMode === 'roleplay' ? selectedPartnerId : null;
-    let partnerForSession: ConversationPartner | null = null;
-
-    if (selectedMode === 'roleplay') {
-      if (!partnerIdForSession) {
-        toast.error(t`Select a conversation partner`);
-        return;
-      }
-      partnerForSession = roleplayPartners.find((partner) => partner.id === partnerIdForSession) || null;
-      if (!partnerForSession) {
-        toast.error(t`Select a conversation partner`);
-        return;
-      }
-    }
-
-    let screenStreamForSession: MediaStream | null = null;
-    if (selectedMode === 'live_call') {
-      const pendingScreenStream = screenShareStreamRef.current;
-      if (!pendingScreenStream) {
-        toast.error(t`Share your call first`, {
-          description: t`Use "Select screen" in Step 2 so Glass can capture the call audio.`,
-        });
-        return;
-      }
-      screenStreamForSession = pendingScreenStream;
-      screenShareStreamRef.current = null;
-      setScreenSharePreviewStream(null);
-      setScreenShareError(null);
-    }
-
-    const config: SessionConfig = {
-      languages,
-      mode: selectedMode,
-      partnerId: partnerForSession?.id || partnerIdForSession || null,
-      partner: partnerForSession,
-      screenStream: screenStreamForSession,
-    };
-
-    if (limitEnabled) {
-      const hasCapacity = await ensureConversationCapacity();
-      if (!hasCapacity) {
-        return;
-      }
-    }
-
-    // Proceed with connection (onboarding should already be completed at this point)
+    // Set loading state immediately for instant UI feedback
     setIsStartingCall(true);
+
     try {
+      const partnerIdForSession = selectedMode === 'roleplay' ? selectedPartnerId : null;
+      let partnerForSession: ConversationPartner | null = null;
+
+      if (selectedMode === 'roleplay') {
+        if (!partnerIdForSession) {
+          toast.error(t`Select a conversation partner`);
+          setIsStartingCall(false);
+          return;
+        }
+        partnerForSession = roleplayPartners.find((partner) => partner.id === partnerIdForSession) || null;
+        if (!partnerForSession) {
+          toast.error(t`Select a conversation partner`);
+          setIsStartingCall(false);
+          return;
+        }
+      }
+
+      let screenStreamForSession: MediaStream | null = null;
+      if (selectedMode === 'live_call') {
+        const pendingScreenStream = screenShareStreamRef.current;
+        if (!pendingScreenStream) {
+          toast.error(t`Share your call first`, {
+            description: t`Use "Select screen" in Step 2 so Glass can capture the call audio.`,
+          });
+          setIsStartingCall(false);
+          return;
+        }
+        screenStreamForSession = pendingScreenStream;
+        screenShareStreamRef.current = null;
+        setScreenSharePreviewStream(null);
+        setScreenShareError(null);
+      }
+
+      if (limitEnabled) {
+        const hasCapacity = await ensureConversationCapacity();
+        if (!hasCapacity) {
+          setIsStartingCall(false);
+          return;
+        }
+      }
+
+      const config: SessionConfig = {
+        languages,
+        mode: selectedMode,
+        partnerId: partnerForSession?.id || partnerIdForSession || null,
+        partner: partnerForSession,
+        screenStream: screenStreamForSession,
+      };
+
+      // Proceed with connection
       await connect(config);
-    } catch {
+    } catch (error) {
+      console.error('[StartCall] Connection failed:', error);
       toast.error(t`Unable to start call`);
       setIsStartingCall(false);
     }
@@ -1105,9 +1112,8 @@ export default function StartCall() {
   }
 
   // Debug: Log when StartCall UI should show
-  // Keep showing the UI while starting call (before actual connection is established)
-  const shouldShow =
-    status.value === 'idle' || status.value === 'disconnected' || (status.value === 'connecting' && isStartingCall);
+  // Show StartCall UI until actually connected
+  const shouldShow = status.value === 'idle' || status.value === 'disconnected' || status.value === 'connecting';
 
   return (
     <>
