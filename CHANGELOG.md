@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.1.11](https://github.com/speakglass/glass/compare/v0.1.10...v0.1.11) (2025-11-21)
+
+
+### Features
+
+* **api:** enhance OAuth sign-in and registration flow ([69c1d1a](https://github.com/speakglass/glass/commit/69c1d1ac93d9d6ed13349bc1505d056750b759eb))
+* **billing:** add locales directory to docker-compose and improve billing content formatting ([9c6b5b8](https://github.com/speakglass/glass/commit/9c6b5b8eacf8624afd5e281fb840047df80e85f2))
+* **billing:** enhance billing content and add feature comparison table ([5e18a71](https://github.com/speakglass/glass/commit/5e18a7115db6167dfb1f633e2b1b17d203188cf5))
+* **locales:** add localization support for new features and improve existing translations ([20fc301](https://github.com/speakglass/glass/commit/20fc3011257bb30a61d0a33b55f6ee2c5f9e780d))
+* **memory:** integrate semantic memory with pgvector support ([8c3a25b](https://github.com/speakglass/glass/commit/8c3a25bdd046fd7b0383c8d06cb13cfe22c44ec6))
+* **persistence:** add multilingual descriptions for conversation partners ([31e437a](https://github.com/speakglass/glass/commit/31e437a808eda1a246530e0ef578d8354daa7417))
+* **ui:** enhance error handling and update localization links ([e27d303](https://github.com/speakglass/glass/commit/e27d3031a3e83cd8eb4a6b7408c11b4f2d72224b))
+* **ui:** enhance StartCall component and update environment variables ([0349a37](https://github.com/speakglass/glass/commit/0349a37d422426da2ad5e9375671d2240cdf06b8))
+
+
+### Bug Fixes
+
+* **locales:** update Korean translations for improved clarity ([a31c11d](https://github.com/speakglass/glass/commit/a31c11d647c37b01852d59d14f65de6c11690f9a))
+* **locales:** update memory-related translations for consistency ([7d365cd](https://github.com/speakglass/glass/commit/7d365cdb3e3de9e94c0771ca49fbbfc981369c34))
+* **locales:** update translations and remove unused strings ([773f502](https://github.com/speakglass/glass/commit/773f502089cb3f30212f4cd9c8ba041f73b49953))
+
+
+### Code Refactoring
+
+* **ui:** simplify import statements and improve code readability in StartCall component ([e91b4c4](https://github.com/speakglass/glass/commit/e91b4c4369ed16bbb30562d79f2e44520a7c3d01))
+
 ## [0.1.10](https://github.com/speakglass/glass/compare/v0.1.9...v0.1.10) (2025-11-20)
 
 
