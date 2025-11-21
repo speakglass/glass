@@ -125,10 +125,6 @@ msgstr "Add new memory"
 msgid "Advanced"
 msgstr "Advanced"
 
-#: components/billing/billing-content.tsx:107
-#~ msgid "Advanced Real-time suggestions based on your Memory"
-#~ msgstr "Advanced Real-time suggestions based on your Memory"
-
 #: lib/onboarding-tours.tsx:85
 msgid "After each conversation"
 msgstr "After each conversation"
@@ -139,18 +135,14 @@ msgstr "After each conversation, I'll give you feedback on your grammar, pronunc
 
 #: components/billing/billing-content.tsx:96
 #: components/billing/billing-content.tsx:152
-#: components/start-call.tsx:1141
-#: components/start-call.tsx:1439
+#: components/start-call.tsx:1405
+#: components/start-call.tsx:1775
 msgid "AI Roleplay"
 msgstr "AI Roleplay"
 
 #: components/memory/memory-dialog.tsx:80
 msgid "AI will organize and categorize this automatically."
 msgstr "AI will organize and categorize this automatically."
-
-#: components/billing/billing-content.tsx:105
-#~ msgid "All free features"
-#~ msgstr "All free features"
 
 #: components/signup-form.tsx:252
 msgid "Already have an account? <0>Sign in</0>"
@@ -277,10 +269,6 @@ msgstr "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Pr
 #: components/call-summary.tsx:841
 msgid "Call Summary"
 msgstr "Call Summary"
-
-#: components/billing/billing-content.tsx:93
-#~ msgid "Call summary (fluency/accuracy)"
-#~ msgstr "Call summary (fluency/accuracy)"
 
 #: components/billing/billing-content.tsx:798
 #: components/call-summary.tsx:1505
@@ -732,13 +720,9 @@ msgstr "Enterprise"
 msgid "Enterprise Onboarding"
 msgstr "Enterprise Onboarding"
 
-#: components/memory/columns.tsx:221
+#: components/memory/columns.tsx:257
 msgid "Entities"
 msgstr "Entities"
-
-#: components/start-call.tsx:545
-#~ msgid "Everyday conversation"
-#~ msgstr "Everyday conversation"
 
 #: components/billing/billing-content.tsx:113
 msgid "Everything in Free"
@@ -1106,8 +1090,8 @@ msgstr "Listening… say anything when you're ready."
 
 #: components/billing/billing-content.tsx:95
 #: components/billing/billing-content.tsx:146
-#: components/start-call.tsx:1201
-#: components/start-call.tsx:1439
+#: components/start-call.tsx:1469
+#: components/start-call.tsx:1777
 msgid "Live Call"
 msgstr "Live Call"
 
@@ -1481,10 +1465,6 @@ msgstr "Photo"
 msgid "Photo updated"
 msgstr "Photo updated"
 
-#: components/start-call.tsx:876
-#~ msgid "Pick the window/tab for that platform and turn on system or tab audio."
-#~ msgstr "Pick the window/tab for that platform and turn on system or tab audio."
-
 #: components/billing/billing-content.tsx:637
 msgid "Plan ends on {planRenewalLabel}"
 msgstr "Plan ends on {planRenewalLabel}"
@@ -1516,7 +1496,7 @@ msgstr "Please share your screen with audio from your call platform (Zoom, Googl
 #: components/billing/billing-content.tsx:503
 #: components/billing/billing-content.tsx:522
 #: components/billing/billing-content.tsx:547
-#: components/start-call.tsx:837
+#: components/start-call.tsx:1006
 msgid "Please sign in again"
 msgstr "Please sign in again"
 
@@ -1541,7 +1521,7 @@ msgstr "Please wait while we verify your email address"
 msgid "Post-Call Feedback"
 msgstr "Post-Call Feedback"
 
-#: components/start-call.tsx:1144
+#: components/start-call.tsx:1408
 msgid "Practice Conversations"
 msgstr "Practice Conversations"
 
@@ -1565,10 +1545,6 @@ msgstr "Priority"
 msgid "Priority Response"
 msgstr "Priority Response"
 
-#: components/billing/billing-content.tsx:119
-#~ msgid "Priority support"
-#~ msgstr "Priority support"
-
 #: app/[lang]/(app)/billing/success/page.tsx:67
 msgid "Priority support is available through the in-app help menu."
 msgstr "Priority support is available through the in-app help menu."
@@ -1587,10 +1563,6 @@ msgstr "Pronunciation"
 msgid "Quick actions"
 msgstr "Quick actions"
 
-#: components/billing/billing-content.tsx:92
-#~ msgid "Real-time feedback"
-#~ msgstr "Real-time feedback"
-
 #: components/billing/billing-content.tsx:98
 #: components/billing/billing-content.tsx:164
 msgid "Real-Time Feedback"
@@ -1600,10 +1572,6 @@ msgstr "Real-Time Feedback"
 #: components/billing/billing-content.tsx:158
 msgid "Real-Time Suggestion"
 msgstr "Real-Time Suggestion"
-
-#: components/billing/billing-content.tsx:91
-#~ msgid "Real-time suggestions"
-#~ msgstr "Real-time suggestions"
 
 #: components/start-call.tsx:1430
 msgid "RECOMMENDED"
@@ -1653,11 +1621,7 @@ msgstr "Resetting..."
 msgid "Response Time"
 msgstr "Response Time"
 
-#: components/start-call.tsx:726
-#~ msgid "Restaurant"
-#~ msgstr "Restaurant"
-
-#: components/memory/columns.tsx:166
+#: components/memory/columns.tsx:183
 msgid "Retention"
 msgstr "Retention"
 
@@ -1696,14 +1660,6 @@ msgstr "Save"
 #: components/call-summary.tsx:1383
 msgid "Save Call"
 msgstr "Save Call"
-
-#: components/billing/billing-content.tsx:108
-#~ msgid "Save unlimited call summaries"
-#~ msgstr "Save unlimited call summaries"
-
-#: components/billing/billing-content.tsx:94
-#~ msgid "Save up to 5 call summaries"
-#~ msgstr "Save up to 5 call summaries"
 
 #: components/start-call.tsx:2179
 #: contexts/glass-context.tsx:1670
@@ -1972,14 +1928,6 @@ msgstr "System default"
 msgid "Team Management"
 msgstr "Team Management"
 
-#: components/billing/billing-content.tsx:119
-#~ msgid "Team onboarding"
-#~ msgstr "Team onboarding"
-
-#: components/start-call.tsx:548
-#~ msgid "Telephone etiquette"
-#~ msgstr "Telephone etiquette"
-
 #: components/billing/billing-content.tsx:748
 msgid "Tell us a little about your team and we’ll reach out shortly."
 msgstr "Tell us a little about your team and we’ll reach out shortly."
@@ -2089,7 +2037,7 @@ msgid "Unable to open billing portal"
 msgstr "Unable to open billing portal"
 
 #: components/billing/billing-content.tsx:514
-#: components/start-call.tsx:848
+#: components/start-call.tsx:1017
 msgid "Unable to open checkout"
 msgstr "Unable to open checkout"
 
@@ -2149,14 +2097,6 @@ msgstr "Unlimited Conversation History"
 msgid "Unlimited Memory"
 msgstr "Unlimited Memory"
 
-#: components/billing/billing-content.tsx:96
-#~ msgid "Unlimited saved conversations"
-#~ msgstr "Unlimited saved conversations"
-
-#: components/billing/billing-content.tsx:99
-#~ msgid "Unlock unlimited history, faster analysis, and priority support."
-#~ msgstr "Unlock unlimited history, faster analysis, and priority support."
-
 #: components/history/conversation-history.tsx:1107
 msgid "Untitled Conversation"
 msgstr "Untitled Conversation"
@@ -2186,10 +2126,6 @@ msgstr "Updating..."
 msgid "Upgrade"
 msgstr "Upgrade"
 
-#: components/start-call.tsx:952
-#~ msgid "Upgrade for unlimited history"
-#~ msgstr "Upgrade for unlimited history"
-
 #: components/billing/billing-content.tsx:120
 #: components/billing/billing-content.tsx:499
 msgid "Upgrade monthly"
@@ -2203,10 +2139,6 @@ msgstr "Upgrade plan"
 msgid "Upgrade to keep unlimited conversation history."
 msgstr "Upgrade to keep unlimited conversation history."
 
-#: components/billing/billing-content.tsx:84
-#~ msgid "Upgrade to unlock unlimited saved calls and premium support."
-#~ msgstr "Upgrade to unlock unlimited saved calls and premium support."
-
 #: components/billing/billing-content.tsx:120
 #: components/billing/billing-content.tsx:499
 msgid "Upgrade yearly"
@@ -2217,7 +2149,7 @@ msgstr "Upgrade yearly"
 msgid "Usage Analytics"
 msgstr "Usage Analytics"
 
-#: components/start-call.tsx:800
+#: components/start-call.tsx:969
 msgid "Use \"Select screen\" in Step 2 so Glass can capture the call audio."
 msgstr "Use \"Select screen\" in Step 2 so Glass can capture the call audio."
 
