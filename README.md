@@ -1,4 +1,4 @@
-<img width="979" height="522" alt="Screenshot 2025-11-21 at 11 52 55 AM 1" src="https://github.com/user-attachments/assets/d0c8cf2c-6d09-47d2-8273-09d723f3916d" />
+<img width="979" height="518" alt="glass-mock" src="https://github.com/user-attachments/assets/66779581-eddc-422b-ad9c-05aeaa59afe0" />
 
 # Glass
 
