@@ -600,15 +600,3 @@ export const getLocalizedText = (key: TextKey, locale: string): string => {
 
 export const getDemoTemplate = (learningLang: string): DemoTemplate =>
   DEMO_TEMPLATES[learningLang] ?? DEMO_TEMPLATES.en;
-
-export const getLanguageExample = (learningLang: string, nativeLang: string): ExamplePhrase | undefined => {
-  const learning = normalizeLocale(learningLang);
-  const native = normalizeLocale(nativeLang);
-  return (
-    LANGUAGE_EXAMPLES[learning]?.[native] ?? {
-      target: SHORT_EXAMPLES[learning],
-      pronunciation: SHORT_EXAMPLE_PRONUNCIATIONS[learning]?.[native],
-      translation: SHORT_EXAMPLE_TRANSLATIONS[native],
-    }
-  );
-};
