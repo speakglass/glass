@@ -187,6 +187,13 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "native_lang": "en",
         "name": "Emma",
         "description": "London marketer who swaps idioms over coffee chats",
+        "description_i18n": {
+            "en": "London marketer who swaps idioms over coffee chats",
+            "ko": "런던 마케터. 커피 한잔하며 관용구 이야기 나누기 좋아함",
+            "ja": "ロンドンのマーケター。コーヒーを飲みながら慣用句を交換するのが好き",
+            "es": "Marketera de Londres que intercambia modismos tomando café",
+            "fr": "Marketeur londonien qui échange des expressions autour d'un café",
+        },
         "avatar_asset": "emma.png",
         "voice_id": "cgSgspJ2msm6clMCkdW9",
     },
@@ -196,6 +203,13 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "native_lang": "en",
         "name": "Alex",
         "description": "New York product lead who loves travel podcasts",
+        "description_i18n": {
+            "en": "New York product lead who loves travel podcasts",
+            "ko": "뉴욕 프로덕트 리드. 여행 팟캐스트 애청자",
+            "ja": "ニューヨークのプロダクトリード。旅行ポッドキャストが大好き",
+            "es": "Product lead de Nueva York amante de los podcasts de viajes",
+            "fr": "Chef de produit new-yorkais passionné de podcasts de voyage",
+        },
         "avatar_asset": "alex.png",
         "voice_id": "IKne3meq5aSn9XLyUdCD",
     },
@@ -205,6 +219,13 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "native_lang": "ko",
         "name": "Jiwoo",
         "description": "Busan travel vlogger sharing food spots and K-drama gossip",
+        "description_i18n": {
+            "en": "Busan travel vlogger sharing food spots and K-drama gossip",
+            "ko": "부산 여행 브이로거. 맛집과 K-드라마 수다 공유",
+            "ja": "釜山の旅行ブロガー。グルメスポットとK-ドラマのゴシップを共有",
+            "es": "Vlogger de viajes de Busan que comparte lugares de comida y chismes de K-dramas",
+            "fr": "Vloggeuse de voyage de Busan partageant restos et potins K-drama",
+        },
         "avatar_asset": "jiwoo.png",
         "voice_id": "8jHHF8rMqMlg8if2mOUe",
     },
@@ -214,6 +235,13 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "native_lang": "ko",
         "name": "Minjun",
         "description": "Seoul software engineer comparing K-pop drops",
+        "description_i18n": {
+            "en": "Seoul software engineer comparing K-pop drops",
+            "ko": "서울 소프트웨어 엔지니어. K-pop 신곡 비교하는 걸 좋아함",
+            "ja": "ソウルのソフトウェアエンジニア。K-popの新曲を比較するのが好き",
+            "es": "Ingeniero de software de Seúl comparando lanzamientos de K-pop",
+            "fr": "Ingénieur logiciel séoulite qui compare les sorties K-pop",
+        },
         "avatar_asset": "minjun.png",
         "voice_id": "UgBBYS2sOqTuMpoF3BR0",
     },
@@ -223,6 +251,13 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "native_lang": "ja",
         "name": "Yui",
         "description": "Tokyo cafe owner chatting anime and study tips",
+        "description_i18n": {
+            "en": "Tokyo cafe owner chatting anime and study tips",
+            "ko": "도쿄 카페 주인. 애니메이션과 공부 팁 이야기하는 걸 좋아함",
+            "ja": "東京のカフェオーナー。アニメと勉強のコツについておしゃべり",
+            "es": "Dueña de café en Tokio que charla sobre anime y consejos de estudio",
+            "fr": "Propriétaire de café tokyoïte discutant anime et astuces d'étude",
+        },
         "avatar_asset": "yui.png",
         "voice_id": "fUjY9K2nAIwlALOwSiwc",
     },
@@ -232,6 +267,13 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "native_lang": "ja",
         "name": "Haruto",
         "description": "Osaka game developer into live music and baseball",
+        "description_i18n": {
+            "en": "Osaka game developer into live music and baseball",
+            "ko": "오사카 게임 개발자. 라이브 음악과 야구 팬",
+            "ja": "大阪のゲーム開発者。ライブ音楽と野球が好き",
+            "es": "Desarrollador de juegos de Osaka aficionado a la música en vivo y el béisbol",
+            "fr": "Développeur de jeux d'Osaka passionné de concerts et de baseball",
+        },
         "avatar_asset": "haruto.png",
         "voice_id": "3JDquces8E8bkmvbh6Bc",
     },
@@ -241,6 +283,13 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "native_lang": "es",
         "name": "Camila",
         "description": "Mexico City DJ sharing reggaeton drops",
+        "description_i18n": {
+            "en": "Mexico City DJ sharing reggaeton drops",
+            "ko": "멕시코시티 DJ. 레게톤 신곡 공유하는 걸 좋아함",
+            "ja": "メキシコシティのDJ。レゲトンの新曲をシェア",
+            "es": "DJ de Ciudad de México compartiendo lanzamientos de reggaetón",
+            "fr": "DJ de Mexico City partageant des sorties reggaeton",
+        },
         "avatar_asset": "camila.png",
         "voice_id": "qHkrJuifPpn95wK3rm2A",
     },
@@ -250,6 +299,13 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "native_lang": "es",
         "name": "Diego",
         "description": "Madrid sports journalist debating La Liga",
+        "description_i18n": {
+            "en": "Madrid sports journalist debating La Liga",
+            "ko": "마드리드 스포츠 기자. 라리가 토론 좋아함",
+            "ja": "マドリードのスポーツジャーナリスト。ラリーガについて議論",
+            "es": "Periodista deportivo de Madrid debatiendo sobre La Liga",
+            "fr": "Journaliste sportif madrilène débattant de La Liga",
+        },
         "avatar_asset": "diego.png",
         "voice_id": "94zOad0g7T7K4oa7zhDq",
     },
@@ -259,6 +315,13 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "native_lang": "fr",
         "name": "Claire",
         "description": "Paris strategist mixing pastry tips with work talk",
+        "description_i18n": {
+            "en": "Paris strategist mixing pastry tips with work talk",
+            "ko": "파리 전략가. 페이스트리 팁과 업무 이야기를 섞어서 함",
+            "ja": "パリのストラテジスト。パティスリーのコツと仕事の話を混ぜる",
+            "es": "Estratega parisina mezclando consejos de repostería con charlas de trabajo",
+            "fr": "Stratège parisienne mêlant conseils pâtisserie et discussions pro",
+        },
         "avatar_asset": "claire.png",
         "voice_id": "F1toM6PcP54s45kOOAyV",
     },
@@ -268,6 +331,13 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "native_lang": "fr",
         "name": "Luc",
         "description": "Lyon designer into cycling tours and indie cinema",
+        "description_i18n": {
+            "en": "Lyon designer into cycling tours and indie cinema",
+            "ko": "리옹 디자이너. 사이클 투어와 인디 영화 팬",
+            "ja": "リヨンのデザイナー。サイクリングツアーとインディ映画が好き",
+            "es": "Diseñador de Lyon aficionado a los tours en bicicleta y el cine indie",
+            "fr": "Designer lyonnais passionné de cyclotourisme et cinéma indépendant",
+        },
         "avatar_asset": "luc.png",
         "voice_id": "93nuHbke4dTER9x2pDwE",
     },
@@ -289,6 +359,10 @@ def _build_template_metadata(entry: dict[str, Any]) -> dict[str, Any] | None:
         metadata.setdefault("avatar_asset", avatar_asset)
     metadata.setdefault("template_slug", entry["slug"])
     metadata.setdefault("type", "roleplay")
+    # Include i18n descriptions in metadata for cloning
+    description_i18n = entry.get("description_i18n")
+    if description_i18n:
+        metadata["description_i18n"] = description_i18n
     return metadata or None
 
 
@@ -410,6 +484,8 @@ async def ensure_user_partner_templates(db: PersistenceDatabase, user_id: str) -
             slug = await _generate_unique_slug(session, template.name)
             clone_metadata = dict(template.extra_metadata or {})
             clone_metadata["template_slug"] = template_slug
+
+            # Keep original description - will be localized dynamically in list_partners
             clone = ConversationPartner(
                 user_id=user_id,
                 slug=slug,
@@ -440,6 +516,10 @@ async def list_partners(
     await ensure_user_partner_templates(db, user_id)
     async_session_factory = db.session()
     async with async_session_factory() as session:
+        # Get user's current native language preference
+        user = await session.scalar(select(AccountUser).where(AccountUser.id == user_id))
+        user_native_lang = user.native_lang if user else None
+
         stmt = select(ConversationPartner).where(
             ConversationPartner.is_active.is_(True),
             ConversationPartner.user_id == user_id,
@@ -451,7 +531,21 @@ async def list_partners(
             ConversationPartner.name.asc(),
         )
         result = await session.scalars(stmt)
-        return list(result.all())
+        partners = list(result.all())
+
+        # Localize descriptions based on user's current native language
+        if user_native_lang:
+            for partner in partners:
+                meta = partner.extra_metadata or {}
+                if isinstance(meta, dict):
+                    description_i18n = meta.get("description_i18n")
+                    if isinstance(description_i18n, dict):
+                        # Use localized description if available, fallback to original
+                        localized = description_i18n.get(user_native_lang)
+                        if localized:
+                            partner.description = localized
+
+        return partners
 
 
 async def update_partner_details(
