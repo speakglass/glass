@@ -1105,8 +1105,9 @@ export default function StartCall() {
   }
 
   // Debug: Log when StartCall UI should show
-  const shouldShow = status.value === 'idle' || status.value === 'connecting' || status.value === 'disconnected';
-  console.log('[StartCall] Should show UI:', shouldShow, 'status:', status.value);
+  // Keep showing the UI while starting call (before actual connection is established)
+  const shouldShow =
+    status.value === 'idle' || status.value === 'disconnected' || (status.value === 'connecting' && isStartingCall);
 
   return (
     <>

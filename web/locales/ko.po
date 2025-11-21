@@ -81,9 +81,9 @@ msgstr "{totalMemories, plural, one {총 #개의 메모리} other {총 #개의 �
 
 #: components/onboarding/onboarding-client.tsx:670
 #: components/onboarding/onboarding-client.tsx:752
-#: components/start-call.tsx:1304
-#: components/start-call.tsx:1495
-#: components/start-call.tsx:1568
+#: components/start-call.tsx:1305
+#: components/start-call.tsx:1496
+#: components/start-call.tsx:1569
 msgid "← Back"
 msgstr "← 뒤로"
 
@@ -107,8 +107,8 @@ msgstr "추가"
 
 #: components/call-summary.tsx:1447
 #: components/history/conversation-history.tsx:1819
-#: components/start-call.tsx:1661
-#: components/start-call.tsx:1764
+#: components/start-call.tsx:1662
+#: components/start-call.tsx:1765
 msgid "Add a short description"
 msgstr "간단한 설명 추가"
 
@@ -135,8 +135,8 @@ msgstr "대화가 끝날 때마다 문법, 발음, 어휘에 대한 피드백을
 
 #: components/billing/billing-content.tsx:112
 #: components/billing/billing-content.tsx:168
-#: components/start-call.tsx:1221
-#: components/start-call.tsx:1527
+#: components/start-call.tsx:1222
+#: components/start-call.tsx:1528
 msgid "AI Roleplay"
 msgstr "AI 롤플레이"
 
@@ -178,7 +178,7 @@ msgid "Are you sure you want to delete \"{selectedConversationName}\"? This acti
 msgstr "\"{selectedConversationName}\" 대화를 삭제하시겠어요? 삭제 후에는 되돌릴 수 없고, 기록에서도 완전히 사라져요."
 
 #. placeholder {0}: partnerPendingDelete.name
-#: components/start-call.tsx:1810
+#: components/start-call.tsx:1811
 msgid "Are you sure you want to delete {0}? This action cannot be undone."
 msgstr "정말로 {0}을(를) 삭제하시겠어요? 삭제 후에는 복구할 수 없어요."
 
@@ -277,7 +277,7 @@ msgstr "대화 요약"
 #: components/memory/memory-dialog.tsx:94
 #: components/memory/memory-table.tsx:320
 #: components/memory/memory-table.tsx:357
-#: components/start-call.tsx:1820
+#: components/start-call.tsx:1821
 msgid "Cancel"
 msgstr "취소"
 
@@ -291,8 +291,8 @@ msgstr "카테고리"
 
 #: components/call-summary.tsx:1401
 #: components/history/conversation-history.tsx:1773
-#: components/start-call.tsx:1616
-#: components/start-call.tsx:1723
+#: components/start-call.tsx:1617
+#: components/start-call.tsx:1724
 msgid "Change partner photo"
 msgstr "파트너 사진 변경"
 
@@ -318,11 +318,11 @@ msgstr "월별 또는 연간 구독을 선택하고 팀에 맞춤화된 Glass �
 msgid "Choose the language you want to practice speaking"
 msgstr "연습하고 싶은 언어를 선택하세요."
 
-#: components/start-call.tsx:1329
+#: components/start-call.tsx:1330
 msgid "Choose who to call"
 msgstr "통화할 사람 선택"
 
-#: components/start-call.tsx:1200
+#: components/start-call.tsx:1201
 msgid "Choose your preferred mode"
 msgstr "원하는 모드를 선택하세요"
 
@@ -354,8 +354,8 @@ msgstr "전체 요약 보기"
 #: components/call-summary.tsx:1478
 #: components/history/conversation-history.tsx:1850
 #: components/memory/memory-dialog.tsx:89
-#: components/start-call.tsx:1684
-#: components/start-call.tsx:1787
+#: components/start-call.tsx:1685
+#: components/start-call.tsx:1788
 msgid "Close"
 msgstr "닫기"
 
@@ -397,8 +397,8 @@ msgstr "이해도"
 msgid "Confirm Password"
 msgstr "비밀번호 확인"
 
-#: components/start-call.tsx:1511
-#: components/start-call.tsx:1584
+#: components/start-call.tsx:1512
+#: components/start-call.tsx:1585
 msgid "Connecting..."
 msgstr "연결 중..."
 
@@ -455,7 +455,7 @@ msgid "Couldn’t connect"
 msgstr "연결할 수 없어요."
 
 #: components/memory/memory-dialog.tsx:97
-#: components/start-call.tsx:1693
+#: components/start-call.tsx:1694
 msgid "Create"
 msgstr "생성하기"
 
@@ -472,11 +472,11 @@ msgid "Create an account"
 msgstr "계정을 생성하세요"
 
 #: components/partner-search-empty-state.tsx:62
-#: components/start-call.tsx:1596
+#: components/start-call.tsx:1597
 msgid "Create partner"
 msgstr "파트너 생성"
 
-#: components/start-call.tsx:1478
+#: components/start-call.tsx:1479
 msgid "Create your own conversation partner"
 msgstr "나만의 대화 상대 만들기"
 
@@ -494,11 +494,11 @@ msgstr "계정을 생성하는 중..."
 msgid "Current plan"
 msgstr "현재 요금제"
 
-#: components/start-call.tsx:1852
+#: components/start-call.tsx:1853
 msgid "Current usage"
 msgstr "현재 사용량"
 
-#: components/start-call.tsx:1475
+#: components/start-call.tsx:1476
 msgid "Custom partner"
 msgstr "맞춤 파트너"
 
@@ -535,12 +535,12 @@ msgstr "전담 지원"
 #: components/memory/data-table.tsx:142
 #: components/memory/memory-table.tsx:324
 #: components/memory/memory-table.tsx:361
-#: components/start-call.tsx:1441
-#: components/start-call.tsx:1831
+#: components/start-call.tsx:1442
+#: components/start-call.tsx:1832
 msgid "Delete"
 msgstr "삭제"
 
-#: components/start-call.tsx:1857
+#: components/start-call.tsx:1858
 msgid "Delete a saved call or upgrade to keep recording new ones."
 msgstr "새 통화를 녹음하려면, 저장된 통화를 삭제하거나 업그레이드해 주세요."
 
@@ -559,7 +559,7 @@ msgstr "계속 이용하려면 이전 기록을 삭제하거나 요금제를 업
 #: components/call-summary.tsx:1465
 #: components/history/conversation-history.tsx:1837
 #: components/history/conversation-history.tsx:1869
-#: components/start-call.tsx:1806
+#: components/start-call.tsx:1807
 msgid "Delete partner"
 msgstr "파트너 삭제"
 
@@ -601,8 +601,8 @@ msgstr "삭제 중..."
 
 #: components/call-summary.tsx:1442
 #: components/history/conversation-history.tsx:1814
-#: components/start-call.tsx:1654
-#: components/start-call.tsx:1759
+#: components/start-call.tsx:1655
+#: components/start-call.tsx:1760
 msgid "Description"
 msgstr "설명"
 
@@ -629,9 +629,9 @@ msgstr "예를 들어, 저는 산에서 하이킹하는 것을 좋아해요, 제
 #: components/history/conversation-history.tsx:1269
 #: components/history/conversation-history.tsx:1793
 #: components/memory/columns.tsx:299
-#: components/start-call.tsx:1431
-#: components/start-call.tsx:1631
-#: components/start-call.tsx:1738
+#: components/start-call.tsx:1432
+#: components/start-call.tsx:1632
+#: components/start-call.tsx:1739
 msgid "Edit"
 msgstr "편집"
 
@@ -641,7 +641,7 @@ msgstr "메모리 편집"
 
 #: components/call-summary.tsx:1393
 #: components/history/conversation-history.tsx:1765
-#: components/start-call.tsx:1703
+#: components/start-call.tsx:1704
 msgid "Edit partner"
 msgstr "파트너 편집"
 
@@ -680,8 +680,8 @@ msgstr "영어"
 
 #: components/call-summary.tsx:1436
 #: components/history/conversation-history.tsx:1808
-#: components/start-call.tsx:1648
-#: components/start-call.tsx:1753
+#: components/start-call.tsx:1649
+#: components/start-call.tsx:1754
 msgid "Enter a name"
 msgstr "이름을 입력하세요"
 
@@ -851,7 +851,7 @@ msgstr "비밀번호를 잊으셨나요?"
 msgid "Free"
 msgstr "무료"
 
-#: components/start-call.tsx:1843
+#: components/start-call.tsx:1844
 msgid "Free accounts can keep up to 10 conversations. Delete old calls or upgrade for unlimited history."
 msgstr "무료 계정은 최대 10개의 대화를 저장할 수 있어요. 오래된 기록을 삭제하거나 무제한 기록을 위해 업그레이드하세요."
 
@@ -885,7 +885,7 @@ msgstr "대화를 분석해 인사이트와 피드백을 정리하는 중이에�
 msgid "Get Suggestions"
 msgstr "제안 받기"
 
-#: components/start-call.tsx:1599
+#: components/start-call.tsx:1600
 msgid "Give your custom partner a name, description, and optional photo."
 msgstr "파트너의 이름과 설명을 입력하고, 필요하면 사진도 추가해 주세요."
 
@@ -944,7 +944,7 @@ msgstr "홈"
 msgid "How confident are you in this language?"
 msgstr "이 언어에 얼마나 자신 있으신가요?"
 
-#: components/start-call.tsx:1197
+#: components/start-call.tsx:1198
 msgid "How would you like to use Glass?"
 msgstr "Glass를 어떻게 사용하고 싶으신가요?"
 
@@ -1056,7 +1056,7 @@ msgstr "키워드"
 msgid "Korean"
 msgstr "한국어"
 
-#: components/start-call.tsx:1284
+#: components/start-call.tsx:1285
 msgid "Language Exchange • Calls"
 msgstr "언어 교환 • 모임"
 
@@ -1094,8 +1094,8 @@ msgstr "지금 듣고 있어요. 준비되면 편하게 말해보세요."
 
 #: components/billing/billing-content.tsx:111
 #: components/billing/billing-content.tsx:162
-#: components/start-call.tsx:1281
-#: components/start-call.tsx:1527
+#: components/start-call.tsx:1282
+#: components/start-call.tsx:1528
 msgid "Live Call"
 msgstr "라이브 통화"
 
@@ -1116,7 +1116,7 @@ msgstr "메모리 불러오는 중"
 msgid "Loading memories..."
 msgstr "메모리 불러오는 중..."
 
-#: components/start-call.tsx:1342
+#: components/start-call.tsx:1343
 msgid "Loading partners..."
 msgstr "파트너 로딩 중..."
 
@@ -1157,7 +1157,7 @@ msgstr "낮음"
 msgid "Manage billing"
 msgstr "결제 관리"
 
-#: components/start-call.tsx:1863
+#: components/start-call.tsx:1864
 msgid "Manage history"
 msgstr "기록 관리"
 
@@ -1255,8 +1255,8 @@ msgstr "8자 이상이어야 합니다."
 
 #: components/call-summary.tsx:1431
 #: components/history/conversation-history.tsx:1803
-#: components/start-call.tsx:1641
-#: components/start-call.tsx:1748
+#: components/start-call.tsx:1642
+#: components/start-call.tsx:1749
 msgid "Name"
 msgstr "이름"
 
@@ -1288,7 +1288,7 @@ msgstr "새 비밀번호"
 #: components/onboarding/onboarding-client.tsx:617
 #: components/onboarding/onboarding-client.tsx:682
 #: components/onboarding/onboarding-client.tsx:767
-#: components/start-call.tsx:1313
+#: components/start-call.tsx:1314
 msgid "Next →"
 msgstr "다음 →"
 
@@ -1331,7 +1331,7 @@ msgstr "메시지 없음"
 msgid "No partner assigned"
 msgstr "파트너가 지정되지 않음"
 
-#: components/start-call.tsx:1346
+#: components/start-call.tsx:1347
 msgid "No partners available"
 msgstr "파트너를 찾을 수 없습니다."
 
@@ -1404,9 +1404,9 @@ msgstr "{totalPages}페이지 중 {0}페이지"
 #: components/history/conversation-history.tsx:1785
 #: components/messages.tsx:116
 #: components/messages.tsx:149
-#: components/start-call.tsx:1542
-#: components/start-call.tsx:1623
-#: components/start-call.tsx:1730
+#: components/start-call.tsx:1543
+#: components/start-call.tsx:1624
+#: components/start-call.tsx:1731
 msgid "Partner"
 msgstr "상대방"
 
@@ -1459,8 +1459,8 @@ msgstr "맞춤 메모리"
 
 #: components/call-summary.tsx:1425
 #: components/history/conversation-history.tsx:1797
-#: components/start-call.tsx:1635
-#: components/start-call.tsx:1742
+#: components/start-call.tsx:1636
+#: components/start-call.tsx:1743
 msgid "Photo"
 msgstr "사진"
 
@@ -1525,7 +1525,7 @@ msgstr "이메일 주소를 확인 중입니다. 잠시만 기다려 주세요."
 msgid "Post-Call Feedback"
 msgstr "통화 후 피드백"
 
-#: components/start-call.tsx:1224
+#: components/start-call.tsx:1225
 msgid "Practice Conversations"
 msgstr "대화 연습"
 
@@ -1577,7 +1577,7 @@ msgstr "실시간 피드백"
 msgid "Real-Time Suggestion"
 msgstr "실시간 제안"
 
-#: components/start-call.tsx:1246
+#: components/start-call.tsx:1247
 msgid "RECOMMENDED"
 msgstr "추천"
 
@@ -1656,7 +1656,7 @@ msgstr "페이지당 행 수"
 
 #: components/call-summary.tsx:1487
 #: components/history/conversation-history.tsx:1859
-#: components/start-call.tsx:1796
+#: components/start-call.tsx:1797
 msgid "Save"
 msgstr "저장"
 
@@ -1664,7 +1664,7 @@ msgstr "저장"
 msgid "Save Call"
 msgstr "통화 저장"
 
-#: components/start-call.tsx:1840
+#: components/start-call.tsx:1841
 #: contexts/glass-context.tsx:1670
 msgid "Saved call limit reached"
 msgstr "저장된 통화 한도에 도달했습니다"
@@ -1737,7 +1737,7 @@ msgstr "먼저 대화를 선택하세요"
 
 #: components/start-call.tsx:862
 #: components/start-call.tsx:867
-#: components/start-call.tsx:1332
+#: components/start-call.tsx:1333
 msgid "Select a conversation partner"
 msgstr "대화 상대를 선택하세요"
 
@@ -1758,7 +1758,7 @@ msgstr "모드를 선택하여 계속 진행하세요"
 msgid "Select a partner"
 msgstr "파트너 선택"
 
-#: components/start-call.tsx:1553
+#: components/start-call.tsx:1554
 msgid "Select a partner to see details."
 msgstr "파트너를 선택하여 세부 정보를 확인하세요."
 
@@ -1885,10 +1885,10 @@ msgstr "일반"
 msgid "Star on GitHub"
 msgstr "GitHub에 Star 추가"
 
-#: components/start-call.tsx:1159
-#: components/start-call.tsx:1176
-#: components/start-call.tsx:1511
-#: components/start-call.tsx:1584
+#: components/start-call.tsx:1160
+#: components/start-call.tsx:1177
+#: components/start-call.tsx:1512
+#: components/start-call.tsx:1585
 msgid "Start Call"
 msgstr "통화 시작"
 
@@ -1908,7 +1908,7 @@ msgstr "제안하기"
 #: components/bottom-panel.tsx:35
 #: components/onboarding/bottom-panel-demo.tsx:130
 msgid "Suggested Answer"
-msgstr "추천 답변"
+msgstr "제안된 답변"
 
 #: components/call-summary.tsx:1298
 msgid "Summarize this insight..."
@@ -1959,7 +1959,7 @@ msgstr "인증 링크가 잘못되었거나 만료되었습니다."
 msgid "Theme"
 msgstr "테마"
 
-#: components/start-call.tsx:1814
+#: components/start-call.tsx:1815
 msgid "This action cannot be undone."
 msgstr "이 작업은 취소할 수 없습니다."
 
@@ -2072,7 +2072,7 @@ msgstr "대화를 시작할 수 없습니다."
 msgid "Unable to submit request"
 msgstr "요청을 제출할 수 없습니다."
 
-#: components/start-call.tsx:1294
+#: components/start-call.tsx:1295
 msgid "Unavailable on mobile"
 msgstr "모바일에서는 사용할 수 없습니다"
 
@@ -2116,7 +2116,7 @@ msgstr "최대 500건"
 msgid "Update"
 msgstr "업데이트"
 
-#: components/start-call.tsx:1706
+#: components/start-call.tsx:1707
 msgid "Update your custom partner details."
 msgstr "파트너 정보를 업데이트하세요."
 
@@ -2134,7 +2134,7 @@ msgstr "업그레이드"
 msgid "Upgrade monthly"
 msgstr "월간 업그레이드"
 
-#: components/start-call.tsx:1867
+#: components/start-call.tsx:1868
 msgid "Upgrade plan"
 msgstr "업그레이드 플랜"
 
