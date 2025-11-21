@@ -12,6 +12,7 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
+    Column,
     DateTime,
     ForeignKey,
     Integer,
@@ -21,6 +22,12 @@ from sqlalchemy import (
     Index,
     UniqueConstraint,
 )
+
+# Import pgvector types
+try:
+    from pgvector.sqlalchemy import Vector
+except ImportError:
+    Vector = None
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -280,14 +287,16 @@ class MemoryRecord(Base):
     importance: Mapped[int] = mapped_column(default=0)
     text: Mapped[str] = mapped_column(Text)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
-    keywords: Mapped[list[str] | None] = mapped_column(ARRAY(String(64)), nullable=True)
-    entities: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     retention_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     content_hash: Mapped[str] = mapped_column(String(64))
+    # pgvector embedding for semantic search (1536 dimensions for OpenAI text-embedding-3-small)
+    # Note: Using Column (not mapped_column) because Vector is not a standard SQLAlchemy type
+    # Note: HNSW index has 2000 dimension limit, so we use 1536 dim model
+    embedding = Column(Vector(1536) if Vector else None, nullable=True)
 
     __table_args__ = (Index("ix_memory_records_user_hash", "user_id", "content_hash", unique=True),)
 

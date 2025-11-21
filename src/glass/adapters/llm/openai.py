@@ -37,6 +37,8 @@ class OpenAILLMAdapter:
         max_tokens: int | None = None,
         response_schema: object | None = None,
         schema_context: dict[str, str] | None = None,
+        tools: list[dict] | None = None,
+        tool_choice: str | None = None,
     ) -> str | dict:
         """Call OpenAI API with optional structured outputs.
 
@@ -128,8 +130,32 @@ class OpenAILLMAdapter:
             if max_tokens is not None:
                 kwargs["max_tokens"] = max_tokens
 
+            # Add tools if provided
+            if tools:
+                kwargs["tools"] = tools
+                if tool_choice:
+                    kwargs["tool_choice"] = tool_choice
+
             completion = await client.chat.completions.create(**kwargs)
-            return completion.choices[0].message.content or ""
+
+            # Check for tool calls
+            message = completion.choices[0].message
+            if message.tool_calls:
+                # Return tool call information
+                return {
+                    "type": "tool_calls",
+                    "tool_calls": [
+                        {
+                            "id": tc.id,
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        }
+                        for tc in message.tool_calls
+                    ],
+                    "message": message.model_dump(),
+                }
+
+            return message.content or ""
 
         except Exception as e:
             LOGGER.error(f"OpenAI API call failed [model={chosen_model}]: {e}", exc_info=True)

@@ -23,8 +23,6 @@ class MemoryFactPayload(TypedDict, total=False):
     category: str
     retention: str
     importance: int
-    keywords: list[str]
-    entities: list[dict[str, str]]
     retention_ttl_days: float | int | None
     retention_expires_at: str | None
     partner_id: str | None
@@ -236,11 +234,6 @@ def derive_conversation_title(started_at: datetime | None) -> str:
 def _serialize_partner(partner: ConversationPartner | None) -> dict[str, Any] | None:
     if not partner:
         return None
-    kind = (
-        partner.kind
-        if getattr(partner, "kind", None) in {"roleplay", "live_call"}
-        else ("live_call" if not partner.voice_id else "roleplay")
-    )
     return {
         "id": partner.id,
         "name": partner.name,
@@ -250,7 +243,7 @@ def _serialize_partner(partner: ConversationPartner | None) -> dict[str, Any] | 
         "learning_lang": partner.learning_lang,
         "native_lang": partner.native_lang,
         "is_system": partner.user_id is None,
-        "kind": kind,
+        "kind": partner.kind,
     }
 
 

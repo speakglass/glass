@@ -24,8 +24,6 @@ class MemoryRecordResponse(BaseModel):
     partner_id: str | None = None
     conversation_id: str | None = None
     summary: str | None = None
-    keywords: list[str] | None = None
-    entities: list[dict[str, str]] | None = None
     retention_expires_at: str | None = None
     created_at: str | None = None
     updated_at: str | None = None

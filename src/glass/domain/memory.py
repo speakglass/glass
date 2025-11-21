@@ -314,8 +314,9 @@ class ConversationMemory:
 
         seen: set[str] = set()
 
-        def _collect(items: list[dict[str, Any]], *, limit: int, key_fn) -> list[str]:
-            bucket: list[str] = []
+        def _collect(items: list[dict[str, Any]], *, limit: int, key_fn) -> list[dict[str, str]]:
+            """Collect memories with scope information."""
+            bucket: list[dict[str, str]] = []
             for record in sorted(items, key=key_fn, reverse=True):
                 summary = _summary(record)
                 if not summary or summary in seen:
@@ -324,25 +325,24 @@ class ConversationMemory:
                 truncated = summary[:150] + "..." if len(summary) > 150 else summary
                 scope = record.get("scope", "unknown")
 
-                # Add timestamp info for context
+                # Add compact timestamp
                 timestamp = _timestamp(record)
                 if timestamp > 0:
                     from datetime import datetime, timezone
+                    from ..utils.time import format_relative_time_compact
 
                     dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-                    # Format as relative time (e.g., "2 days ago")
-                    now = datetime.now(timezone.utc)
-                    delta = now - dt
-                    if delta.days > 0:
-                        time_str = f"{delta.days} day{'s' if delta.days != 1 else ''} ago"
-                    elif delta.seconds >= 3600:
-                        hours = delta.seconds // 3600
-                        time_str = f"{hours} hour{'s' if hours != 1 else ''} ago"
-                    else:
-                        time_str = "today"
-                    bucket.append(f"- [{scope}, {time_str}] {truncated}")
+                    time_str = format_relative_time_compact(dt)
                 else:
-                    bucket.append(f"- [{scope}] {truncated}")
+                    time_str = "past"
+
+                bucket.append(
+                    {
+                        "scope": scope,
+                        "text": truncated,
+                        "time": time_str,
+                    }
+                )
 
                 seen.add(summary)
                 if len(bucket) >= limit:
@@ -368,10 +368,29 @@ class ConversationMemory:
             else []
         )
 
-        parts: list[str] = []
-        if important:
-            parts.append("Important Notes:\n" + "\n".join(important))
-        if recent:
-            parts.append("Recent Interactions:\n" + "\n".join(recent))
+        # Combine and group by scope
+        all_memories = {mem["text"]: mem for mem in (important + recent)}.values()
 
-        return "\n\n".join(parts).strip()
+        user_facts = []
+        partner_facts = []
+        interaction_facts = []
+
+        for mem in all_memories:
+            formatted = f"- [{mem['time']}] {mem['text']}"
+            if mem["scope"] == "user":
+                user_facts.append(formatted)
+            elif mem["scope"] == "partner":
+                partner_facts.append(formatted)
+            elif mem["scope"] == "interaction":
+                interaction_facts.append(formatted)
+
+        # Build grouped context
+        sections = []
+        if user_facts:
+            sections.append("About the user:\n" + "\n".join(user_facts))
+        if partner_facts:
+            sections.append("About you:\n" + "\n".join(partner_facts))
+        if interaction_facts:
+            sections.append("Your interactions:\n" + "\n".join(interaction_facts))
+
+        return "\n\n".join(sections).strip()

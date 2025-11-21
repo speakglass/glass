@@ -141,6 +141,8 @@ class LLMPort(Protocol):
         max_tokens: int | None = None,
         response_schema: object | None = None,
         schema_context: dict[str, str] | None = None,
+        tools: list[dict] | None = None,
+        tool_choice: str | None = None,
     ) -> str | dict:
         """Call LLM with flexible input options.
 
@@ -153,10 +155,12 @@ class LLMPort(Protocol):
             max_tokens: Max response tokens (None = no limit, let model/prompt decide)
             response_schema: Optional Pydantic model for structured output
             schema_context: Optional context for dynamic schema substitution (e.g., {"TARGET": "Japanese", "NATIVE": "Korean"})
+            tools: Optional list of tool definitions for function calling
+            tool_choice: Optional tool choice strategy ("auto", "required", or specific tool name)
 
         Returns:
             str: Response text when response_schema is None
-            dict: Parsed structured data when response_schema is provided
+            dict: Parsed structured data when response_schema is provided or tool calls
             Empty string/dict on error
         """
         ...

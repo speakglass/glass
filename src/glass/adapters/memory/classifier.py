@@ -23,7 +23,6 @@ You are Glass Memory — classify durable conversational facts.
 Guidelines:
 - Use short_term only when the information clearly expires within a week; otherwise long_term or permanent.
 - importance indicates how helpful the fact is for personalization (0-100).
-- keywords/entities should be concise anchors for retrieval.
 """
 
 
@@ -33,8 +32,6 @@ class MemoryClassification:
     retention: str
     importance: int
     expires_at: datetime | None
-    keywords: list[str]
-    entities: list[dict[str, str]]
     content_hash: str
     summary: str | None = None
 
@@ -81,8 +78,6 @@ async def classify_memory(
     summary = _coerce_str(payload.get("summary"))
 
     expires_at = _coerce_expiration(payload.get("expires_in_days"))
-    keywords = _coerce_str_list(payload.get("keywords"), limit=20)
-    entities = _coerce_entity_list(payload.get("entities"), limit=20)
     content_hash = hashlib.sha1(f"{user_id}:{normalized.lower()}".encode("utf-8"), usedforsecurity=False).hexdigest()
 
     return MemoryClassification(
@@ -90,8 +85,6 @@ async def classify_memory(
         retention=retention,
         importance=importance,
         expires_at=expires_at,
-        keywords=keywords,
-        entities=entities,
         content_hash=content_hash,
         summary=summary,
     )
@@ -130,36 +123,3 @@ def _coerce_expiration(value: Any) -> datetime | None:
     if days <= 0:
         return None
     return datetime.now(timezone.utc) + timedelta(days=days)
-
-
-def _coerce_str_list(value: Any, *, limit: int) -> list[str]:
-    if not isinstance(value, list):
-        return []
-    results: list[str] = []
-    for entry in value:
-        if isinstance(entry, str):
-            text = entry.strip()
-            if text:
-                results.append(text)
-        if len(results) >= limit:
-            break
-    return results
-
-
-def _coerce_entity_list(value: Any, *, limit: int) -> list[dict[str, str]]:
-    if not isinstance(value, list):
-        return []
-    entities: list[dict[str, str]] = []
-    for entry in value:
-        if isinstance(entry, dict):
-            label = str(entry.get("label") or "keyword").strip() or "keyword"
-            val = str(entry.get("value") or "").strip()
-            if val:
-                entities.append({"label": label, "value": val})
-        elif isinstance(entry, str):
-            val = entry.strip()
-            if val:
-                entities.append({"label": "keyword", "value": val})
-        if len(entities) >= limit:
-            break
-    return entities

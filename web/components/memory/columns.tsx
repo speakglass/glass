@@ -200,43 +200,6 @@ export const createColumns = (
     },
   },
   {
-    accessorKey: 'keywords',
-    header: () => <Trans>Keywords</Trans>,
-    cell: ({ row }) => {
-      const keywords = (row.getValue('keywords') as string[] | null) ?? [];
-      if (!keywords.length) return renderPlaceholder();
-      return (
-        <div className="flex flex-wrap gap-1 max-w-[260px]">
-          {keywords.map((keyword) => (
-            <Badge key={keyword} variant="secondary" className="text-xs">
-              {keyword}
-            </Badge>
-          ))}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: 'entities',
-    header: () => <Trans>Entities</Trans>,
-    cell: ({ row }) => {
-      const entities = (row.getValue('entities') as Array<{ label: string; value: string }> | null) ?? [];
-      if (!entities.length) return renderPlaceholder();
-      return (
-        <div className="flex flex-wrap gap-1 max-w-[320px]">
-          {entities.map((entity) => {
-            const key = `${entity.label}-${entity.value}`;
-            return (
-              <Badge key={key} variant="secondary" className="text-xs">
-                {entity.label}: {entity.value}
-              </Badge>
-            );
-          })}
-        </div>
-      );
-    },
-  },
-  {
     accessorKey: 'partnerId',
     header: () => <Trans>Partner ID</Trans>,
     cell: ({ row }) => {

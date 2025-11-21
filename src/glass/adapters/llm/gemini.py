@@ -38,6 +38,8 @@ class GeminiLLMAdapter:
         max_tokens: int | None = None,
         response_schema: object | None = None,
         schema_context: dict[str, str] | None = None,
+        tools: list[dict] | None = None,
+        tool_choice: str | None = None,
     ) -> str | dict:
         """Call Gemini API with optional structured outputs.
 
@@ -118,12 +120,60 @@ class GeminiLLMAdapter:
         if system:
             config_args["system_instruction"] = system
 
+        # Add tools if provided
+        if tools:
+            # Convert OpenAI-style tools to Gemini format
+            gemini_tools = []
+            for tool in tools:
+                if tool.get("type") == "function":
+                    func = tool["function"]
+                    gemini_tools.append(
+                        types.Tool(
+                            function_declarations=[
+                                types.FunctionDeclaration(
+                                    name=func["name"],
+                                    description=func.get("description", ""),
+                                    parameters=func.get("parameters", {}),
+                                )
+                            ]
+                        )
+                    )
+
+            # Add tools to config
+            config_args["tools"] = gemini_tools
+
+            # Set tool choice if required
+            if tool_choice == "required":
+                config_args["tool_config"] = types.ToolConfig(
+                    function_calling_config=types.FunctionCallingConfig(mode=types.FunctionCallingConfig.Mode.ANY)
+                )
+
         try:
             response = await client.aio.models.generate_content(
                 model=chosen_model,
                 contents=contents,
                 config=types.GenerateContentConfig(**config_args),
             )
+
+            # Check for function calls first
+            if tools and response.candidates:
+                candidate = response.candidates[0]
+                if candidate.content and candidate.content.parts:
+                    for part in candidate.content.parts:
+                        if hasattr(part, "function_call") and part.function_call:
+                            # Return tool call information
+                            fc = part.function_call
+                            return {
+                                "type": "tool_calls",
+                                "tool_calls": [
+                                    {
+                                        "id": f"call_{fc.name}",  # Gemini doesn't provide IDs
+                                        "name": fc.name,
+                                        "arguments": json.dumps(dict(fc.args)) if fc.args else "{}",
+                                    }
+                                ],
+                                "message": {"role": "assistant", "content": None},
+                            }
 
             # Extract text from response (standard method)
             try:

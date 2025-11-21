@@ -42,8 +42,6 @@ NEXTAUTH_SECRET=your-secret-here
 GLASS_AUTH_JWT_SECRET=your-jwt-secret
 ```
 
-**Note:** WebSocket URL is automatically generated from API URL (http→ws, https→wss)
-
 3. Start the development server:
 
 ```bash
@@ -56,13 +54,11 @@ pnpm dev
 
 ## Environment Variables
 
-| Variable                       | Description                         | Required | Default                |
-| ------------------------------ | ----------------------------------- | -------- | ---------------------- |
-| `NEXT_PUBLIC_GLASS_API_URL`    | Glass API URL (WebSocket auto)      | Yes      | `http://localhost:8000`|
-| `NEXTAUTH_SECRET`              | NextAuth encryption secret          | Yes      | -                      |
-| `GLASS_AUTH_JWT_SECRET`        | JWT secret (must match backend)     | Yes      | -                      |
-| `GOOGLE_CLIENT_ID`             | Google OAuth client ID              | No       | -                      |
-| `GOOGLE_CLIENT_SECRET`         | Google OAuth client secret          | No       | -                      |
+| Variable                    | Description                     | Required | Default                 |
+| --------------------------- | ------------------------------- | -------- | ----------------------- |
+| `NEXT_PUBLIC_GLASS_API_URL` | Glass API URL (WebSocket auto)  | Yes      | `http://localhost:8000` |
+| `NEXTAUTH_SECRET`           | NextAuth encryption secret      | Yes      | -                       |
+| `GLASS_AUTH_JWT_SECRET`     | JWT secret (must match backend) | Yes      | -                       |
 
 ## Usage
 

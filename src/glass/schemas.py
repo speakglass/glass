@@ -58,10 +58,11 @@ class SuggestionResponse(BaseModel):
 
     target_text: str = Field(
         ...,
-        description="What the USER should say next in {TARGET} (the language being learned). NOT what the partner should say.",
+        description="Complete natural sentence in {TARGET} that the USER should say next. NOT what the partner should say.",
     )
     native_translation: str = Field(
-        ..., description="Translation of target_text into {NATIVE} (the user's native language) for understanding"
+        ...,
+        description="Translation of YOUR suggested target_text (not the user's hint) into {NATIVE}. ALWAYS translate the target_text you just generated.",
     )
 
 
@@ -140,16 +141,6 @@ class MemoryExtractionResponse(BaseModel):
     )
 
 
-class MemoryClassificationEntity(BaseModel):
-    """An entity extracted from memory text.
-
-    Represents structured information like names, places, topics.
-    """
-
-    label: str = Field(..., description="Entity type (e.g., 'person', 'place', 'topic', 'skill', 'interest')")
-    value: str = Field(..., description="The actual entity value or name")
-
-
 class MemoryClassificationResponse(BaseModel):
     """Response schema for memory classification.
 
@@ -164,16 +155,19 @@ class MemoryClassificationResponse(BaseModel):
         ..., description="How long to retain: 'short_term' (days), 'long_term' (months), 'permanent' (indefinite)"
     )
     importance: int = Field(
-        ..., ge=0, le=100, description="Importance score (0-100): how critical this memory is for future conversations"
+        ...,
+        ge=0,
+        le=100,
+        description=(
+            "Importance score (0-100): how critical this memory is for future conversations. "
+            "80-100: Core identity/preferences (name, job, values). "
+            "50-79: Significant facts (hobbies, relationships, goals). "
+            "20-49: Contextual info (recent events, opinions). "
+            "0-19: Minor details (casual mentions)."
+        ),
     )
     summary: str = Field(
         default="", description="Brief headline summarizing the memory in {NATIVE} (the user's native language)"
-    )
-    keywords: list[str] = Field(
-        default_factory=list, description="Search keywords for memory retrieval (key terms, concepts)"
-    )
-    entities: list[MemoryClassificationEntity] = Field(
-        default_factory=list, description="Structured entities extracted from the memory text"
     )
     expires_in_days: float | None = Field(
         None, description="Days until expiration (for short_term memories only, null otherwise)"

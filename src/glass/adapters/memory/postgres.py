@@ -14,6 +14,7 @@ from sqlalchemy.dialects.postgresql import insert
 from ...domain.ports import LLMPort
 from ...persistence.db import MemoryRecord, PersistenceDatabase
 from .classifier import classify_memory
+from .embedder import MemoryEmbedder
 
 LOGGER = logging.getLogger(__name__)
 
@@ -80,39 +81,6 @@ def _normalize_summary(value: Any) -> str | None:
     return None
 
 
-def _coerce_keywords(value: Any, *, limit: int = 16) -> list[str]:
-    if not isinstance(value, (list, tuple)):
-        return []
-    keywords: list[str] = []
-    for entry in value:
-        if isinstance(entry, str):
-            text = entry.strip()
-            if text:
-                keywords.append(text[:64])
-        if len(keywords) >= limit:
-            break
-    return keywords
-
-
-def _coerce_entities(value: Any, *, limit: int = 16) -> list[dict[str, str]]:
-    if not isinstance(value, (list, tuple)):
-        return []
-    entities: list[dict[str, str]] = []
-    for entry in value:
-        if isinstance(entry, dict):
-            label = str(entry.get("label") or entry.get("type") or "keyword").strip() or "keyword"
-            entity_value = (entry.get("value") or entry.get("text") or "").strip()
-            if entity_value:
-                entities.append({"label": label[:64], "value": entity_value[:256]})
-        elif isinstance(entry, str):
-            text = entry.strip()
-            if text:
-                entities.append({"label": "keyword", "value": text[:256]})
-        if len(entities) >= limit:
-            break
-    return entities
-
-
 def _parse_retention_expiry(value: Any) -> datetime | None:
     if value is None:
         return None
@@ -144,18 +112,20 @@ def _build_content_hash(
 
 
 class PostgresMemoryAdapter:
-    """Implements MemoryPort using Postgres."""
+    """Implements MemoryPort using Postgres with semantic search support."""
 
     def __init__(
         self,
         *,
         database: PersistenceDatabase,
         llm: LLMPort | None = None,
+        embedder: MemoryEmbedder | None = None,
     ) -> None:
         self.database = database
         if llm is None:
             raise ValueError("LLM adapter is required for PostgresMemoryAdapter")
         self.llm = llm
+        self.embedder = embedder  # Optional: semantic search only works if embedder is provided
 
     async def ensure_user(
         self,
@@ -260,8 +230,6 @@ class PostgresMemoryAdapter:
                 retention = _normalize_retention(entry.get("retention"))
                 importance = _normalize_importance(entry.get("importance"))
                 summary = _normalize_summary(entry.get("summary"))
-                keywords = _coerce_keywords(entry.get("keywords"))
-                entities = _coerce_entities(entry.get("entities"))
                 retention_expires_at = _parse_retention_expiry(entry.get("retention_expires_at"))
             else:
                 # Classify with LLM
@@ -278,9 +246,15 @@ class PostgresMemoryAdapter:
                 retention = classification.retention
                 importance = classification.importance
                 summary = classification.summary or scope.title()
-                keywords = classification.keywords
-                entities = classification.entities
                 retention_expires_at = classification.expires_at
+
+            # Generate embedding if embedder is available
+            embedding = None
+            if self.embedder:
+                try:
+                    embedding = await self.embedder.embed_memory(text=text)
+                except Exception as e:
+                    LOGGER.warning(f"[MemoryStore] Failed to generate embedding: {e}")
 
             payload = {
                 "user_id": user_id,
@@ -291,8 +265,6 @@ class PostgresMemoryAdapter:
                 "importance": importance,
                 "text": text,
                 "summary": summary,
-                "keywords": keywords or None,
-                "entities": entities or None,
                 "retention_expires_at": retention_expires_at,
                 "created_at": timestamp,
                 "updated_at": timestamp,
@@ -306,6 +278,8 @@ class PostgresMemoryAdapter:
             }
             if entry_conversation_id:
                 payload["conversation_id"] = entry_conversation_id
+            if embedding is not None:
+                payload["embedding"] = embedding
             return payload
 
         for entry in entries:
@@ -323,14 +297,15 @@ class PostgresMemoryAdapter:
                 "importance": stmt.excluded.importance,
                 "retention": stmt.excluded.retention,
                 "summary": stmt.excluded.summary,
-                "keywords": stmt.excluded.keywords,
-                "entities": stmt.excluded.entities,
                 "partner_id": stmt.excluded.partner_id,
                 "conversation_id": stmt.excluded.conversation_id,
                 "scope": stmt.excluded.scope,
                 "retention_expires_at": stmt.excluded.retention_expires_at,
                 "updated_at": stmt.excluded.updated_at,
             }
+            # Only update embedding if it's provided
+            if "embedding" in payloads[0]:
+                update_cols["embedding"] = stmt.excluded.embedding
             stmt = stmt.on_conflict_do_update(
                 index_elements=["user_id", "content_hash"],
                 set_=update_cols,
@@ -364,8 +339,6 @@ class PostgresMemoryAdapter:
                 "importance": row.importance,
                 "text": row.text,
                 "summary": row.summary,
-                "keywords": row.keywords,
-                "entities": row.entities,
                 "partner_id": row.partner_id,
                 "conversation_id": row.conversation_id,
                 "retention_expires_at": row.retention_expires_at.isoformat() if row.retention_expires_at else None,
@@ -406,8 +379,6 @@ class PostgresMemoryAdapter:
                 "retention": row.retention,
                 "importance": row.importance,
                 "summary": row.summary,
-                "keywords": row.keywords,
-                "entities": row.entities,
                 "partner_id": row.partner_id,
                 "conversation_id": row.conversation_id,
                 "retention_expires_at": row.retention_expires_at.isoformat() if row.retention_expires_at else None,
@@ -474,6 +445,15 @@ class PostgresMemoryAdapter:
             text=text,
             scope="user",
         )
+
+        # Generate embedding if embedder is available
+        embedding = None
+        if self.embedder:
+            try:
+                embedding = await self.embedder.embed_memory(text=text)
+            except Exception as e:
+                LOGGER.warning(f"[CreateMemory] Failed to generate embedding: {e}")
+
         payload = {
             "user_id": user_id,
             "partner_id": None,
@@ -484,8 +464,6 @@ class PostgresMemoryAdapter:
             "importance": classification.importance,
             "text": text,
             "summary": classification.summary,
-            "keywords": classification.keywords,
-            "entities": classification.entities,
             "retention_expires_at": classification.expires_at,
             "updated_at": _now(),
             "content_hash": _build_content_hash(
@@ -496,6 +474,8 @@ class PostgresMemoryAdapter:
                 text=text,
             ),
         }
+        if embedding is not None:
+            payload["embedding"] = embedding
         async_session = self.database.session()
         async with async_session() as session:
             stmt = insert(MemoryRecord).values(payload)
@@ -506,12 +486,11 @@ class PostgresMemoryAdapter:
                     "retention": stmt.excluded.retention,
                     "importance": stmt.excluded.importance,
                     "text": stmt.excluded.text,
-                    "keywords": stmt.excluded.keywords,
-                    "entities": stmt.excluded.entities,
                     "scope": stmt.excluded.scope,
                     "conversation_id": stmt.excluded.conversation_id,
                     "retention_expires_at": stmt.excluded.retention_expires_at,
                     "updated_at": stmt.excluded.updated_at,
+                    "embedding": stmt.excluded.embedding,
                 },
             ).returning(
                 MemoryRecord.id,
@@ -523,8 +502,6 @@ class PostgresMemoryAdapter:
                 MemoryRecord.summary,
                 MemoryRecord.partner_id,
                 MemoryRecord.conversation_id,
-                MemoryRecord.keywords,
-                MemoryRecord.entities,
                 MemoryRecord.retention_expires_at,
                 MemoryRecord.created_at,
             )
@@ -543,8 +520,6 @@ class PostgresMemoryAdapter:
             "summary": row["summary"],
             "partner_id": row["partner_id"],
             "conversation_id": row["conversation_id"],
-            "keywords": row["keywords"],
-            "entities": row["entities"],
             "retention_expires_at": row["retention_expires_at"].isoformat() if row["retention_expires_at"] else None,
             "created_at": row["created_at"].isoformat() if row["created_at"] else None,
         }
@@ -577,21 +552,32 @@ class PostgresMemoryAdapter:
             text=text,
             scope=scope,
         )
+
+        # Generate new embedding if embedder is available
+        embedding = None
+        if self.embedder:
+            try:
+                embedding = await self.embedder.embed_memory(text=text)
+            except Exception as e:
+                LOGGER.warning(f"[UpdateMemory] Failed to generate embedding: {e}")
+
+        update_values = {
+            "text": text,
+            "category": classification.category,
+            "retention": classification.retention,
+            "importance": classification.importance,
+            "summary": classification.summary,
+            "retention_expires_at": classification.expires_at,
+            "updated_at": _now(),
+        }
+        if embedding is not None:
+            update_values["embedding"] = embedding
+
         async with session_factory() as session:
             stmt = (
                 update(MemoryRecord)
                 .where(MemoryRecord.id == record_id, MemoryRecord.user_id == user_id)
-                .values(
-                    text=text,
-                    category=classification.category,
-                    retention=classification.retention,
-                    importance=classification.importance,
-                    keywords=classification.keywords,
-                    entities=classification.entities,
-                    summary=classification.summary,
-                    retention_expires_at=classification.expires_at,
-                    updated_at=_now(),
-                )
+                .values(**update_values)
                 .returning(
                     MemoryRecord.id,
                     MemoryRecord.scope,
@@ -602,8 +588,6 @@ class PostgresMemoryAdapter:
                     MemoryRecord.summary,
                     MemoryRecord.partner_id,
                     MemoryRecord.conversation_id,
-                    MemoryRecord.keywords,
-                    MemoryRecord.entities,
                     MemoryRecord.retention_expires_at,
                     MemoryRecord.updated_at,
                 )
@@ -624,8 +608,6 @@ class PostgresMemoryAdapter:
             "summary": row["summary"],
             "partner_id": row["partner_id"],
             "conversation_id": row["conversation_id"],
-            "keywords": row["keywords"],
-            "entities": row["entities"],
             "retention_expires_at": row["retention_expires_at"].isoformat() if row["retention_expires_at"] else None,
             "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
         }
@@ -642,3 +624,226 @@ class PostgresMemoryAdapter:
             result = await session.execute(stmt)
             await session.commit()
         return result.rowcount > 0
+
+    async def semantic_search_memories(
+        self,
+        *,
+        user_id: str,
+        query_text: str,
+        query_context: str | None = None,
+        partner_id: str | None = None,
+        scopes: list[str] | None = None,
+        limit: int = 10,
+        similarity_threshold: float = 0.65,
+        rerank: bool = True,
+    ) -> list[dict[str, Any]]:
+        """Semantic search for relevant memories using vector similarity.
+
+        Combines vector similarity search with metadata filtering and optional
+        reranking based on importance and recency.
+
+        Args:
+            user_id: User ID to search memories for
+            query_text: Search query (user message, hint, or last partner message)
+            query_context: Optional conversation context for better search
+            partner_id: Filter to specific partner's memories
+            scopes: Filter by scope (user/partner/interaction)
+            limit: Maximum number of results to return
+            similarity_threshold: Minimum cosine similarity (0.0-1.0)
+            rerank: Whether to rerank by hybrid score (similarity + importance + recency)
+
+        Returns:
+            List of memory records with similarity scores
+        """
+        if not self.embedder:
+            LOGGER.warning("[SemanticSearch] Embedder not configured, falling back to empty results")
+            return []
+
+        # Generate query embedding
+        try:
+            query_embedding = await self.embedder.embed_query(
+                query=query_text,
+                context=query_context,
+            )
+        except Exception as e:
+            LOGGER.error(f"[SemanticSearch] Failed to generate query embedding: {e}", exc_info=True)
+            return []
+
+        # Build vector similarity search query
+        async_session = self.database.session()
+        async with async_session() as session:
+            from sqlalchemy import or_, and_
+
+            # Base filters
+            filters = [
+                MemoryRecord.user_id == user_id,
+                MemoryRecord.embedding.isnot(None),
+            ]
+
+            # Scope filtering with partner_id logic:
+            # - scope="user": include all (no partner_id filter)
+            # - scope="partner" or "interaction": only if partner_id matches
+            if scopes and partner_id:
+                scope_conditions = []
+
+                if "user" in scopes:
+                    # User memories: no partner restriction
+                    scope_conditions.append(MemoryRecord.scope == "user")
+
+                # Partner/interaction memories: must match partner_id
+                partner_scopes = [s for s in scopes if s in ("partner", "interaction")]
+                if partner_scopes:
+                    scope_conditions.append(
+                        and_(MemoryRecord.scope.in_(partner_scopes), MemoryRecord.partner_id == partner_id)
+                    )
+
+                if scope_conditions:
+                    filters.append(or_(*scope_conditions))
+            elif scopes:
+                # No partner_id provided: simple scope filter
+                filters.append(MemoryRecord.scope.in_(scopes))
+            elif partner_id:
+                # No scopes provided: simple partner filter
+                filters.append(MemoryRecord.partner_id == partner_id)
+
+            # Vector similarity search using cosine distance
+            # Note: <=> operator computes cosine distance (0 = identical, 2 = opposite)
+            # We convert to similarity: 1 - distance (so 1 = identical, 0 = orthogonal)
+            from sqlalchemy import text, cast, Float
+
+            # Fetch more candidates for reranking
+            fetch_limit = limit * 2 if rerank else limit
+
+            stmt = (
+                select(
+                    MemoryRecord,
+                    # Cosine similarity score
+                    cast(1 - MemoryRecord.embedding.cosine_distance(query_embedding), Float).label("similarity"),
+                )
+                .where(*filters)
+                .where(
+                    # Filter by similarity threshold
+                    cast(1 - MemoryRecord.embedding.cosine_distance(query_embedding), Float)
+                    >= similarity_threshold
+                )
+                .order_by(
+                    # Order by similarity (highest first)
+                    cast(1 - MemoryRecord.embedding.cosine_distance(query_embedding), Float).desc()
+                )
+                .limit(fetch_limit)
+            )
+
+            result = await session.execute(stmt)
+            rows = result.all()
+
+        if not rows:
+            # Debug: Check if there are any results with same filters but no threshold
+            debug_stmt = (
+                select(
+                    MemoryRecord,
+                    cast(1 - MemoryRecord.embedding.cosine_distance(query_embedding), Float).label("similarity"),
+                )
+                .where(*filters)  # Use same filters as main query
+                .order_by(cast(1 - MemoryRecord.embedding.cosine_distance(query_embedding), Float).desc())
+                .limit(3)
+            )
+            async_session_debug = self.database.session()
+            async with async_session_debug() as session_debug:
+                debug_result = await session_debug.execute(debug_stmt)
+                debug_rows = debug_result.all()
+
+            if debug_rows:
+                # Show scope info in debug
+                debug_info = [f"{float(row[1]):.3f}({row[0].scope})" for row in debug_rows[:3]]
+                LOGGER.info(
+                    f"[SemanticSearch] No results above threshold {similarity_threshold} for query: {query_text[:50]}. "
+                    f"Top similarities (scope): {', '.join(debug_info)}"
+                )
+            else:
+                scope_filter = f" scope={scopes}" if scopes else ""
+                LOGGER.info(f"[SemanticSearch] No memories with embeddings found for user {user_id}{scope_filter}")
+            return []
+
+        # Convert to dict format
+        candidates = []
+        for row in rows:
+            record = row[0]  # MemoryRecord
+            similarity = float(row[1])  # similarity score
+
+            candidates.append(
+                {
+                    "id": record.id,
+                    "text": record.text,
+                    "summary": record.summary,
+                    "scope": record.scope,
+                    "category": record.category,
+                    "importance": record.importance,
+                    "partner_id": record.partner_id,
+                    "conversation_id": record.conversation_id,
+                    "retention": record.retention,
+                    "created_at": record.created_at.isoformat() if record.created_at else None,
+                    "updated_at": record.updated_at.isoformat() if record.updated_at else None,
+                    "similarity": similarity,
+                }
+            )
+
+        # Rerank if requested
+        if rerank and len(candidates) > limit:
+            candidates = self._rerank_results(candidates, limit)
+        else:
+            candidates = candidates[:limit]
+
+        LOGGER.info(
+            f"[SemanticSearch] Found {len(candidates)} results "
+            f"(query='{query_text[:50]}...', top_similarity={candidates[0]['similarity']:.3f})"
+        )
+
+        return candidates
+
+    def _rerank_results(
+        self,
+        candidates: list[dict[str, Any]],
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        """Rerank search results using hybrid scoring.
+
+        Combines semantic similarity with metadata signals:
+        - Similarity (60%): Semantic relevance to query
+        - Importance (30%): User-defined or LLM-classified importance
+        - Recency (10%): How recently the memory was updated
+
+        Args:
+            candidates: List of candidate memories with similarity scores
+            limit: Maximum number of results to return
+
+        Returns:
+            Reranked and truncated list of memories
+        """
+        import time
+        from datetime import datetime
+
+        now = time.time()
+
+        for item in candidates:
+            # Normalize importance (0-100 → 0-1)
+            item["importance_norm"] = item["importance"] / 100.0
+
+            # Normalize recency using exponential decay (30-day half-life)
+            if item["updated_at"]:
+                try:
+                    updated_ts = datetime.fromisoformat(item["updated_at"].replace("Z", "+00:00")).timestamp()
+                    days_old = (now - updated_ts) / 86400  # Convert to days
+                    # Exponential decay: 0.5^(days/30) gives half-life of 30 days
+                    item["recency_norm"] = 0.5 ** (days_old / 30)
+                except (ValueError, AttributeError):
+                    item["recency_norm"] = 0.0
+            else:
+                item["recency_norm"] = 0.0
+
+            # Hybrid score: weighted combination
+            item["hybrid_score"] = 0.6 * item["similarity"] + 0.3 * item["importance_norm"] + 0.1 * item["recency_norm"]
+
+        # Sort by hybrid score (descending)
+        candidates.sort(key=lambda x: x["hybrid_score"], reverse=True)
+
+        return candidates[:limit]

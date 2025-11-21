@@ -31,7 +31,8 @@ script yet. This repo hosts both the FastAPI backend (speech → understanding �
 - 🎧 Real-time feedback, sentence suggestions, and pronunciation hints/romanization
 - 🔤 Keyword → natural sentence translation with context awareness (Gemini 2.5 Flash by default)
 - 🗣️ Practice mode with on-device mic + optional AI voice partner
-- 🧠 Persistent memory powered by Postgres + Redis that personalizes over time
+- 🧠 Semantic memory powered by pgvector + OpenAI embeddings that recalls context intelligently
+- 🤖 AI roleplay with tool calling to search past conversations dynamically
 - 💾 Meeting history, transcripts, and summaries stored in Postgres
 - 🌐 Fully localized Next.js 16 app (Lingui PO workflows + dark mode UI)
 
@@ -43,20 +44,25 @@ script yet. This repo hosts both the FastAPI backend (speech → understanding �
 
 ## Memory architecture
 
-At runtime we only persist compact facts in `memory_records`. Each record stores:
+Glass uses **semantic memory** powered by pgvector to recall context intelligently. Each memory record stores:
 
 | Field                                      | Purpose                                                     |
 | ------------------------------------------ | ----------------------------------------------------------- |
 | `user_id`, `conversation_id`, `partner_id` | Scope (user-scoped, partner-scoped, or conversation-scoped) |
 | `category`                                 | One of fact / preference / skill / context / rule           |
 | `retention`                                | short_term / long_term / permanent (with optional expiry)   |
-| `text`, `summary`                          | Canonical fact text plus optional headline                  |
-| `keywords`, `entities`                     | Lightweight search accelerators                             |
-| `importance`                               | Used to rank facts when building prompts                    |
+| `text`, `summary`                          | Canonical fact text (used for embeddings)                   |
+| `embedding`                                | 1536-dim vector (OpenAI text-embedding-3-small)             |
+| `importance`                               | Used for hybrid ranking in search results                   |
 
-The classifier described in `src/glass/adapters/memory/classifier.py` ensures every fact is normalized and deduplicated before insert.
+### Semantic search
 
-All higher-level operations simply filter this table:
+When generating suggestions or answering questions, Glass:
+
+1. **Embeds the query** (user hint or question)
+2. **Searches by vector similarity** (cosine distance < 0.15 threshold)
+3. **Groups by scope** (user facts, partner facts, interactions)
+4. **Includes in LLM prompt** with relative timestamps
 
 | Operation                                | Query                                                                                                        |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
@@ -64,23 +70,23 @@ All higher-level operations simply filter this table:
 | “Remind me what this partner likes”      | `... WHERE user_id = :user AND partner_id = :partner`                                                        |
 | “Give me the last session’s commitments” | `... WHERE conversation_id = :conversation ORDER BY updated_at DESC`                                         |
 
-That’s it—no extra persona/feedback tables required. Session history still streams through Redis/Postgres for context, but durable memory lives in one place, making it trivial to reason about and operate.
+That's it—no complex RAG pipelines. Session history streams through Redis, durable semantic memory lives in Postgres + pgvector.
 
 ### Conceptual memory layers
 
-| Layer                                      | Description                                                                                                           | Lifetime                              |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| Live context buffer                        | Deques in `ConversationMemory` + Redis for current session turns. Feeds prompts, never persisted long term.           | Seconds–minutes                       |
-| Durable facts (`memory_records`)           | Classified facts (fact / preference / skill / context / rule) with retention scoring. Drives personalization queries. | Days–forever (depending on retention) |
-| Session metadata (`account_conversations`) | Minimal rows noting session/partner/time for audit + history lists. No transcripts stored here.                       | Historical reference                  |
+| Layer                                      | Description                                                                                                   | Lifetime                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Live context buffer                        | Deques in `ConversationMemory` + Redis for current session turns. Feeds prompts, never persisted long term.   | Seconds–minutes                       |
+| Semantic facts (`memory_records`)          | Vector-embedded memories with scope/category/retention. Drives intelligent suggestions and AI partner recall. | Days–forever (depending on retention) |
+| Session metadata (`account_conversations`) | Minimal rows noting session/partner/time for audit + history lists. No transcripts stored here.               | Historical reference                  |
 
-Every feature maps to one of these abstractions, which keeps the mental model simple: capture context in-memory, condense into facts, and jot down which session produced them.
+Every feature maps to one of these abstractions: capture context in-memory, condense into semantic facts with embeddings, recall intelligently via vector search.
 
 ## Tech stack
 
-- **Backend:** Python 3.11+, FastAPI, WebSockets, SQLAlchemy, Redis, Deepgram, Gemini (default) with OpenAI fallback, ElevenLabs
+- **Backend:** Python 3.11+, FastAPI, WebSockets, SQLAlchemy, pgvector, Redis, Deepgram, Gemini (default) with OpenAI fallback, ElevenLabs
 - **Frontend:** Next.js 16 App Router, React 18, NextAuth, TanStack Query/Table, Lingui, Tailwind tooling
-- **Data & infra:** Postgres for history, Redis for usage metering, Docker images for api/web, pnpm-managed frontend
+- **Data & infra:** Postgres + pgvector for semantic memory, Redis for usage metering, Docker images for api/web, pnpm-managed frontend
 - **Testing & tooling:** Pytest, Next lint, Lingui extraction/compile, Husky + Commitlint
 
 ## Setup
@@ -132,7 +138,7 @@ docker compose up --build
 | Screen audio capture for meetings         | ✅ Done    | Works with Zoom/Meet/Teams    |
 | Persistent memory/personalization         | ✅ Done    | Postgres + Redis memory core  |
 | Docker/Compose support                    | ✅ Done    | Backend/Web images + compose  |
-| pgvector semantic memory search           | 🚧 Planned | Vector-based memory retrieval |
+| pgvector semantic memory search           | ✅ Done    | Vector-based memory retrieval |
 | Desktop app                               | 🚧 Planned | macOS app with full Glass UI  |
 | Speaker diarization                       | 🚧 Planned | Multi-speaker labeling        |
 | Local-hosted model adapters (LLM/ASR/TTS) | 🚧 Planned | Self-hosted runtime           |

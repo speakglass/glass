@@ -154,8 +154,6 @@ export interface Memory {
   partnerId?: string | null;
   conversationId?: string | null;
   summary?: string | null;
-  keywords?: string[] | null;
-  entities?: Array<{ label: string; value: string }> | null;
   retentionExpiresAt?: Date | null;
   createdAt?: Date | null;
   updatedAt?: Date | null;
@@ -345,8 +343,6 @@ type MemoryApi = {
   partner_id?: string | null;
   conversation_id?: string | null;
   summary?: string | null;
-  keywords?: string[] | null;
-  entities?: Array<{ label: string; value: string }> | null;
   retention_expires_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -557,8 +553,6 @@ function mapMemory(data: MemoryApi): Memory {
     partnerId: data.partner_id ?? null,
     conversationId: data.conversation_id ?? null,
     summary: data.summary ?? null,
-    keywords: data.keywords ?? null,
-    entities: data.entities ?? null,
     retentionExpiresAt: data.retention_expires_at ? new Date(data.retention_expires_at) : null,
     createdAt: data.created_at ? new Date(data.created_at) : null,
     updatedAt: data.updated_at ? new Date(data.updated_at) : null,

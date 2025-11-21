@@ -80,11 +80,27 @@ def build_suggestion_prompt(
     user_hint: str | None = None,
     recent_conversation: list[str] | None,
     last_partner_message: str | None = None,
+    memory_context: str | None = None,
     length_mode: str = "auto",
     partner_name: str | None = None,
     user_name: str | None = None,
 ) -> tuple[str, str]:
-    """Build system and user prompts for conversation suggestions."""
+    """Build system and user prompts for conversation suggestions.
+
+    Args:
+        target_lang: Target language being learned
+        native_lang: User's native language
+        user_hint: Optional hint from user about what they want to say
+        recent_conversation: Recent conversation messages
+        last_partner_message: Last message from conversation partner
+        memory_context: Relevant memories from semantic search (user/partner/interaction facts)
+        length_mode: Suggestion length preference (auto/short/long)
+        partner_name: Name of conversation partner
+        user_name: Name of user
+
+    Returns:
+        Tuple of (system_prompt, user_prompt)
+    """
 
     normalized_length_mode = (length_mode or "auto").lower()
     length_mode_rule = {
@@ -118,12 +134,26 @@ def build_suggestion_prompt(
             - Even if it's just a word/phrase, expand it into a FULL sentence
             - Keep the user's intended meaning exactly - don't change what they want to say
             - Use conversation context ONLY for tone/formality, NOT to override their intent
+            - Use background information to personalize the suggestion when relevant
+            
+            CRITICAL: In your response, native_translation must be the translation of YOUR target_text suggestion (NOT the user's hint).
             
             Length: {length_mode_rule}
             """
         ).strip()
 
-        sections = [f"User wants to express:\n{hint_text}"]
+        sections = []
+
+        # Add relevant memories FIRST (highest priority context)
+        if memory_context:
+            sections.append(
+                f"Relevant facts (from past conversations):\n\n{memory_context}\n\n"
+                "(Use these to personalize the suggestion when relevant.)"
+            )
+
+        sections.append(
+            f"User's hint (in {native_lang}):\n{hint_text}\n\nExpand this into a complete {target_lang} sentence."
+        )
 
         # Add minimal context only for style reference
         if recent_conversation:
@@ -142,12 +172,21 @@ def build_suggestion_prompt(
             
             Analyze the conversation flow and suggest a natural, appropriate response.
             Be culturally appropriate and match the conversation tone.
+            Use background information to make suggestions more personal and relevant.
             
             Length: {length_mode_rule}
             """
         ).strip()
 
         sections = []
+
+        # Add relevant memories FIRST (guides suggestion direction)
+        if memory_context:
+            sections.append(
+                f"Relevant facts (from past conversations):\n\n{memory_context}\n\n"
+                "(Use these to make your suggestion more relevant.)"
+            )
+
         if recent_conversation:
             recent_lines = recent_conversation[-5:] if len(recent_conversation) > 5 else recent_conversation
             conversation_text = "\n".join(line.strip() for line in recent_lines if line and line.strip())
@@ -338,8 +377,9 @@ Important:
 
     # Add relationship context (memories from PREVIOUS conversations)
     if relationship_context:
-        limited = relationship_context[:400] + "..." if len(relationship_context) > 400 else relationship_context
-        background_parts.append(f"From previous conversations:\n{limited}")
+        # Limit length but keep structure
+        limited = relationship_context[:500] + "..." if len(relationship_context) > 500 else relationship_context
+        background_parts.append(f"Past memories:\n{limited}")
 
     if background_parts:
         sections.append("Background context (for reference only):\n" + "\n".join(background_parts))
@@ -363,16 +403,24 @@ def build_pronunciation_prompt(
     Returns:
         (system_prompt, user_prompt)
     """
-    system = "Output ONLY a single line of pronunciation. No translation. No quotes. No prose."
+    system = "Output ONLY a single line of pronunciation. No translation. No quotes. No prose. No full sentences - ONLY the pronunciation guide."
 
     if mode == "romaji":
         example = get_romanization_example(target_lang)
-        user = f"Romanize in ONE line.\nExample: {example}\n\n{target_lang} text: {target_text}"
+        user = f"Romanize this {target_lang} text in ONE line.\nExample: {example}\n\nText to romanize: {target_text}"
     else:
         example = get_pronunciation_example(native_lang, target_lang)
-        user = (
-            f"Write sounds in {native_lang} script. ONE line.\nExample: {example}\n\n{target_lang} text: {target_text}"
-        )
+        user = dedent(
+            f"""
+            Write ONLY the pronunciation of this {target_lang} text using {native_lang} script.
+            
+            Example: {example}
+            
+            {target_lang} text to pronounce: "{target_text}"
+            
+            Output: Write ONLY the pronunciation in {native_lang} script (ONE line, no translation, no explanation).
+            """
+        ).strip()
 
     return system, user
 

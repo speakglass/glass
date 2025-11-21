@@ -2318,7 +2318,7 @@ msgstr "귀하의 의견..."
 
 #: app/[lang]/(app)/memory/page.tsx:31
 msgid "Your memories"
-msgstr "사용자 메모리 목록"
+msgstr "내 메모리 목록"
 
 #: app/[lang]/(app)/billing/success/page.tsx:95
 msgid ""

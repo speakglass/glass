@@ -95,6 +95,64 @@ class Roleplay:
         except Exception as e:
             LOGGER.warning(f"[Conversation Summary] Failed to update: {e}")
 
+    async def _search_memories(self, query: str) -> str:
+        """Search relevant memories for the AI."""
+        if not self.memory or not self.partner_id:
+            return "No memories available."
+
+        try:
+            # Search memories with partner filter
+            results = await self.memory.memory.semantic_search_memories(
+                user_id=self.memory.user_id,
+                query_text=query,
+                partner_id=self.partner_id,
+                scopes=["user", "partner", "interaction"],  # All scopes, filtered by partner
+                limit=5,
+                similarity_threshold=0.15,
+                rerank=False,
+            )
+
+            if not results:
+                return "No relevant memories found."
+
+            # Format results by scope with timestamps
+            from ..utils.time import format_relative_time_compact
+
+            # Group by scope
+            user_facts = []
+            partner_facts = []
+            interaction_facts = []
+
+            for mem in results:
+                text = mem["text"]
+                if len(text) > 100:
+                    text = text[:100] + "..."
+
+                # Add timestamp
+                time_str = format_relative_time_compact(mem.get("updated_at") or mem.get("created_at"))
+                formatted = f"- [{time_str}] {text}"
+
+                if mem["scope"] == "user":
+                    user_facts.append(formatted)
+                elif mem["scope"] == "partner":
+                    partner_facts.append(formatted)
+                elif mem["scope"] == "interaction":
+                    interaction_facts.append(formatted)
+
+            # Build formatted result
+            sections = []
+            if user_facts:
+                sections.append("About the user:\n" + "\n".join(user_facts))
+            if partner_facts:
+                sections.append(f"About you ({self.partner_name}):\n" + "\n".join(partner_facts))
+            if interaction_facts:
+                sections.append("Your interactions:\n" + "\n".join(interaction_facts))
+
+            return "\n\n".join(sections) if sections else "No relevant memories found."
+        except Exception as e:
+            LOGGER.error(f"[Roleplay] Memory search failed: {e}")
+            return "Memory search failed."
+
     async def generate_ai_response(
         self,
         user_text: str,
@@ -164,18 +222,95 @@ class Roleplay:
 
             LOGGER.info(f"[AI Response] SYSTEM:\n{system_prompt}\n\nUSER:\n{user_prompt}")
 
-            # Generate response
+            # Define memory search tool
+            tools = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "search_memories",
+                        "description": "Search past conversation memories to recall specific information about the user, yourself, or your interactions. Use this when the user asks about something from the past that you don't immediately know.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "query": {
+                                    "type": "string",
+                                    "description": "What to search for in past memories (e.g., 'user hobbies', 'where user works', 'what we talked about last time')",
+                                }
+                            },
+                            "required": ["query"],
+                        },
+                    },
+                }
+            ]
+
+            # Generate response with tool calling
             ai_response = await self.llm.call(
                 prompt=user_prompt,
                 system=system_prompt,
                 temperature=0.8,
+                tools=tools,
+                tool_choice="auto",  # Let AI decide when to use tools
             )
 
-            if not ai_response or not ai_response.strip():
-                return ""
+            # Handle tool calls
+            if isinstance(ai_response, dict) and ai_response.get("type") == "tool_calls":
+                LOGGER.info(f"[Roleplay] AI requested tool call")
+                tool_results = []
 
-            LOGGER.info(f"[Roleplay] Generated: {ai_response[:50]}...")
-            return ai_response.strip()
+                for tool_call in ai_response["tool_calls"]:
+                    if tool_call["name"] == "search_memories":
+                        import json
+
+                        args = json.loads(tool_call["arguments"])
+                        query = args.get("query", "")
+                        LOGGER.info(f"[Roleplay] Searching memories: {query}")
+
+                        result = await self._search_memories(query)
+                        tool_results.append(
+                            {
+                                "tool_call_id": tool_call["id"],
+                                "name": tool_call["name"],
+                                "content": result,
+                            }
+                        )
+
+                # Call LLM again with tool results
+                messages = [
+                    {"role": "user", "content": user_prompt},
+                    ai_response["message"],
+                ]
+
+                # Add tool results
+                for tr in tool_results:
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tr["tool_call_id"],
+                            "name": tr["name"],
+                            "content": tr["content"],
+                        }
+                    )
+
+                # Get final response
+                final_response = await self.llm.call(
+                    messages=messages,
+                    system=system_prompt,
+                    temperature=0.8,
+                )
+
+                if isinstance(final_response, str) and final_response.strip():
+                    LOGGER.info(f"[Roleplay] Generated with memory: {final_response[:50]}...")
+                    return final_response.strip()
+                else:
+                    LOGGER.warning(f"[Roleplay] Empty response after tool call")
+                    return ""
+
+            # Standard response (no tool calls)
+            if isinstance(ai_response, str) and ai_response.strip():
+                LOGGER.info(f"[Roleplay] Generated: {ai_response[:50]}...")
+                return ai_response.strip()
+
+            return ""
 
         except Exception as e:
             LOGGER.error(f"[Roleplay] Failed to generate response: {e}", exc_info=True)

@@ -29,8 +29,6 @@ const MEMORY_VISIBLE_LIMIT = 50;
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
   text: false,
   importance: false,
-  keywords: false,
-  entities: false,
   partnerId: false,
   conversationId: false,
 };
@@ -233,8 +231,8 @@ export function MemoryTable() {
       <TooltipContent side="top" align="start">
         <p className="max-w-xs text-sm">
           <Trans>
-            This table highlights the latest {MEMORY_VISIBLE_LIMIT} memories. Older ones stay archived, so use the search field
-            whenever you want to surface something specific.
+            This table highlights the latest {MEMORY_VISIBLE_LIMIT} memories. Older ones stay archived, so use the
+            search field whenever you want to surface something specific.
           </Trans>
         </p>
       </TooltipContent>
@@ -307,15 +305,15 @@ export function MemoryTable() {
             <AlertDialogTitle>
               <Trans>Delete memory?</Trans>
             </AlertDialogTitle>
-          <AlertDialogDescription>
-            <Trans>This will permanently remove the selected memory from your knowledge graph.</Trans>
-          </AlertDialogDescription>
-          {deleteMutation.isPending && (
-            <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <Trans>Deleting...</Trans>
-            </p>
-          )}
+            <AlertDialogDescription>
+              <Trans>This will permanently remove the selected memory from your knowledge graph.</Trans>
+            </AlertDialogDescription>
+            {deleteMutation.isPending && (
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <Trans>Deleting...</Trans>
+              </p>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteMutation.isPending}>
@@ -342,15 +340,17 @@ export function MemoryTable() {
             <AlertDialogTitle>
               <Trans>Delete selected memories?</Trans>
             </AlertDialogTitle>
-          <AlertDialogDescription>
-            {t`This action will permanently delete ${memoriesToDelete?.length ?? 0} selected memories. This cannot be undone.`}
-          </AlertDialogDescription>
-          {bulkDeleteMutation.isPending && (
-            <p className="text-sm text-muted-foreground flex items-center gap-2 mt-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <Trans>Deleting selected memories...</Trans>
-            </p>
-          )}
+            <AlertDialogDescription>
+              {t`This action will permanently delete ${
+                memoriesToDelete?.length ?? 0
+              } selected memories. This cannot be undone.`}
+            </AlertDialogDescription>
+            {bulkDeleteMutation.isPending && (
+              <p className="text-sm text-muted-foreground flex items-center gap-2 mt-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <Trans>Deleting selected memories...</Trans>
+              </p>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={bulkDeleteMutation.isPending}>

@@ -222,18 +222,22 @@ class ConversationSession:
         formatted_conversation_lines = self._format_conversation_snippets(recent_conversation)
         formatted_recent_conversation = "\n".join(formatted_conversation_lines)
         formatted_recent = formatted_recent_conversation
-        await self.assistant.process_utterance(
-            text=text,
-            utterance_id=utterance_id,
-            source_lang=source_lang,
-            source=source,
-            is_user=is_user,
-            event_type_translation=EventType.TRANSLATION,
-            event_type_feedback=EventType.FEEDBACK,
-            event_type_suggestion=EventType.SUGGESTION,
-            recent_conversation=formatted_recent,
-            user_context=user_context,
-            last_partner_message=last_partner_message,
+
+        # Start translation/feedback/suggestion in background (non-blocking)
+        asyncio.create_task(
+            self.assistant.process_utterance(
+                text=text,
+                utterance_id=utterance_id,
+                source_lang=source_lang,
+                source=source,
+                is_user=is_user,
+                event_type_translation=EventType.TRANSLATION,
+                event_type_feedback=EventType.FEEDBACK,
+                event_type_suggestion=EventType.SUGGESTION,
+                recent_conversation=formatted_recent,
+                user_context=user_context,
+                last_partner_message=last_partner_message,
+            )
         )
 
         if is_user:
@@ -643,10 +647,10 @@ class ConversationSession:
 
     # --- LLM-Related Methods (Delegated to LLMProcessor) -----------------
     async def generate_suggestion(self, user_hint: str | None = None) -> dict:
-        """Generate a suggestion based on conversation context.
+        """Generate a suggestion based on conversation context and relevant memories.
 
         Args:
-            user_hint: Optional hint from user (e.g., keywords, partial sentence)
+            user_hint: Optional hint from user (e.g., partial sentence, topic)
 
         Returns:
             dict with target_text, native_translation, pronunciation
@@ -661,6 +665,85 @@ class ConversationSession:
                 last_partner_message = msg.get("text")
                 break
 
+        # Build search query for semantic memory retrieval
+        # Priority: user_hint > last_partner_message > recent conversation
+        query_text = user_hint or last_partner_message or ""
+
+        # Build conversation context for better semantic search
+        query_context = None
+        if len(recent_conversation) >= 2:
+            last_3 = recent_conversation[-3:]
+            context_parts = []
+            for msg in last_3:
+                role = msg.get("role", "unknown")
+                text = msg.get("text", "")
+                if text:
+                    context_parts.append(f"{role}: {text}")
+            if context_parts:
+                query_context = " | ".join(context_parts)
+
+        # Retrieve relevant memories using semantic search
+        relevant_memories: list[dict] = []
+        if query_text and self.memory.user_id and self.partner_id:
+            try:
+                relevant_memories = await self.memory.memory.semantic_search_memories(
+                    user_id=self.memory.user_id,
+                    query_text=query_text,
+                    query_context=query_context,
+                    partner_id=self.partner_id,
+                    scopes=["user", "partner", "interaction"],  # All scopes (filtered by partner_id logic)
+                    limit=5,
+                    similarity_threshold=0.15,
+                    rerank=False,
+                )
+                if relevant_memories:
+                    LOGGER.info(
+                        f"[Suggestion] Found {len(relevant_memories)} relevant memories "
+                        f"(top similarity: {relevant_memories[0]['similarity']:.3f})"
+                    )
+            except Exception as e:
+                LOGGER.warning(f"[Suggestion] Memory search failed: {e}")
+
+        # Format memory context for prompt (grouped by scope)
+        memory_context = None
+        if relevant_memories:
+            from ..utils.time import format_relative_time_compact
+
+            # Group by scope
+            user_facts = []
+            partner_facts = []
+            interaction_facts = []
+
+            for mem in relevant_memories:
+                text = mem["text"]  # Use raw text (we simplified embeddings)
+                # Truncate long memories
+                if len(text) > 120:
+                    text = text[:120] + "..."
+
+                # Add timestamp
+                time_str = format_relative_time_compact(mem.get("updated_at") or mem.get("created_at"))
+                formatted = f"- [{time_str}] {text}"
+
+                if mem["scope"] == "user":
+                    user_facts.append(formatted)
+                elif mem["scope"] == "partner":
+                    partner_facts.append(formatted)
+                elif mem["scope"] == "interaction":
+                    interaction_facts.append(formatted)
+
+            # Build context with clear sections
+            sections = []
+            if user_facts:
+                sections.append(f"About the user:\n" + "\n".join(user_facts))
+            if partner_facts:
+                partner_name = self.roleplay.partner_name if self.mode == "roleplay" else "partner"
+                sections.append(f"About {partner_name}:\n" + "\n".join(partner_facts))
+            if interaction_facts:
+                sections.append(f"Their interactions:\n" + "\n".join(interaction_facts))
+
+            if sections:
+                memory_context = "\n\n".join(sections)
+
         # Generate suggestion via LLM processor (without emitting)
         target_lang_name = lang_code_to_name(self.assistant.learning_lang)
         native_lang_name = lang_code_to_name(self.assistant.native_lang)
@@ -672,12 +755,16 @@ class ConversationSession:
             user_hint=user_hint,
             recent_conversation=recent_conv_texts,
             last_partner_message=last_partner_message,
+            memory_context=memory_context,  # Include relevant memories
             length_mode=self.assistant.suggest_length_mode,
             partner_name=self.roleplay.partner_name if self.mode == "roleplay" else None,
             user_name=self.roleplay.user_name if self.mode == "roleplay" else None,
         )
 
         from ..schemas import SuggestionResponse
+
+        LOGGER.info(f"[Suggestion] System prompt: {system_prompt}")
+        LOGGER.info(f"[Suggestion] User prompt: {user_prompt}")
 
         response = await self.assistant.llm.call(
             prompt=user_prompt,

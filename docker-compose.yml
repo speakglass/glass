@@ -8,7 +8,7 @@ services:
       - '6379:6379'
 
   db:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg15
     restart: unless-stopped
     ports:
       - '5432:5432'
@@ -57,6 +57,7 @@ services:
     volumes:
       - ./src:/app/src
       - ./migrations:/app/migrations
+      - ./scripts:/app/scripts
       - backend_uploads:/app/var/uploads
 
   web:

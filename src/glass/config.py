@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     asr_provider: str = "deepgram"
     tts_provider: str = "elevenlabs"
     memory_provider: str = "postgres"
+    embedding_provider: str = "openai"  # "openai", "gemini", or "none" to disable semantic search
 
     # OpenAI LLM
     openai_api_key: str | None = None
