@@ -13,27 +13,23 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. js-lingui-explicit-id
 #: app/[lang]/layout.tsx:27
 #: app/[lang]/layout.tsx:43
 #: app/[lang]/layout.tsx:64
-#. js-lingui-explicit-id
 msgid "Glass: AI that helps you speak any language"
 msgstr "Glass: la IA que te ayuda a hablar cualquier idioma"
 
+#. js-lingui-explicit-id
 #: app/[lang]/layout.tsx:28
 #: app/[lang]/layout.tsx:44
 #: app/[lang]/layout.tsx:65
-#. js-lingui-explicit-id
-msgid ""
-"Glass is an AI that helps you speak any language. It uses the latest in AI "
-"to help you learn and speak any language."
-msgstr ""
-"Glass es una IA que te ayuda a hablar cualquier idioma. Utiliza la "
-"tecnología más avanzada para que aprendas y te comuniques con fluidez."
+msgid "Glass is an AI that helps you speak any language. It uses the latest in AI to help you learn and speak any language."
+msgstr "Glass es una IA que te ayuda a hablar cualquier idioma. Utiliza la tecnología más avanzada para que aprendas y te comuniques con fluidez."
 
-#: components/memory/data-table.tsx:220
 #. placeholder {0}: table.getFilteredSelectedRowModel().rows.length
 #. placeholder {1}: table.getFilteredRowModel().rows.length
+#: components/memory/data-table.tsx:220
 msgid "{0} of {1} rows selected"
 msgstr "{0} de {1} filas seleccionadas"
 
@@ -77,19 +73,17 @@ msgstr "{totalConversations, plural, one {# conversación} other {# conversacion
 
 #: components/memory/memory-table.tsx:209
 msgid "{totalMemories, plural, one {# matching memory} other {# matching memories}}"
-msgstr ""
-"{totalMemories, plural, one {# memoria coincidente} other {# memorias "
-"coincidentes}}"
+msgstr "{totalMemories, plural, one {# memoria coincidente} other {# memorias coincidentes}}"
 
 #: components/memory/memory-table.tsx:213
 msgid "{totalMemories, plural, one {# total memory} other {# total memories}}"
 msgstr "{totalMemories, plural, one {# memoria total} other {# memorias totales}}"
 
-#: components/onboarding/onboarding-client.tsx:566
-#: components/onboarding/onboarding-client.tsx:635
-#: components/start-call.tsx:1224
-#: components/start-call.tsx:1411
-#: components/start-call.tsx:1476
+#: components/onboarding/onboarding-client.tsx:670
+#: components/onboarding/onboarding-client.tsx:752
+#: components/start-call.tsx:1497
+#: components/start-call.tsx:1740
+#: components/start-call.tsx:1828
 msgid "← Back"
 msgstr "← Volver"
 
@@ -98,12 +92,12 @@ msgstr "← Volver"
 msgid "Accuracy"
 msgstr "Precisión"
 
-#: components/memory/columns.tsx:278
+#: components/memory/columns.tsx:318
 msgid "Actions"
 msgstr "Acciones"
 
-#: components/billing/billing-content.tsx:251
-#: components/billing/billing-content.tsx:265
+#: components/billing/billing-content.tsx:267
+#: components/billing/billing-content.tsx:281
 msgid "Active"
 msgstr "Activo"
 
@@ -113,8 +107,8 @@ msgstr "Agregar"
 
 #: components/call-summary.tsx:1447
 #: components/history/conversation-history.tsx:1819
-#: components/start-call.tsx:1605
-#: components/start-call.tsx:1708
+#: components/start-call.tsx:1975
+#: components/start-call.tsx:2093
 msgid "Add a short description"
 msgstr "Añade una breve descripción"
 
@@ -126,7 +120,7 @@ msgstr "Agregar memoria"
 msgid "Add new memory"
 msgstr "Agregar nueva memoria"
 
-#: components/onboarding/onboarding-client.tsx:59
+#: components/onboarding/onboarding-client.tsx:72
 #: components/settings.tsx:47
 msgid "Advanced"
 msgstr "Avanzado"
@@ -136,17 +130,13 @@ msgid "After each conversation"
 msgstr "Después de cada conversación"
 
 #: lib/onboarding-tours.tsx:68
-msgid ""
-"After each conversation, I'll give you feedback on your grammar, "
-"pronunciation, and vocabulary. So you keep improving naturally."
-msgstr ""
-"Después de cada conversación, te daré comentarios sobre tu gramática, "
-"pronunciación y vocabulario. Así seguirás mejorando de manera natural."
+msgid "After each conversation, I'll give you feedback on your grammar, pronunciation, and vocabulary. So you keep improving naturally."
+msgstr "Después de cada conversación, te daré comentarios sobre tu gramática, pronunciación y vocabulario."
 
-#: components/billing/billing-content.tsx:96
-#: components/billing/billing-content.tsx:152
-#: components/start-call.tsx:1141
-#: components/start-call.tsx:1439
+#: components/billing/billing-content.tsx:112
+#: components/billing/billing-content.tsx:168
+#: components/start-call.tsx:1405
+#: components/start-call.tsx:1775
 msgid "AI Roleplay"
 msgstr "Juego de Roles de IA"
 
@@ -175,30 +165,20 @@ msgstr "Analizando la conversación"
 msgid "Analyzing conversation to extract memories..."
 msgstr "Analizando la conversación para extraer recuerdos..."
 
-#: components/billing/billing-content.tsx:128
+#: components/billing/billing-content.tsx:144
 msgid "Annual billing only"
 msgstr "Solo facturación anual"
 
 #: components/history/conversation-history.tsx:1872
-msgid ""
-"Are you sure you want to delete \"{partnerDeleteTarget}\"? This cannot be "
-"undone."
-msgstr ""
-"¿Estás seguro de que deseas eliminar \"{partnerDeleteTarget}\"? Esta acción "
-"no se puede deshacer."
+msgid "Are you sure you want to delete \"{partnerDeleteTarget}\"? This cannot be undone."
+msgstr "¿Estás seguro de que deseas eliminar \"{partnerDeleteTarget}\"? Esta acción no se puede deshacer."
 
 #: components/history/conversation-history.tsx:1741
-msgid ""
-"Are you sure you want to delete \"{selectedConversationName}\"? This action "
-"cannot be undone and will permanently remove this conversation from your "
-"history."
-msgstr ""
-"¿Estás seguro de que deseas eliminar \"{selectedConversationName}\"? Esta "
-"acción no se puede deshacer y eliminará permanentemente esta conversación "
-"de tu historial."
+msgid "Are you sure you want to delete \"{selectedConversationName}\"? This action cannot be undone and will permanently remove this conversation from your history."
+msgstr "¿Estás seguro de que deseas eliminar \"{selectedConversationName}\"? Esta acción no se puede deshacer y eliminará permanentemente esta conversación de tu historial."
 
-#: components/start-call.tsx:1754
 #. placeholder {0}: partnerPendingDelete.name
+#: components/start-call.tsx:2146
 msgid "Are you sure you want to delete {0}? This action cannot be undone."
 msgstr "¿Estás seguro de que quieres eliminar {0}? Esta acción no se puede deshacer."
 
@@ -214,15 +194,13 @@ msgstr "Al menos un carácter especial"
 msgid "Authentication failed"
 msgstr "Fallo en la autenticación"
 
-#: components/onboarding/onboarding-client.tsx:448
+#: components/onboarding/onboarding-client.tsx:544
 msgid "Authentication is required. Please refresh and try again."
-msgstr ""
-"Es necesario autenticarse. Por favor, actualice la página e intente de "
-"nuevo."
+msgstr "Es necesario autenticarse. Por favor, actualice la página e intente de nuevo."
 
-#: components/start-call.tsx:537
-#: components/start-call.tsx:614
-#: components/start-call.tsx:663
+#: components/start-call.tsx:682
+#: components/start-call.tsx:763
+#: components/start-call.tsx:816
 #: contexts/glass-context.tsx:1354
 msgid "Authentication token not available. Please refresh the page."
 msgstr "Token de autenticación no disponible. Por favor, actualiza la página."
@@ -245,7 +223,7 @@ msgstr "Promedio"
 msgid "Back"
 msgstr "Atrás"
 
-#: components/onboarding/onboarding-client.tsx:41
+#: components/onboarding/onboarding-client.tsx:54
 #: components/settings.tsx:44
 msgid "Beginner"
 msgstr "Principiante"
@@ -254,11 +232,11 @@ msgstr "Principiante"
 msgid "Below Average"
 msgstr "Por debajo del promedio"
 
-#: components/billing/billing-content.tsx:110
+#: components/billing/billing-content.tsx:126
 msgid "Billed monthly"
 msgstr "Facturado mensualmente"
 
-#: components/billing/billing-content.tsx:110
+#: components/billing/billing-content.tsx:126
 msgid "Billed yearly"
 msgstr "Facturado anualmente"
 
@@ -267,17 +245,15 @@ msgstr "Facturado anualmente"
 msgid "Billing"
 msgstr "Facturación"
 
-#: components/billing/billing-content.tsx:644
+#: components/billing/billing-content.tsx:732
 msgid "Billing active."
 msgstr "Facturación activada."
 
 #: app/[lang]/(app)/billing/success/page.tsx:73
 msgid "Billing details can be updated anytime from the billing dashboard."
-msgstr ""
-"Los detalles de facturación se pueden actualizar en cualquier momento desde "
-"el panel de facturación."
+msgstr "Los detalles de facturación se pueden actualizar en cualquier momento desde el panel de facturación."
 
-#: components/billing/billing-content.tsx:602
+#: components/billing/billing-content.tsx:682
 msgid "Billing is not available"
 msgstr "La facturación no está disponible"
 
@@ -287,44 +263,40 @@ msgstr "Facturación actualizada"
 
 #: components/login-form.tsx:161
 #: components/signup-form.tsx:265
-msgid ""
-"By clicking continue, you agree to our <0>Terms of Service</0> and "
-"<1>Privacy Policy</1>."
-msgstr ""
-"Al hacer clic en continuar, aceptas nuestros <0>Términos de servicio</0> y "
-"<1>Política de privacidad</1>."
+msgid "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Privacy Policy</1>."
+msgstr "Al hacer clic en continuar, aceptas nuestros <0>Términos de servicio</0> y <1>Política de privacidad</1>."
 
 #: components/call-summary.tsx:841
 msgid "Call Summary"
 msgstr "Resumen de llamada"
 
-#: components/billing/billing-content.tsx:798
+#: components/billing/billing-content.tsx:915
 #: components/call-summary.tsx:1505
 #: components/history/conversation-history.tsx:1746
 #: components/history/conversation-history.tsx:1877
 #: components/memory/memory-dialog.tsx:94
 #: components/memory/memory-table.tsx:322
 #: components/memory/memory-table.tsx:357
-#: components/start-call.tsx:1764
+#: components/start-call.tsx:2157
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: components/billing/billing-content.tsx:261
+#: components/billing/billing-content.tsx:277
 msgid "Canceled"
 msgstr "Cancelado"
 
-#: components/memory/columns.tsx:91
+#: components/memory/columns.tsx:104
 msgid "Category"
 msgstr "Categoría"
 
 #: components/call-summary.tsx:1401
 #: components/history/conversation-history.tsx:1773
-#: components/start-call.tsx:1560
-#: components/start-call.tsx:1667
+#: components/start-call.tsx:1926
+#: components/start-call.tsx:2044
 msgid "Change partner photo"
 msgstr "Cambiar foto del socio"
 
-#: components/start-call.tsx:965
+#: components/start-call.tsx:1172
 msgid "Change screen"
 msgstr "Cambiar pantalla"
 
@@ -338,35 +310,29 @@ msgstr "Revisa tu correo electrónico"
 msgid "Checking your plan…"
 msgstr "Comprobando tu plan…"
 
-#: components/billing/billing-content.tsx:684
-msgid ""
-"Choose monthly or yearly billing and unlock Glass features tailored to your "
-"team."
-msgstr ""
-"Elige la facturación mensual o anual y desbloquea las funciones de Glass "
-"diseñadas para tu equipo."
+#: components/billing/billing-content.tsx:774
+msgid "Choose monthly or yearly billing and unlock Glass features tailored to your team."
+msgstr "Elige la facturación mensual o anual y desbloquea las funciones de Glass diseñadas para tu equipo."
 
-#: components/onboarding/onboarding-client.tsx:533
+#: components/onboarding/onboarding-client.tsx:634
 msgid "Choose the language you want to practice speaking"
 msgstr "Elige el idioma que deseas practicar hablando"
 
-#: components/start-call.tsx:1249
+#: components/start-call.tsx:1537
 msgid "Choose who to call"
 msgstr "Elige a quién llamar"
 
-#: components/start-call.tsx:1120
+#: components/start-call.tsx:1374
 msgid "Choose your preferred mode"
 msgstr "Elige tu modo preferido"
 
-#: components/start-call.tsx:1001
+#: components/start-call.tsx:1221
 msgid "Clear your view"
 msgstr "Limpia tu vista"
 
 #: components/verify-email-sent-content.tsx:88
 msgid "Click the link in the email to verify your account and continue to Glass."
-msgstr ""
-"Haz clic en el enlace del correo electrónico para verificar tu cuenta y "
-"continuar en Glass."
+msgstr "Haz clic en el enlace del correo electrónico para verificar tu cuenta y continuar en Glass."
 
 #: components/history/conversation-history.tsx:1105
 msgid "Click to edit"
@@ -376,11 +342,11 @@ msgstr "Haga clic para editar"
 msgid "Click to edit..."
 msgstr "Haz clic para editar..."
 
-#: components/memory/columns.tsx:114
+#: components/memory/columns.tsx:129
 msgid "Click to view full content"
 msgstr "Haz clic para ver el contenido completo"
 
-#: components/memory/columns.tsx:157
+#: components/memory/columns.tsx:174
 msgid "Click to view full summary"
 msgstr "Haz clic para ver el resumen completo"
 
@@ -388,8 +354,8 @@ msgstr "Haz clic para ver el resumen completo"
 #: components/call-summary.tsx:1478
 #: components/history/conversation-history.tsx:1850
 #: components/memory/memory-dialog.tsx:89
-#: components/start-call.tsx:1628
-#: components/start-call.tsx:1731
+#: components/start-call.tsx:2000
+#: components/start-call.tsx:2118
 msgid "Close"
 msgstr "Cerrar"
 
@@ -397,28 +363,28 @@ msgstr "Cerrar"
 msgid "Columns"
 msgstr "Columnas"
 
-#: components/billing/billing-content.tsx:195
+#: components/billing/billing-content.tsx:211
 #: components/nav.tsx:87
 msgid "Community"
 msgstr "Comunidad"
 
-#: components/billing/billing-content.tsx:102
+#: components/billing/billing-content.tsx:118
 msgid "Community Support"
 msgstr "Soporte de la comunidad"
 
-#: components/billing/billing-content.tsx:755
+#: components/billing/billing-content.tsx:856
 msgid "Company"
 msgstr "Empresa"
 
-#: components/billing/billing-content.tsx:760
+#: components/billing/billing-content.tsx:866
 msgid "Company name"
 msgstr "Nombre de la empresa"
 
-#: components/billing/billing-content.tsx:765
+#: components/billing/billing-content.tsx:871
 msgid "Company size"
 msgstr "Tamaño de la empresa"
 
-#: components/billing/billing-content.tsx:708
+#: components/billing/billing-content.tsx:805
 msgid "Compare plans"
 msgstr "Comparar planes"
 
@@ -431,17 +397,17 @@ msgstr "Claridad"
 msgid "Confirm Password"
 msgstr "Confirmar contraseña"
 
-#: components/start-call.tsx:1512
-#: components/start-call.tsx:1526
+#: components/start-call.tsx:1868
+#: components/start-call.tsx:1886
 msgid "Connecting..."
 msgstr "Conectando..."
 
-#: components/billing/billing-content.tsx:138
-#: components/billing/billing-content.tsx:745
+#: components/billing/billing-content.tsx:154
+#: components/billing/billing-content.tsx:844
 msgid "Contact sales"
 msgstr "Contactar con ventas"
 
-#: components/billing/billing-content.tsx:127
+#: components/billing/billing-content.tsx:143
 msgid "Contact us"
 msgstr "Contáctanos"
 
@@ -458,14 +424,14 @@ msgstr "Conversación eliminada"
 msgid "Conversation history"
 msgstr "Historial de conversaciones"
 
-#: components/billing/billing-content.tsx:101
-#: components/billing/billing-content.tsx:182
+#: components/billing/billing-content.tsx:117
+#: components/billing/billing-content.tsx:198
 #: components/call-summary.tsx:1348
 #: components/history/conversation-history.tsx:1643
 msgid "Conversation History"
 msgstr "Historial de conversación"
 
-#: components/memory/columns.tsx:250
+#: components/memory/columns.tsx:290
 msgid "Conversation ID"
 msgstr "ID de conversación"
 
@@ -480,7 +446,7 @@ msgstr "Conversación asignada a un compañero"
 msgid "Conversation saved"
 msgstr "Conversación guardada"
 
-#: components/memory/columns.tsx:287
+#: components/memory/columns.tsx:327
 msgid "Copy"
 msgstr "Copiar"
 
@@ -489,7 +455,7 @@ msgid "Couldn’t connect"
 msgstr "No se pudo conectar"
 
 #: components/memory/memory-dialog.tsx:97
-#: components/start-call.tsx:1637
+#: components/start-call.tsx:2011
 msgid "Create"
 msgstr "Crear"
 
@@ -506,15 +472,15 @@ msgid "Create an account"
 msgstr "Crear una cuenta"
 
 #: components/partner-search-empty-state.tsx:62
-#: components/start-call.tsx:1540
+#: components/start-call.tsx:1903
 msgid "Create partner"
 msgstr "Crear socio"
 
-#: components/start-call.tsx:1398
+#: components/start-call.tsx:1722
 msgid "Create your own conversation partner"
 msgstr "Crea tu propio compañero de conversación"
 
-#: components/memory/columns.tsx:71
+#: components/memory/columns.tsx:80
 msgid "Created at"
 msgstr "Creado el"
 
@@ -522,21 +488,21 @@ msgstr "Creado el"
 msgid "Creating account..."
 msgstr "Creando cuenta..."
 
-#: components/billing/billing-content.tsx:426
-#: components/billing/billing-content.tsx:431
-#: components/billing/billing-content.tsx:617
+#: components/billing/billing-content.tsx:465
+#: components/billing/billing-content.tsx:475
+#: components/billing/billing-content.tsx:700
 msgid "Current plan"
 msgstr "Plan actual"
 
-#: components/start-call.tsx:1796
+#: components/start-call.tsx:2192
 msgid "Current usage"
 msgstr "Uso actual"
 
-#: components/start-call.tsx:1395
+#: components/start-call.tsx:1715
 msgid "Custom partner"
 msgstr "Socio personalizado"
 
-#: components/start-call.tsx:650
+#: components/start-call.tsx:803
 msgid "Custom partner ready"
 msgstr "Socio personalizado listo"
 
@@ -548,16 +514,16 @@ msgstr "Personaliza tu experiencia con Glass"
 msgid "Dark"
 msgstr "Oscuro"
 
-#: components/billing/billing-content.tsx:116
-#: components/billing/billing-content.tsx:188
+#: components/billing/billing-content.tsx:132
+#: components/billing/billing-content.tsx:204
 msgid "Data Retention Guarantee"
 msgstr "Garantía de retención de datos"
 
-#: components/billing/billing-content.tsx:197
+#: components/billing/billing-content.tsx:213
 msgid "Dedicated"
 msgstr "Dedicado"
 
-#: components/billing/billing-content.tsx:134
+#: components/billing/billing-content.tsx:150
 msgid "Dedicated Support"
 msgstr "Soporte Dedicado"
 
@@ -565,16 +531,16 @@ msgstr "Soporte Dedicado"
 #: components/history/conversation-history.tsx:1326
 #: components/history/conversation-history.tsx:1755
 #: components/history/conversation-history.tsx:1888
-#: components/memory/columns.tsx:296
+#: components/memory/columns.tsx:339
 #: components/memory/data-table.tsx:142
 #: components/memory/memory-table.tsx:326
 #: components/memory/memory-table.tsx:361
-#: components/start-call.tsx:1361
-#: components/start-call.tsx:1775
+#: components/start-call.tsx:1677
+#: components/start-call.tsx:2170
 msgid "Delete"
 msgstr "Eliminar"
 
-#: components/start-call.tsx:1801
+#: components/start-call.tsx:2199
 msgid "Delete a saved call or upgrade to keep recording new ones."
 msgstr "Elimina una llamada guardada o mejora tu plan para seguir grabando nuevas."
 
@@ -593,7 +559,7 @@ msgstr "Elimina el historial antiguo o mejora tu plan para continuar."
 #: components/call-summary.tsx:1465
 #: components/history/conversation-history.tsx:1837
 #: components/history/conversation-history.tsx:1869
-#: components/start-call.tsx:1750
+#: components/start-call.tsx:2142
 msgid "Delete partner"
 msgstr "Eliminar socio"
 
@@ -605,21 +571,19 @@ msgstr "¿Eliminar socio?"
 msgid "Delete selected memories?"
 msgstr "¿Eliminar recuerdos seleccionados?"
 
-#: components/memory/memory-table.tsx:109
 #. placeholder {0}: variables.length
+#: components/memory/memory-table.tsx:109
 msgid "Deleted {0} memories"
 msgstr "Se eliminaron {0} recuerdos"
 
-#: components/memory/memory-table.tsx:106
 #. placeholder {0}: result.deleted
 #. placeholder {1}: result.failed.length
+#: components/memory/memory-table.tsx:106
 msgid "Deleted {0} memories, but {1} could not be removed. Please retry later."
-msgstr ""
-"Se eliminaron {0} recuerdos, pero {1} no se pudieron borrar. Por favor, "
-"inténtalo de nuevo más tarde."
+msgstr "Se eliminaron {0} recuerdos, pero {1} no se pudieron borrar. Por favor, inténtalo de nuevo más tarde."
 
-#: components/memory/memory-table.tsx:100
 #. placeholder {0}: memoryIds.length
+#: components/memory/memory-table.tsx:100
 msgid "Deleting {0} selected memories..."
 msgstr "Eliminando {0} recuerdos seleccionados..."
 
@@ -637,8 +601,8 @@ msgstr "Eliminando..."
 
 #: components/call-summary.tsx:1442
 #: components/history/conversation-history.tsx:1814
-#: components/start-call.tsx:1598
-#: components/start-call.tsx:1703
+#: components/start-call.tsx:1968
+#: components/start-call.tsx:2086
 msgid "Description"
 msgstr "Descripción"
 
@@ -655,12 +619,8 @@ msgid "Don't have an account? <0>Sign up</0>"
 msgstr "¿No tienes una cuenta? <0>Regístrate</0>"
 
 #: components/memory/memory-dialog.tsx:66
-msgid ""
-"e.g., I love hiking in the mountains, My favorite food is sushi, I'm "
-"learning Spanish..."
-msgstr ""
-"Por ejemplo, me encanta hacer senderismo en las montañas, mi comida "
-"favorita es el sushi, estoy aprendiendo español..."
+msgid "e.g., I love hiking in the mountains, My favorite food is sushi, I'm learning Spanish..."
+msgstr "Por ejemplo, me encanta hacer senderismo en las montañas, mi comida favorita es el sushi, estoy aprendiendo español..."
 
 #: components/call-summary.tsx:724
 #: components/call-summary.tsx:785
@@ -668,10 +628,10 @@ msgstr ""
 #: components/history/conversation-history.tsx:1197
 #: components/history/conversation-history.tsx:1269
 #: components/history/conversation-history.tsx:1793
-#: components/memory/columns.tsx:291
-#: components/start-call.tsx:1351
-#: components/start-call.tsx:1575
-#: components/start-call.tsx:1682
+#: components/memory/columns.tsx:331
+#: components/start-call.tsx:1667
+#: components/start-call.tsx:1944
+#: components/start-call.tsx:2062
 msgid "Edit"
 msgstr "Editar"
 
@@ -681,23 +641,23 @@ msgstr "Editar memoria"
 
 #: components/call-summary.tsx:1393
 #: components/history/conversation-history.tsx:1765
-#: components/start-call.tsx:1647
+#: components/start-call.tsx:2024
 msgid "Edit partner"
 msgstr "Editar socio"
 
-#: components/onboarding/onboarding-client.tsx:47
+#: components/onboarding/onboarding-client.tsx:60
 #: components/settings.tsx:45
 msgid "Elementary"
 msgstr "Primaria"
 
-#: components/billing/billing-content.tsx:196
+#: components/billing/billing-content.tsx:212
 #: components/forgot-password-form.tsx:94
 #: components/login-form.tsx:105
 #: components/signup-form.tsx:188
 msgid "Email"
 msgstr "Correo electrónico"
 
-#: components/billing/billing-content.tsx:117
+#: components/billing/billing-content.tsx:133
 msgid "Email Support"
 msgstr "Soporte por correo electrónico"
 
@@ -720,8 +680,8 @@ msgstr "Inglés"
 
 #: components/call-summary.tsx:1436
 #: components/history/conversation-history.tsx:1808
-#: components/start-call.tsx:1592
-#: components/start-call.tsx:1697
+#: components/start-call.tsx:1962
+#: components/start-call.tsx:2080
 msgid "Enter a name"
 msgstr "Introduce un nombre"
 
@@ -731,8 +691,8 @@ msgstr "Introduce un nombre"
 msgid "Enter a name first"
 msgstr "Primero, ingresa un nombre"
 
-#: components/start-call.tsx:620
-#: components/start-call.tsx:669
+#: components/start-call.tsx:769
+#: components/start-call.tsx:822
 msgid "Enter a name for your partner"
 msgstr "Introduce un nombre para tu socio"
 
@@ -743,34 +703,32 @@ msgstr "Ingresa un nombre de socio"
 
 #: components/forgot-password-form.tsx:86
 msgid "Enter your email address and we'll send you a reset link"
-msgstr ""
-"Ingresa tu dirección de correo electrónico y te enviaremos un enlace para "
-"restablecer tu contraseña."
+msgstr "Ingresa tu dirección de correo electrónico y te enviaremos un enlace para restablecer tu contraseña."
 
 #: components/reset-password-form.tsx:79
 msgid "Enter your new password below"
 msgstr "Ingresa tu nueva contraseña a continuación"
 
-#: components/billing/billing-content.tsx:126
-#: components/billing/billing-content.tsx:243
-#: components/billing/billing-content.tsx:728
+#: components/billing/billing-content.tsx:142
+#: components/billing/billing-content.tsx:259
+#: components/billing/billing-content.tsx:827
 msgid "Enterprise"
 msgstr "Empresa"
 
-#: components/billing/billing-content.tsx:136
-#: components/billing/billing-content.tsx:224
+#: components/billing/billing-content.tsx:152
+#: components/billing/billing-content.tsx:240
 msgid "Enterprise Onboarding"
 msgstr "Incorporación empresarial"
 
-#: components/memory/columns.tsx:221
+#: components/memory/columns.tsx:257
 msgid "Entities"
 msgstr "Entidades"
 
-#: components/billing/billing-content.tsx:113
+#: components/billing/billing-content.tsx:129
 msgid "Everything in Free"
 msgstr "Todo lo que incluye la versión gratuita"
 
-#: components/billing/billing-content.tsx:130
+#: components/billing/billing-content.tsx:146
 msgid "Everything in Pro"
 msgstr "Todo en Pro"
 
@@ -778,7 +736,7 @@ msgstr "Todo en Pro"
 msgid "Excellent"
 msgstr "Excelente"
 
-#: components/memory/columns.tsx:184
+#: components/memory/columns.tsx:213
 msgid "Expires"
 msgstr "Expira"
 
@@ -787,8 +745,8 @@ msgstr "Expira"
 msgid "Failed to assign partner"
 msgstr "No se pudo asignar al socio"
 
-#: components/memory/memory-table.tsx:138
 #. placeholder {0}: error.message
+#: components/memory/memory-table.tsx:138
 msgid "Failed to create memory: {0}"
 msgstr "Error al crear la memoria: {0}"
 
@@ -803,13 +761,13 @@ msgstr "No se pudo crear el socio"
 msgid "Failed to delete conversation"
 msgstr "No se pudo eliminar la conversación"
 
-#: components/memory/memory-table.tsx:114
 #. placeholder {0}: error.message
+#: components/memory/memory-table.tsx:114
 msgid "Failed to delete memories: {0}"
 msgstr "No se pudieron eliminar los recuerdos: {0}"
 
-#: components/memory/memory-table.tsx:84
 #. placeholder {0}: error.message
+#: components/memory/memory-table.tsx:84
 msgid "Failed to delete memory: {0}"
 msgstr "No se pudo eliminar la memoria: {0}"
 
@@ -824,9 +782,7 @@ msgstr "No se pudo eliminar al socio"
 
 #: components/history/conversation-history.tsx:637
 msgid "Failed to load conversation detail. Please try again."
-msgstr ""
-"No se pudo cargar el detalle de la conversación. Por favor, inténtalo de "
-"nuevo."
+msgstr "No se pudo cargar el detalle de la conversación. Por favor, inténtalo de nuevo."
 
 #: components/history/conversation-history.tsx:788
 msgid "Failed to load conversations"
@@ -836,8 +792,8 @@ msgstr "Error al cargar las conversaciones"
 msgid "Failed to submit feedback. Please try again."
 msgstr "No se pudo enviar la retroalimentación. Por favor, inténtalo de nuevo."
 
-#: components/memory/memory-table.tsx:154
 #. placeholder {0}: error.message
+#: components/memory/memory-table.tsx:154
 msgid "Failed to update memory: {0}"
 msgstr "No se pudo actualizar la memoria: {0}"
 
@@ -859,15 +815,15 @@ msgstr "No se pudo actualizar el título"
 msgid "Failed to upload image"
 msgstr "Error al subir la imagen"
 
-#: components/billing/billing-content.tsx:203
+#: components/billing/billing-content.tsx:219
 msgid "Fastest"
 msgstr "Máxima prioridad"
 
-#: components/billing/billing-content.tsx:135
+#: components/billing/billing-content.tsx:151
 msgid "Fastest Response"
 msgstr "Respuesta prioritaria absoluta"
 
-#: components/billing/billing-content.tsx:719
+#: components/billing/billing-content.tsx:818
 msgid "Feature"
 msgstr "Función"
 
@@ -888,22 +844,18 @@ msgstr "Fluidez"
 msgid "Forgot your password?"
 msgstr "¿Olvidaste tu contraseña?"
 
-#: components/billing/billing-content.tsx:91
-#: components/billing/billing-content.tsx:232
-#: components/billing/billing-content.tsx:236
-#: components/billing/billing-content.tsx:722
+#: components/billing/billing-content.tsx:107
+#: components/billing/billing-content.tsx:248
+#: components/billing/billing-content.tsx:252
+#: components/billing/billing-content.tsx:821
 msgid "Free"
 msgstr "Gratis"
 
-#: components/start-call.tsx:1787
-msgid ""
-"Free accounts can keep up to 10 conversations. Delete old calls or upgrade "
-"for unlimited history."
-msgstr ""
-"Las cuentas gratuitas pueden guardar hasta 10 conversaciones. Elimina "
-"llamadas antiguas o actualiza para obtener un historial ilimitado."
+#: components/start-call.tsx:2182
+msgid "Free accounts can keep up to 10 conversations. Delete old calls or upgrade for unlimited history."
+msgstr "Las cuentas gratuitas pueden guardar hasta 10 conversaciones. Elimina llamadas antiguas o actualiza para obtener un historial ilimitado."
 
-#: components/billing/billing-content.tsx:93
+#: components/billing/billing-content.tsx:109
 msgid "Free for everyone"
 msgstr "Gratis para todos"
 
@@ -933,11 +885,9 @@ msgstr "Generando comentarios y sugerencias..."
 msgid "Get Suggestions"
 msgstr "Obtener sugerencias"
 
-#: components/start-call.tsx:1543
+#: components/start-call.tsx:1906
 msgid "Give your custom partner a name, description, and optional photo."
-msgstr ""
-"Asigna un nombre, una descripción y una foto opcional a tu socio "
-"personalizado."
+msgstr "Asigna un nombre, una descripción y una foto opcional a tu socio personalizado."
 
 #: components/call-summary.tsx:548
 #: components/history/conversation-history.tsx:880
@@ -986,35 +936,33 @@ msgstr "¡Hola! Soy Glass."
 msgid "Hide messages"
 msgstr "Ocultar mensajes"
 
-#: components/onboarding/onboarding-client.tsx:589
+#: components/onboarding/onboarding-client.tsx:696
 msgid "How confident are you in this language?"
-msgstr "¿Qué tan seguro te sientes en este idioma?"
+msgstr "¿Qué tan cómodo(a) te sientes usando este idioma?"
 
-#: components/start-call.tsx:1117
+#: components/start-call.tsx:1371
 msgid "How would you like to use Glass?"
 msgstr "¿Cómo te gustaría usar Glass?"
 
-#: components/onboarding/onboarding-client.tsx:38
+#: components/onboarding/onboarding-client.tsx:49
 msgid "I am starting from zero and need full guidance."
-msgstr "Estoy empezando desde cero y necesito orientación completa."
+msgstr "Estoy empezando desde cero y necesito acompañamiento desde el principio."
 
-#: components/onboarding/onboarding-client.tsx:60
+#: components/onboarding/onboarding-client.tsx:73
 msgid "I can discuss complex topics and want to sound more natural."
-msgstr "Soy capaz de hablar sobre temas complejos y quiero sonar más natural."
+msgstr "Puedo hablar de temas complejos, pero quiero sonar de una forma más natural."
 
-#: components/onboarding/onboarding-client.tsx:54
+#: components/onboarding/onboarding-client.tsx:67
 msgid "I can explain ideas, ask follow-up questions, and manage most conversations."
-msgstr ""
-"Puedo explicar ideas, hacer preguntas de seguimiento y gestionar la mayoría "
-"de las conversaciones."
+msgstr "Puedo expresar mis ideas, hacer preguntas y manejar la mayoría de las conversaciones sin problema."
 
-#: components/onboarding/onboarding-client.tsx:48
+#: components/onboarding/onboarding-client.tsx:61
 msgid "I can hold short chats about daily life with support."
-msgstr "Puedo mantener conversaciones breves sobre la vida diaria con ayuda."
+msgstr "on un poco de ayuda, puedo mantener conversaciones cortas sobre la vida diaria."
 
-#: components/onboarding/onboarding-client.tsx:42
+#: components/onboarding/onboarding-client.tsx:55
 msgid "I can say simple phrases but need help forming sentences."
-msgstr "Puedo decir frases sencillas, pero necesito ayuda para formar oraciones."
+msgstr "Puedo decir frases sencillas, pero necesito ayuda para formar oraciones completas."
 
 #: lib/onboarding-tours.tsx:65
 msgid "I help you learn"
@@ -1030,60 +978,42 @@ msgstr "Te ayudo a entender"
 
 #: lib/onboarding-tours.tsx:34
 msgid "I listen and translate what they say in real time. You'll never miss a word."
-msgstr ""
-"Escucho y traduzco lo que dicen en tiempo real. Nunca te perderás una "
-"palabra."
+msgstr "Escucho y traduzco lo que dicen en tiempo real. Nunca te perderás una palabra."
 
 #: lib/onboarding-tours.tsx:107
-msgid ""
-"I remember things about you and get smarter at giving feedback and "
-"suggestions the more we talk."
-msgstr ""
-"Recuerdo cosas sobre ti y mejoro en dar retroalimentación y sugerencias "
-"cuanto más hablamos."
+msgid "I remember things about you and get smarter at giving feedback and suggestions the more we talk."
+msgstr "Cuanto más hablamos, más aprendo sobre ti, y mis sugerencias y feedback se vuelven cada vez mejores."
 
 #: lib/onboarding-tours.tsx:104
 msgid "I remember you"
 msgstr "Te recuerdo"
 
 #: lib/onboarding-tours.tsx:88
-msgid ""
-"I'll turn your real conversations into learning materials. Review the "
-"conversation history and feedback."
-msgstr ""
-"Convertiré tus conversaciones reales en materiales de aprendizaje. Revisa "
-"el historial de conversaciones y los comentarios."
+msgid "I'll turn your real conversations into learning materials. Review the conversation history and feedback."
+msgstr "Convertiré tus conversaciones reales en material de aprendizaje. Puedes revisar el historial y los comentarios para repasar cuando quieras."
 
 #: lib/onboarding-tours.tsx:17
-msgid ""
-"I'm here to help you communicate and learn a new language through real "
-"conversations."
-msgstr ""
-"Estoy aquí para ayudarte a comunicarte y aprender un nuevo idioma a través "
-"de conversaciones reales."
+msgid "I'm here to help you communicate and learn a new language through real conversations."
+msgstr "Estoy aquí para ayudarte a comunicarte y aprender un nuevo idioma a través de conversaciones reales."
 
-#: components/billing/billing-content.tsx:792
+#: components/billing/billing-content.tsx:905
 msgid "I'm interested in Glass for my team..."
 msgstr "Estoy interesado en Glass para mi equipo..."
 
 #: components/forgot-password-form.tsx:56
-msgid ""
-"If an account exists for <0>{email}</0>, you will receive a password reset "
-"link shortly."
-msgstr ""
-"Si existe una cuenta para <0>{email}</0>, recibirás un enlace para "
-"restablecer la contraseña en breve."
+msgid "If an account exists for <0>{email}</0>, you will receive a password reset link shortly."
+msgstr "Si existe una cuenta para <0>{email}</0>, recibirás un enlace para restablecer la contraseña en breve."
 
 #: components/verify-email-sent-content.tsx:91
 msgid "If you don't see the email, check your spam folder."
 msgstr "Si no ves el correo electrónico, revisa tu carpeta de spam."
 
-#: components/memory/columns.tsx:137
+#: components/memory/columns.tsx:152
 msgid "Importance"
 msgstr "Importancia"
 
-#: components/billing/billing-content.tsx:251
-#: components/billing/billing-content.tsx:265
+#: components/billing/billing-content.tsx:267
+#: components/billing/billing-content.tsx:281
 msgid "Inactive"
 msgstr "Inactivo"
 
@@ -1091,7 +1021,7 @@ msgstr "Inactivo"
 msgid "Interaction"
 msgstr "Interacción"
 
-#: components/onboarding/onboarding-client.tsx:53
+#: components/onboarding/onboarding-client.tsx:66
 #: components/settings.tsx:46
 msgid "Intermediate"
 msgstr "Intermedio"
@@ -1101,7 +1031,7 @@ msgstr "Intermedio"
 msgid "Japanese"
 msgstr "Japonés"
 
-#: components/start-call.tsx:930
+#: components/start-call.tsx:1118
 msgid "Join your call"
 msgstr "Únete a tu llamada"
 
@@ -1110,14 +1040,10 @@ msgid "just now"
 msgstr "justo ahora"
 
 #: lib/onboarding-tours.tsx:51
-msgid ""
-"Just type a few words in your language. I'll turn them into a full sentence "
-"you can speak."
-msgstr ""
-"Solo escribe unas pocas palabras en tu idioma. Las convertiré en una "
-"oración completa que puedas decir."
+msgid "Just type a few words in your language. I'll turn them into a full sentence you can speak."
+msgstr "Solo escribe unas pocas palabras en tu idioma. Las convertiré en una oración completa que puedas decir."
 
-#: components/memory/columns.tsx:204
+#: components/memory/columns.tsx:240
 msgid "Keywords"
 msgstr "Palabras clave"
 
@@ -1126,7 +1052,7 @@ msgstr "Palabras clave"
 msgid "Korean"
 msgstr "Coreano"
 
-#: components/start-call.tsx:1204
+#: components/start-call.tsx:1472
 msgid "Language Exchange • Calls"
 msgstr "Intercambio de idiomas • Reuniones"
 
@@ -1140,7 +1066,7 @@ msgstr "Idioma de aprendizaje"
 
 #: lib/onboarding-tours.tsx:20
 msgid "Let me show you how I'll help you."
-msgstr "Déjame mostrarte cómo voy a ayudarte."
+msgstr "Permítame mostrarle cómo voy a ayudarle."
 
 #: components/onboarding/glass-onboarding-card.tsx:89
 msgid "Let's Go! 🎉"
@@ -1162,14 +1088,14 @@ msgstr "Escuchando. Habla cuando estés listo."
 msgid "Listening… say anything when you're ready."
 msgstr "Escuchando... puedes hablar cuando quieras."
 
-#: components/billing/billing-content.tsx:95
-#: components/billing/billing-content.tsx:146
-#: components/start-call.tsx:1201
-#: components/start-call.tsx:1439
+#: components/billing/billing-content.tsx:111
+#: components/billing/billing-content.tsx:162
+#: components/start-call.tsx:1469
+#: components/start-call.tsx:1777
 msgid "Live Call"
 msgstr "Llamada en Vivo"
 
-#: components/billing/billing-content.tsx:585
+#: components/billing/billing-content.tsx:663
 msgid "Loading billing…"
 msgstr "Cargando facturación…"
 
@@ -1186,7 +1112,7 @@ msgstr "Cargando recuerdos"
 msgid "Loading memories..."
 msgstr "Cargando recuerdos..."
 
-#: components/start-call.tsx:1262
+#: components/start-call.tsx:1554
 msgid "Loading partners..."
 msgstr "Cargando socios..."
 
@@ -1227,11 +1153,11 @@ msgstr "Bajo"
 msgid "Manage billing"
 msgstr "Administrar facturación"
 
-#: components/start-call.tsx:1807
+#: components/start-call.tsx:2211
 msgid "Manage history"
 msgstr "Administrar historial"
 
-#: components/billing/billing-content.tsx:668
+#: components/billing/billing-content.tsx:758
 msgid "Manage subscription"
 msgstr "Administrar suscripción"
 
@@ -1241,7 +1167,7 @@ msgstr "Administrar suscripción"
 #: components/call-summary.tsx:1210
 #: components/history/conversation-history.tsx:1592
 #: components/history/conversation-history.tsx:1609
-#: components/memory/columns.tsx:104
+#: components/memory/columns.tsx:117
 #: components/memory/memory-dialog.tsx:53
 #: components/user-menu.tsx:98
 msgid "Memory"
@@ -1251,7 +1177,7 @@ msgstr "Memoria"
 msgid "Memory cannot be empty."
 msgstr "La memoria no puede estar vacía."
 
-#: components/memory/columns.tsx:283
+#: components/memory/columns.tsx:323
 msgid "Memory copied to clipboard"
 msgstr "Memoria copiada al portapapeles"
 
@@ -1302,7 +1228,7 @@ msgstr "Falta de autenticación"
 msgid "Missing conversation"
 msgstr "Conversación no encontrada"
 
-#: components/billing/billing-content.tsx:559
+#: components/billing/billing-content.tsx:637
 msgid "Missing email in profile"
 msgstr "Falta el correo electrónico en el perfil"
 
@@ -1315,7 +1241,7 @@ msgstr "Falta el correo electrónico en el perfil"
 msgid "Missing partner information"
 msgstr "Falta información del socio"
 
-#: components/billing/billing-content.tsx:274
+#: components/billing/billing-content.tsx:290
 msgid "Monthly"
 msgstr "Mensual"
 
@@ -1325,8 +1251,8 @@ msgstr "Debe tener al menos 8 caracteres."
 
 #: components/call-summary.tsx:1431
 #: components/history/conversation-history.tsx:1803
-#: components/start-call.tsx:1585
-#: components/start-call.tsx:1692
+#: components/start-call.tsx:1955
+#: components/start-call.tsx:2073
 msgid "Name"
 msgstr "Nombre"
 
@@ -1355,22 +1281,20 @@ msgid "New Password"
 msgstr "Nueva contraseña"
 
 #: components/onboarding/glass-onboarding-card.tsx:89
-#: components/onboarding/onboarding-client.tsx:516
-#: components/onboarding/onboarding-client.tsx:575
-#: components/onboarding/onboarding-client.tsx:644
-#: components/start-call.tsx:1233
+#: components/onboarding/onboarding-client.tsx:617
+#: components/onboarding/onboarding-client.tsx:682
+#: components/onboarding/onboarding-client.tsx:767
+#: components/start-call.tsx:1515
 msgid "Next →"
 msgstr "Siguiente →"
 
-#: components/billing/billing-content.tsx:526
+#: components/billing/billing-content.tsx:604
 msgid "No active subscription to manage"
 msgstr "No hay ninguna suscripción activa para gestionar"
 
-#: components/start-call.tsx:903
+#: components/start-call.tsx:1076
 msgid "No audio detected. Share the window that plays your call and enable audio."
-msgstr ""
-"No se detectó audio. Comparte la ventana que reproduce tu llamada y activa "
-"el audio."
+msgstr "No se detectó audio. Comparte la ventana que reproduce tu llamada y activa el audio."
 
 #: components/history/conversation-history.tsx:974
 msgid "No conversations found"
@@ -1403,7 +1327,7 @@ msgstr "No hay mensajes"
 msgid "No partner assigned"
 msgstr "No se ha asignado socio"
 
-#: components/start-call.tsx:1266
+#: components/start-call.tsx:1562
 msgid "No partners available"
 msgstr "No hay socios disponibles"
 
@@ -1424,21 +1348,17 @@ msgstr "No se seleccionaron filas"
 msgid "Off"
 msgstr "Desactivado"
 
-#: components/start-call.tsx:1013
+#: components/start-call.tsx:1239
 msgid "Once your screen is shared, the Start Call button will unlock."
 msgstr "Una vez que compartas tu pantalla, el botón Iniciar Llamada se activará."
 
-#: components/memory/columns.tsx:272
+#: components/memory/columns.tsx:312
 msgid "Open menu"
 msgstr "Abrir menú"
 
-#: components/start-call.tsx:948
-msgid ""
-"Open Zoom, Discord, Meet, or any call app and join the room you're about to "
-"share."
-msgstr ""
-"Abre Zoom, Discord, Meet o cualquier aplicación de llamadas y únete a la "
-"sala que vas a compartir."
+#: components/start-call.tsx:1140
+msgid "Open Zoom, Discord, Meet, or any call app and join the room you're about to share."
+msgstr "Abre Zoom, Discord, Meet o cualquier aplicación de llamadas y únete a la sala que vas a compartir."
 
 #: components/login-form.tsx:99
 #: components/signup-form.tsx:170
@@ -1450,14 +1370,14 @@ msgstr "O continuar con"
 msgid "Overall Score"
 msgstr "Puntuación general"
 
-#: components/memory/data-table.tsx:246
 #. placeholder {0}: table.getState().pagination.pageIndex + 1
 #. placeholder {1}: table.getPageCount()
+#: components/memory/data-table.tsx:246
 msgid "Page {0} of {1}"
 msgstr "Página {0} de {1}"
 
-#: components/history/conversation-history.tsx:1037
 #. placeholder {0}: page + 1
+#: components/history/conversation-history.tsx:1037
 msgid "Page {0} of {totalPages}"
 msgstr "Página {0} de {totalPages}"
 
@@ -1480,9 +1400,9 @@ msgstr "Página {0} de {totalPages}"
 #: components/history/conversation-history.tsx:1785
 #: components/messages.tsx:116
 #: components/messages.tsx:149
-#: components/start-call.tsx:1454
-#: components/start-call.tsx:1567
-#: components/start-call.tsx:1674
+#: components/start-call.tsx:1799
+#: components/start-call.tsx:1933
+#: components/start-call.tsx:2051
 msgid "Partner"
 msgstr "Interlocutor"
 
@@ -1495,11 +1415,11 @@ msgstr "Socio creado"
 
 #: components/call-summary.tsx:450
 #: components/history/conversation-history.tsx:472
-#: components/start-call.tsx:724
+#: components/start-call.tsx:885
 msgid "Partner deleted"
 msgstr "Socio eliminado"
 
-#: components/memory/columns.tsx:241
+#: components/memory/columns.tsx:281
 msgid "Partner ID"
 msgstr "ID de socio"
 
@@ -1511,7 +1431,7 @@ msgstr "Es necesario el nombre del socio"
 
 #: components/call-summary.tsx:392
 #: components/history/conversation-history.tsx:438
-#: components/start-call.tsx:689
+#: components/start-call.tsx:849
 msgid "Partner updated"
 msgstr "Socio actualizado"
 
@@ -1520,23 +1440,23 @@ msgstr "Socio actualizado"
 msgid "Password"
 msgstr "Contraseña"
 
-#: components/billing/billing-content.tsx:258
+#: components/billing/billing-content.tsx:274
 msgid "Past due"
 msgstr "Vencido"
 
-#: components/billing/billing-content.tsx:109
+#: components/billing/billing-content.tsx:125
 msgid "per month"
 msgstr "por mes"
 
-#: components/billing/billing-content.tsx:100
-#: components/billing/billing-content.tsx:176
+#: components/billing/billing-content.tsx:116
+#: components/billing/billing-content.tsx:192
 msgid "Personalized Memory"
 msgstr "Memoria personalizada"
 
 #: components/call-summary.tsx:1425
 #: components/history/conversation-history.tsx:1797
-#: components/start-call.tsx:1579
-#: components/start-call.tsx:1686
+#: components/start-call.tsx:1949
+#: components/start-call.tsx:2067
 msgid "Photo"
 msgstr "Foto"
 
@@ -1545,15 +1465,15 @@ msgstr "Foto"
 msgid "Photo updated"
 msgstr "Foto actualizada"
 
-#: components/billing/billing-content.tsx:637
+#: components/billing/billing-content.tsx:722
 msgid "Plan ends on {planRenewalLabel}"
 msgstr "El plan finaliza el {planRenewalLabel}"
 
-#: components/billing/billing-content.tsx:634
+#: components/billing/billing-content.tsx:719
 msgid "Plan ends on {scheduledCancelAt}"
 msgstr "El plan finaliza el {scheduledCancelAt}"
 
-#: components/billing/billing-content.tsx:551
+#: components/billing/billing-content.tsx:629
 msgid "Please complete the required fields"
 msgstr "Por favor, completa los campos obligatorios"
 
@@ -1563,26 +1483,20 @@ msgstr "Por favor, ingresa tus comentarios"
 
 #: contexts/glass-context.tsx:1805
 msgid "Please re-enable microphone permissions or choose another input device."
-msgstr ""
-"Por favor, vuelve a activar los permisos del micrófono o elige otro "
-"dispositivo de entrada."
+msgstr "Por favor, vuelve a activar los permisos del micrófono o elige otro dispositivo de entrada."
 
 #: contexts/glass-context.tsx:1661
 msgid "Please refresh the page and try again."
 msgstr "Por favor, actualiza la página e inténtalo de nuevo."
 
 #: contexts/glass-context.tsx:1513
-msgid ""
-"Please share your screen with audio from your call platform (Zoom, Google "
-"Meet, Teams)."
-msgstr ""
-"Por favor, comparte tu pantalla con audio desde tu plataforma de llamadas "
-"(Zoom, Google Meet, Teams)."
+msgid "Please share your screen with audio from your call platform (Zoom, Google Meet, Teams)."
+msgstr "Por favor, comparte tu pantalla con audio desde tu plataforma de llamadas (Zoom, Google Meet, Teams)."
 
-#: components/billing/billing-content.tsx:503
-#: components/billing/billing-content.tsx:522
-#: components/billing/billing-content.tsx:547
-#: components/start-call.tsx:837
+#: components/billing/billing-content.tsx:581
+#: components/billing/billing-content.tsx:600
+#: components/billing/billing-content.tsx:625
+#: components/start-call.tsx:1006
 msgid "Please sign in again"
 msgstr "Por favor, inicia sesión nuevamente"
 
@@ -1590,7 +1504,7 @@ msgstr "Por favor, inicia sesión nuevamente"
 msgid "Please try again in a few moments."
 msgstr "Por favor, inténtalo de nuevo en unos momentos."
 
-#: components/start-call.tsx:753
+#: components/start-call.tsx:915
 msgid "Please try again in a moment."
 msgstr "Inténtalo de nuevo en un momento."
 
@@ -1602,12 +1516,12 @@ msgstr "Por favor, espera a que se cargue la sesión y vuelve a intentar."
 msgid "Please wait while we verify your email address"
 msgstr "Por favor, espera mientras verificamos tu dirección de correo electrónico."
 
-#: components/billing/billing-content.tsx:99
-#: components/billing/billing-content.tsx:170
+#: components/billing/billing-content.tsx:115
+#: components/billing/billing-content.tsx:186
 msgid "Post-Call Feedback"
 msgstr "Comentarios posteriores a la llamada"
 
-#: components/start-call.tsx:1144
+#: components/start-call.tsx:1408
 msgid "Practice Conversations"
 msgstr "Practicar conversaciones"
 
@@ -1615,35 +1529,29 @@ msgstr "Practicar conversaciones"
 msgid "Preparing your workspace…"
 msgstr "Preparando tu espacio de trabajo…"
 
-#: components/start-call.tsx:1011
-msgid ""
-"Press Start Call below to connect. Glass will use your mic plus the shared "
-"audio."
-msgstr ""
-"Presiona Iniciar Llamada a continuación para conectarte. Glass utilizará tu "
-"micrófono junto con el audio compartido."
+#: components/start-call.tsx:1234
+msgid "Press Start Call below to connect. Glass will use your mic plus the shared audio."
+msgstr "Presiona Iniciar Llamada a continuación para conectarte. Glass utilizará tu micrófono junto con el audio compartido."
 
-#: components/billing/billing-content.tsx:678
+#: components/billing/billing-content.tsx:768
 msgid "Pricing"
 msgstr "Precios"
 
-#: components/billing/billing-content.tsx:202
+#: components/billing/billing-content.tsx:218
 msgid "Priority"
 msgstr "Prioritaria"
 
-#: components/billing/billing-content.tsx:118
+#: components/billing/billing-content.tsx:134
 msgid "Priority Response"
 msgstr "Respuesta prioritaria"
 
 #: app/[lang]/(app)/billing/success/page.tsx:67
 msgid "Priority support is available through the in-app help menu."
-msgstr ""
-"El soporte prioritario está disponible a través del menú de ayuda en la "
-"aplicación."
+msgstr "El soporte prioritario está disponible a través del menú de ayuda en la aplicación."
 
-#: components/billing/billing-content.tsx:107
-#: components/billing/billing-content.tsx:240
-#: components/billing/billing-content.tsx:725
+#: components/billing/billing-content.tsx:123
+#: components/billing/billing-content.tsx:256
+#: components/billing/billing-content.tsx:824
 msgid "Pro"
 msgstr "Pro"
 
@@ -1655,17 +1563,17 @@ msgstr "Pronunciación"
 msgid "Quick actions"
 msgstr "Acciones rápidas"
 
-#: components/billing/billing-content.tsx:98
-#: components/billing/billing-content.tsx:164
+#: components/billing/billing-content.tsx:114
+#: components/billing/billing-content.tsx:180
 msgid "Real-Time Feedback"
 msgstr "Retroalimentación en tiempo real"
 
-#: components/billing/billing-content.tsx:97
-#: components/billing/billing-content.tsx:158
+#: components/billing/billing-content.tsx:113
+#: components/billing/billing-content.tsx:174
 msgid "Real-Time Suggestion"
 msgstr "Sugerencia en tiempo real"
 
-#: components/start-call.tsx:1166
+#: components/start-call.tsx:1430
 msgid "RECOMMENDED"
 msgstr "RECOMENDADO"
 
@@ -1677,7 +1585,7 @@ msgstr "Redirigiendo al inicio de sesión en {countdown} segundos..."
 msgid "Remember your password? <0>Sign in</0>"
 msgstr "¿Recuerdas tu contraseña? <0>Inicia sesión</0>"
 
-#: components/start-call.tsx:974
+#: components/start-call.tsx:1184
 msgid "Remove"
 msgstr "Eliminar"
 
@@ -1685,7 +1593,7 @@ msgstr "Eliminar"
 msgid "Remove insight"
 msgstr "Eliminar información"
 
-#: components/billing/billing-content.tsx:639
+#: components/billing/billing-content.tsx:724
 msgid "Renews on {planRenewalLabel}"
 msgstr "Se renueva el {planRenewalLabel}"
 
@@ -1709,11 +1617,11 @@ msgstr "Restablece tu contraseña"
 msgid "Resetting..."
 msgstr "Restableciendo..."
 
-#: components/billing/billing-content.tsx:200
+#: components/billing/billing-content.tsx:216
 msgid "Response Time"
 msgstr "Tiempo de respuesta"
 
-#: components/memory/columns.tsx:166
+#: components/memory/columns.tsx:183
 msgid "Retention"
 msgstr "Retención"
 
@@ -1733,9 +1641,7 @@ msgstr "Volver a iniciar sesión"
 #: components/call-summary.tsx:327
 #: components/history/conversation-history.tsx:350
 msgid "Roleplay conversations cannot change partner images"
-msgstr ""
-"No se pueden cambiar las imágenes de los compañeros en las conversaciones "
-"de rol."
+msgstr "No se pueden cambiar las imágenes de los compañeros en las conversaciones de rol."
 
 #: components/settings.tsx:241
 msgid "Romaji (Latin)"
@@ -1747,7 +1653,7 @@ msgstr "Filas por página"
 
 #: components/call-summary.tsx:1487
 #: components/history/conversation-history.tsx:1859
-#: components/start-call.tsx:1740
+#: components/start-call.tsx:2129
 msgid "Save"
 msgstr "Guardar"
 
@@ -1755,7 +1661,7 @@ msgstr "Guardar"
 msgid "Save Call"
 msgstr "Guardar llamada"
 
-#: components/start-call.tsx:1784
+#: components/start-call.tsx:2179
 #: contexts/glass-context.tsx:1670
 msgid "Saved call limit reached"
 msgstr "Límite de llamadas guardadas alcanzado"
@@ -1768,15 +1674,15 @@ msgstr "Conversaciones guardadas"
 msgid "Saving..."
 msgstr "Guardando..."
 
-#: components/onboarding/onboarding-client.tsx:644
+#: components/onboarding/onboarding-client.tsx:765
 msgid "Saving…"
 msgstr "Guardando…"
 
-#: components/billing/billing-content.tsx:681
+#: components/billing/billing-content.tsx:771
 msgid "Scale with the right plan"
 msgstr "Escala con el plan adecuado"
 
-#: components/memory/columns.tsx:124
+#: components/memory/columns.tsx:139
 msgid "Scope"
 msgstr "Alcance"
 
@@ -1788,23 +1694,19 @@ msgstr "Se requiere compartir el audio de la pantalla"
 msgid "Screen share stopped"
 msgstr "Se detuvo el uso compartido de pantalla"
 
-#: components/start-call.tsx:899
+#: components/start-call.tsx:1072
 msgid "Screen share was cancelled. Try again when you're ready."
-msgstr ""
-"Se canceló el uso compartido de pantalla. Inténtalo de nuevo cuando estés "
-"listo."
+msgstr "Se canceló el uso compartido de pantalla. Inténtalo de nuevo cuando estés listo."
 
-#: components/start-call.tsx:482
+#: components/start-call.tsx:621
 msgid "Screen sharing is not supported in this browser"
 msgstr "La compartición de pantalla no es compatible con este navegador"
 
-#: components/start-call.tsx:897
+#: components/start-call.tsx:1070
 msgid "Screen sharing permission was blocked. Allow access to continue."
-msgstr ""
-"Se bloqueó el permiso para compartir pantalla. Permite el acceso para "
-"continuar."
+msgstr "Se bloqueó el permiso para compartir pantalla. Permite el acceso para continuar."
 
-#: components/start-call.tsx:985
+#: components/start-call.tsx:1201
 msgid "Screen sharing ready. Keep it running so Glass can listen in."
 msgstr "Compartir pantalla listo. Mantenlo activo para que Glass pueda escuchar."
 
@@ -1821,20 +1723,18 @@ msgstr "Buscar recuerdos..."
 msgid "Search partners"
 msgstr "Socios de búsqueda"
 
-#: components/billing/billing-content.tsx:711
+#: components/billing/billing-content.tsx:808
 msgid "See all features across plans and find what works best for you."
-msgstr ""
-"Consulta todas las características de los planes y encuentra la que mejor "
-"se adapte a tus necesidades."
+msgstr "Consulta todas las características de los planes y encuentra la que mejor se adapte a tus necesidades."
 
 #: components/history/conversation-history.tsx:346
 #: components/history/conversation-history.tsx:539
 msgid "Select a conversation first"
 msgstr "Primero selecciona una conversación"
 
-#: components/start-call.tsx:785
-#: components/start-call.tsx:790
-#: components/start-call.tsx:1252
+#: components/start-call.tsx:951
+#: components/start-call.tsx:959
+#: components/start-call.tsx:1540
 msgid "Select a conversation partner"
 msgstr "Selecciona un compañero de conversación"
 
@@ -1842,11 +1742,11 @@ msgstr "Selecciona un compañero de conversación"
 msgid "Select a conversation to view details"
 msgstr "Selecciona una conversación para ver los detalles"
 
-#: components/onboarding/onboarding-client.tsx:444
+#: components/onboarding/onboarding-client.tsx:539
 msgid "Select a level to continue"
 msgstr "Selecciona un nivel para continuar"
 
-#: components/start-call.tsx:776
+#: components/start-call.tsx:941
 msgid "Select a mode to continue"
 msgstr "Selecciona un modo para continuar"
 
@@ -1855,11 +1755,11 @@ msgstr "Selecciona un modo para continuar"
 msgid "Select a partner"
 msgstr "Selecciona un socio"
 
-#: components/start-call.tsx:1465
+#: components/start-call.tsx:1814
 msgid "Select a partner to see details."
 msgstr "Selecciona un socio para ver los detalles."
 
-#: components/memory/columns.tsx:48
+#: components/memory/columns.tsx:53
 msgid "Select all"
 msgstr "Seleccionar todo"
 
@@ -1867,31 +1767,29 @@ msgstr "Seleccionar todo"
 msgid "Select an existing partner or create a new one."
 msgstr "Seleccione un socio existente o cree uno nuevo."
 
-#: components/memory/columns.tsx:57
+#: components/memory/columns.tsx:62
 msgid "Select row"
 msgstr "Seleccionar fila"
 
-#: components/start-call.tsx:965
+#: components/start-call.tsx:1174
 msgid "Select screen"
 msgstr "Seleccionar pantalla"
 
-#: components/billing/billing-content.tsx:772
+#: components/billing/billing-content.tsx:880
 msgid "Select size"
 msgstr "Seleccionar tamaño"
 
-#: components/onboarding/onboarding-client.tsx:592
+#: components/onboarding/onboarding-client.tsx:699
 msgid "Select the description that feels closest to your speaking ability."
 msgstr "Selecciona la descripción que más se asemeje a tu habilidad para hablar."
 
-#: components/onboarding/onboarding-client.tsx:487
+#: components/onboarding/onboarding-client.tsx:584
 msgid "Select the language you speak fluently"
 msgstr "Selecciona el idioma que hablas con fluidez"
 
 #: contexts/glass-context.tsx:793
 msgid "Selected mic is unavailable. Using the system default instead."
-msgstr ""
-"El micrófono seleccionado no está disponible. Se usará el predeterminado "
-"del sistema en su lugar."
+msgstr "El micrófono seleccionado no está disponible. Se usará el predeterminado del sistema en su lugar."
 
 #: components/feedback.tsx:133
 msgid "Send"
@@ -1901,7 +1799,7 @@ msgstr "Enviar"
 msgid "Send Feedback"
 msgstr "Enviar comentarios"
 
-#: components/billing/billing-content.tsx:802
+#: components/billing/billing-content.tsx:919
 msgid "Send request"
 msgstr "Enviar solicitud"
 
@@ -1922,19 +1820,15 @@ msgstr "Longitud de la oración"
 msgid "Settings"
 msgstr "Ajustes"
 
-#: components/start-call.tsx:955
-msgid ""
-"Share the screen where your call is already open, choose \"Entire screen,\" "
-"and toggle \"Also share system audio.\""
-msgstr ""
-"Comparte la pantalla donde tu llamada ya está abierta, elige \"Toda la "
-"pantalla\" y activa \"Compartir también el audio del sistema.\""
+#: components/start-call.tsx:1153
+msgid "Share the screen where your call is already open, choose \"Entire screen,\" and toggle \"Also share system audio.\""
+msgstr "Comparte la pantalla donde tu llamada ya está abierta, elige \"Toda la pantalla\" y activa \"Compartir también el audio del sistema.\""
 
-#: components/start-call.tsx:799
+#: components/start-call.tsx:968
 msgid "Share your call first"
 msgstr "Comparte tu llamada primero"
 
-#: components/start-call.tsx:953
+#: components/start-call.tsx:1150
 msgid "Share your whole screen with audio"
 msgstr "Comparte toda tu pantalla con audio"
 
@@ -1970,8 +1864,8 @@ msgstr "Cerrando sesión..."
 msgid "Skip tour"
 msgstr "Omitir introducción"
 
-#: components/billing/billing-content.tsx:133
-#: components/billing/billing-content.tsx:218
+#: components/billing/billing-content.tsx:149
+#: components/billing/billing-content.tsx:234
 msgid "SLA Guarantee"
 msgstr "Garantía de SLA"
 
@@ -1980,7 +1874,7 @@ msgstr "Garantía de SLA"
 msgid "Spanish"
 msgstr "Español"
 
-#: components/billing/billing-content.tsx:201
+#: components/billing/billing-content.tsx:217
 msgid "Standard"
 msgstr "Estándar"
 
@@ -1988,18 +1882,18 @@ msgstr "Estándar"
 msgid "Star on GitHub"
 msgstr "Dale una estrella en GitHub"
 
-#: components/start-call.tsx:1079
-#: components/start-call.tsx:1096
-#: components/start-call.tsx:1423
-#: components/start-call.tsx:1488
+#: components/start-call.tsx:1321
+#: components/start-call.tsx:1346
+#: components/start-call.tsx:1752
+#: components/start-call.tsx:1840
 msgid "Start Call"
 msgstr "Iniciar llamada"
 
-#: components/start-call.tsx:1008
+#: components/start-call.tsx:1231
 msgid "Start the live call"
 msgstr "Iniciar la llamada en vivo"
 
-#: components/start-call.tsx:909
+#: components/start-call.tsx:1095
 msgid "Step {step}"
 msgstr "Paso {step}"
 
@@ -2017,11 +1911,11 @@ msgstr "Respuesta sugerida"
 msgid "Summarize this insight..."
 msgstr "Resuma esta información..."
 
-#: components/memory/columns.tsx:148
+#: components/memory/columns.tsx:163
 msgid "Summary"
 msgstr "Resumen"
 
-#: components/billing/billing-content.tsx:194
+#: components/billing/billing-content.tsx:210
 msgid "Support"
 msgstr "Soporte"
 
@@ -2029,16 +1923,16 @@ msgstr "Soporte"
 msgid "System default"
 msgstr "Predeterminado del sistema"
 
-#: components/billing/billing-content.tsx:131
-#: components/billing/billing-content.tsx:206
+#: components/billing/billing-content.tsx:147
+#: components/billing/billing-content.tsx:222
 msgid "Team Management"
 msgstr "Gestión de equipos"
 
-#: components/billing/billing-content.tsx:748
+#: components/billing/billing-content.tsx:847
 msgid "Tell us a little about your team and we’ll reach out shortly."
 msgstr "Cuéntanos un poco sobre tu equipo y nos pondremos en contacto pronto."
 
-#: components/billing/billing-content.tsx:786
+#: components/billing/billing-content.tsx:894
 msgid "Tell us about your requirements"
 msgstr "Cuéntanos tus requisitos"
 
@@ -2047,20 +1941,12 @@ msgid "Thank you for your feedback!"
 msgstr "¡Gracias por tus comentarios!"
 
 #: app/[lang]/(app)/billing/success/page.tsx:41
-msgid ""
-"Thanks for upgrading your Glass workspace. Your subscription is active and "
-"your receipts will arrive via email. You can start roleplaying or manage "
-"your billing details whenever you like."
-msgstr ""
-"Gracias por actualizar tu espacio de trabajo en Glass. Tu suscripción está "
-"activa y recibirás los recibos por correo electrónico. Puedes comenzar a "
-"jugar de rol o gestionar los detalles de facturación cuando lo desees."
+msgid "Thanks for upgrading your Glass workspace. Your subscription is active and your receipts will arrive via email. You can start roleplaying or manage your billing details whenever you like."
+msgstr "Gracias por actualizar tu espacio de trabajo en Glass. Tu suscripción está activa y recibirás los recibos por correo electrónico. Puedes comenzar a jugar de rol o gestionar los detalles de facturación cuando lo desees."
 
-#: components/billing/billing-content.tsx:642
+#: components/billing/billing-content.tsx:727
 msgid "The Free plan never expires. Upgrade anytime for unlimited history."
-msgstr ""
-"El plan gratuito nunca vence. Mejora en cualquier momento para obtener "
-"historial ilimitado."
+msgstr "El plan gratuito nunca vence. Mejora en cualquier momento para obtener historial ilimitado."
 
 #: components/verify-email-form.tsx:122
 msgid "The verification link is invalid or has expired."
@@ -2070,44 +1956,30 @@ msgstr "El enlace de verificación es inválido o ha expirado."
 msgid "Theme"
 msgstr "Tema"
 
-#: components/start-call.tsx:1758
+#: components/start-call.tsx:2151
 msgid "This action cannot be undone."
 msgstr "Esta acción no se puede deshacer."
 
-#: components/memory/memory-table.tsx:346
 #. placeholder {0}: memoriesToDelete?.length ?? 0
-msgid ""
-"This action will permanently delete {0} selected memories. This cannot be "
-"undone."
-msgstr ""
-"Esta acción eliminará de forma permanente {0} recuerdos seleccionados. Esto "
-"no se puede deshacer."
+#: components/memory/memory-table.tsx:346
+msgid "This action will permanently delete {0} selected memories. This cannot be undone."
+msgstr "Esta acción eliminará de forma permanente {0} recuerdos seleccionados. Esto no se puede deshacer."
 
 #: components/history/conversation-history.tsx:908
 msgid "this conversation"
 msgstr "esta conversación"
 
-#: components/billing/billing-content.tsx:605
-msgid ""
-"This Glass instance is running in self-hosted mode, so upgrades aren't "
-"required."
-msgstr ""
-"Esta instancia de Glass está operando en modo autohospedado, por lo que no "
-"se requieren actualizaciones."
+#: components/billing/billing-content.tsx:685
+msgid "This Glass instance is running in self-hosted mode, so upgrades aren't required."
+msgstr "Esta instancia de Glass está operando en modo autohospedado, por lo que no se requieren actualizaciones."
 
 #: components/history/conversation-history.tsx:602
 msgid "this partner"
 msgstr "este socio"
 
 #: components/memory/memory-table.tsx:235
-msgid ""
-"This table highlights the latest {MEMORY_VISIBLE_LIMIT} memories. Older "
-"ones stay archived, so use the search field whenever you want to surface "
-"something specific."
-msgstr ""
-"Esta tabla destaca las últimas {MEMORY_VISIBLE_LIMIT} memorias. Las más "
-"antiguas permanecen archivadas, así que utiliza el campo de búsqueda cuando "
-"quieras encontrar algo específico."
+msgid "This table highlights the latest {MEMORY_VISIBLE_LIMIT} memories. Older ones stay archived, so use the search field whenever you want to surface something specific."
+msgstr "Esta tabla destaca las últimas {MEMORY_VISIBLE_LIMIT} memorias. Las más antiguas permanecen archivadas, así que utiliza el campo de búsqueda cuando quieras encontrar algo específico."
 
 #: components/call-summary.tsx:1500
 msgid "This will permanently remove the partner and cannot be undone."
@@ -2115,15 +1987,13 @@ msgstr "Esto eliminará al socio de forma permanente y no se podrá deshacer."
 
 #: components/memory/memory-table.tsx:311
 msgid "This will permanently remove the selected memory from your knowledge graph."
-msgstr ""
-"Esto eliminará permanentemente la memoria seleccionada de tu gráfico de "
-"conocimiento."
+msgstr "Esto eliminará permanentemente la memoria seleccionada de tu gráfico de conocimiento."
 
 #: components/history/conversation-history.tsx:733
 msgid "Title updated"
 msgstr "Título actualizado"
 
-#: components/billing/billing-content.tsx:256
+#: components/billing/billing-content.tsx:272
 msgid "Trial"
 msgstr "Prueba"
 
@@ -2131,7 +2001,7 @@ msgstr "Prueba"
 msgid "Try again"
 msgstr "Vuelve a intentarlo"
 
-#: components/start-call.tsx:483
+#: components/start-call.tsx:622
 msgid "Try using the latest version of Chrome, Edge, or Firefox."
 msgstr "Prueba usando la última versión de Chrome, Edge o Firefox."
 
@@ -2150,11 +2020,11 @@ msgstr "No se puede acceder al micrófono"
 msgid "Unable to connect"
 msgstr "No se puede conectar"
 
-#: components/start-call.tsx:536
+#: components/start-call.tsx:681
 msgid "Unable to create a partner"
 msgstr "No se puede crear un socio"
 
-#: components/start-call.tsx:727
+#: components/start-call.tsx:888
 msgid "Unable to delete partner"
 msgstr "No se puede eliminar al socio"
 
@@ -2162,32 +2032,32 @@ msgstr "No se puede eliminar al socio"
 msgid "Unable to load memories right now."
 msgstr "No se pueden cargar los recuerdos en este momento."
 
-#: components/billing/billing-content.tsx:539
+#: components/billing/billing-content.tsx:617
 msgid "Unable to open billing portal"
 msgstr "No se puede abrir el portal de facturación."
 
-#: components/billing/billing-content.tsx:514
-#: components/start-call.tsx:848
+#: components/billing/billing-content.tsx:592
+#: components/start-call.tsx:1017
 msgid "Unable to open checkout"
 msgstr "No se puede abrir la caja"
 
-#: components/start-call.tsx:469
+#: components/start-call.tsx:605
 msgid "Unable to play preview"
 msgstr "No se puede reproducir la vista previa"
 
-#: components/onboarding/onboarding-client.tsx:466
+#: components/onboarding/onboarding-client.tsx:563
 msgid "Unable to save level. Please try again."
 msgstr "No se puede guardar el nivel. Por favor, inténtalo de nuevo."
 
-#: components/start-call.tsx:613
-#: components/start-call.tsx:654
-#: components/start-call.tsx:662
-#: components/start-call.tsx:693
+#: components/start-call.tsx:762
+#: components/start-call.tsx:807
+#: components/start-call.tsx:815
+#: components/start-call.tsx:853
 msgid "Unable to save partner"
 msgstr "No se puede guardar al socio"
 
-#: components/start-call.tsx:752
-#: components/start-call.tsx:830
+#: components/start-call.tsx:914
+#: components/start-call.tsx:999
 msgid "Unable to start call"
 msgstr "No se pudo iniciar la llamada"
 
@@ -2195,23 +2065,23 @@ msgstr "No se pudo iniciar la llamada"
 msgid "Unable to start conversation"
 msgstr "No se puede iniciar la conversación"
 
-#: components/billing/billing-content.tsx:575
+#: components/billing/billing-content.tsx:653
 msgid "Unable to submit request"
 msgstr "No se puede enviar la solicitud"
 
-#: components/start-call.tsx:1214
+#: components/start-call.tsx:1484
 msgid "Unavailable on mobile"
 msgstr "No disponible en dispositivos móviles"
 
-#: components/memory/columns.tsx:94
-#: components/memory/columns.tsx:169
+#: components/memory/columns.tsx:107
+#: components/memory/columns.tsx:186
 msgid "Unknown"
 msgstr "Desconocido"
 
-#: components/billing/billing-content.tsx:178
-#: components/billing/billing-content.tsx:179
-#: components/billing/billing-content.tsx:184
-#: components/billing/billing-content.tsx:185
+#: components/billing/billing-content.tsx:194
+#: components/billing/billing-content.tsx:195
+#: components/billing/billing-content.tsx:200
+#: components/billing/billing-content.tsx:201
 msgid "Unlimited"
 msgstr "Ilimitado"
 
@@ -2219,11 +2089,11 @@ msgstr "Ilimitado"
 msgid "Unlimited call summaries are enabled right away."
 msgstr "Los resúmenes de llamadas ilimitados se activan de inmediato."
 
-#: components/billing/billing-content.tsx:115
+#: components/billing/billing-content.tsx:131
 msgid "Unlimited Conversation History"
 msgstr "Historial de conversaciones ilimitado"
 
-#: components/billing/billing-content.tsx:114
+#: components/billing/billing-content.tsx:130
 msgid "Unlimited Memory"
 msgstr "Memoria ilimitada"
 
@@ -2231,11 +2101,11 @@ msgstr "Memoria ilimitada"
 msgid "Untitled Conversation"
 msgstr "Conversación sin título"
 
-#: components/billing/billing-content.tsx:183
+#: components/billing/billing-content.tsx:199
 msgid "Up to 5"
 msgstr "Hasta 5"
 
-#: components/billing/billing-content.tsx:177
+#: components/billing/billing-content.tsx:193
 msgid "Up to 500"
 msgstr "Hasta 500"
 
@@ -2243,7 +2113,7 @@ msgstr "Hasta 500"
 msgid "Update"
 msgstr "Actualizar"
 
-#: components/start-call.tsx:1650
+#: components/start-call.tsx:2027
 msgid "Update your custom partner details."
 msgstr "Actualiza los detalles personalizados de tu socio."
 
@@ -2256,12 +2126,12 @@ msgstr "Actualizando..."
 msgid "Upgrade"
 msgstr "Actualizar"
 
-#: components/billing/billing-content.tsx:120
-#: components/billing/billing-content.tsx:499
+#: components/billing/billing-content.tsx:136
+#: components/billing/billing-content.tsx:577
 msgid "Upgrade monthly"
 msgstr "Actualiza mensualmente"
 
-#: components/start-call.tsx:1811
+#: components/start-call.tsx:2221
 msgid "Upgrade plan"
 msgstr "Actualizar plan"
 
@@ -2269,29 +2139,23 @@ msgstr "Actualizar plan"
 msgid "Upgrade to keep unlimited conversation history."
 msgstr "Actualiza para mantener el historial de conversaciones ilimitado."
 
-#: components/billing/billing-content.tsx:120
-#: components/billing/billing-content.tsx:499
+#: components/billing/billing-content.tsx:136
+#: components/billing/billing-content.tsx:577
 msgid "Upgrade yearly"
 msgstr "Actualizar anualmente"
 
-#: components/billing/billing-content.tsx:132
-#: components/billing/billing-content.tsx:212
+#: components/billing/billing-content.tsx:148
+#: components/billing/billing-content.tsx:228
 msgid "Usage Analytics"
 msgstr "Análisis de uso"
 
-#: components/start-call.tsx:800
+#: components/start-call.tsx:969
 msgid "Use \"Select screen\" in Step 2 so Glass can capture the call audio."
-msgstr ""
-"Usa \"Seleccionar pantalla\" en el Paso 2 para que Glass pueda capturar el "
-"audio de la llamada."
+msgstr "Usa \"Seleccionar pantalla\" en el Paso 2 para que Glass pueda capturar el audio de la llamada."
 
-#: components/start-call.tsx:1003
-msgid ""
-"Use the browser's “Hide” option on the sharing bar (see screenshot) so it "
-"doesn't cover Glass."
-msgstr ""
-"Usa la opción \"Ocultar\" del navegador en la barra de compartir (ver "
-"captura de pantalla) para que no cubra Glass."
+#: components/start-call.tsx:1223
+msgid "Use the browser's “Hide” option on the sharing bar so it doesn't cover Glass."
+msgstr "Usa la opción \"Ocultar\" del navegador en la barra de compartición para que no cubra Glass."
 
 #: components/history/conversation-history.tsx:151
 msgid "User"
@@ -2309,31 +2173,23 @@ msgstr "Verificando tu correo electrónico..."
 msgid "Voice stream failed to initialize. Please try again."
 msgstr "No se pudo inicializar la transmisión de voz. Por favor, inténtalo de nuevo."
 
-#: components/start-call.tsx:901
+#: components/start-call.tsx:1074
 msgid "We couldn't capture your screen. Try a different window or browser."
-msgstr ""
-"No pudimos capturar tu pantalla. Intenta con una ventana o navegador "
-"diferente."
+msgstr "No pudimos capturar tu pantalla. Intenta con una ventana o navegador diferente."
 
-#: components/billing/billing-content.tsx:593
+#: components/billing/billing-content.tsx:671
 msgid "We couldn't load your account details. Please refresh and try again."
-msgstr ""
-"No pudimos cargar los detalles de tu cuenta. Por favor, actualiza la página "
-"e inténtalo de nuevo."
+msgstr "No pudimos cargar los detalles de tu cuenta. Por favor, actualiza la página e inténtalo de nuevo."
 
 #: components/history/conversation-history.tsx:923
 msgid "We couldn't load your history. Refresh and try again."
 msgstr "No pudimos cargar tu historial. Actualiza la página e inténtalo de nuevo."
 
 #: app/[lang]/failure/page.tsx:24
-msgid ""
-"We had trouble starting your session. Please check your internet and try "
-"again."
-msgstr ""
-"Hubo un problema al iniciar tu sesión. Revisa tu conexión a Internet e "
-"inténtalo de nuevo."
+msgid "We had trouble starting your session. Please check your internet and try again."
+msgstr "Hubo un problema al iniciar tu sesión. Revisa tu conexión a Internet e inténtalo de nuevo."
 
-#: components/billing/billing-content.tsx:570
+#: components/billing/billing-content.tsx:648
 msgid "We'll be in touch shortly"
 msgstr "Nos pondremos en contacto contigo pronto."
 
@@ -2350,7 +2206,7 @@ msgstr "Bienvenido de nuevo"
 msgid "What do you want to say..."
 msgstr "¿Qué deseas decir...?"
 
-#: components/onboarding/onboarding-client.tsx:484
+#: components/onboarding/onboarding-client.tsx:581
 msgid "What is your native language?"
 msgstr "¿Cuál es tu idioma nativo?"
 
@@ -2362,16 +2218,16 @@ msgstr "¿Qué te gustaría recordar?"
 msgid "What's next"
 msgstr "¿Qué sigue?"
 
-#: components/onboarding/onboarding-client.tsx:530
+#: components/onboarding/onboarding-client.tsx:631
 msgid "Which language do you want to learn?"
 msgstr "¿Qué idioma te gustaría aprender?"
 
-#: components/memory/data-table.tsx:106
 #. placeholder {0}: selectedRows.length
+#: components/memory/data-table.tsx:106
 msgid "Would delete {0} memories"
 msgstr "Eliminaría {0} memorias"
 
-#: components/billing/billing-content.tsx:276
+#: components/billing/billing-content.tsx:292
 msgid "Yearly"
 msgstr "Anual"
 
@@ -2389,9 +2245,7 @@ msgstr "¡Todo listo!"
 
 #: lib/onboarding-tours.tsx:127
 msgid "You're ready to have real conversations. No fear, no hesitation."
-msgstr ""
-"Estás listo para tener conversaciones de verdad. Sin miedo, sin "
-"vacilaciones."
+msgstr "Vous êtes prêt(e) pour de vraies conversations. Plus besoin d’avoir peur, ni d’hésiter."
 
 #: contexts/glass-context.tsx:2219
 #: contexts/glass-context.tsx:2264
@@ -2412,482 +2266,14 @@ msgid "Your memories"
 msgstr "Tus recuerdos"
 
 #: app/[lang]/(app)/billing/success/page.tsx:95
-msgid ""
-"Your new plan is active. We'll keep your saved conversations safe and "
-"synced."
-msgstr ""
-"Tu nuevo plan está activo. Mantendremos tus conversaciones guardadas "
-"seguras y sincronizadas."
+msgid "Your new plan is active. We'll keep your saved conversations safe and synced."
+msgstr "Tu nuevo plan está activo. Mantendremos tus conversaciones guardadas seguras y sincronizadas."
 
 #: app/[lang]/(app)/history/page.tsx:31
 msgid "Your saved calls"
 msgstr "Tus llamadas guardadas"
 
-#: components/onboarding/onboarding-client.tsx:38
+#: components/onboarding/onboarding-client.tsx:48
 #: components/settings.tsx:43
 msgid "Zero"
 msgstr "Cero"
-
-#: components/history/conversation-limit-indicator.tsx:28
-#~ msgid "{limitUsed}개 / {limitMax}"
-#~ msgstr "{limitUsed} / {limitMax} usados"
-
-#: components/memory/data-table.tsx:204
-#~ msgid "{totalCount, plural, one {# memory total • } other {# memories total • }}"
-#~ msgstr ""
-#~ "{totalCount, plural, one {# memoria total • } other {# memorias en total • "
-#~ "}}"
-
-#: components/start-call.tsx:771
-#~ msgid "• Browser tab → Enable \"Share tab audio\""
-#~ msgstr "• Pestaña del navegador → Activar \"Compartir audio de la pestaña\""
-
-#: components/start-call.tsx:774
-#~ msgid "• Desktop app → Enable \"Share system audio\""
-#~ msgstr "• Aplicación de escritorio → Activar \"Compartir audio del sistema\""
-
-#: app/[lang]/time-limit/page.tsx:54
-#~ msgid "← Back to Home"
-#~ msgstr "← Volver a Inicio"
-
-#: components/start-call.tsx:760
-#~ msgid "1. Join a Discord voice chat or online call"
-#~ msgstr "1. Únete a un chat de voz en Discord o a una llamada en línea"
-
-#: components/start-call.tsx:763
-#~ msgid "2. Click \"Start\" below"
-#~ msgstr "2. Haz clic en “Iniciar” abajo"
-
-#: components/start-call.tsx:767
-#~ msgid "3. Share your tab or screen with audio:"
-#~ msgstr "3. Comparte tu pestaña o pantalla con audio:"
-
-#: components/start-call.tsx:779
-#~ msgid "4. Start talking and let Glass assist you"
-#~ msgstr "4. Comienza a hablar y deja que Glass te ayude"
-
-#: components/billing/billing-content.tsx:107
-#~ msgid "Advanced Real-time suggestions based on your Memory"
-#~ msgstr "Sugerencias avanzadas en tiempo real basadas en tu Memoria"
-
-#: components/memory/memory-dialog.tsx:82
-#~ msgid "AI will automatically organize and categorize this information"
-#~ msgstr "La IA organizará y categorizará automáticamente esta información."
-
-#: components/memory/memory-dialog.tsx:82
-#~ msgid ""
-#~ "AI will organize and categorize this automatically, which can take up to 2 "
-#~ "minutes."
-#~ msgstr ""
-#~ "La IA organizará y categorizará esto automáticamente, lo cual puede tardar "
-#~ "hasta 2 minutos."
-
-#: components/start-call.tsx:721
-#~ msgid "Airport Check-in"
-#~ msgstr "Registro en el aeropuerto"
-
-#: components/billing/billing-content.tsx:105
-#~ msgid "All free features"
-#~ msgstr "Todas las funciones gratuitas"
-
-#: components/memory/memory-table.tsx:116
-#~ msgid "Are you sure you want to delete {0} memories?"
-#~ msgstr "¿Estás seguro de que deseas eliminar {0} recuerdos?"
-
-#: components/memory/memory-table.tsx:109
-#~ msgid "Are you sure you want to delete this memory?"
-#~ msgstr "¿Estás seguro de que quieres eliminar este recuerdo?"
-
-#: components/start-call.tsx:796
-#: components/start-call.tsx:815
-#: components/start-call.tsx:834
-#: components/start-call.tsx:853
-#: components/start-call.tsx:873
-#~ msgid "Back in Glass, press Start Call."
-#~ msgstr "De vuelta en Glass, presiona Iniciar Llamada."
-
-#: components/user-menu.tsx:128
-#~ msgid "Bonus minutes"
-#~ msgstr "Minutos extra"
-
-#: components/billing/billing-content.tsx:93
-#~ msgid "Call summary (fluency/accuracy)"
-#~ msgstr "Resumen de llamada (fluidez/precisión)"
-
-#: components/start-call.tsx:741
-#~ msgid "Casual Chat"
-#~ msgstr "Charla informal"
-
-#: components/start-call.tsx:510
-#~ msgid "Choose a scenario"
-#~ msgstr "Elige un escenario"
-
-#: components/start-call.tsx:799
-#~ msgid "Choose the Discord window (or desktop) and enable system audio."
-#~ msgstr ""
-#~ "Selecciona la ventana de Discord (o el escritorio) y activa el audio del "
-#~ "sistema."
-
-#: components/start-call.tsx:856
-#~ msgid "Choose the Teams window (or desktop) and enable system audio."
-#~ msgstr "Elige la ventana de Teams (o el escritorio) y activa el audio del sistema."
-
-#: components/start-call.tsx:818
-#~ msgid "Choose the Zoom window (or desktop) and enable system audio."
-#~ msgstr "Elige la ventana de Zoom (o escritorio) y activa el audio del sistema."
-
-#: components/start-call.tsx:1339
-#~ msgid "Choose your platform"
-#~ msgstr "Elige tu plataforma"
-
-#: components/history/conversation-limit-indicator.tsx:56
-#~ msgid "Conversation limit info"
-#~ msgstr "Información sobre el límite de conversaciones"
-
-#: components/start-call.tsx:944
-#~ msgid "conversations saved"
-#~ msgstr "conversaciones guardadas"
-
-#: components/start-call.tsx:610
-#~ msgid "Custom"
-#~ msgstr "Personalizado"
-
-#: components/start-call.tsx:572
-#~ msgid "Custom Scenario"
-#~ msgstr "Escenario personalizado"
-
-#: components/user-menu.tsx:121
-#~ msgid "Daily free minutes"
-#~ msgstr "Minutos gratis diarios"
-
-#: components/start-call.tsx:1404
-#~ msgid "Delete older calls or upgrade for unlimited history."
-#~ msgstr ""
-#~ "Elimina las llamadas antiguas o actualiza para obtener un historial "
-#~ "ilimitado."
-
-#: components/history/conversation-history.tsx:440
-#~ msgid "Delete this partner? This cannot be undone."
-#~ msgstr "¿Eliminar a este socio? Esta acción no se puede deshacer."
-
-#: components/start-call.tsx:590
-#~ msgid "Describe the scenario you want to roleplay..."
-#~ msgstr "Describe el escenario que deseas interpretar..."
-
-#: components/start-call.tsx:649
-#~ msgid "Describe them (role, personality, background)..."
-#~ msgstr "Describe sus características (rol, personalidad, antecedentes)..."
-
-#: components/start-call.tsx:575
-#~ msgid "Describe your own situation"
-#~ msgstr "Describe tu propia situación"
-
-#: components/onboarding/onboarding-client.tsx:560
-#~ msgid "Do you want pronunciation help?"
-#~ msgstr "¿Quieres ayuda con la pronunciación?"
-
-#: components/controls.tsx:121
-#~ msgid "Ending soon: under 5 minutes left"
-#~ msgstr "Terminando pronto: menos de 5 minutos restantes"
-
-#: components/start-call.tsx:545
-#~ msgid "Everyday conversation"
-#~ msgstr "Conversación cotidiana"
-
-#: components/memory/columns.tsx:113
-#~ msgid "Expired"
-#~ msgstr "Caducado"
-
-#: components/memory/columns.tsx:129
-#~ msgid "Expired memories cannot be edited"
-#~ msgstr "No se pueden editar los recuerdos vencidos"
-
-#: components/call-summary.tsx:1176
-#~ msgid "Fetching thread context..."
-#~ msgstr "Obteniendo contexto del hilo..."
-
-#: components/start-call.tsx:756
-#~ msgid "Follow these steps:"
-#~ msgstr "Sigue estos pasos:"
-
-#: components/user-menu.tsx:133
-#~ msgid "Free minutes"
-#~ msgstr "Minutos gratis"
-
-#: components/billing/billing-content.tsx:80
-#~ msgid ""
-#~ "Free plan allows up to {0} saved conversations. Paid plans unlock unlimited "
-#~ "history."
-#~ msgstr ""
-#~ "El plan gratuito permite hasta {0} conversaciones guardadas. Los planes de "
-#~ "pago desbloquean historial ilimitado."
-
-#: components/history/conversation-limit-indicator.tsx:65
-#~ msgid ""
-#~ "Free plan keeps up to {limitMax} saved conversations. Upgrade to unlock "
-#~ "unlimited history."
-#~ msgstr ""
-#~ "El plan gratuito guarda hasta {limitMax} conversaciones guardadas. Mejora "
-#~ "tu suscripción para desbloquear un historial ilimitado."
-
-#: components/history/conversation-history.tsx:975
-#~ msgid "Free plan limit: {0}"
-#~ msgstr "Límite del plan gratuito: {0}"
-
-#: components/call-summary.tsx:1128
-#~ msgid "Gathering conversation memories…"
-#~ msgstr "Recopilando recuerdos de conversaciones…"
-
-#: components/billing/billing-content.tsx:93
-#~ msgid "Glass Unlimited"
-#~ msgstr "Glass Unlimited"
-
-#: components/history/conversation-limit-indicator.tsx:39
-#~ msgid "History limit"
-#~ msgstr "Límite de historial"
-
-#: components/billing/billing-content.tsx:613
-#~ msgid "How can we help?"
-#~ msgstr "¿Cómo podemos ayudarte?"
-
-#: components/memory/columns.tsx:114
-#~ msgid "Invalid"
-#~ msgstr "Inválido"
-
-#: components/start-call.tsx:731
-#~ msgid "Job Interview"
-#~ msgstr "Entrevista de trabajo"
-
-#: app/[lang]/time-limit/page.tsx:40
-#~ msgid "Join Community"
-#~ msgstr "Unirse a la comunidad"
-
-#: components/start-call.tsx:812
-#~ msgid "Join or start your Zoom meeting."
-#~ msgstr "Únete o comienza tu reunión de Zoom."
-
-#: components/start-call.tsx:782
-#~ msgid "Join our <0>Discord voice channel</0> (or your own server)."
-#~ msgstr "Únete a nuestro <0>canal de voz de Discord</0> (o a tu propio servidor)."
-
-#: components/start-call.tsx:870
-#~ msgid "Join the call in your preferred platform."
-#~ msgstr "Únete a la llamada en la plataforma de tu preferencia."
-
-#: components/start-call.tsx:831
-#~ msgid "Join the Google Meet room."
-#~ msgstr "Únete a la sala de Google Meet."
-
-#: components/start-call.tsx:850
-#~ msgid "Join your Microsoft Teams meeting."
-#~ msgstr "Únete a tu reunión de Microsoft Teams."
-
-#: components/start-call.tsx:802
-#: components/start-call.tsx:821
-#: components/start-call.tsx:840
-#: components/start-call.tsx:859
-#: components/start-call.tsx:879
-#~ msgid "Keep Glass open to get live help during your call."
-#~ msgstr "Mantén Glass abierto para recibir ayuda en vivo durante tu llamada."
-
-#: app/[lang]/(app)/memory/page.tsx:28
-#~ msgid "Memory system"
-#~ msgstr "Sistema de memoria"
-
-#: components/billing/billing-content.tsx:607
-#~ msgid "Message"
-#~ msgstr "Mensaje"
-
-#: components/user-menu.tsx:192
-#~ msgid "min"
-#~ msgstr "min"
-
-#: components/start-call.tsx:635
-#~ msgid "Name (e.g., Alex, Maria)..."
-#~ msgstr "Nombre (por ejemplo, Alex, María)..."
-
-#: components/call-summary.tsx:1211
-#~ msgid "No context available yet"
-#~ msgstr "No hay contexto disponible todavía"
-
-#: components/call-summary.tsx:1167
-#~ msgid "No insights available yet."
-#~ msgstr "Aún no hay información disponible."
-
-#: components/call-summary.tsx:1152
-#~ msgid "No memories were extracted from this call."
-#~ msgstr "No se extrajeron memorias de esta llamada."
-
-#: components/onboarding/onboarding-client.tsx:613
-#~ msgid "No, I'm fine"
-#~ msgstr "No, estoy bien"
-
-#: components/start-call.tsx:948
-#~ msgid ""
-#~ "Open Zoom, Discord, Meet, or any call app, join the room, and keep Glass "
-#~ "open on that same screen—you'll share it next."
-#~ msgstr ""
-#~ "Abre Zoom, Discord, Meet o cualquier aplicación de llamadas, únete a la "
-#~ "sala y mantén Glass abierto en esa misma pantalla; será lo que compartas a "
-#~ "continuación."
-
-#: components/start-call.tsx:546
-#~ msgid "Ordering food & drinks"
-#~ msgstr "Pedir comida o bebidas"
-
-#: components/start-call.tsx:746
-#~ msgid "Phone Call"
-#~ msgstr "Llamada telefónica"
-
-#: components/start-call.tsx:876
-#~ msgid "Pick the window/tab for that platform and turn on system or tab audio."
-#~ msgstr ""
-#~ "Selecciona la ventana o pestaña para esa plataforma y activa el audio del "
-#~ "sistema o de la pestaña."
-
-#: components/billing/billing-content.tsx:119
-#~ msgid "Priority support"
-#~ msgstr "Soporte prioritario"
-
-#: components/start-call.tsx:547
-#~ msgid "Professional conversation"
-#~ msgstr "Conversación profesional"
-
-#: components/billing/billing-content.tsx:92
-#~ msgid "Real-time feedback"
-#~ msgstr "Retroalimentación en tiempo real"
-
-#: components/billing/billing-content.tsx:91
-#~ msgid "Real-time suggestions"
-#~ msgstr "Sugerencias en tiempo real"
-
-#: app/[lang]/time-limit/page.tsx:44
-#~ msgid "Request more time from the host in the community"
-#~ msgstr "Solicita más tiempo al anfitrión en la comunidad"
-
-#: components/start-call.tsx:726
-#~ msgid "Restaurant"
-#~ msgstr "Restaurante"
-
-#: components/billing/billing-content.tsx:108
-#~ msgid "Save unlimited call summaries"
-#~ msgstr "Guarda resúmenes de llamadas ilimitados"
-
-#: components/billing/billing-content.tsx:94
-#~ msgid "Save up to 5 call summaries"
-#~ msgstr "Guarda hasta 5 resúmenes de llamadas"
-
-#: components/billing/billing-content.tsx:75
-#~ msgid "Saved calls"
-#~ msgstr "Llamadas guardadas"
-
-#: components/start-call.tsx:1400
-#~ msgid "saved on the free plan"
-#~ msgstr "guardado en el plan gratuito"
-
-#: components/start-call.tsx:1261
-#~ msgid "Scenario:"
-#~ msgstr "Escenario:"
-
-#: components/start-call.tsx:837
-#~ msgid "Select the Chrome tab with Meet, toggle Share tab audio, and confirm."
-#~ msgstr ""
-#~ "Selecciona la pestaña de Chrome con Meet, activa Compartir audio de la "
-#~ "pestaña y confirma."
-
-#: components/start-call.tsx:736
-#~ msgid "Shopping"
-#~ msgstr "Compras"
-
-#: components/start-call.tsx:678
-#: components/start-call.tsx:795
-#~ msgid "Start"
-#~ msgstr "Iniciar"
-
-#: components/onboarding/onboarding-client.tsx:642
-#~ msgid "Start Tutorial"
-#~ msgstr "Iniciar tutorial"
-
-#: components/memory/columns.tsx:108
-#~ msgid "Status"
-#~ msgstr "Estado"
-
-#: components/memory/columns.tsx:124
-#~ msgid "Subject role"
-#~ msgstr "Rol del asunto"
-
-#: components/billing/billing-content.tsx:119
-#~ msgid "Team onboarding"
-#~ msgstr "Incorporación del equipo"
-
-#: components/start-call.tsx:548
-#~ msgid "Telephone etiquette"
-#~ msgstr "Etiqueta telefónica"
-
-#: contexts/glass-context.tsx:1227
-#~ msgid "Trial session ended due to time limit."
-#~ msgstr "La sesión de prueba ha terminado debido al límite de tiempo."
-
-#: components/start-call.tsx:405
-#~ msgid "Tutorial with AI"
-#~ msgstr "Tutorial con IA"
-
-#: components/call-summary.tsx:513
-#~ msgid "Unable to load context from Zep."
-#~ msgstr "No se puede cargar el contexto desde Zep."
-
-#: components/call-summary.tsx:592
-#~ msgid "Unable to save memory highlights right now."
-#~ msgstr "No se pueden guardar las notas destacadas en este momento."
-
-#: components/billing/billing-content.tsx:96
-#~ msgid "Unlimited saved conversations"
-#~ msgstr "Conversaciones guardadas ilimitadas"
-
-#: components/billing/billing-content.tsx:99
-#~ msgid "Unlock unlimited history, faster analysis, and priority support."
-#~ msgstr "Desbloquea historial ilimitado, análisis más rápidos y soporte prioritario."
-
-#: components/start-call.tsx:952
-#~ msgid "Upgrade for unlimited history"
-#~ msgstr "Mejora para obtener historial ilimitado"
-
-#: components/billing/billing-content.tsx:84
-#~ msgid "Upgrade to unlock unlimited saved calls and premium support."
-#~ msgstr "Actualiza para desbloquear llamadas guardadas ilimitadas y soporte premium."
-
-#: app/[lang]/error.tsx:30
-#~ msgid "View Documentation"
-#~ msgstr "Ver documentación"
-
-#: app/[lang]/time-limit/page.tsx:26
-#~ msgid "Want to keep practicing?"
-#~ msgstr "¿Quieres seguir practicando?"
-
-#: components/billing/billing-content.tsx:571
-#~ msgid "We'll reach out to {0}."
-#~ msgstr "Nos pondremos en contacto con {0}."
-
-#: components/onboarding/onboarding-client.tsx:563
-#~ msgid "We'll show how to read sentences in your alphabet when helpful"
-#~ msgstr "Mostraremos cómo leer frases en tu alfabeto cuando sea útil."
-
-#: components/start-call.tsx:513
-#~ msgid "What would you like to roleplay?"
-#~ msgstr "¿Qué te gustaría interpretar?"
-
-#: components/onboarding/onboarding-client.tsx:581
-#~ msgid "Yes, show pronunciation"
-#~ msgstr "Sí, mostrar pronunciación"
-
-#: contexts/glass-context.tsx:1238
-#~ msgid "You've used your free time"
-#~ msgstr "Has utilizado tu tiempo libre"
-
-#: components/billing/billing-content.tsx:571
-#~ msgid "your account email"
-#~ msgstr "tu correo electrónico de la cuenta"
-
-#: app/[lang]/time-limit/page.tsx:23
-#~ msgid "Your free time is up"
-#~ msgstr "Se acabó tu tiempo gratuito"

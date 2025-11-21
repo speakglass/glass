@@ -104,7 +104,9 @@ export const createColumns = (
     header: () => <Trans>Memory</Trans>,
     cell: ({ row, table }) => {
       const text = row.getValue('text') as string;
-      const meta = table.options.meta as { onViewMemory?: (memory: Memory) => void };
+      const meta = table.options.meta as {
+        onViewMemory?: (memory: Memory) => void;
+      };
 
       return (
         <div className="max-w-[600px] py-2">
@@ -149,7 +151,9 @@ export const createColumns = (
     cell: ({ row, table }) => {
       const summary = row.getValue('summary') as string | null;
       if (!summary) return renderPlaceholder();
-      const meta = table.options.meta as { onViewMemory?: (memory: Memory) => void };
+      const meta = table.options.meta as {
+        onViewMemory?: (memory: Memory) => void;
+      };
       return (
         <p
           className="text-sm text-muted-foreground max-w-[520px] line-clamp-3 cursor-pointer hover:text-foreground/80 transition-colors"
@@ -195,6 +199,47 @@ export const createColumns = (
         <div className="text-xs leading-tight w-32 min-w-[120px]">
           <div className="font-medium text-foreground/80">{expiration.toLocaleDateString()}</div>
           <div className="text-muted-foreground">{expiration.toLocaleTimeString()}</div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: 'keywords',
+    header: () => <Trans>Keywords</Trans>,
+    cell: ({ row }) => {
+      const keywords = (row.getValue('keywords') as string[] | null) ?? [];
+      if (!keywords.length) return renderPlaceholder();
+      return (
+        <div className="flex flex-wrap gap-1 max-w-[260px]">
+          {keywords.map((keyword) => (
+            <Badge key={keyword} variant="secondary" className="text-xs">
+              {keyword}
+            </Badge>
+          ))}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: 'entities',
+    header: () => <Trans>Entities</Trans>,
+    cell: ({ row }) => {
+      const entities =
+        (row.getValue('entities') as Array<{
+          label: string;
+          value: string;
+        }> | null) ?? [];
+      if (!entities.length) return renderPlaceholder();
+      return (
+        <div className="flex flex-wrap gap-1 max-w-[320px]">
+          {entities.map((entity) => {
+            const key = `${entity.label}-${entity.value}`;
+            return (
+              <Badge key={key} variant="secondary" className="text-xs">
+                {entity.label}: {entity.value}
+              </Badge>
+            );
+          })}
         </div>
       );
     },

@@ -15,7 +15,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAccountSession } from '@/contexts/account-session-context';
 import {
   createCheckoutSession,
@@ -33,8 +39,18 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.speakglass.com';
 
 function CheckIcon() {
   return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2.5}
+        d="M5 13l4 4L19 7"
+      />
     </svg>
   );
 }
@@ -283,7 +299,11 @@ const formatPlanRenewalDate = (periodEnd?: string | null) => {
   if (!periodEnd) return null;
   const date = new Date(periodEnd);
   if (Number.isNaN(date.getTime())) return null;
-  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
 };
 
 function PricingCard({
@@ -333,7 +353,9 @@ function PricingCard({
     : isLast
     ? 'rounded-2xl lg:rounded-r-3xl lg:rounded-l-none'
     : 'rounded-2xl lg:rounded-none';
-  const borderClass = isFirst ? 'border' : 'border lg:border-t lg:border-r lg:border-b lg:border-l-0';
+  const borderClass = isFirst
+    ? 'border'
+    : 'border lg:border-t lg:border-r lg:border-b lg:border-l-0';
 
   return (
     <div
@@ -375,16 +397,26 @@ function CardContent({
   return (
     <>
       <div className="mb-6">
-        <h3 className="text-xl font-semibold mb-4 text-emphasis">{plan.name}</h3>
+        <h3 className="text-xl font-semibold mb-4 text-emphasis">
+          {plan.name}
+        </h3>
         <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-semibold text-emphasis">{plan.price}</span>
-          {plan.period && <span className="text-subtle text-base ml-1">{plan.period}</span>}
+          <span className="text-4xl font-semibold text-emphasis">
+            {plan.price}
+          </span>
+          {plan.period && (
+            <span className="text-subtle text-base ml-1">{plan.period}</span>
+          )}
         </div>
       </div>
 
       <div className="flex items-center gap-2 min-h-[68px] py-5 px-6 -mx-6 mb-6 border-t border-b border-black/5 dark:border-white/6">
         {plan.showBillingToggle && (
-          <Switch checked={isYearly} onCheckedChange={setIsYearly} aria-label="Toggle billing period" />
+          <Switch
+            checked={isYearly}
+            onCheckedChange={setIsYearly}
+            aria-label="Toggle billing period"
+          />
         )}
         <div className="text-subtle text-sm">{plan.billingInfo}</div>
       </div>
@@ -411,7 +443,12 @@ function CardContent({
       </div>
 
       {plan.requiresContact && plan.cta && onContact ? (
-        <Button variant={plan.ctaVariant || 'secondary'} size="lg" className="w-full" onClick={onContact}>
+        <Button
+          variant={plan.ctaVariant || 'secondary'}
+          size="lg"
+          className="w-full"
+          onClick={onContact}
+        >
           {plan.cta}
         </Button>
       ) : plan.requiresCheckout && plan.cta ? (
@@ -422,17 +459,34 @@ function CardContent({
           onClick={() => void onCheckout(currentBillingPlan)}
           disabled={planLocked || loadingPlan !== null}
         >
-          {loadingPlan === currentBillingPlan && !planLocked && <Loader2 className="h-4 w-4 animate-spin" />}
+          {loadingPlan === currentBillingPlan && !planLocked && (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          )}
           {planLocked ? <Trans>Current plan</Trans> : plan.cta}
         </Button>
       ) : plan.cta && plan.ctaHref ? (
         planLocked ? (
-          <Button variant={plan.ctaVariant || 'secondary'} size="lg" className="w-full" disabled>
+          <Button
+            variant={plan.ctaVariant || 'secondary'}
+            size="lg"
+            className="w-full"
+            disabled
+          >
             <Trans>Current plan</Trans>
           </Button>
         ) : (
-          <Button variant={plan.ctaVariant || 'secondary'} size="lg" className="w-full" asChild>
-            <Link href={plan.ctaHref} prefetch={false} target="_blank" rel="noreferrer">
+          <Button
+            variant={plan.ctaVariant || 'secondary'}
+            size="lg"
+            className="w-full"
+            asChild
+          >
+            <Link
+              href={plan.ctaHref}
+              prefetch={false}
+              target="_blank"
+              rel="noreferrer"
+            >
               {plan.cta}
             </Link>
           </Button>
@@ -453,15 +507,29 @@ function FeatureTableRow({ row }: { row: FeatureComparisonRow }) {
         <span className="text-subtle text-lg">✗</span>
       );
     }
-    return <span className={`text-xs md:text-sm ${highlight ? 'text-emphasis' : 'text-subtle'}`}>{value}</span>;
+    return (
+      <span
+        className={`text-xs md:text-sm ${
+          highlight ? 'text-emphasis' : 'text-subtle'
+        }`}
+      >
+        {value}
+      </span>
+    );
   };
 
   return (
     <tr className="border-b border-black/5 dark:border-white/10">
-      <td className="py-4 px-2 md:px-4 text-xs md:text-sm text-subtle">{row.feature}</td>
+      <td className="py-4 px-2 md:px-4 text-xs md:text-sm text-subtle">
+        {row.feature}
+      </td>
       <td className="py-4 px-1 md:px-3 text-center">{renderCell(row.free)}</td>
-      <td className="py-4 px-1 md:px-3 text-center bg-black/5 dark:bg-white/5">{renderCell(row.pro, true)}</td>
-      <td className="py-4 px-1 md:px-3 text-center">{renderCell(row.enterprise, true)}</td>
+      <td className="py-4 px-1 md:px-3 text-center bg-black/5 dark:bg-white/5">
+        {renderCell(row.pro, true)}
+      </td>
+      <td className="py-4 px-1 md:px-3 text-center">
+        {renderCell(row.enterprise, true)}
+      </td>
     </tr>
   );
 }
@@ -477,19 +545,29 @@ export function BillingContent() {
     companySize: '',
     message: '',
   });
-  const billingDisabled = snapshot?.billing?.selfHosted || !snapshot?.billing?.enabled;
+  const billingDisabled =
+    snapshot?.billing?.selfHosted || !snapshot?.billing?.enabled;
   const planDisplayName = getPlanDisplayName(snapshot?.billing?.plan);
-  const planStatusLabel = getPlanStatusLabel(snapshot?.billing?.status, snapshot?.billing?.active);
-  const planRenewalLabel = formatPlanRenewalDate(snapshot?.billing?.currentPeriodEnd);
+  const planStatusLabel = getPlanStatusLabel(
+    snapshot?.billing?.status,
+    snapshot?.billing?.active
+  );
+  const planRenewalLabel = formatPlanRenewalDate(
+    snapshot?.billing?.currentPeriodEnd
+  );
   const locale = useLocale();
   const [isYearly, setIsYearly] = useState(true);
   const pricingPlans = getPricingPlans(locale, isYearly);
   const featureComparison = getFeatureComparison();
   const currentPlanKey = normalizePlanKey(snapshot?.billing?.plan);
   const isFreePlan = currentPlanKey === 'free';
-  const planIntervalLabel = getPlanIntervalLabel(snapshot?.billing?.planInterval);
+  const planIntervalLabel = getPlanIntervalLabel(
+    snapshot?.billing?.planInterval
+  );
   const planStatusRaw = snapshot?.billing?.status?.toLowerCase();
-  const scheduledCancelAt = formatPlanRenewalDate(snapshot?.billing?.cancelAt || null);
+  const scheduledCancelAt = formatPlanRenewalDate(
+    snapshot?.billing?.cancelAt || null
+  );
   const isCancelled =
     planStatusRaw === 'canceled' ||
     planStatusRaw === 'cancelled' ||
@@ -590,7 +668,9 @@ export function BillingContent() {
   if (!snapshot) {
     return (
       <div className="rounded-3xl border border-border/60 bg-card/60 px-6 py-12 text-center text-sm text-muted-foreground">
-        <Trans>We couldn't load your account details. Please refresh and try again.</Trans>
+        <Trans>
+          We couldn't load your account details. Please refresh and try again.
+        </Trans>
       </div>
     );
   }
@@ -602,7 +682,10 @@ export function BillingContent() {
           <Trans>Billing is not available</Trans>
         </h3>
         <p className="text-sm text-muted-foreground">
-          <Trans>This Glass instance is running in self-hosted mode, so upgrades aren't required.</Trans>
+          <Trans>
+            This Glass instance is running in self-hosted mode, so upgrades
+            aren't required.
+          </Trans>
         </p>
       </div>
     );
@@ -617,7 +700,9 @@ export function BillingContent() {
               <Trans>Current plan</Trans>
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground">{planDisplayName}</h2>
+              <h2 className="text-3xl font-semibold tracking-tight text-foreground">
+                {planDisplayName}
+              </h2>
               {planIntervalLabel && (
                 <span className="rounded-full border border-border/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {planIntervalLabel}
@@ -639,7 +724,10 @@ export function BillingContent() {
                   <Trans>Renews on {planRenewalLabel}</Trans>
                 )
               ) : isFreePlan ? (
-                <Trans>The Free plan never expires. Upgrade anytime for unlimited history.</Trans>
+                <Trans>
+                  The Free plan never expires. Upgrade anytime for unlimited
+                  history.
+                </Trans>
               ) : (
                 <Trans>Billing active.</Trans>
               )}
@@ -653,7 +741,9 @@ export function BillingContent() {
                 onClick={() => void handleCheckout(checkoutPlan)}
                 disabled={loadingPlan !== null}
               >
-                {loadingPlan === checkoutPlan && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loadingPlan === checkoutPlan && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
                 {checkoutLabel}
               </Button>
             ) : (
@@ -681,7 +771,10 @@ export function BillingContent() {
             <Trans>Scale with the right plan</Trans>
           </h3>
           <p className="text-subtle text-base">
-            <Trans>Choose monthly or yearly billing and unlock Glass features tailored to your team.</Trans>
+            <Trans>
+              Choose monthly or yearly billing and unlock Glass features
+              tailored to your team.
+            </Trans>
           </p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-0 mb-8">
@@ -695,7 +788,11 @@ export function BillingContent() {
               setIsYearly={setIsYearly}
               loadingPlan={loadingPlan}
               onCheckout={handleCheckout}
-              onContact={plan.requiresContact ? () => setContactDialogOpen(true) : undefined}
+              onContact={
+                plan.requiresContact
+                  ? () => setContactDialogOpen(true)
+                  : undefined
+              }
               planLocked={PLAN_RANK[currentPlanKey] >= PLAN_RANK[plan.planKey]}
             />
           ))}
@@ -708,7 +805,9 @@ export function BillingContent() {
             <Trans>Compare plans</Trans>
           </h3>
           <p className="text-subtle text-base">
-            <Trans>See all features across plans and find what works best for you.</Trans>
+            <Trans>
+              See all features across plans and find what works best for you.
+            </Trans>
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -745,7 +844,9 @@ export function BillingContent() {
               <Trans>Contact sales</Trans>
             </DialogTitle>
             <DialogDescription>
-              <Trans>Tell us a little about your team and we’ll reach out shortly.</Trans>
+              <Trans>
+                Tell us a little about your team and we’ll reach out shortly.
+              </Trans>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -756,7 +857,12 @@ export function BillingContent() {
                 </Label>
                 <Input
                   value={contactForm.company}
-                  onChange={(event) => setContactForm((prev) => ({ ...prev, company: event.target.value }))}
+                  onChange={(event) =>
+                    setContactForm((prev) => ({
+                      ...prev,
+                      company: event.target.value,
+                    }))
+                  }
                   placeholder={t`Company name`}
                 />
               </div>
@@ -766,7 +872,9 @@ export function BillingContent() {
                 </Label>
                 <Select
                   value={contactForm.companySize}
-                  onValueChange={(value) => setContactForm((prev) => ({ ...prev, companySize: value }))}
+                  onValueChange={(value) =>
+                    setContactForm((prev) => ({ ...prev, companySize: value }))
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={t`Select size`} />
@@ -787,14 +895,23 @@ export function BillingContent() {
               </Label>
               <Textarea
                 value={contactForm.message}
-                onChange={(event) => setContactForm((prev) => ({ ...prev, message: event.target.value }))}
+                onChange={(event) =>
+                  setContactForm((prev) => ({
+                    ...prev,
+                    message: event.target.value,
+                  }))
+                }
                 rows={4}
                 placeholder={t`I'm interested in Glass for my team...`}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setContactDialogOpen(false)} disabled={contactLoading}>
+            <Button
+              variant="ghost"
+              onClick={() => setContactDialogOpen(false)}
+              disabled={contactLoading}
+            >
               <Trans>Cancel</Trans>
             </Button>
             <Button onClick={handleContactSubmit} disabled={contactLoading}>
