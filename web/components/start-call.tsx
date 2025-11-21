@@ -218,11 +218,12 @@ export default function StartCall() {
     learningLang: snapshot?.user.learningLang || settings.languages?.learningLang || '',
     nativeLang: snapshot?.user.nativeLang || settings.languages?.nativeLang || '',
   });
-  // Use snapshot directly for stable query key
-  const currentLearningLang = useMemo(
-    () => snapshot?.user.learningLang || languages.learningLang || 'en',
-    [snapshot?.user.learningLang, languages.learningLang]
-  );
+
+  // Fixed learning language for stable query key - set once, never changes during session
+  const currentLearningLang = useRef(snapshot?.user.learningLang || 'en');
+  if (snapshot?.user.learningLang && !currentLearningLang.current) {
+    currentLearningLang.current = snapshot.user.learningLang;
+  }
   const [selectedMode, setSelectedMode] = useState<'roleplay' | 'live_call' | null>(null);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] = useState(false);
@@ -305,14 +306,14 @@ export default function StartCall() {
       : selectedMode === 'live_call'
       ? Boolean(screenSharePreviewStream)
       : false;
-  const partnersQueryEnabled = !!token && !!currentLearningLang;
+  const partnersQueryEnabled = !!token && !!currentLearningLang.current;
   const {
     data: partnersData,
     isLoading: partnersQueryLoading,
     isFetching: partnersFetching,
   } = useQuery({
-    queryKey: ['partners', token, currentLearningLang],
-    queryFn: () => fetchPartners(token!, currentLearningLang),
+    queryKey: ['partners', token, currentLearningLang.current],
+    queryFn: () => fetchPartners(token!, currentLearningLang.current),
     enabled: partnersQueryEnabled,
     staleTime: Infinity, // Never mark as stale to prevent automatic refetches
     gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
@@ -711,7 +712,7 @@ export default function StartCall() {
       let partner = await createPartner(token, {
         name: trimmedName,
         description: createPartnerDescriptionDraft.trim() || undefined,
-        learningLang: currentLearningLang,
+        learningLang: currentLearningLang.current,
         nativeLang: languages.nativeLang || undefined,
         voiceId: createPartnerVoiceId || undefined,
       });
@@ -719,7 +720,7 @@ export default function StartCall() {
         partner = await uploadPartnerAvatar(token, partner.id, createPartnerAvatarFile);
       }
       queryClient.setQueryData<ConversationPartner[] | undefined>(
-        ['partners', token, currentLearningLang],
+        ['partners', token, currentLearningLang.current],
         (previous) => {
           const existing = previous || [];
           if (existing.some((item) => item.id === partner.id)) {
@@ -762,7 +763,7 @@ export default function StartCall() {
         partner = await uploadPartnerAvatar(token, partner.id, editPartnerAvatarFile);
       }
       queryClient.setQueryData<ConversationPartner[] | undefined>(
-        ['partners', token, currentLearningLang],
+        ['partners', token, currentLearningLang.current],
         (previous) => (previous || []).map((item) => (item.id === partner.id ? partner : item))
       );
       if (selectedPartnerId === partner.id) {
@@ -797,7 +798,7 @@ export default function StartCall() {
     try {
       await deletePartner(token, partnerPendingDelete.id);
       queryClient.setQueryData<ConversationPartner[] | undefined>(
-        ['partners', token, currentLearningLang],
+        ['partners', token, currentLearningLang.current],
         (previous) => (previous || []).filter((item) => item.id !== partnerPendingDelete.id)
       );
       if (selectedPartnerId === partnerPendingDelete.id) {
