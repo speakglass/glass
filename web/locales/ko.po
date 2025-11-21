@@ -142,7 +142,7 @@ msgstr "AI 롤플레이"
 
 #: components/memory/memory-dialog.tsx:80
 msgid "AI will organize and categorize this automatically."
-msgstr "AI가 이를 자동으로 정리하고 분류할 것입니다."
+msgstr "AI가 이 내용을 자동으로 정리하고 분류해 줘요."
 
 #: components/signup-form.tsx:252
 msgid "Already have an account? <0>Sign in</0>"
@@ -1946,7 +1946,7 @@ msgstr "Glass 워크스페이스를 업그레이드해 주셔서 감사합니다
 
 #: components/billing/billing-content.tsx:642
 msgid "The Free plan never expires. Upgrade anytime for unlimited history."
-msgstr "무료 플랜은 사용 기한이 없습니다. 업그레이드 시 저장된 메모리를 무제한으로 활용하실 수 있습니다."
+msgstr "무료 플랜은 만료되지 않아요. 업그레이드 시 저장된 메모리를 무제한으로 활용하실 수 있어요."
 
 #: components/verify-email-form.tsx:122
 msgid "The verification link is invalid or has expired."
