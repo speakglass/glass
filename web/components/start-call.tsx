@@ -448,7 +448,11 @@ export default function StartCall() {
     // Only re-run when the actual language values change, not when snapshot object changes
   }, [snapshot?.user.learningLang, snapshot?.user.nativeLang, updateSettings]);
 
-  // Reset step when disconnected
+  const snapshotLearningLang = snapshot?.user.learningLang;
+  const snapshotNativeLang = snapshot?.user.nativeLang;
+
+  // Reset step when disconnected. Depend on the specific language values so this effect
+  // doesn't re-run just because the snapshot object identity changes during refresh.
   useEffect(() => {
     console.log('[StartCall] Status effect triggered:', status.value);
     if (status.value === 'disconnected' || status.value === 'idle') {
@@ -456,10 +460,10 @@ export default function StartCall() {
       setStep('start');
       setIsStartingCall(false);
       // Keep languages from user profile
-      if (snapshot?.user.learningLang && snapshot?.user.nativeLang) {
+      if (snapshotLearningLang && snapshotNativeLang) {
         setLanguages({
-          learningLang: snapshot.user.learningLang,
-          nativeLang: snapshot.user.nativeLang,
+          learningLang: snapshotLearningLang,
+          nativeLang: snapshotNativeLang,
         });
       }
       setSelectedMode(null);
@@ -467,7 +471,7 @@ export default function StartCall() {
       stopOwnedScreenShare();
       setScreenShareError(null);
     }
-  }, [status.value, snapshot, stopOwnedScreenShare]);
+  }, [status.value, snapshotLearningLang, snapshotNativeLang, stopOwnedScreenShare]);
 
   const handleLanguageSelect = (type: 'learning' | 'native', code: string) => {
     const newLanguages = {
