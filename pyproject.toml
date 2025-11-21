@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "glass"
-version = "0.1.10"
+version = "0.1.11"
 description = "AI that helps you speak any language in the real world."
 readme = "README.md"
 requires-python = ">=3.11"
