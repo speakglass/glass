@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Loader2, Phone, UserRound, MoreHorizontal, AlertTriangle, Trash2 } from 'lucide-react';
 import LiquidGlass from './liquid-glass';
 import { toast } from 'sonner';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from './ui/button';
@@ -218,7 +218,11 @@ export default function StartCall() {
     learningLang: snapshot?.user.learningLang || settings.languages?.learningLang || '',
     nativeLang: snapshot?.user.nativeLang || settings.languages?.nativeLang || '',
   });
-  const currentLearningLang = languages.learningLang || snapshot?.user.learningLang || 'en';
+  // Use snapshot directly for stable query key
+  const currentLearningLang = useMemo(
+    () => snapshot?.user.learningLang || languages.learningLang || 'en',
+    [snapshot?.user.learningLang, languages.learningLang]
+  );
   const [selectedMode, setSelectedMode] = useState<'roleplay' | 'live_call' | null>(null);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] = useState(false);
@@ -447,7 +451,8 @@ export default function StartCall() {
       // Also update settings
       updateSettings({ languages: userLanguages });
     }
-  }, [snapshot, updateSettings]);
+    // Only re-run when the actual language values change, not when snapshot object changes
+  }, [snapshot?.user.learningLang, snapshot?.user.nativeLang, updateSettings]);
 
   // Reset step when disconnected
   useEffect(() => {
