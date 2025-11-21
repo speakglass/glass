@@ -1,18 +1,7 @@
-import {
-  useGlass,
-  LanguageSettings,
-  SessionConfig,
-} from '@/contexts/glass-context';
+import { useGlass, LanguageSettings, SessionConfig } from '@/contexts/glass-context';
 import { useAccountSession } from '@/contexts/account-session-context';
 import { AnimatePresence, motion } from 'motion/react';
-import {
-  Loader2,
-  Phone,
-  UserRound,
-  MoreHorizontal,
-  AlertTriangle,
-  Trash2,
-} from 'lucide-react';
+import { Loader2, Phone, UserRound, MoreHorizontal, AlertTriangle, Trash2 } from 'lucide-react';
 import LiquidGlass from './liquid-glass';
 import { toast } from 'sonner';
 import { useRef, useState, useEffect, useCallback } from 'react';
@@ -64,14 +53,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-type SetupStep =
-  | 'start'
-  | 'languages'
-  | 'level'
-  | 'mode'
-  | 'scenario'
-  | 'instructions'
-  | 'connecting';
+type SetupStep = 'start' | 'languages' | 'level' | 'mode' | 'scenario' | 'instructions';
 type DisplayMediaVideoOptions = MediaTrackConstraints & {
   displaySurface?: 'monitor' | 'window' | 'application' | 'browser';
   preferCurrentTab?: boolean;
@@ -216,21 +198,14 @@ const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = {
 const DEFAULT_ROLEPLAY_VOICE_ID = ROLEPLAY_VOICE_OPTIONS[0]?.id ?? '';
 
 // Get example for language pair, fallback to Japanese->English if not found
-const getLanguageExample = (
-  learningLang: string,
-  nativeLang: string
-): ExamplePhrase | undefined => {
-  return (
-    LANGUAGE_EXAMPLES[learningLang]?.[nativeLang] ||
-    LANGUAGE_EXAMPLES['ja']?.['en']
-  );
+const getLanguageExample = (learningLang: string, nativeLang: string): ExamplePhrase | undefined => {
+  return LANGUAGE_EXAMPLES[learningLang]?.[nativeLang] || LANGUAGE_EXAMPLES['ja']?.['en'];
 };
 
 export default function StartCall() {
   const { status, connect, updateSettings, settings } = useGlass();
   const { onboardingStatus, snapshot, token, refresh } = useAccountSession();
-  const { playPreview, stopPreview, loadingVoiceId, playingVoiceId } =
-    useVoicePreviewPlayer(token);
+  const { playPreview, stopPreview, loadingVoiceId, playingVoiceId } = useVoicePreviewPlayer(token);
   const router = useRouter();
   const pathname = usePathname();
   const langSegment = pathname.split('/')[1] || 'en';
@@ -240,56 +215,35 @@ export default function StartCall() {
 
   // Initialize languages from user profile (from onboarding)
   const [languages, setLanguages] = useState<LanguageSettings>({
-    learningLang:
-      snapshot?.user.learningLang || settings.languages?.learningLang || '',
-    nativeLang:
-      snapshot?.user.nativeLang || settings.languages?.nativeLang || '',
+    learningLang: snapshot?.user.learningLang || settings.languages?.learningLang || '',
+    nativeLang: snapshot?.user.nativeLang || settings.languages?.nativeLang || '',
   });
-  const currentLearningLang =
-    languages.learningLang || snapshot?.user.learningLang || 'en';
-  const [selectedMode, setSelectedMode] = useState<
-    'roleplay' | 'live_call' | null
-  >(null);
+  const currentLearningLang = languages.learningLang || snapshot?.user.learningLang || 'en';
+  const [selectedMode, setSelectedMode] = useState<'roleplay' | 'live_call' | null>(null);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
-  const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] =
-    useState(false);
-  const [createPartnerNameDraft, setCreatePartnerNameDraft] =
-    useState<string>('');
-  const [createPartnerDescriptionDraft, setCreatePartnerDescriptionDraft] =
-    useState<string>('');
-  const [createPartnerAvatarPreview, setCreatePartnerAvatarPreview] = useState<
-    string | null
-  >(null);
-  const [createPartnerAvatarFile, setCreatePartnerAvatarFile] =
-    useState<File | null>(null);
-  const [createPartnerVoiceId, setCreatePartnerVoiceId] = useState<string>(
-    DEFAULT_ROLEPLAY_VOICE_ID
-  );
+  const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] = useState(false);
+  const [createPartnerNameDraft, setCreatePartnerNameDraft] = useState<string>('');
+  const [createPartnerDescriptionDraft, setCreatePartnerDescriptionDraft] = useState<string>('');
+  const [createPartnerAvatarPreview, setCreatePartnerAvatarPreview] = useState<string | null>(null);
+  const [createPartnerAvatarFile, setCreatePartnerAvatarFile] = useState<File | null>(null);
+  const [createPartnerVoiceId, setCreatePartnerVoiceId] = useState<string>(DEFAULT_ROLEPLAY_VOICE_ID);
   const createPartnerAvatarInputRef = useRef<HTMLInputElement>(null);
   const [isSavingCreatePartner, setIsSavingCreatePartner] = useState(false);
 
   const [isEditPartnerModalOpen, setIsEditPartnerModalOpen] = useState(false);
-  const [partnerToEdit, setPartnerToEdit] =
-    useState<ConversationPartner | null>(null);
+  const [partnerToEdit, setPartnerToEdit] = useState<ConversationPartner | null>(null);
   const [editPartnerNameDraft, setEditPartnerNameDraft] = useState<string>('');
-  const [editPartnerDescriptionDraft, setEditPartnerDescriptionDraft] =
-    useState<string>('');
-  const [editPartnerAvatarPreview, setEditPartnerAvatarPreview] = useState<
-    string | null
-  >(null);
-  const [editPartnerAvatarFile, setEditPartnerAvatarFile] =
-    useState<File | null>(null);
-  const [editPartnerVoiceId, setEditPartnerVoiceId] = useState<string>(
-    DEFAULT_ROLEPLAY_VOICE_ID
-  );
+  const [editPartnerDescriptionDraft, setEditPartnerDescriptionDraft] = useState<string>('');
+  const [editPartnerAvatarPreview, setEditPartnerAvatarPreview] = useState<string | null>(null);
+  const [editPartnerAvatarFile, setEditPartnerAvatarFile] = useState<File | null>(null);
+  const [editPartnerVoiceId, setEditPartnerVoiceId] = useState<string>(DEFAULT_ROLEPLAY_VOICE_ID);
   const editPartnerAvatarInputRef = useRef<HTMLInputElement>(null);
   const [isSavingEditPartner, setIsSavingEditPartner] = useState(false);
 
-  const [isDeletePartnerDialogOpen, setIsDeletePartnerDialogOpen] =
-    useState(false);
-  const [partnerPendingDelete, setPartnerPendingDelete] =
-    useState<ConversationPartner | null>(null);
+  const [isDeletePartnerDialogOpen, setIsDeletePartnerDialogOpen] = useState(false);
+  const [partnerPendingDelete, setPartnerPendingDelete] = useState<ConversationPartner | null>(null);
   const [isDeletingPartner, setIsDeletingPartner] = useState(false);
+  const [isStartingCall, setIsStartingCall] = useState(false);
   const clearCreatePartnerAvatarPreview = useCallback(() => {
     setCreatePartnerAvatarFile(null);
     setCreatePartnerAvatarPreview((previous) => {
@@ -317,25 +271,18 @@ export default function StartCall() {
   }, []);
   const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [screenSharePreviewStream, setScreenSharePreviewStream] =
-    useState<MediaStream | null>(null);
+  const [screenSharePreviewStream, setScreenSharePreviewStream] = useState<MediaStream | null>(null);
   const screenShareStreamRef = useRef<MediaStream | null>(null);
   const screenShareVideoRef = useRef<HTMLVideoElement | null>(null);
   const step4CardRef = useRef<HTMLDivElement | null>(null);
   const [isRequestingScreenShare, setIsRequestingScreenShare] = useState(false);
-  const [screenShareError, setScreenShareError] = useState<
-    'denied' | 'cancelled' | 'failed' | 'no_audio' | null
-  >(null);
+  const [screenShareError, setScreenShareError] = useState<'denied' | 'cancelled' | 'failed' | 'no_audio' | null>(null);
   const conversationLimit = snapshot?.limits?.conversations || null;
-  const limitEnabled = Boolean(
-    conversationLimit?.enabled && conversationLimit?.limit
-  );
+  const limitEnabled = Boolean(conversationLimit?.enabled && conversationLimit?.limit);
   const limitMax = conversationLimit?.limit ?? null;
   const limitUsed = conversationLimit?.used ?? 0;
-  const limitDisplayUsed =
-    limitMax !== null ? Math.min(limitUsed, limitMax) : limitUsed;
-  const limitUsageLabel =
-    limitMax !== null ? `${limitDisplayUsed}/${limitMax}` : null;
+  const limitDisplayUsed = limitMax !== null ? Math.min(limitUsed, limitMax) : limitUsed;
+  const limitUsageLabel = limitMax !== null ? `${limitDisplayUsed}/${limitMax}` : null;
   const limitBlocked = Boolean(limitEnabled && conversationLimit?.blocked);
   const stopOwnedScreenShare = useCallback(() => {
     const stream = screenShareStreamRef.current;
@@ -346,7 +293,7 @@ export default function StartCall() {
     setScreenSharePreviewStream(null);
   }, []);
 
-  const isConnecting = status.value === 'connecting' || step === 'connecting';
+  const isConnecting = status.value === 'connecting' || isStartingCall;
   const glassMode = settings.glassMode ?? false;
   const canStartCall =
     selectedMode === 'roleplay'
@@ -365,17 +312,10 @@ export default function StartCall() {
     enabled: partnersQueryEnabled,
     staleTime: 60 * 1000,
   });
-  const partnersLoading = partnersQueryEnabled
-    ? partnersQueryLoading || partnersFetching
-    : true;
-  const roleplayPartners: ConversationPartner[] = (partnersData ?? []).filter(
-    (partner) => partner.kind === 'roleplay'
-  );
-  const selectedRoleplayPartner = roleplayPartners.find(
-    (partner) => partner.id === selectedPartnerId
-  );
-  const [hoveredPartner, setHoveredPartner] =
-    useState<ConversationPartner | null>(null);
+  const partnersLoading = partnersQueryEnabled ? partnersQueryLoading || partnersFetching : true;
+  const roleplayPartners: ConversationPartner[] = (partnersData ?? []).filter((partner) => partner.kind === 'roleplay');
+  const selectedRoleplayPartner = roleplayPartners.find((partner) => partner.id === selectedPartnerId);
+  const [hoveredPartner, setHoveredPartner] = useState<ConversationPartner | null>(null);
   const partnerListRef = useRef<HTMLDivElement | null>(null);
   const [showPartnerListGradient, setShowPartnerListGradient] = useState(false);
   const updatePartnerListGradient = useCallback(() => {
@@ -455,9 +395,7 @@ export default function StartCall() {
   };
 
   const getScaleClass = () => {
-    return glassMode
-      ? 'hover:scale-105 active:scale-95'
-      : 'hover:scale-[1.01] active:scale-[0.99]';
+    return glassMode ? 'hover:scale-105 active:scale-95' : 'hover:scale-[1.01] active:scale-[0.99]';
   };
 
   const getBackButtonClass = () => {
@@ -468,10 +406,7 @@ export default function StartCall() {
 
   useEffect(() => {
     return () => {
-      if (
-        createPartnerAvatarPreview &&
-        createPartnerAvatarPreview.startsWith('blob:')
-      ) {
+      if (createPartnerAvatarPreview && createPartnerAvatarPreview.startsWith('blob:')) {
         URL.revokeObjectURL(createPartnerAvatarPreview);
       }
     };
@@ -479,10 +414,7 @@ export default function StartCall() {
 
   useEffect(() => {
     return () => {
-      if (
-        editPartnerAvatarPreview &&
-        editPartnerAvatarPreview.startsWith('blob:')
-      ) {
+      if (editPartnerAvatarPreview && editPartnerAvatarPreview.startsWith('blob:')) {
         URL.revokeObjectURL(editPartnerAvatarPreview);
       }
     };
@@ -523,6 +455,7 @@ export default function StartCall() {
     if (status.value === 'disconnected' || status.value === 'idle') {
       console.log('[StartCall] Resetting to start screen');
       setStep('start');
+      setIsStartingCall(false);
       // Keep languages from user profile
       if (snapshot?.user.learningLang && snapshot?.user.nativeLang) {
         setLanguages({
@@ -614,10 +547,7 @@ export default function StartCall() {
     if (isRequestingScreenShare) {
       return;
     }
-    if (
-      typeof navigator === 'undefined' ||
-      !navigator.mediaDevices?.getDisplayMedia
-    ) {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getDisplayMedia) {
       toast.error(t`Screen sharing is not supported in this browser`, {
         description: t`Try using the latest version of Chrome, Edge, or Firefox.`,
       });
@@ -651,9 +581,7 @@ export default function StartCall() {
         return;
       }
       if (screenShareStreamRef.current) {
-        screenShareStreamRef.current
-          .getTracks()
-          .forEach((track) => track.stop());
+        screenShareStreamRef.current.getTracks().forEach((track) => track.stop());
       }
       screenShareStreamRef.current = stream;
       setScreenSharePreviewStream(stream);
@@ -723,9 +651,7 @@ export default function StartCall() {
     stopPreview();
   };
 
-  const handleCreateAvatarChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleCreateAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
@@ -740,9 +666,7 @@ export default function StartCall() {
     });
   };
 
-  const handleEditAvatarChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleEditAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
@@ -783,11 +707,7 @@ export default function StartCall() {
         voiceId: createPartnerVoiceId || undefined,
       });
       if (createPartnerAvatarFile) {
-        partner = await uploadPartnerAvatar(
-          token,
-          partner.id,
-          createPartnerAvatarFile
-        );
+        partner = await uploadPartnerAvatar(token, partner.id, createPartnerAvatarFile);
       }
       queryClient.setQueryData<ConversationPartner[] | undefined>(
         ['partners', token, currentLearningLang],
@@ -830,18 +750,11 @@ export default function StartCall() {
         voiceId: editPartnerVoiceId || null,
       });
       if (editPartnerAvatarFile) {
-        partner = await uploadPartnerAvatar(
-          token,
-          partner.id,
-          editPartnerAvatarFile
-        );
+        partner = await uploadPartnerAvatar(token, partner.id, editPartnerAvatarFile);
       }
       queryClient.setQueryData<ConversationPartner[] | undefined>(
         ['partners', token, currentLearningLang],
-        (previous) =>
-          (previous || []).map((item) =>
-            item.id === partner.id ? partner : item
-          )
+        (previous) => (previous || []).map((item) => (item.id === partner.id ? partner : item))
       );
       if (selectedPartnerId === partner.id) {
         setSelectedPartnerId(partner.id);
@@ -876,8 +789,7 @@ export default function StartCall() {
       await deletePartner(token, partnerPendingDelete.id);
       queryClient.setQueryData<ConversationPartner[] | undefined>(
         ['partners', token, currentLearningLang],
-        (previous) =>
-          (previous || []).filter((item) => item.id !== partnerPendingDelete.id)
+        (previous) => (previous || []).filter((item) => item.id !== partnerPendingDelete.id)
       );
       if (selectedPartnerId === partnerPendingDelete.id) {
         setSelectedPartnerId('');
@@ -902,8 +814,7 @@ export default function StartCall() {
     }
     try {
       const latestSnapshot = (await refresh()) ?? snapshot;
-      const latestLimit =
-        latestSnapshot?.limits?.conversations ?? conversationLimit;
+      const latestLimit = latestSnapshot?.limits?.conversations ?? conversationLimit;
       if (latestLimit?.limit && latestLimit.used >= latestLimit.limit) {
         setQuotaDialogOpen(true);
         return false;
@@ -924,10 +835,7 @@ export default function StartCall() {
         setQuotaDialogOpen(true);
         return;
       }
-      const hasLocalCapacity = !(
-        conversationLimit?.limit &&
-        conversationLimit.used >= conversationLimit.limit
-      );
+      const hasLocalCapacity = !(conversationLimit?.limit && conversationLimit.used >= conversationLimit.limit);
       if (!hasLocalCapacity) {
         setQuotaDialogOpen(true);
         return;
@@ -942,8 +850,11 @@ export default function StartCall() {
       return;
     }
 
-    const partnerIdForSession =
-      selectedMode === 'roleplay' ? selectedPartnerId : null;
+    if (isStartingCall) {
+      return;
+    }
+
+    const partnerIdForSession = selectedMode === 'roleplay' ? selectedPartnerId : null;
     let partnerForSession: ConversationPartner | null = null;
 
     if (selectedMode === 'roleplay') {
@@ -951,10 +862,7 @@ export default function StartCall() {
         toast.error(t`Select a conversation partner`);
         return;
       }
-      partnerForSession =
-        roleplayPartners.find(
-          (partner) => partner.id === partnerIdForSession
-        ) || null;
+      partnerForSession = roleplayPartners.find((partner) => partner.id === partnerIdForSession) || null;
       if (!partnerForSession) {
         toast.error(t`Select a conversation partner`);
         return;
@@ -992,12 +900,12 @@ export default function StartCall() {
     }
 
     // Proceed with connection (onboarding should already be completed at this point)
-    setStep('connecting');
+    setIsStartingCall(true);
     try {
       await connect(config);
     } catch {
       toast.error(t`Unable to start call`);
-      setStep('instructions');
+      setIsStartingCall(false);
     }
   };
 
@@ -1049,9 +957,7 @@ export default function StartCall() {
       'rounded-2xl border p-3 sm:p-4 space-y-2.5 transition-colors text-xs sm:text-sm',
       glassMode ? 'bg-white/10 border-white/20' : 'bg-muted/60 border-border/60'
     );
-    const stepLabelClass = glassMode
-      ? 'text-white/60'
-      : 'text-muted-foreground/70';
+    const stepLabelClass = glassMode ? 'text-white/60' : 'text-muted-foreground/70';
     const step2CardClass = cn(
       stepCardBase,
       !screenSharePreviewStream &&
@@ -1061,9 +967,7 @@ export default function StartCall() {
     );
     const previewContainerClass = cn(
       'rounded-xl border border-dashed overflow-hidden flex items-center justify-center h-28 sm:h-32',
-      glassMode
-        ? 'border-white/25 bg-white/5 text-white/70'
-        : 'border-border/70 bg-muted/40 text-muted-foreground'
+      glassMode ? 'border-white/25 bg-white/5 text-white/70' : 'border-border/70 bg-muted/40 text-muted-foreground'
     );
     const screenShareStatus =
       screenShareError === 'denied'
@@ -1075,28 +979,13 @@ export default function StartCall() {
         : screenShareError === 'no_audio'
         ? t`No audio detected. Share the window that plays your call and enable audio.`
         : null;
-    const StepHeader = ({
-      step,
-      title,
-      extra,
-    }: {
-      step: number;
-      title: ReactNode;
-      extra?: ReactNode;
-    }) => (
+    const StepHeader = ({ step, title, extra }: { step: number; title: ReactNode; extra?: ReactNode }) => (
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p
-            className={cn(
-              'text-[10px] font-semibold uppercase tracking-[0.25em] mb-0.5',
-              stepLabelClass
-            )}
-          >
+          <p className={cn('text-[10px] font-semibold uppercase tracking-[0.25em] mb-0.5', stepLabelClass)}>
             <Trans>Step {step}</Trans>
           </p>
-          <div className={`${getTextClass('title')} text-sm font-semibold`}>
-            {title}
-          </div>
+          <div className={`${getTextClass('title')} text-sm font-semibold`}>{title}</div>
         </div>
         {extra}
       </div>
@@ -1126,33 +1015,23 @@ export default function StartCall() {
                       glassMode ? 'bg-white/15 border-white/25' : ''
                     )}
                   >
-                    <img
-                      src={icon.src}
-                      alt={icon.alt}
-                      className="h-4 w-4 object-contain"
-                    />
+                    <img src={icon.src} alt={icon.alt} className="h-4 w-4 object-contain" />
                   </div>
                 ))}
               </div>
             }
           />
           <p className={`${getTextClass('body')} leading-relaxed`}>
-            <Trans>
-              Open Zoom, Discord, Meet, or any call app and join the room you're
-              about to share.
-            </Trans>
+            <Trans>Open Zoom, Discord, Meet, or any call app and join the room you're about to share.</Trans>
           </p>
         </div>
 
         <div className={step2CardClass}>
-          <StepHeader
-            step={2}
-            title={<Trans>Share your whole screen with audio</Trans>}
-          />
+          <StepHeader step={2} title={<Trans>Share your whole screen with audio</Trans>} />
           <p className={`${getTextClass('body')} leading-relaxed`}>
             <Trans>
-              Share the screen where your call is already open, choose "Entire
-              screen," and toggle "Also share system audio."
+              Share the screen where your call is already open, choose "Entire screen," and toggle "Also share system
+              audio."
             </Trans>
           </p>
           <div className="flex flex-wrap gap-2">
@@ -1160,19 +1039,10 @@ export default function StartCall() {
               size="sm"
               onClick={handleScreenShareSelect}
               disabled={isRequestingScreenShare}
-              className={cn(
-                'cursor-pointer',
-                glassMode ? 'bg-white text-foreground hover:bg-white/90' : ''
-              )}
+              className={cn('cursor-pointer', glassMode ? 'bg-white text-foreground hover:bg-white/90' : '')}
             >
-              {isRequestingScreenShare && (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              )}
-              {screenSharePreviewStream ? (
-                <Trans>Change screen</Trans>
-              ) : (
-                <Trans>Select screen</Trans>
-              )}
+              {isRequestingScreenShare && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {screenSharePreviewStream ? <Trans>Change screen</Trans> : <Trans>Select screen</Trans>}
             </Button>
             {screenSharePreviewStream && (
               <Button
@@ -1187,29 +1057,19 @@ export default function StartCall() {
           </div>
           {screenSharePreviewStream && (
             <div className={previewContainerClass}>
-              <video
-                ref={screenShareVideoRef}
-                autoPlay
-                muted
-                playsInline
-                className="h-full w-full object-cover"
-              />
+              <video ref={screenShareVideoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
             </div>
           )}
           {screenSharePreviewStream && (
             <p className="text-[11px] font-semibold text-emerald-500">
-              <Trans>
-                Screen sharing ready. Keep it running so Glass can listen in.
-              </Trans>
+              <Trans>Screen sharing ready. Keep it running so Glass can listen in.</Trans>
             </p>
           )}
           {screenShareStatus && (
             <p
               className={cn(
                 'text-[11px]',
-                screenShareError === 'denied' || screenShareError === 'no_audio'
-                  ? 'text-red-500'
-                  : 'text-amber-400'
+                screenShareError === 'denied' || screenShareError === 'no_audio' ? 'text-red-500' : 'text-amber-400'
               )}
             >
               {screenShareStatus}
@@ -1220,10 +1080,7 @@ export default function StartCall() {
         <div className={stepCardBase}>
           <StepHeader step={3} title={<Trans>Clear your view</Trans>} />
           <p className={`${getTextClass('body')} leading-relaxed`}>
-            <Trans>
-              Use the browser's “Hide” option on the sharing bar so it doesn't
-              cover Glass.
-            </Trans>
+            <Trans>Use the browser's “Hide” option on the sharing bar so it doesn't cover Glass.</Trans>
           </p>
         </div>
 
@@ -1231,14 +1088,9 @@ export default function StartCall() {
           <StepHeader step={4} title={<Trans>Start the live call</Trans>} />
           <p className={`${getTextClass('body')} leading-relaxed`}>
             {screenSharePreviewStream ? (
-              <Trans>
-                Press Start Call below to connect. Glass will use your mic plus
-                the shared audio.
-              </Trans>
+              <Trans>Press Start Call below to connect. Glass will use your mic plus the shared audio.</Trans>
             ) : (
-              <Trans>
-                Once your screen is shared, the Start Call button will unlock.
-              </Trans>
+              <Trans>Once your screen is shared, the Start Call button will unlock.</Trans>
             )}
           </p>
         </div>
@@ -1253,16 +1105,8 @@ export default function StartCall() {
   }
 
   // Debug: Log when StartCall UI should show
-  const shouldShow =
-    status.value === 'idle' ||
-    status.value === 'connecting' ||
-    status.value === 'disconnected';
-  console.log(
-    '[StartCall] Should show UI:',
-    shouldShow,
-    'status:',
-    status.value
-  );
+  const shouldShow = status.value === 'idle' || status.value === 'connecting' || status.value === 'disconnected';
+  console.log('[StartCall] Should show UI:', shouldShow, 'status:', status.value);
 
   return (
     <>
@@ -1271,9 +1115,7 @@ export default function StartCall() {
           <motion.div
             key="overlay"
             ref={containerRef}
-            className={
-              'fixed inset-0 p-3 sm:p-4 flex items-center justify-center bg-background'
-            }
+            className={'fixed inset-0 p-3 sm:p-4 flex items-center justify-center bg-background'}
             style={
               glassMode
                 ? {
@@ -1311,11 +1153,7 @@ export default function StartCall() {
                       cornerRadius={100}
                       padding="16px 32px"
                     >
-                      <div
-                        className={
-                          'flex items-center gap-2 min-w-[140px] justify-center'
-                        }
-                      >
+                      <div className={'flex items-center gap-2 min-w-[140px] justify-center'}>
                         <Phone className={'size-4 text-green-400'} />
                         <span className="text-white font-medium whitespace-nowrap">
                           <Trans>Start Call</Trans>
@@ -1330,17 +1168,9 @@ export default function StartCall() {
                         exit: { scale: 0.5 },
                       }}
                     >
-                      <Button
-                        className={
-                          'z-50 flex items-center gap-1.5 rounded-full'
-                        }
-                        onClick={handleInitialStart}
-                      >
+                      <Button className={'z-50 flex items-center gap-1.5 rounded-full'} onClick={handleInitialStart}>
                         <span>
-                          <Phone
-                            className={'size-4 opacity-50 fill-current'}
-                            strokeWidth={0}
-                          />
+                          <Phone className={'size-4 opacity-50 fill-current'} strokeWidth={0} />
                         </span>
                         <span>
                           <Trans>Start Call</Trans>
@@ -1363,11 +1193,7 @@ export default function StartCall() {
                 className={'flex flex-col items-center gap-6 sm:gap-8 px-1.5'}
               >
                 <div className={'text-center'}>
-                  <h2
-                    className={`${getTextClass(
-                      'title'
-                    )} text-2xl font-medium mb-2`}
-                  >
+                  <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
                     <Trans>How would you like to use Glass?</Trans>
                   </h2>
                   <p className={`${getTextClass('body')} text-sm`}>
@@ -1375,11 +1201,7 @@ export default function StartCall() {
                   </p>
                 </div>
 
-                <div
-                  className={
-                    'flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start'
-                  }
-                >
+                <div className={'flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start'}>
                   <button
                     onClick={() => handleModeSelect('roleplay')}
                     className={cn(
@@ -1392,16 +1214,10 @@ export default function StartCall() {
                       <img
                         src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=facearea&facepad=2&w=80&h=80&q=80"
                         alt="AI Roleplay person"
-                        className={
-                          'h-[24px] w-[24px] sm:h-[28px] sm:w-[28px] object-cover rounded-full'
-                        }
+                        className={'h-[24px] w-[24px] sm:h-[28px] sm:w-[28px] object-cover rounded-full'}
                       />
                       <div className={'text-center'}>
-                        <div
-                          className={`${getTextClass(
-                            'title'
-                          )} font-medium mb-1 text-base`}
-                        >
+                        <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
                           <Trans>AI Roleplay</Trans>
                         </div>
                         <div className={`${getTextClass('body')} text-xs`}>
@@ -1461,11 +1277,7 @@ export default function StartCall() {
                         />
                       </div>
                       <div className={'text-center'}>
-                        <div
-                          className={`${getTextClass(
-                            'title'
-                          )} font-medium mb-1 text-base`}
-                        >
+                        <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
                           <Trans>Live Call</Trans>
                         </div>
                         <div className={`${getTextClass('body')} text-xs`}>
@@ -1475,9 +1287,7 @@ export default function StartCall() {
                         <div
                           className={
                             'sm:hidden inline-flex items-center gap-1 mt-2 text-[11px] px-2 py-1 rounded-full border ' +
-                            (glassMode
-                              ? 'border-white/30 text-white/70'
-                              : 'border-border text-muted-foreground')
+                            (glassMode ? 'border-white/30 text-white/70' : 'border-border text-muted-foreground')
                           }
                         >
                           <span className={'leading-none text-xs'}>
@@ -1490,27 +1300,15 @@ export default function StartCall() {
                 </div>
 
                 <div className={'flex justify-between items-center w-full'}>
-                  <button
-                    onClick={() => setStep('start')}
-                    className={cn(getBackButtonClass(), 'cursor-pointer')}
-                  >
+                  <button onClick={() => setStep('start')} className={cn(getBackButtonClass(), 'cursor-pointer')}>
                     <Trans>← Back</Trans>
                   </button>
                   <Button
-                    onClick={() =>
-                      setStep(
-                        selectedMode === 'roleplay'
-                          ? 'scenario'
-                          : 'instructions'
-                      )
-                    }
+                    onClick={() => setStep(selectedMode === 'roleplay' ? 'scenario' : 'instructions')}
                     disabled={!selectedMode}
                     variant={glassMode ? 'translucent' : 'default'}
                     size="sm"
-                    className={cn(
-                      'text-sm cursor-pointer',
-                      !selectedMode && 'opacity-50 cursor-not-allowed'
-                    )}
+                    className={cn('text-sm cursor-pointer', !selectedMode && 'opacity-50 cursor-not-allowed')}
                   >
                     <Trans>Next →</Trans>
                   </Button>
@@ -1524,16 +1322,10 @@ export default function StartCall() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className={
-                  'flex flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5'
-                }
+                className={'flex flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5'}
               >
                 <div className={'text-center'}>
-                  <h2
-                    className={`${getTextClass(
-                      'title'
-                    )} text-2xl font-medium mb-2`}
-                  >
+                  <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
                     <Trans>Choose who to call</Trans>
                   </h2>
                   <p className={`${getTextClass('body')} text-sm`}>
@@ -1546,19 +1338,11 @@ export default function StartCall() {
                     className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto pr-1 pb-3 sm:pr-2"
                   >
                     {partnersLoading ? (
-                      <div
-                        className={`${getTextClass(
-                          'muted'
-                        )} text-sm text-center py-4`}
-                      >
+                      <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
                         <Trans>Loading partners...</Trans>
                       </div>
                     ) : roleplayPartners.length === 0 ? (
-                      <div
-                        className={`${getTextClass(
-                          'muted'
-                        )} text-sm text-center py-4`}
-                      >
+                      <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
                         <Trans>No partners available</Trans>
                       </div>
                     ) : (
@@ -1581,9 +1365,7 @@ export default function StartCall() {
                             getCardClass(),
                             'hover:scale-[1.01]',
                             selectedPartnerId === partner.id &&
-                              (glassMode
-                                ? 'bg-white/20 border-white/40'
-                                : 'bg-accent/50 border-foreground/30')
+                              (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent/50 border-foreground/30')
                           )}
                         >
                           <div className="relative flex items-center gap-3">
@@ -1610,36 +1392,18 @@ export default function StartCall() {
                                   ? 'border-white/30 bg-white/10 text-white/80 shadow-none'
                                   : 'bg-muted text-foreground/80'
                               )}
-                              fallbackClassName={
-                                glassMode
-                                  ? 'bg-transparent text-white/80'
-                                  : undefined
-                              }
+                              fallbackClassName={glassMode ? 'bg-transparent text-white/80' : undefined}
                               fallbackSize="md"
                               name={partner.name}
                               src={partner.avatarUrl || undefined}
                               alt={partner.name}
                             />
-                            <div
-                              className={
-                                'flex-1 min-w-0 flex items-start gap-2'
-                              }
-                            >
+                            <div className={'flex-1 min-w-0 flex items-start gap-2'}>
                               <div className="flex-1 min-w-0">
-                                <div
-                                  className={`${getTextClass(
-                                    'title'
-                                  )} font-medium text-base mb-0.5`}
-                                >
+                                <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
                                   {partner.name}
                                 </div>
-                                <div
-                                  className={`${getTextClass(
-                                    'muted'
-                                  )} text-xs truncate`}
-                                >
-                                  {partner.description}
-                                </div>
+                                <div className={`${getTextClass('muted')} text-xs truncate`}>{partner.description}</div>
                               </div>
                               {partner.isSystem === false && (
                                 <DropdownMenu>
@@ -1707,21 +1471,11 @@ export default function StartCall() {
                             <UserRound className="w-6 h-6" strokeWidth={1.75} />
                           </div>
                           <div className={'flex-1 min-w-0'}>
-                            <div
-                              className={`${getTextClass(
-                                'title'
-                              )} font-medium text-base mb-0.5`}
-                            >
+                            <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
                               <Trans>Custom partner</Trans>
                             </div>
-                            <div
-                              className={`${getTextClass(
-                                'muted'
-                              )} text-xs truncate`}
-                            >
-                              <Trans>
-                                Create your own conversation partner
-                              </Trans>
+                            <div className={`${getTextClass('muted')} text-xs truncate`}>
+                              <Trans>Create your own conversation partner</Trans>
                             </div>
                           </div>
                         </div>
@@ -1736,20 +1490,25 @@ export default function StartCall() {
                   <button
                     onClick={() => setStep('mode')}
                     className={cn(getBackButtonClass(), 'cursor-pointer')}
+                    disabled={isStartingCall}
                   >
                     <Trans>← Back</Trans>
                   </button>
                   <Button
                     onClick={handleStartCall}
-                    disabled={!selectedPartnerId}
+                    disabled={!selectedPartnerId || isStartingCall}
                     variant="default"
                     className={cn(
                       'cursor-pointer rounded-full px-6 py-2 sm:px-7 sm:py-2.5 inline-flex items-center gap-1.5 font-semibold tracking-tight text-white bg-emerald-500 hover:bg-emerald-600',
-                      !selectedPartnerId && 'opacity-50 cursor-not-allowed'
+                      (!selectedPartnerId || isStartingCall) && 'opacity-50 cursor-not-allowed'
                     )}
                   >
-                    <Phone className="size-4 opacity-80" strokeWidth={2.25} />
-                    <Trans>Start Call</Trans>
+                    {isStartingCall ? (
+                      <Loader2 className="size-4 opacity-80 animate-spin" strokeWidth={2.25} />
+                    ) : (
+                      <Phone className="size-4 opacity-80" strokeWidth={2.25} />
+                    )}
+                    {isStartingCall ? <Trans>Connecting...</Trans> : <Trans>Start Call</Trans>}
                   </Button>
                 </div>
               </motion.div>
@@ -1761,50 +1520,30 @@ export default function StartCall() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className={
-                  'flex flex-col items-center gap-5 sm:gap-6 max-w-lg mx-auto px-1.5'
-                }
+                className={'flex flex-col items-center gap-5 sm:gap-6 max-w-lg mx-auto px-1.5'}
               >
                 <div className={'text-center'}>
-                  <h2
-                    className={`${getTextClass(
-                      'title'
-                    )} text-2xl font-medium mb-2`}
-                  >
-                    {selectedMode === 'roleplay' ? (
-                      <Trans>AI Roleplay</Trans>
-                    ) : (
-                      <Trans>Live Call</Trans>
-                    )}
+                  <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
+                    {selectedMode === 'roleplay' ? <Trans>AI Roleplay</Trans> : <Trans>Live Call</Trans>}
                   </h2>
                 </div>
 
                 <div
                   className={cn(
                     'rounded-2xl p-4 sm:p-6',
-                    glassMode
-                      ? 'bg-white/10 backdrop-blur-sm border border-white/20'
-                      : 'bg-card border border-border'
+                    glassMode ? 'bg-white/10 backdrop-blur-sm border border-white/20' : 'bg-card border border-border'
                   )}
                 >
                   {selectedMode === 'roleplay' ? (
                     <div className={getTextClass('title')}>
                       {selectedRoleplayPartner ? (
                         <div>
-                          <p
-                            className={`text-xs ${getTextClass(
-                              'muted'
-                            )} mb-1.5 sm:mb-2`}
-                          >
+                          <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>
                             <Trans>Partner</Trans>
                           </p>
-                          <p className={'text-base font-medium'}>
-                            {selectedRoleplayPartner.name}
-                          </p>
+                          <p className={'text-base font-medium'}>{selectedRoleplayPartner.name}</p>
                           {selectedRoleplayPartner.description && (
-                            <p
-                              className={`${getTextClass('body')} text-sm mt-1`}
-                            >
+                            <p className={`${getTextClass('body')} text-sm mt-1`}>
                               {selectedRoleplayPartner.description}
                             </p>
                           )}
@@ -1824,89 +1563,40 @@ export default function StartCall() {
                   <button
                     onClick={() => setStep('mode')}
                     className={cn(getBackButtonClass(), 'cursor-pointer')}
+                    disabled={isStartingCall}
                   >
                     <Trans>← Back</Trans>
                   </button>
                   <Button
                     variant="default"
                     onClick={handleStartCall}
-                    disabled={!canStartCall}
+                    disabled={!canStartCall || isStartingCall}
                     className={cn(
                       'cursor-pointer rounded-full px-6 py-2 sm:px-7 sm:py-2.5 inline-flex items-center gap-1.5 font-semibold tracking-tight text-white bg-emerald-500 hover:bg-emerald-600',
-                      !canStartCall && 'opacity-50 cursor-not-allowed'
+                      (!canStartCall || isStartingCall) && 'opacity-50 cursor-not-allowed'
                     )}
                   >
-                    <Phone className="size-4 opacity-80" strokeWidth={2.25} />
-                    <Trans>Start Call</Trans>
+                    {isStartingCall ? (
+                      <Loader2 className="size-4 opacity-80 animate-spin" strokeWidth={2.25} />
+                    ) : (
+                      <Phone className="size-4 opacity-80" strokeWidth={2.25} />
+                    )}
+                    {isStartingCall ? <Trans>Connecting...</Trans> : <Trans>Start Call</Trans>}
                   </Button>
                 </div>
               </motion.div>
             )}
-
-            {/* Connecting State */}
-            {step === 'connecting' && (
-              <>
-                {glassMode ? (
-                  <LiquidGlass
-                    mouseContainer={containerRef}
-                    className={'z-50'}
-                    style={{ position: 'fixed', top: '50%', left: '50%' }}
-                    displacementScale={64}
-                    blurAmount={0.1}
-                    saturation={130}
-                    aberrationIntensity={2}
-                    cornerRadius={100}
-                    padding="16px 32px"
-                  >
-                    <div
-                      className={
-                        'flex items-center gap-2 min-w-[140px] justify-center'
-                      }
-                    >
-                      <Loader2 className={'size-4 opacity-50 animate-spin'} />
-                      <span className="text-white font-medium whitespace-nowrap">
-                        <Trans>Connecting...</Trans>
-                      </span>
-                    </div>
-                  </LiquidGlass>
-                ) : (
-                  <motion.div
-                    initial={false}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 1 }}
-                  >
-                    <Button
-                      className={
-                        'z-50 flex items-center gap-1.5 rounded-full px-6 py-2 sm:px-8 sm:py-2.5 min-w-[140px]'
-                      }
-                      disabled
-                    >
-                      <Loader2 className={'size-4 opacity-50 animate-spin'} />
-                      <span>
-                        <Trans>Connecting...</Trans>
-                      </span>
-                    </Button>
-                  </motion.div>
-                )}
-              </>
-            )}
           </motion.div>
         ) : null}
       </AnimatePresence>
-      <Dialog
-        open={isCreatePartnerModalOpen}
-        onOpenChange={(open) => !open && handleCloseCreatePartnerModal()}
-      >
+      <Dialog open={isCreatePartnerModalOpen} onOpenChange={(open) => !open && handleCloseCreatePartnerModal()}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>
               <Trans>Create partner</Trans>
             </DialogTitle>
             <DialogDescription className="text-sm">
-              <Trans>
-                Give your custom partner a name, description, and optional
-                photo.
-              </Trans>
+              <Trans>Give your custom partner a name, description, and optional photo.</Trans>
             </DialogDescription>
           </DialogHeader>
           <input
@@ -1938,11 +1628,7 @@ export default function StartCall() {
                     isSavingCreatePartner && 'opacity-100'
                   )}
                 >
-                  {isSavingCreatePartner ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trans>Edit</Trans>
-                  )}
+                  {isSavingCreatePartner ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trans>Edit</Trans>}
                 </span>
               </button>
               <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1978,9 +1664,7 @@ export default function StartCall() {
                 />
               </div>
               <PartnerVoiceSelector
-                selectedVoiceId={
-                  createPartnerVoiceId || DEFAULT_ROLEPLAY_VOICE_ID
-                }
+                selectedVoiceId={createPartnerVoiceId || DEFAULT_ROLEPLAY_VOICE_ID}
                 onSelect={setCreatePartnerVoiceId}
                 onPreview={handleVoicePreview}
                 loadingVoiceId={loadingVoiceId}
@@ -2005,19 +1689,14 @@ export default function StartCall() {
               disabled={isSavingCreatePartner || !createPartnerNameDraft.trim()}
               className="cursor-pointer disabled:cursor-not-allowed"
             >
-              {isSavingCreatePartner && (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              )}
+              {isSavingCreatePartner && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               <Trans>Create</Trans>
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={isEditPartnerModalOpen}
-        onOpenChange={(open) => !open && handleCloseEditPartnerModal()}
-      >
+      <Dialog open={isEditPartnerModalOpen} onOpenChange={(open) => !open && handleCloseEditPartnerModal()}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>
@@ -2056,11 +1735,7 @@ export default function StartCall() {
                     isSavingEditPartner && 'opacity-100'
                   )}
                 >
-                  {isSavingEditPartner ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trans>Edit</Trans>
-                  )}
+                  {isSavingEditPartner ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trans>Edit</Trans>}
                 </span>
               </button>
               <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -2074,9 +1749,7 @@ export default function StartCall() {
                 </Label>
                 <Input
                   value={editPartnerNameDraft}
-                  onChange={(event) =>
-                    setEditPartnerNameDraft(event.target.value)
-                  }
+                  onChange={(event) => setEditPartnerNameDraft(event.target.value)}
                   placeholder={t`Enter a name`}
                   disabled={isSavingEditPartner}
                 />
@@ -2087,18 +1760,14 @@ export default function StartCall() {
                 </Label>
                 <Textarea
                   value={editPartnerDescriptionDraft}
-                  onChange={(event) =>
-                    setEditPartnerDescriptionDraft(event.target.value)
-                  }
+                  onChange={(event) => setEditPartnerDescriptionDraft(event.target.value)}
                   placeholder={t`Add a short description`}
                   disabled={isSavingEditPartner}
                   rows={3}
                 />
               </div>
               <PartnerVoiceSelector
-                selectedVoiceId={
-                  editPartnerVoiceId || DEFAULT_ROLEPLAY_VOICE_ID
-                }
+                selectedVoiceId={editPartnerVoiceId || DEFAULT_ROLEPLAY_VOICE_ID}
                 onSelect={setEditPartnerVoiceId}
                 onPreview={handleVoicePreview}
                 loadingVoiceId={loadingVoiceId}
@@ -2123,19 +1792,14 @@ export default function StartCall() {
               disabled={isSavingEditPartner || !editPartnerNameDraft.trim()}
               className="cursor-pointer disabled:cursor-not-allowed"
             >
-              {isSavingEditPartner && (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              )}
+              {isSavingEditPartner && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               <Trans>Save</Trans>
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
-        open={isDeletePartnerDialogOpen}
-        onOpenChange={(open) => !open && handleCancelDeletePartner()}
-      >
+      <AlertDialog open={isDeletePartnerDialogOpen} onOpenChange={(open) => !open && handleCancelDeletePartner()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -2144,8 +1808,7 @@ export default function StartCall() {
             <AlertDialogDescription>
               {partnerPendingDelete ? (
                 <Trans>
-                  Are you sure you want to delete {partnerPendingDelete.name}?
-                  This action cannot be undone.
+                  Are you sure you want to delete {partnerPendingDelete.name}? This action cannot be undone.
                 </Trans>
               ) : (
                 <Trans>This action cannot be undone.</Trans>
@@ -2164,9 +1827,7 @@ export default function StartCall() {
               className="bg-destructive text-white hover:bg-destructive/90"
               disabled={isDeletingPartner}
             >
-              {isDeletingPartner && (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              )}
+              {isDeletingPartner && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               <Trans>Delete</Trans>
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -2180,8 +1841,7 @@ export default function StartCall() {
             </DialogTitle>
             <DialogDescription>
               <Trans>
-                Free accounts can keep up to 10 conversations. Delete old calls
-                or upgrade for unlimited history.
+                Free accounts can keep up to 10 conversations. Delete old calls or upgrade for unlimited history.
               </Trans>
             </DialogDescription>
           </DialogHeader>
@@ -2192,32 +1852,18 @@ export default function StartCall() {
                 <Trans>Current usage</Trans>
               </span>
             </div>
-            <div className="text-3xl font-semibold tracking-tight">
-              {limitUsageLabel || limitDisplayUsed}
-            </div>
+            <div className="text-3xl font-semibold tracking-tight">{limitUsageLabel || limitDisplayUsed}</div>
             <p className="text-xs text-muted-foreground">
-              <Trans>
-                Delete a saved call or upgrade to keep recording new ones.
-              </Trans>
+              <Trans>Delete a saved call or upgrade to keep recording new ones.</Trans>
             </p>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={handleManageHistoryClick}
-              className="cursor-pointer"
-            >
+            <Button variant="outline" onClick={handleManageHistoryClick} className="cursor-pointer">
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               <Trans>Manage history</Trans>
             </Button>
-            <Button
-              onClick={handleUpgradeClick}
-              className="cursor-pointer"
-              disabled={checkoutLoading}
-            >
-              {checkoutLoading && (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              )}
+            <Button onClick={handleUpgradeClick} className="cursor-pointer" disabled={checkoutLoading}>
+              {checkoutLoading && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               <Trans>Upgrade plan</Trans>
             </Button>
           </DialogFooter>
