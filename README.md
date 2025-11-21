@@ -1,4 +1,4 @@
-<img width="1511" height="828" alt="web-app" src="https://github.com/user-attachments/assets/01c8a960-90c1-4b39-81b9-84f6091323a8" />
+<img width="978" height="524" alt="Screenshot 2025-11-21 at 11 06 01 AM" src="https://github.com/user-attachments/assets/790fa2a9-040d-4a7a-9a59-289bc743f029" />
 
 # Glass
 
