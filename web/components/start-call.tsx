@@ -215,6 +215,7 @@ export default function StartCall() {
   });
   const [selectedMode, setSelectedMode] = useState<'roleplay' | 'live_call' | null>(null);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
+  const profileLanguagesRef = useRef<LanguageSettings | null>(null);
   const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] = useState(false);
   const [createPartnerNameDraft, setCreatePartnerNameDraft] = useState<string>('');
   const [createPartnerDescriptionDraft, setCreatePartnerDescriptionDraft] = useState<string>('');
@@ -434,25 +435,29 @@ export default function StartCall() {
     }
   }, [roleplayPartners, selectedPartnerId]);
 
-  // Sync languages from user profile when snapshot loads
+  // Sync languages from the profile and remember the last good pair for later resets.
   useEffect(() => {
-    if (snapshot?.user.learningLang && snapshot?.user.nativeLang) {
-      const userLanguages = {
-        learningLang: snapshot.user.learningLang,
-        nativeLang: snapshot.user.nativeLang,
-      };
-      setLanguages(userLanguages);
-      // Also update settings
-      updateSettings({ languages: userLanguages });
+    const learningLang = snapshot?.user.learningLang;
+    const nativeLang = snapshot?.user.nativeLang;
+    if (!learningLang || !nativeLang) {
+      return;
     }
-    // Only re-run when the actual language values change, not when snapshot object changes
+    const userLanguages = { learningLang, nativeLang };
+    const previous = profileLanguagesRef.current;
+    const changed =
+      !previous ||
+      previous.learningLang !== learningLang ||
+      previous.nativeLang !== nativeLang;
+    if (!changed) {
+      return;
+    }
+    profileLanguagesRef.current = userLanguages;
+    setLanguages(userLanguages);
+    updateSettings({ languages: userLanguages });
   }, [snapshot?.user.learningLang, snapshot?.user.nativeLang, updateSettings]);
 
-  const snapshotLearningLang = snapshot?.user.learningLang;
-  const snapshotNativeLang = snapshot?.user.nativeLang;
-
-  // Reset step when disconnected. Depend on the specific language values so this effect
-  // doesn't re-run just because the snapshot object identity changes during refresh.
+  // Reset step when disconnected. Only depend on status changes so quota refreshes
+  // don't accidentally clear the local wizard state.
   useEffect(() => {
     console.log('[StartCall] Status effect triggered:', status.value);
     if (status.value === 'disconnected' || status.value === 'idle') {
@@ -460,18 +465,15 @@ export default function StartCall() {
       setStep('start');
       setIsStartingCall(false);
       // Keep languages from user profile
-      if (snapshotLearningLang && snapshotNativeLang) {
-        setLanguages({
-          learningLang: snapshotLearningLang,
-          nativeLang: snapshotNativeLang,
-        });
+      if (profileLanguagesRef.current) {
+        setLanguages(profileLanguagesRef.current);
       }
       setSelectedMode(null);
       setSelectedPartnerId('');
       stopOwnedScreenShare();
       setScreenShareError(null);
     }
-  }, [status.value, snapshotLearningLang, snapshotNativeLang, stopOwnedScreenShare]);
+  }, [status.value, stopOwnedScreenShare]);
 
   const handleLanguageSelect = (type: 'learning' | 'native', code: string) => {
     const newLanguages = {
