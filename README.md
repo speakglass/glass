@@ -2,7 +2,7 @@
 
 # Glass
 
-AI that helps you speak any language in the real world.
+AI that helps you learn any language in the real world.
 
 Glass is your live language coach: speak in the moment with real-time feedback,
 sentence suggestions, and pronunciation you can read—even if you can’t read the
