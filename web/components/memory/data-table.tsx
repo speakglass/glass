@@ -40,7 +40,7 @@ import {
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { t } from '@lingui/macro';
+import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 
 interface DataTableProps<TData, TValue> {
@@ -118,7 +118,7 @@ export function DataTable<TData, TValue>({
               value={
                 typeof searchValue === 'string'
                   ? searchValue
-                  : ((table.getColumn('fact')?.getFilterValue() as string) ?? '')
+                  : (table.getColumn('fact')?.getFilterValue() as string) ?? ''
               }
               onChange={(event) => {
                 if (onSearchChange) {
@@ -217,7 +217,10 @@ export function DataTable<TData, TValue>({
       {/* Pagination */}
       <div className="flex items-center justify-between px-4">
         <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-          {footerNote ?? t`${table.getFilteredSelectedRowModel().rows.length} of ${table.getFilteredRowModel().rows.length} rows selected`}
+          {footerNote ??
+            t`${table.getFilteredSelectedRowModel().rows.length} of ${
+              table.getFilteredRowModel().rows.length
+            } rows selected`}
         </div>
         <div className="flex w-full items-center gap-8 lg:w-fit">
           <div className="hidden items-center gap-2 lg:flex">

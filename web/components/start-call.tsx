@@ -1,8 +1,12 @@
 import { useGlass, LanguageSettings, SessionConfig } from '@/contexts/glass-context';
 import { useAccountSession, type SessionData } from '@/contexts/account-session-context';
 import { AnimatePresence, motion } from 'motion/react';
-import { Loader2, Phone, UserRound, MoreHorizontal, AlertTriangle, Trash2 } from 'lucide-react';
+import { Loader2, Phone, AlertTriangle, Trash2 } from 'lucide-react';
 import LiquidGlass from './liquid-glass';
+import { ModeSelection } from './start-call-mode-selection';
+import { PartnerSelection } from './start-call-partner-selection';
+import { StartCallInstructions } from './start-call-instructions';
+import { CustomPartnerCreator, CustomPartnerEditor } from './custom-partner-creator';
 import { toast } from 'sonner';
 import { useRef, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
@@ -15,23 +19,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ConversationPartner,
   fetchPartners,
-  createPartner,
-  uploadPartnerAvatar,
-  updatePartner,
   deletePartner,
   createCheckoutSession,
   fetchAccountSnapshot,
 } from '@/lib/account-api';
-import { PartnerVoiceSelector } from '@/components/partner-voice-selector';
-import { ROLEPLAY_VOICE_OPTIONS } from '@/lib/roleplay-voices';
 import { useVoicePreviewPlayer } from '@/hooks/use-voice-preview';
-import { PartnerAvatar } from '@/components/partner-avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,9 +42,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 
 type SetupStep = 'start' | 'languages' | 'level' | 'mode' | 'scenario' | 'instructions';
 type DisplayMediaVideoOptions = MediaTrackConstraints & {
@@ -61,142 +50,6 @@ type DisplayMediaVideoOptions = MediaTrackConstraints & {
   selfBrowserSurface?: 'include' | 'exclude';
   systemAudio?: 'include' | 'exclude';
 };
-interface LanguageOption {
-  code: string;
-  name: string;
-  flag: string;
-}
-
-interface ExamplePhrase {
-  target: string; // Text in learning language
-  pronunciation?: string; // Romanization/pronunciation guide
-  translation: string; // Translation in native language
-}
-
-interface LanguageExample {
-  withPronunciation: {
-    words: { target: string; pronunciation: string }[];
-  };
-  withoutPronunciation: {
-    target: string;
-  };
-}
-
-// Example phrases for each language with translations
-const LANGUAGE_EXAMPLES: Record<string, Record<string, ExamplePhrase>> = {
-  en: {
-    ko: {
-      target: 'Thank you very much',
-      pronunciation: '땡큐 베리 머치',
-      translation: '정말 감사합니다',
-    },
-    ja: {
-      target: 'Thank you very much',
-      pronunciation: 'サンキュー ベリー マッチ',
-      translation: '本当にありがとうございます',
-    },
-    es: {
-      target: 'Thank you very much',
-      pronunciation: 'zenk yu beri mach',
-      translation: 'Muchas gracias',
-    },
-    fr: {
-      target: 'Thank you very much',
-      pronunciation: 'sank iou vèri meutch',
-      translation: 'Merci beaucoup',
-    },
-  },
-  ko: {
-    en: {
-      target: '정말 감사합니다',
-      pronunciation: 'jeong-mal gam-sa-ham-ni-da',
-      translation: 'Thank you very much',
-    },
-    ja: {
-      target: '정말 감사합니다',
-      pronunciation: 'チョンマル カムサハムニダ',
-      translation: '本当にありがとうございます',
-    },
-    es: {
-      target: '정말 감사합니다',
-      pronunciation: 'jeong-mal gam-sa-jam-ni-da',
-      translation: 'Muchas gracias',
-    },
-    fr: {
-      target: '정말 감사합니다',
-      pronunciation: 'djeong-mal gam-sa-ham-ni-da',
-      translation: 'Merci beaucoup',
-    },
-  },
-  ja: {
-    en: {
-      target: 'ありがとうございます',
-      pronunciation: 'a-ri-ga-tou go-za-i-ma-su',
-      translation: 'Thank you very much',
-    },
-    ko: {
-      target: 'ありがとうございます',
-      pronunciation: '아리가토 고자이마스',
-      translation: '정말 감사합니다',
-    },
-    es: {
-      target: 'ありがとうございます',
-      pronunciation: 'a-ri-ga-tou go-sai-ma-su',
-      translation: 'Muchas gracias',
-    },
-    fr: {
-      target: 'ありがとうございます',
-      pronunciation: 'a-ri-ga-tou go-zaï-ma-su',
-      translation: 'Merci beaucoup',
-    },
-  },
-  es: {
-    en: {
-      target: 'Muchas gracias',
-      pronunciation: 'moo-chahs grah-see-ahs',
-      translation: 'Thank you very much',
-    },
-    ko: {
-      target: 'Muchas gracias',
-      pronunciation: '무차스 그라시아스',
-      translation: '정말 감사합니다',
-    },
-    ja: {
-      target: 'Muchas gracias',
-      pronunciation: 'ムーチャス グラシアス',
-      translation: '本当にありがとうございます',
-    },
-    fr: {
-      target: 'Muchas gracias',
-      pronunciation: 'moo-tchas gra-si-as',
-      translation: 'Merci beaucoup',
-    },
-  },
-  fr: {
-    en: {
-      target: 'Merci beaucoup',
-      pronunciation: 'mehr-see boh-koo',
-      translation: 'Thank you very much',
-    },
-    ko: {
-      target: 'Merci beaucoup',
-      pronunciation: '메르시 보쿠',
-      translation: '정말 감사합니다',
-    },
-    ja: {
-      target: 'Merci beaucoup',
-      pronunciation: 'メルシー ボクー',
-      translation: '本当にありがとうございます',
-    },
-    es: {
-      target: 'Merci beaucoup',
-      pronunciation: 'mersi boku',
-      translation: 'Muchas gracias',
-    },
-  },
-};
-
-const DEFAULT_ROLEPLAY_VOICE_ID = ROLEPLAY_VOICE_OPTIONS[0]?.id ?? '';
 
 export default function StartCall() {
   const { status, connect, updateSettings, settings } = useGlass();
@@ -217,54 +70,14 @@ export default function StartCall() {
   const [selectedMode, setSelectedMode] = useState<'roleplay' | 'live_call' | null>(null);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const profileLanguagesRef = useRef<LanguageSettings | null>(null);
-  const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] = useState(false);
-  const [createPartnerNameDraft, setCreatePartnerNameDraft] = useState<string>('');
-  const [createPartnerDescriptionDraft, setCreatePartnerDescriptionDraft] = useState<string>('');
-  const [createPartnerAvatarPreview, setCreatePartnerAvatarPreview] = useState<string | null>(null);
-  const [createPartnerAvatarFile, setCreatePartnerAvatarFile] = useState<File | null>(null);
-  const [createPartnerVoiceId, setCreatePartnerVoiceId] = useState<string>(DEFAULT_ROLEPLAY_VOICE_ID);
-  const createPartnerAvatarInputRef = useRef<HTMLInputElement>(null);
-  const [isSavingCreatePartner, setIsSavingCreatePartner] = useState(false);
-
+  const [isCustomPartnerCreatorOpen, setIsCustomPartnerCreatorOpen] = useState(false);
   const [isEditPartnerModalOpen, setIsEditPartnerModalOpen] = useState(false);
   const [partnerToEdit, setPartnerToEdit] = useState<ConversationPartner | null>(null);
-  const [editPartnerNameDraft, setEditPartnerNameDraft] = useState<string>('');
-  const [editPartnerDescriptionDraft, setEditPartnerDescriptionDraft] = useState<string>('');
-  const [editPartnerAvatarPreview, setEditPartnerAvatarPreview] = useState<string | null>(null);
-  const [editPartnerAvatarFile, setEditPartnerAvatarFile] = useState<File | null>(null);
-  const [editPartnerVoiceId, setEditPartnerVoiceId] = useState<string>(DEFAULT_ROLEPLAY_VOICE_ID);
-  const editPartnerAvatarInputRef = useRef<HTMLInputElement>(null);
-  const [isSavingEditPartner, setIsSavingEditPartner] = useState(false);
 
   const [isDeletePartnerDialogOpen, setIsDeletePartnerDialogOpen] = useState(false);
   const [partnerPendingDelete, setPartnerPendingDelete] = useState<ConversationPartner | null>(null);
   const [isDeletingPartner, setIsDeletingPartner] = useState(false);
   const [isStartingCall, setIsStartingCall] = useState(false);
-  const clearCreatePartnerAvatarPreview = useCallback(() => {
-    setCreatePartnerAvatarFile(null);
-    setCreatePartnerAvatarPreview((previous) => {
-      if (previous && previous.startsWith('blob:')) {
-        URL.revokeObjectURL(previous);
-      }
-      return null;
-    });
-    if (createPartnerAvatarInputRef.current) {
-      createPartnerAvatarInputRef.current.value = '';
-    }
-  }, []);
-
-  const clearEditPartnerAvatarPreview = useCallback(() => {
-    setEditPartnerAvatarFile(null);
-    setEditPartnerAvatarPreview((previous) => {
-      if (previous && previous.startsWith('blob:')) {
-        URL.revokeObjectURL(previous);
-      }
-      return null;
-    });
-    if (editPartnerAvatarInputRef.current) {
-      editPartnerAvatarInputRef.current.value = '';
-    }
-  }, []);
   const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [screenSharePreviewStream, setScreenSharePreviewStream] = useState<MediaStream | null>(null);
@@ -315,41 +128,6 @@ export default function StartCall() {
   const partnersLoading = partnersQueryEnabled ? partnersQueryLoading || partnersFetching : true;
   const roleplayPartners: ConversationPartner[] = (partnersData ?? []).filter((partner) => partner.kind === 'roleplay');
   const selectedRoleplayPartner = roleplayPartners.find((partner) => partner.id === selectedPartnerId);
-  const [hoveredPartner, setHoveredPartner] = useState<ConversationPartner | null>(null);
-  const [hoveredPartnerPreviewTop, setHoveredPartnerPreviewTop] = useState<number | null>(null);
-  const partnerListWrapperRef = useRef<HTMLDivElement | null>(null);
-  const partnerListRef = useRef<HTMLDivElement | null>(null);
-  const [showPartnerListGradient, setShowPartnerListGradient] = useState(false);
-  const updatePartnerListGradient = useCallback(() => {
-    const el = partnerListRef.current;
-    if (!el) {
-      setShowPartnerListGradient(false);
-      return;
-    }
-
-    const canScroll = el.scrollHeight > el.clientHeight + 1;
-    if (!canScroll) {
-      setShowPartnerListGradient(false);
-      return;
-    }
-
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 12;
-    setShowPartnerListGradient(!atBottom);
-  }, []);
-  useEffect(() => {
-    const el = partnerListRef.current;
-    if (!el) {
-      setShowPartnerListGradient(false);
-      return;
-    }
-
-    updatePartnerListGradient();
-    const handleScroll = () => updatePartnerListGradient();
-    el.addEventListener('scroll', handleScroll);
-    return () => {
-      el.removeEventListener('scroll', handleScroll);
-    };
-  }, [roleplayPartners, partnersLoading, updatePartnerListGradient]);
 
   useEffect(() => {
     return () => {
@@ -405,22 +183,6 @@ export default function StartCall() {
       ? 'text-white/70 hover:text-white text-sm transition-colors'
       : 'text-muted-foreground hover:text-foreground text-sm transition-colors';
   };
-
-  useEffect(() => {
-    return () => {
-      if (createPartnerAvatarPreview && createPartnerAvatarPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(createPartnerAvatarPreview);
-      }
-    };
-  }, [createPartnerAvatarPreview]);
-
-  useEffect(() => {
-    return () => {
-      if (editPartnerAvatarPreview && editPartnerAvatarPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(editPartnerAvatarPreview);
-      }
-    };
-  }, [editPartnerAvatarPreview]);
 
   useEffect(() => {
     if (
@@ -616,12 +378,7 @@ export default function StartCall() {
       });
       return;
     }
-    setCreatePartnerNameDraft('');
-    setCreatePartnerDescriptionDraft('');
-    clearCreatePartnerAvatarPreview();
-    setCreatePartnerVoiceId(DEFAULT_ROLEPLAY_VOICE_ID);
-    stopPreview();
-    setIsCreatePartnerModalOpen(true);
+    setIsCustomPartnerCreatorOpen(true);
   };
 
   const openEditPartnerModal = (partner: ConversationPartner) => {
@@ -629,148 +386,27 @@ export default function StartCall() {
       return;
     }
     setPartnerToEdit(partner);
-    setEditPartnerNameDraft(partner.name || '');
-    setEditPartnerDescriptionDraft(partner.description || '');
-    clearEditPartnerAvatarPreview();
-    setEditPartnerAvatarPreview(partner.avatarUrl || null);
-    setEditPartnerVoiceId(partner.voiceId || DEFAULT_ROLEPLAY_VOICE_ID);
     stopPreview();
     setIsEditPartnerModalOpen(true);
   };
 
   const handleCloseCreatePartnerModal = () => {
-    setIsCreatePartnerModalOpen(false);
-    setIsSavingCreatePartner(false);
-    clearCreatePartnerAvatarPreview();
-    setCreatePartnerVoiceId(DEFAULT_ROLEPLAY_VOICE_ID);
-    stopPreview();
+    setIsCustomPartnerCreatorOpen(false);
   };
 
   const handleCloseEditPartnerModal = () => {
     setIsEditPartnerModalOpen(false);
     setPartnerToEdit(null);
-    setIsSavingEditPartner(false);
-    clearEditPartnerAvatarPreview();
-    setEditPartnerAvatarFile(null);
-    setEditPartnerVoiceId(DEFAULT_ROLEPLAY_VOICE_ID);
     stopPreview();
   };
 
-  const handleCreateAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-    const nextUrl = URL.createObjectURL(file);
-    setCreatePartnerAvatarFile(file);
-    setCreatePartnerAvatarPreview((previous) => {
-      if (previous && previous.startsWith('blob:')) {
-        URL.revokeObjectURL(previous);
-      }
-      return nextUrl;
-    });
+  const handlePartnerCreated = (partner: ConversationPartner) => {
+    setSelectedPartnerId(partner.id);
   };
 
-  const handleEditAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-    const nextUrl = URL.createObjectURL(file);
-    setEditPartnerAvatarFile(file);
-    setEditPartnerAvatarPreview((previous) => {
-      if (previous && previous.startsWith('blob:')) {
-        URL.revokeObjectURL(previous);
-      }
-      return nextUrl;
-    });
-  };
-
-  const handleCreatePartnerSave = async () => {
-    if (!token) {
-      toast.error(t`Unable to save partner`, {
-        description: t`Authentication token not available. Please refresh the page.`,
-      });
-      return;
-    }
-    const trimmedName = createPartnerNameDraft.trim();
-    if (!trimmedName) {
-      toast.error(t`Enter a name for your partner`);
-      return;
-    }
-    setIsSavingCreatePartner(true);
-    try {
-      if (limitBlocked) {
-        setQuotaDialogOpen(true);
-        return false;
-      }
-      let partner = await createPartner(token, {
-        name: trimmedName,
-        description: createPartnerDescriptionDraft.trim() || undefined,
-        learningLang: snapshot!.user.learningLang,
-        nativeLang: snapshot?.user.nativeLang || undefined,
-        voiceId: createPartnerVoiceId || undefined,
-      });
-      if (createPartnerAvatarFile) {
-        partner = await uploadPartnerAvatar(token, partner.id, createPartnerAvatarFile);
-      }
-      queryClient.setQueryData<ConversationPartner[] | undefined>(
-        ['partners', token, snapshot?.user.learningLang],
-        (previous) => {
-          const existing = previous || [];
-          if (existing.some((item) => item.id === partner.id)) {
-            return existing;
-          }
-          return [partner, ...existing];
-        }
-      );
+  const handlePartnerUpdated = (partner: ConversationPartner) => {
+    if (selectedPartnerId === partner.id) {
       setSelectedPartnerId(partner.id);
-      toast.success(t`Custom partner ready`);
-      handleCloseCreatePartnerModal();
-    } catch (error) {
-      console.error('[StartCall] Failed to save partner', error);
-      toast.error(t`Unable to save partner`);
-    } finally {
-      setIsSavingCreatePartner(false);
-    }
-  };
-
-  const handleEditPartnerSave = async () => {
-    if (!token || !partnerToEdit) {
-      toast.error(t`Unable to save partner`, {
-        description: t`Authentication token not available. Please refresh the page.`,
-      });
-      return;
-    }
-    const trimmedName = editPartnerNameDraft.trim();
-    if (!trimmedName) {
-      toast.error(t`Enter a name for your partner`);
-      return;
-    }
-    setIsSavingEditPartner(true);
-    try {
-      let partner = await updatePartner(token, partnerToEdit.id, {
-        name: trimmedName,
-        description: editPartnerDescriptionDraft.trim() || null,
-        voiceId: editPartnerVoiceId || null,
-      });
-      if (editPartnerAvatarFile) {
-        partner = await uploadPartnerAvatar(token, partner.id, editPartnerAvatarFile);
-      }
-      queryClient.setQueryData<ConversationPartner[] | undefined>(
-        ['partners', token, snapshot?.user.learningLang],
-        (previous) => (previous || []).map((item) => (item.id === partner.id ? partner : item))
-      );
-      if (selectedPartnerId === partner.id) {
-        setSelectedPartnerId(partner.id);
-      }
-      toast.success(t`Partner updated`);
-      handleCloseEditPartnerModal();
-    } catch (error) {
-      console.error('[StartCall] Failed to update partner', error);
-      toast.error(t`Unable to save partner`);
-    } finally {
-      setIsSavingEditPartner(false);
     }
   };
 
@@ -1235,136 +871,17 @@ export default function StartCall() {
 
             {/* Mode Selection */}
             {step === 'mode' && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className={'flex flex-col items-center gap-6 sm:gap-8 px-3 sm:px-1.5'}
-              >
-                <div className={'text-center'}>
-                  <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
-                    <Trans>How would you like to use Glass?</Trans>
-                  </h2>
-                  <p className={`${getTextClass('body')} text-sm`}>
-                    <Trans>Choose your preferred mode</Trans>
-                  </p>
-                </div>
-
-                <div
-                  className={'flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start w-full sm:w-auto'}
-                >
-                  <button
-                    onClick={() => handleModeSelect('roleplay')}
-                    className={cn(
-                      'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px]',
-                      getCardClass(),
-                      getScaleClass()
-                    )}
-                  >
-                    <div className={'flex flex-col items-center gap-3'}>
-                      <img
-                        src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=facearea&facepad=2&w=80&h=80&q=80"
-                        alt="AI Roleplay person"
-                        className={'h-[24px] w-[24px] sm:h-[28px] sm:w-[28px] object-cover rounded-full'}
-                      />
-                      <div className={'text-center'}>
-                        <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
-                          <Trans>AI Roleplay</Trans>
-                        </div>
-                        <div className={`${getTextClass('body')} text-xs`}>
-                          <Trans>Practice Conversations</Trans>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => handleModeSelect('live_call')}
-                    className={cn(
-                      'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px] relative',
-                      getCardClass(),
-                      getScaleClass(),
-                      // Disable interactions and subtly dim on mobile
-                      'pointer-events-none opacity-60 sm:pointer-events-auto sm:opacity-100'
-                    )}
-                  >
-                    {/* Recommended Badge */}
-                    <div
-                      className={
-                        'absolute -top-2 -right-2 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white text-[10px] font-bold shadow-lg'
-                      }
-                    >
-                      <Trans>RECOMMENDED</Trans>
-                    </div>
-
-                    <div className={'flex flex-col items-center gap-3'}>
-                      {/* Call platform logos */}
-                      <div className={'flex gap-2 items-center justify-center'}>
-                        <svg
-                          className={'h-6 w-6 opacity-80'}
-                          viewBox="0 0 71 55"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M60.1045 4.8978C55.5792 2.8214 50.7265 1.2916 45.6527 0.41542C45.5603 0.39851 45.468 0.440769 45.4204 0.525289C44.7963 1.6353 44.105 3.0834 43.6209 4.2216C38.1637 3.4046 32.7345 3.4046 27.3892 4.2216C26.905 3.0581 26.1886 1.6353 25.5617 0.525289C25.5141 0.443589 25.4218 0.40133 25.3294 0.41542C20.2584 1.2888 15.4057 2.8186 10.8776 4.8978C10.8384 4.9147 10.8048 4.9429 10.7825 4.9795C1.57795 18.7309 -0.943561 32.1443 0.293408 45.3914C0.299005 45.4562 0.335386 45.5182 0.385761 45.5576C6.45866 50.0174 12.3413 52.7249 18.1147 54.5195C18.2071 54.5477 18.305 54.5139 18.3638 54.4378C19.7295 52.5728 20.9469 50.6063 21.9907 48.5383C22.0523 48.4172 21.9935 48.2735 21.8676 48.2256C19.9366 47.4931 18.0979 46.6 16.3292 45.5858C16.1893 45.5041 16.1781 45.304 16.3068 45.2082C16.679 44.9293 17.0513 44.6391 17.4067 44.3461C17.471 44.2926 17.5606 44.2813 17.6362 44.3151C29.2558 49.6202 41.8354 49.6202 53.3179 44.3151C53.3935 44.2785 53.4831 44.2898 53.5502 44.3433C53.9057 44.6363 54.2779 44.9293 54.6529 45.2082C54.7816 45.304 54.7732 45.5041 54.6333 45.5858C52.8646 46.6197 51.0259 47.4931 49.0921 48.2228C48.9662 48.2707 48.9102 48.4172 48.9718 48.5383C50.038 50.6034 51.2554 52.5699 52.5959 54.435C52.6519 54.5139 52.7526 54.5477 52.845 54.5195C58.6464 52.7249 64.529 50.0174 70.6019 45.5576C70.6551 45.5182 70.6887 45.459 70.6943 45.3942C72.1747 30.0791 68.2147 16.7757 60.1968 4.9823C60.1772 4.9429 60.1437 4.9147 60.1045 4.8978ZM23.7259 37.3253C20.2276 37.3253 17.3451 34.1136 17.3451 30.1693C17.3451 26.225 20.1717 23.0133 23.7259 23.0133C27.308 23.0133 30.1626 26.2532 30.1066 30.1693C30.1066 34.1136 27.28 37.3253 23.7259 37.3253ZM47.3178 37.3253C43.8196 37.3253 40.9371 34.1136 40.9371 30.1693C40.9371 26.225 43.7636 23.0133 47.3178 23.0133C50.9 23.0133 53.7545 26.2532 53.6986 30.1693C53.6986 34.1136 50.9 37.3253 47.3178 37.3253Z"
-                            fill="#5865F2"
-                          />
-                        </svg>
-                        <img
-                          src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Zoom_Communications_Logo.svg"
-                          alt="Zoom"
-                          className={'h-6 w-6 object-contain opacity-80'}
-                        />
-                        <img
-                          src="https://upload.wikimedia.org/wikipedia/commons/9/9b/Google_Meet_icon_%282020%29.svg"
-                          alt="Google Meet"
-                          className={'h-6 w-6 object-contain opacity-80'}
-                        />
-                        <img
-                          src="https://cdn.worldvectorlogo.com/logos/microsoft-teams-1.svg"
-                          alt="Microsoft Teams"
-                          className={'h-6 w-6 object-contain opacity-80'}
-                        />
-                      </div>
-                      <div className={'text-center'}>
-                        <div className={`${getTextClass('title')} font-medium mb-1 text-base`}>
-                          <Trans>Live Call</Trans>
-                        </div>
-                        <div className={`${getTextClass('body')} text-xs`}>
-                          <Trans>Language Exchange • Calls</Trans>
-                        </div>
-                        {/* Mobile unavailability notice */}
-                        <div
-                          className={
-                            'sm:hidden inline-flex items-center gap-1 mt-2 text-[11px] px-2 py-1 rounded-full border ' +
-                            (glassMode ? 'border-white/30 text-white/70' : 'border-border text-muted-foreground')
-                          }
-                        >
-                          <span className={'leading-none text-xs'}>
-                            <Trans>Unavailable on mobile</Trans>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                </div>
-
-                <div className={'flex justify-between items-center w-full'}>
-                  <button onClick={() => setStep('start')} className={cn(getBackButtonClass(), 'cursor-pointer')}>
-                    <Trans>← Back</Trans>
-                  </button>
-                  <Button
-                    onClick={() => setStep(selectedMode === 'roleplay' ? 'scenario' : 'instructions')}
-                    disabled={!selectedMode}
-                    variant={glassMode ? 'translucent' : 'default'}
-                    size="sm"
-                    className={cn('text-sm cursor-pointer', !selectedMode && 'opacity-50 cursor-not-allowed')}
-                  >
-                    <Trans>Next →</Trans>
-                  </Button>
-                </div>
-              </motion.div>
+              <ModeSelection
+                glassMode={glassMode}
+                selectedMode={selectedMode}
+                onSelectMode={handleModeSelect}
+                onBack={() => setStep('start')}
+                onNext={() => setStep(selectedMode === 'roleplay' ? 'scenario' : 'instructions')}
+                getTextClass={getTextClass}
+                getCardClass={getCardClass}
+                getScaleClass={getScaleClass}
+                getBackButtonClass={getBackButtonClass}
+              />
             )}
 
             {/* Partner Selection (Roleplay Mode Only) */}
@@ -1373,187 +890,21 @@ export default function StartCall() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className={cn(
-                  'flex flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5',
-                  isStartingCall && 'pointer-events-none'
-                )}
+                className="flex flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5"
               >
-                <div className={'text-center'}>
-                  <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
-                    <Trans>Choose who to call</Trans>
-                  </h2>
-                  <p className={`${getTextClass('body')} text-sm`}>
-                    <Trans>Select a conversation partner</Trans>
-                  </p>
-                </div>
-                <div className="relative w-full max-w-md mx-auto" ref={partnerListWrapperRef}>
-                  {hoveredPartner?.avatarUrl && hoveredPartnerPreviewTop !== null && (
-                    <div
-                      className="hidden sm:block absolute -left-44 -translate-y-1/2 w-40 h-40 rounded-[36px] overflow-hidden shadow-2xl border pointer-events-none transition-all duration-200 opacity-100 translate-x-0 z-0"
-                      style={{ top: hoveredPartnerPreviewTop }}
-                    >
-                      <img
-                        src={hoveredPartner.avatarUrl}
-                        alt={hoveredPartner.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div
-                    ref={partnerListRef}
-                    className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto pb-4 sm:pb-5 pr-1 sm:pr-2"
-                  >
-                    {partnersLoading ? (
-                      <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
-                        <Trans>Loading partners...</Trans>
-                      </div>
-                    ) : roleplayPartners.length === 0 ? (
-                      <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
-                        <Trans>No partners available</Trans>
-                      </div>
-                    ) : (
-                      <div className="-mx-1.5 space-y-2">
-                        {roleplayPartners.map((partner) => (
-                          <div key={partner.id} className="px-1.5">
-                            <div
-                              role="button"
-                              tabIndex={0}
-                              onClick={() => handlePartnerSelect(partner.id)}
-                              onKeyDown={(event) => {
-                                if (event.key === 'Enter' || event.key === ' ') {
-                                  event.preventDefault();
-                                  handlePartnerSelect(partner.id);
-                                }
-                              }}
-                              onMouseEnter={(event) => {
-                                setHoveredPartner(partner);
-                                if (partner.avatarUrl && partnerListWrapperRef.current) {
-                                  const wrapperRect = partnerListWrapperRef.current.getBoundingClientRect();
-                                  const cardRect = event.currentTarget.getBoundingClientRect();
-                                  setHoveredPartnerPreviewTop(cardRect.top - wrapperRect.top + cardRect.height / 2);
-                                } else {
-                                  setHoveredPartnerPreviewTop(null);
-                                }
-                              }}
-                              onMouseLeave={() => {
-                                setHoveredPartner(null);
-                                setHoveredPartnerPreviewTop(null);
-                              }}
-                              className={cn(
-                                'group relative px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 text-left',
-                                getCardClass(),
-                                'hover:z-20 focus-visible:z-20',
-                                selectedPartnerId === partner.id &&
-                                  (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent/50 border-foreground/30')
-                              )}
-                            >
-                              <div className="relative flex items-center gap-3">
-                                <PartnerAvatar
-                                  className={cn(
-                                    'h-12 w-12 flex-shrink-0',
-                                    glassMode
-                                      ? 'border-white/30 bg-white/10 text-white/80 shadow-none'
-                                      : 'bg-muted text-foreground/80'
-                                  )}
-                                  fallbackClassName={glassMode ? 'bg-transparent text-white/80' : undefined}
-                                  fallbackSize="md"
-                                  name={partner.name}
-                                  src={partner.avatarUrl || undefined}
-                                  alt={partner.name}
-                                />
-                                <div className={'flex-1 min-w-0 flex items-start gap-2'}>
-                                  <div className="flex-1 min-w-0">
-                                    <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
-                                      {partner.name}
-                                    </div>
-                                    <div className={`${getTextClass('muted')} text-xs truncate`}>
-                                      {partner.description}
-                                    </div>
-                                  </div>
-                                  {partner.isSystem === false && (
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <button
-                                          type="button"
-                                          onClick={(event) => {
-                                            event.preventDefault();
-                                            event.stopPropagation();
-                                          }}
-                                          className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-foreground rounded-lg p-1.5 border border-border/0 hover:border-border bg-muted/60 hover:bg-muted data-[state=open]:opacity-100 data-[state=open]:border-border data-[state=open]:bg-muted"
-                                          aria-label="Partner actions"
-                                        >
-                                          <MoreHorizontal className="w-4 h-4" />
-                                        </button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem
-                                          onClick={(event) => {
-                                            event.preventDefault();
-                                            event.stopPropagation();
-                                            openEditPartnerModal(partner);
-                                          }}
-                                        >
-                                          <Trans>Edit</Trans>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                          className="text-destructive focus:text-destructive"
-                                          onClick={(event) => {
-                                            event.preventDefault();
-                                            event.stopPropagation();
-                                            openDeletePartnerDialog(partner);
-                                          }}
-                                        >
-                                          <Trans>Delete</Trans>
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Custom Partner */}
-                    <div className="-mx-1.5">
-                      <div className="px-1.5">
-                        <button
-                          onClick={openCreatePartnerModal}
-                          className={cn(
-                            'w-full px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
-                            getCardClass()
-                          )}
-                        >
-                          <div className={'flex items-center gap-3'}>
-                            <div
-                              className={cn(
-                                'w-12 h-12 rounded-full flex items-center justify-center border',
-                                glassMode
-                                  ? 'border-white/30 bg-white/5 text-white/80'
-                                  : 'border-border bg-muted text-muted-foreground'
-                              )}
-                            >
-                              <UserRound className="w-6 h-6" strokeWidth={1.75} />
-                            </div>
-                            <div className={'flex-1 min-w-0'}>
-                              <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
-                                <Trans>Custom partner</Trans>
-                              </div>
-                              <div className={`${getTextClass('muted')} text-xs truncate`}>
-                                <Trans>Create your own conversation partner</Trans>
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  {showPartnerListGradient && (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-card/90 via-card/70 to-transparent" />
-                  )}
-                </div>
+                <PartnerSelection
+                  glassMode={glassMode}
+                  roleplayPartners={roleplayPartners}
+                  partnersLoading={partnersLoading}
+                  selectedPartnerId={selectedPartnerId}
+                  onSelectPartner={handlePartnerSelect}
+                  getCardClass={getCardClass}
+                  getTextClass={getTextClass}
+                  openCreatePartnerModal={openCreatePartnerModal}
+                  openEditPartnerModal={openEditPartnerModal}
+                  openDeletePartnerDialog={openDeletePartnerDialog}
+                  isStartingCall={isStartingCall}
+                />
                 <div className={'flex justify-between items-center w-full'}>
                   <button
                     onClick={() => setStep('mode')}
@@ -1584,288 +935,46 @@ export default function StartCall() {
 
             {/* Instructions Screen */}
             {step === 'instructions' && selectedMode && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className={'flex flex-col items-center gap-5 sm:gap-6 max-w-lg mx-auto px-1.5'}
-              >
-                <div className={'text-center'}>
-                  <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
-                    {selectedMode === 'roleplay' ? <Trans>AI Roleplay</Trans> : <Trans>Live Call</Trans>}
-                  </h2>
-                </div>
-
-                <div
-                  className={cn(
-                    'rounded-2xl p-4 sm:p-6',
-                    glassMode ? 'bg-white/10 backdrop-blur-sm border border-white/20' : 'bg-card border border-border'
-                  )}
-                >
-                  {selectedMode === 'roleplay' ? (
-                    <div className={getTextClass('title')}>
-                      {selectedRoleplayPartner ? (
-                        <div>
-                          <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>
-                            <Trans>Partner</Trans>
-                          </p>
-                          <p className={'text-base font-medium'}>{selectedRoleplayPartner.name}</p>
-                          {selectedRoleplayPartner.description && (
-                            <p className={`${getTextClass('body')} text-sm mt-1`}>
-                              {selectedRoleplayPartner.description}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <p className={`${getTextClass('muted')} text-sm`}>
-                          <Trans>Select a partner to see details.</Trans>
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    renderLiveCallSteps()
-                  )}
-                </div>
-
-                <div className={'flex justify-between items-center w-full'}>
-                  <button
-                    onClick={() => setStep('mode')}
-                    className={cn(getBackButtonClass(), 'cursor-pointer')}
-                    disabled={isStartingCall}
-                  >
-                    <Trans>← Back</Trans>
-                  </button>
-                  <Button
-                    variant="default"
-                    onClick={handleStartCall}
-                    disabled={!canStartCall || isStartingCall}
-                    className={cn(
-                      'cursor-pointer rounded-full px-6 py-2 sm:px-7 sm:py-2.5 inline-flex items-center gap-1.5 font-semibold tracking-tight text-white bg-emerald-500 hover:bg-emerald-600',
-                      (!canStartCall || isStartingCall) && 'opacity-50 cursor-not-allowed'
-                    )}
-                  >
-                    {isStartingCall ? (
-                      <Loader2 className="size-4 opacity-80 animate-spin" strokeWidth={2.25} />
-                    ) : (
-                      <Phone className="size-4 opacity-80" strokeWidth={2.25} />
-                    )}
-                    {isStartingCall ? <Trans>Connecting...</Trans> : <Trans>Start Call</Trans>}
-                  </Button>
-                </div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+                <StartCallInstructions
+                  glassMode={glassMode}
+                  selectedMode={selectedMode}
+                  selectedRoleplayPartner={selectedRoleplayPartner}
+                  getTextClass={getTextClass}
+                  getBackButtonClass={getBackButtonClass}
+                  canStartCall={canStartCall}
+                  isStartingCall={isStartingCall}
+                  onBack={() => setStep('mode')}
+                  onStartCall={handleStartCall}
+                  liveCallSteps={renderLiveCallSteps()}
+                />
               </motion.div>
             )}
           </motion.div>
         ) : null}
       </AnimatePresence>
-      <Dialog open={isCreatePartnerModalOpen} onOpenChange={(open) => !open && handleCloseCreatePartnerModal()}>
-        <DialogContent className="sm:max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle>
-              <Trans>Create partner</Trans>
-            </DialogTitle>
-            <DialogDescription className="text-sm">
-              <Trans>Give your custom partner a name, description, and optional photo.</Trans>
-            </DialogDescription>
-          </DialogHeader>
-          <input
-            ref={createPartnerAvatarInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleCreateAvatarChange}
-          />
-          <div className="flex items-start gap-4">
-            <div className="flex flex-col items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => createPartnerAvatarInputRef.current?.click()}
-                disabled={isSavingCreatePartner}
-                className="group relative inline-flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-border/70 bg-muted/40 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-                aria-label={t`Change partner photo`}
-              >
-                <PartnerAvatar
-                  className="pointer-events-none h-20 w-20"
-                  fallbackSize="lg"
-                  name={createPartnerNameDraft || undefined}
-                  src={createPartnerAvatarPreview || undefined}
-                  alt={createPartnerNameDraft || t`Partner`}
-                />
-                <span
-                  className={cn(
-                    'pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 transition group-hover:opacity-100',
-                    isSavingCreatePartner && 'opacity-100'
-                  )}
-                >
-                  {isSavingCreatePartner ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trans>Edit</Trans>}
-                </span>
-              </button>
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <Trans>Photo</Trans>
-              </span>
-            </div>
-            <div className="flex flex-1 flex-col gap-3">
-              <div className="space-y-1">
-                <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  <Trans>Name</Trans>
-                </Label>
-                <Input
-                  value={createPartnerNameDraft}
-                  onChange={(event) => {
-                    setCreatePartnerNameDraft(event.target.value);
-                  }}
-                  placeholder={t`Enter a name`}
-                  disabled={isSavingCreatePartner}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  <Trans>Description</Trans>
-                </Label>
-                <Textarea
-                  value={createPartnerDescriptionDraft}
-                  onChange={(event) => {
-                    setCreatePartnerDescriptionDraft(event.target.value);
-                  }}
-                  placeholder={t`Add a short description`}
-                  disabled={isSavingCreatePartner}
-                  rows={3}
-                />
-              </div>
-              <PartnerVoiceSelector
-                selectedVoiceId={createPartnerVoiceId || DEFAULT_ROLEPLAY_VOICE_ID}
-                onSelect={setCreatePartnerVoiceId}
-                onPreview={handleVoicePreview}
-                loadingVoiceId={loadingVoiceId}
-                playingVoiceId={playingVoiceId}
-                disabled={isSavingCreatePartner}
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCloseCreatePartnerModal}
-              disabled={isSavingCreatePartner}
-              className="cursor-pointer disabled:cursor-not-allowed"
-            >
-              <Trans>Close</Trans>
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleCreatePartnerSave}
-              disabled={isSavingCreatePartner || !createPartnerNameDraft.trim()}
-              className="cursor-pointer disabled:cursor-not-allowed"
-            >
-              {isSavingCreatePartner && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              <Trans>Create</Trans>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CustomPartnerCreator
+        open={isCustomPartnerCreatorOpen}
+        onClose={handleCloseCreatePartnerModal}
+        token={token ?? null}
+        learningLang={snapshot?.user.learningLang ?? undefined}
+        nativeLang={snapshot?.user.nativeLang || null}
+        limitBlocked={limitBlocked}
+        onQuotaBlocked={() => setQuotaDialogOpen(true)}
+        onPartnerCreated={handlePartnerCreated}
+      />
 
-      <Dialog open={isEditPartnerModalOpen} onOpenChange={(open) => !open && handleCloseEditPartnerModal()}>
-        <DialogContent className="sm:max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle>
-              <Trans>Edit partner</Trans>
-            </DialogTitle>
-            <DialogDescription className="text-sm">
-              <Trans>Update your custom partner details.</Trans>
-            </DialogDescription>
-          </DialogHeader>
-          <input
-            ref={editPartnerAvatarInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleEditAvatarChange}
-          />
-          <div className="flex items-start gap-4">
-            <div className="flex flex-col items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => editPartnerAvatarInputRef.current?.click()}
-                disabled={isSavingEditPartner}
-                className="group relative inline-flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-border/70 bg-muted/40 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-                aria-label={t`Change partner photo`}
-              >
-                <PartnerAvatar
-                  className="pointer-events-none h-20 w-20"
-                  fallbackSize="lg"
-                  name={editPartnerNameDraft || undefined}
-                  src={editPartnerAvatarPreview || undefined}
-                  alt={editPartnerNameDraft || t`Partner`}
-                />
-                <span
-                  className={cn(
-                    'pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 transition group-hover:opacity-100',
-                    isSavingEditPartner && 'opacity-100'
-                  )}
-                >
-                  {isSavingEditPartner ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trans>Edit</Trans>}
-                </span>
-              </button>
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <Trans>Photo</Trans>
-              </span>
-            </div>
-            <div className="flex flex-1 flex-col gap-3">
-              <div className="space-y-1">
-                <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  <Trans>Name</Trans>
-                </Label>
-                <Input
-                  value={editPartnerNameDraft}
-                  onChange={(event) => setEditPartnerNameDraft(event.target.value)}
-                  placeholder={t`Enter a name`}
-                  disabled={isSavingEditPartner}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  <Trans>Description</Trans>
-                </Label>
-                <Textarea
-                  value={editPartnerDescriptionDraft}
-                  onChange={(event) => setEditPartnerDescriptionDraft(event.target.value)}
-                  placeholder={t`Add a short description`}
-                  disabled={isSavingEditPartner}
-                  rows={3}
-                />
-              </div>
-              <PartnerVoiceSelector
-                selectedVoiceId={editPartnerVoiceId || DEFAULT_ROLEPLAY_VOICE_ID}
-                onSelect={setEditPartnerVoiceId}
-                onPreview={handleVoicePreview}
-                loadingVoiceId={loadingVoiceId}
-                playingVoiceId={playingVoiceId}
-                disabled={isSavingEditPartner}
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCloseEditPartnerModal}
-              disabled={isSavingEditPartner}
-              className="cursor-pointer disabled:cursor-not-allowed"
-            >
-              <Trans>Close</Trans>
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleEditPartnerSave}
-              disabled={isSavingEditPartner || !editPartnerNameDraft.trim()}
-              className="cursor-pointer disabled:cursor-not-allowed"
-            >
-              {isSavingEditPartner && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              <Trans>Save</Trans>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CustomPartnerEditor
+        open={isEditPartnerModalOpen}
+        onClose={handleCloseEditPartnerModal}
+        partner={partnerToEdit}
+        token={token ?? null}
+        learningLang={snapshot?.user.learningLang ?? undefined}
+        onPartnerUpdated={handlePartnerUpdated}
+        onVoicePreview={handleVoicePreview}
+        loadingVoiceId={loadingVoiceId}
+        playingVoiceId={playingVoiceId}
+      />
 
       <AlertDialog open={isDeletePartnerDialogOpen} onOpenChange={(open) => !open && handleCancelDeletePartner()}>
         <AlertDialogContent>
