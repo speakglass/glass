@@ -207,6 +207,9 @@ export function ConversationHistory() {
   const [error, setError] = useState<string | null>(null);
   const [showConversation, setShowConversation] = useState(false);
   const [showMemory, setShowMemory] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const conversationSectionRef = useRef<HTMLElement>(null);
+  const memorySectionRef = useRef<HTMLElement>(null);
 
   // Edit and delete state
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -647,6 +650,23 @@ export function ConversationHistory() {
     setEditTitle(selected?.title || '');
   };
 
+  const scrollConversationIntoView = useCallback(() => {
+    const container = scrollContainerRef.current;
+    const section = conversationSectionRef.current;
+    if (!container || !section) {
+      return;
+    }
+    const containerRect = container.getBoundingClientRect();
+    const sectionRect = section.getBoundingClientRect();
+    const headerOffset = 72; // keep some room for sticky header + first messages
+    const target =
+      container.scrollTop + (sectionRect.top - containerRect.top) - headerOffset;
+    container.scrollTo({
+      top: Math.max(0, target),
+      behavior: 'smooth',
+    });
+  }, []);
+
   const handleTitleChange = (newTitle: string) => {
     setEditTitle(newTitle);
 
@@ -1084,7 +1104,7 @@ export function ConversationHistory() {
             </div>
           )}
           {!loadingDetail && selected && (
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Header with Actions */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -1581,9 +1601,25 @@ export function ConversationHistory() {
 
               {/* Memory Section */}
               {memoryRecords.length > 0 && (
-                <section>
+                <section ref={memorySectionRef}>
                   <button
-                    onClick={() => setShowMemory(!showMemory)}
+                    onClick={() => {
+                      const wasOpen = showMemory;
+                      setShowMemory(!showMemory);
+                      if (!wasOpen) {
+                        // Close conversation history if open
+                        setShowConversation(false);
+                        // Scroll to bottom after animation completes
+                        setTimeout(() => {
+                          if (scrollContainerRef.current) {
+                            scrollContainerRef.current.scrollTo({
+                              top: scrollContainerRef.current.scrollHeight,
+                              behavior: 'smooth',
+                            });
+                          }
+                        }, 400);
+                      }
+                    }}
                     className="w-full flex items-center justify-between bg-background/50 border border-border/30 rounded-lg p-3 hover:bg-accent/30 transition-colors"
                   >
                     <div className="flex items-center gap-2">
@@ -1632,20 +1668,29 @@ export function ConversationHistory() {
               )}
 
               {/* Conversation History Section */}
-              <section>
-                <button
-                  onClick={() => setShowConversation(!showConversation)}
-                  className="w-full flex items-center justify-between bg-background/50 border border-border/30 rounded-lg p-3 hover:bg-accent/30 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="size-4" />
-                    <span className="text-sm font-semibold">
-                      <Trans>Conversation History</Trans>
-                    </span>
-                    <span className="text-xs text-muted-foreground">({selected.messages?.length || 0})</span>
-                  </div>
-                  {showConversation ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-                </button>
+              <section ref={conversationSectionRef} className="relative">
+                <div className="sticky top-6 z-20 pb-3 bg-card/80">
+                  <button
+                    onClick={() => {
+                      setShowConversation(!showConversation);
+                      if (!showConversation) {
+                        setTimeout(() => {
+                          scrollConversationIntoView();
+                        }, 150);
+                      }
+                    }}
+                    className="w-full flex items-center justify-between bg-background/50 border border-border/30 rounded-lg p-3 hover:bg-accent/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="size-4" />
+                      <span className="text-sm font-semibold">
+                        <Trans>Conversation History</Trans>
+                      </span>
+                      <span className="text-xs text-muted-foreground">({selected.messages?.length || 0})</span>
+                    </div>
+                    {showConversation ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                  </button>
+                </div>
 
                 <AnimatePresence>
                   {showConversation && (

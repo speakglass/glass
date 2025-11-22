@@ -410,6 +410,7 @@ class LearningAssistant:
         native_lang: str,
         learning_lang: str,
         conversation_summary: str = "",
+        user_name: str | None = None,
     ) -> dict:
         """Analyze conversation and return scores and feedback using parallel LLM calls.
 
@@ -451,9 +452,9 @@ class LearningAssistant:
                 error_type = (suggestion.get("error_type") or fb_type or "").lower()
                 return importance_order.get(error_type, 0)
 
-            # Sort by importance, take top 20
+            # Sort by importance, take top 100
             sorted_feedback = sorted(all_feedback, key=get_importance, reverse=True)
-            top_feedback = sorted_feedback[:20]
+            top_feedback = sorted_feedback[:100]
             feedback_lines = [f"- {fb.get('text', '')[:150]}" for fb in top_feedback if fb.get("text")]
             if feedback_lines:
                 feedback_summary = "\n".join(feedback_lines)
@@ -489,6 +490,7 @@ class LearningAssistant:
                 learning_lang_name,
                 conversation_summary,
                 user_message_count,
+                user_name,
             ),
         ]
 
@@ -645,10 +647,11 @@ class LearningAssistant:
         learning_lang_name: str,
         conversation_summary: str = "",
         user_message_count: int = 0,
+        user_name: str | None = None,
     ) -> str:
         """Generate overall feedback by synthesizing individual feedback items."""
         prompt = prompts.build_analysis_feedback_prompt(
-            feedback_summary, learning_lang_name, native_lang_name, conversation_summary, user_message_count
+            feedback_summary, learning_lang_name, native_lang_name, conversation_summary, user_message_count, user_name
         )
 
         LOGGER.info(f"[Overall Feedback Prompt]\n{prompt}")

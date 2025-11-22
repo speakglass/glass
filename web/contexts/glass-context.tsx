@@ -217,13 +217,50 @@ export function GlassProvider({
   onError?: (error: Error) => void;
 }) {
   const router = useRouter();
-  const { token: authToken, status: accountStatus, snapshot } = useAccountSession();
+  const { token: authToken, status: accountStatus, snapshot, refresh: refreshAccountSession } = useAccountSession();
   const authTokenRef = useRef<string | null>(null);
   const accountStatusRef = useRef<string>('idle');
   useEffect(() => {
     authTokenRef.current = authToken ?? null;
     accountStatusRef.current = accountStatus;
   }, [authToken, accountStatus]);
+
+  const ensureAuthToken = useCallback(async () => {
+    if (authTokenRef.current) {
+      return authTokenRef.current;
+    }
+    const refreshed = await refreshAccountSession();
+    if (refreshed?.token) {
+      authTokenRef.current = refreshed.token;
+      return refreshed.token;
+    }
+    const error = new Error('Authentication token not available');
+    (error as Error & { code?: string }).code = 'AUTH_TOKEN_UNAVAILABLE';
+    throw error;
+  }, [refreshAccountSession]);
+
+  const runWithAuthToken = useCallback(
+    async <T,>(operation: (token: string) => Promise<T>): Promise<T> => {
+      const execute = async (allowRetry: boolean): Promise<T> => {
+        const token = await ensureAuthToken();
+        try {
+          return await operation(token);
+        } catch (error) {
+          const statusCode = typeof error === 'object' && error && 'status' in error ? (error as { status?: number }).status : null;
+          if (allowRetry && statusCode === 401) {
+            const refreshed = await refreshAccountSession();
+            if (refreshed?.token) {
+              authTokenRef.current = refreshed.token;
+              return execute(false);
+            }
+          }
+          throw error;
+        }
+      };
+      return execute(true);
+    },
+    [ensureAuthToken, refreshAccountSession]
+  );
   const [status, setStatus] = useState<VoiceStatus>({ value: 'idle' });
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionMode, setSessionMode] = useState<'roleplay' | 'live_call'>('live_call');
@@ -1348,20 +1385,13 @@ export function GlassProvider({
         return;
       }
 
-      const token = authTokenRef.current;
-      if (!token) {
-        toast.error(t`Unable to connect`, {
-          description: t`Authentication token not available. Please refresh the page.`,
-        });
-        return;
-      }
-
       updateSettings({ languages });
       isIntentionalDisconnectRef.current = false;
       hasWsErrorRef.current = false;
       hasOpenedRef.current = false;
 
       try {
+        const token = await ensureAuthToken();
         setStatus({ value: 'connecting' });
         if (!resume) {
           setMessages([]);
@@ -1382,12 +1412,12 @@ export function GlassProvider({
 
         try {
           if (!resume || !sessionIdRef.current) {
-            sessionIdRef.current = await createConversationSession(token);
+            sessionIdRef.current = await runWithAuthToken((tokenValue) => createConversationSession(tokenValue));
           }
         } catch (error) {
           console.error('[GlassContext] Failed to create conversation session', error);
           toast.error(t`Unable to start conversation`, {
-            description: t`Please try again in a few moments.`,
+            description: t`Please sign in again.`,
           });
           setStatus({ value: 'disconnected' });
           return;
@@ -1733,6 +1763,8 @@ export function GlassProvider({
       router,
       settings,
       stopStreaming,
+      ensureAuthToken,
+      runWithAuthToken,
     ]
   );
 
@@ -2209,32 +2241,22 @@ export function GlassProvider({
           attempts++;
 
           try {
-            if (!authTokenRef.current) {
-              console.log('[GlassContext] No auth token, skipping poll');
-              if (attempts < maxAttempts) {
-                setTimeout(poll, 1000);
-              } else {
-                setStatus({ value: 'idle' });
-                toast.success(t`Conversation saved`, {
-                  description: t`Your conversation has been saved and is now available in History.`,
-                });
-                isIntentionalDisconnectRef.current = false;
-              }
-              return;
-            }
-
             const { fetchConversationSummaries } = await import('@/lib/account-api');
-            const response = await fetchConversationSummaries(authTokenRef.current, {
-              limit: 5,
-              offset: 0,
-            });
+            const response = await runWithAuthToken((tokenValue) =>
+              fetchConversationSummaries(tokenValue, {
+                limit: 5,
+                offset: 0,
+              })
+            );
 
             const conversation = response.conversations.find((conv: any) => conv.sessionId === currentSessionId);
 
             if (conversation) {
               console.log('[GlassContext] Found saved conversation:', conversation.id);
               const { fetchConversationDetail } = await import('@/lib/account-api');
-              const detail = await fetchConversationDetail(authTokenRef.current, conversation.id);
+              const detail = await runWithAuthToken((tokenValue) =>
+                fetchConversationDetail(tokenValue, conversation.id)
+              );
 
               const resolvedScores = detail.scores ?? { ...DEFAULT_CONVERSATION_SCORES };
               const analysis: ConversationAnalysis = {
@@ -2266,6 +2288,19 @@ export function GlassProvider({
               isIntentionalDisconnectRef.current = false;
             }
           } catch (error) {
+            if ((error as Error & { code?: string }).code === 'AUTH_TOKEN_UNAVAILABLE') {
+              console.log('[GlassContext] No auth token while polling, will retry');
+              if (attempts < maxAttempts) {
+                setTimeout(poll, 1000);
+              } else {
+                setStatus({ value: 'idle' });
+                toast.success(t`Conversation saved`, {
+                  description: t`Your conversation has been saved and is now available in History.`,
+                });
+                isIntentionalDisconnectRef.current = false;
+              }
+              return;
+            }
             console.error('[GlassContext] Error polling for conversation:', error);
 
             if (attempts < maxAttempts) {

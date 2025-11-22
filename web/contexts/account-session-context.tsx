@@ -19,7 +19,7 @@ type AccountSessionContextValue = {
   token: string | null;
   snapshot: AccountSnapshot | null;
   onboardingStatus: OnboardingStatus | null;
-  refresh: () => Promise<AccountSnapshot | null>;
+  refresh: () => Promise<SessionData | null>;
   markOnboardingComplete: (settings: {
     learningLang: string;
     nativeLang: string;
@@ -180,7 +180,7 @@ export function AccountSessionProvider({ children }: { children: React.ReactNode
       onboardingStatus: sessionData?.onboardingStatus ?? null,
       refresh: async () => {
         const result = await refetch();
-        return result.data?.snapshot ?? null;
+        return result.data ?? null;
       },
       markOnboardingComplete: async (settings: { learningLang: string; nativeLang: string; languageLevel: LearningLevel }) => {
         await markOnboardingCompleteMutation.mutateAsync(settings);

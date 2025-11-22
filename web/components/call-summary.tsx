@@ -123,6 +123,8 @@ const CallSummary = ({
   const editingMemoryOriginalRef = useRef<string>('');
   const [pendingMemoryActions, setPendingMemoryActions] = useState<Record<string, 'updating' | 'deleting'>>({});
   const [showConversation, setShowConversation] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const memorySectionRef = useRef<HTMLElement>(null);
   const [isPartnerManagerOpen, setIsPartnerManagerOpen] = useState(false);
   const [partnerNameDraft, setPartnerNameDraft] = useState(partnerProfile?.name || '');
   const [partnerDescriptionDraft, setPartnerDescriptionDraft] = useState(partnerProfile?.description || '');
@@ -559,10 +561,7 @@ const CallSummary = ({
   }, [partnerProfile, userProfile]);
 
   const isRoleplayPartner = Boolean(
-    partnerProfile?.kind === 'roleplay' ||
-      partner?.kind === 'roleplay' ||
-      partnerProfile?.isSystem ||
-      partner?.isSystem
+    partnerProfile?.kind === 'roleplay' || partner?.kind === 'roleplay' || partnerProfile?.isSystem || partner?.isSystem
   );
   const sessionMode = (isRoleplayPartner ? 'roleplay' : 'live_call') as 'roleplay' | 'live_call';
   const canManagePartner = sessionMode !== 'roleplay';
@@ -825,6 +824,7 @@ const CallSummary = ({
       >
         <motion.div
           id="glass-call-summary"
+          ref={scrollContainerRef}
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -1197,9 +1197,25 @@ const CallSummary = ({
               )}
             </div>
 
-            <section id="glass-memory-section">
+            <section id="glass-memory-section" ref={memorySectionRef}>
               <button
-                onClick={() => setShowMemory((prev) => !prev)}
+                onClick={() => {
+                  const wasOpen = showMemory;
+                  setShowMemory((prev) => !prev);
+                  if (!wasOpen) {
+                    // Close conversation history if open
+                    setShowConversation(false);
+                    // Scroll to bottom after animation completes
+                    setTimeout(() => {
+                      if (scrollContainerRef.current) {
+                        scrollContainerRef.current.scrollTo({
+                          top: scrollContainerRef.current.scrollHeight,
+                          behavior: 'smooth',
+                        });
+                      }
+                    }, 400);
+                  }
+                }}
                 className={
                   'w-full flex items-center justify-between bg-background/50 border border-border/30 rounded-lg p-3 hover:bg-accent/30 transition-colors'
                 }
@@ -1337,7 +1353,19 @@ const CallSummary = ({
             {/* Collapsible: Conversation History with Feedback */}
             <section>
               <button
-                onClick={() => setShowConversation(!showConversation)}
+                onClick={() => {
+                  setShowConversation(!showConversation);
+                  if (!showConversation) {
+                    setTimeout(() => {
+                      if (scrollContainerRef.current) {
+                        scrollContainerRef.current.scrollTo({
+                          top: scrollContainerRef.current.scrollHeight,
+                          behavior: 'smooth',
+                        });
+                      }
+                    }, 400);
+                  }
+                }}
                 className={
                   'w-full flex items-center justify-between bg-background/50 border border-border/30 rounded-lg p-3 hover:bg-accent/30 transition-colors'
                 }

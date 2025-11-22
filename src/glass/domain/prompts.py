@@ -341,48 +341,67 @@ def build_ai_response_prompt(
     else:
         identity = "You are a friendly conversation partner."
 
-    system_prompt = f"""{identity}
+    # Determine if this is the first message (conversation just starting)
+    is_first_message = not conversation_summary and len(recent_conversation) <= 1
 
-Native {target_lang} speaker having a natural conversation.
+    # Build first message instruction
+    if is_first_message:
+        first_msg_parts = ["First message:"]
+        if user_name:
+            first_msg_parts.append(f"Greet {user_name}")
+        else:
+            first_msg_parts.append("Greet warmly")
 
-CRITICAL: You MUST respond ONLY in {target_lang}. Never use {native_lang} or any other language.
+        if relationship_context:
+            first_msg_parts.append("reference a past memory")
+        else:
+            first_msg_parts.append("introduce yourself briefly")
 
-Priority:
-1. Answer what they're asking directly
-2. Follow the conversation flow naturally
-3. Keep replies short (1-2 sentences)
+        first_msg_parts.append("End with a question to start conversation.")
+        first_message_instruction = " ".join(first_msg_parts)
+    else:
+        first_message_instruction = "Continue the conversation naturally."
 
-Important:
-- Your character is background context only - don't force it into every response
-- When referring to "previous conversations" memories, make it clear they're from past interactions (e.g., "Last time we chatted...", "I remember we talked about...")
-- Focus on the CURRENT conversation primarily"""
+    system_prompt = f"""{identity} Native {target_lang} speaker.
 
-    # Build user prompt - prioritize recent conversation flow
+Respond ONLY in {target_lang}.
+
+Answer questions naturally:
+- General knowledge → answer directly from what you know
+- Personal questions → use memory search if needed
+
+{first_message_instruction}
+
+CRITICAL: Focus on THEIR topic. Don't force your background/interests into every reply unless directly relevant
+
+Output: Just your conversational reply. No meta-commentary, no explanations about what type of question it is."""
+
+    # Build user prompt - clearly separate past memories from current conversation
     sections = []
 
-    # 1. Recent messages (MOST IMPORTANT - this is the CURRENT conversation)
-    if recent_conversation:
-        sections.append("CURRENT conversation (respond to this):\n" + "\n".join(recent_conversation))
-
-    # 2. Background context (if available, keep brief)
-    background_parts = []
-
-    # Add user name if available
+    # 1. User identification
     if user_name:
-        background_parts.append(f"Speaking with: {user_name}")
+        sections.append(f"Speaking with: {user_name}")
 
-    # Add conversation summary (current session context before recent messages)
-    if conversation_summary:
-        background_parts.append(f"Earlier in this session:\n{conversation_summary.strip()}")
-
-    # Add relationship context (memories from PREVIOUS conversations)
+    # 2. Past memories (from previous sessions) - if available
     if relationship_context:
-        # Limit length but keep structure
-        limited = relationship_context[:500] + "..." if len(relationship_context) > 500 else relationship_context
-        background_parts.append(f"Past memories:\n{limited}")
+        limited = relationship_context[:400] + "..." if len(relationship_context) > 400 else relationship_context
+        sections.append(f"PAST MEMORIES (from previous conversations):\n{limited}")
 
-    if background_parts:
-        sections.append("Background context (for reference only):\n" + "\n".join(background_parts))
+    # 3. Current conversation (this session)
+    current_conv_parts = []
+
+    if conversation_summary:
+        current_conv_parts.append(f"Earlier in this conversation:\n{conversation_summary.strip()}")
+
+    if recent_conversation:
+        current_conv_parts.append("Recent messages:\n" + "\n".join(recent_conversation))
+
+    if current_conv_parts:
+        sections.append("CURRENT CONVERSATION:\n" + "\n\n".join(current_conv_parts))
+    elif not relationship_context:
+        # First time meeting, no history at all
+        sections.append("CURRENT CONVERSATION:\n(Starting new conversation)")
 
     user_prompt = "\n\n".join(sections)
     return system_prompt, user_prompt
@@ -464,6 +483,7 @@ def build_analysis_feedback_prompt(
     native_lang_name: str,
     conversation_summary: str = "",
     user_message_count: int = 0,
+    user_name: str | None = None,
 ) -> str:
     """Build prompt for overall conversation feedback based on individual feedback items.
 
@@ -472,51 +492,35 @@ def build_analysis_feedback_prompt(
     """
     has_feedback = bool(feedback_summary and feedback_summary.strip())
 
+    # Build learner identification
+    learner_name = user_name if user_name else "The learner"
+
     if user_message_count == 0:
-        context = "You didn't speak during this session."
+        context = f"{learner_name} didn't speak during this session."
     elif has_feedback:
-        # When there are feedback items
-        context = f"""What you talked about:
-{conversation_summary or 'General conversation'}
-
-You sent {user_message_count} messages.
-
-Feedback items (up to 20 most important):
+        # When there are feedback items - focus on feedback only
+        context = f"""Feedback items from the session:
 {feedback_summary}"""
     else:
-        # When no feedback - just conversation summary
-        if user_message_count < 3:
-            context = f"""You only sent {user_message_count} message{'s' if user_message_count > 1 else ''}.
-
-What you talked about:
-{conversation_summary or 'Brief exchange'}
-
-No corrections needed - great job!"""
-        else:
-            context = f"""You sent {user_message_count} messages - great participation!
-
-What you talked about:
-{conversation_summary or 'Active conversation'}
-
-No corrections needed - your {learning_lang_name} was natural and clear!"""
+        # When no feedback
+        context = f"No corrections needed - {learner_name}'s {learning_lang_name} was natural and clear."
 
     return dedent(
         f"""
-        Write super friendly feedback for a {learning_lang_name} learner.
+        You are a language coach writing a post-session performance summary.
         
-        CRITICAL: Write your ENTIRE response in {native_lang_name}.
+        Write in {native_lang_name}. Output 3-5 sentences.
         
+        ### Session Data
         {context}
         
-        Task: Write 3-5 warm, encouraging sentences like talking to a friend:
-        - Use casual, friendly tone (you're their supportive language buddy!)
-        - Reference what they talked about to make it personal
-        - If feedback exists: gently highlight patterns, suggest improvements warmly
-        - If no feedback: celebrate their natural communication and fluency
-        - If they barely spoke: encourage them to participate more next time
-        - Write directly without headings or markdown formatting
-        
-        Remember: Be SUPER friendly and write EVERYTHING in {native_lang_name}!
+        ### Instructions
+        Write a warm, encouraging summary of their {learning_lang_name} performance:
+        - If feedback exists: highlight key patterns and suggest improvements
+        - If no feedback: acknowledge their strong performance
+        - Use a supportive, friendly tone
+        - This is a summary report, NOT a chat message to them
+        - Write plain text only, no formatting
     """
     ).strip()
 

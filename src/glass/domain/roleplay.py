@@ -228,13 +228,13 @@ class Roleplay:
                     "type": "function",
                     "function": {
                         "name": "search_memories",
-                        "description": "Search past conversation memories to recall specific information about the user, yourself, or your interactions. Use this when the user asks about something from the past that you don't immediately know.",
+                        "description": "Recall relationship facts from PREVIOUS conversations about the user, yourself, or your shared interactions. Use ONLY when the user asks about past conversations or personal details—not for public knowledge questions.",
                         "parameters": {
                             "type": "object",
                             "properties": {
                                 "query": {
                                     "type": "string",
-                                    "description": "What to search for in past memories (e.g., 'user hobbies', 'where user works', 'what we talked about last time')",
+                                    "description": "Relationship detail to recall from past sessions (e.g., 'user hobbies', 'where user works', 'what we talked about last time')",
                                 }
                             },
                             "required": ["query"],

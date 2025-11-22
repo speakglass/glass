@@ -24,6 +24,7 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
   const isMockMode = !!mockMessages;
   const displayMessages = isMockMode ? mockMessages : messages;
   const lastMessageCountRef = useRef(displayMessages.length);
+  const lastMessagesHashRef = useRef<string>('');
 
   useEffect(() => {
     setAvatarFailed(false);
@@ -64,12 +65,27 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
     return () => container.removeEventListener('scroll', handleScroll);
   }, [checkIfNearBottom]);
 
-  // Auto-scroll when new messages arrive (only if user is near bottom)
+  // Auto-scroll when new messages arrive or translations are added (only if user is near bottom)
   useEffect(() => {
     const currentMessageCount = displayMessages.length;
     const hadNewMessage = currentMessageCount > lastMessageCountRef.current;
 
-    if (hadNewMessage && isNearBottom) {
+    // Create a hash of message contents to detect translation updates
+    const messagesHash = displayMessages
+      .map((msg) => {
+        if (isMockMode) {
+          const mockMsg = msg as MockMessage;
+          return `${mockMsg.text || ''}-${mockMsg.translation || ''}`;
+        } else {
+          const realMsg = msg as Message;
+          return `${realMsg.message?.content || ''}-${realMsg.translation || ''}-${realMsg.partial || ''}`;
+        }
+      })
+      .join('|');
+
+    const hadContentChange = messagesHash !== lastMessagesHashRef.current;
+
+    if ((hadNewMessage || hadContentChange) && isNearBottom) {
       // Small delay to allow DOM to update
       setTimeout(() => {
         scrollToBottom('smooth');
@@ -77,7 +93,8 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
     }
 
     lastMessageCountRef.current = currentMessageCount;
-  }, [displayMessages.length, isNearBottom, scrollToBottom]);
+    lastMessagesHashRef.current = messagesHash;
+  }, [displayMessages, isNearBottom, scrollToBottom, isMockMode]);
 
   // Initial scroll to bottom on mount (skip in mock mode for onboarding)
   useEffect(() => {
@@ -93,7 +110,7 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
       className={'grow overflow-auto px-4 pt-4 pb-4'}
       ref={scrollContainerRef}
     >
-      <motion.div id="glass-messages-content" className={'max-w-2xl mx-auto w-full flex flex-col pb-24'}>
+      <motion.div id="glass-messages-content" className={'max-w-2xl mx-auto w-full flex flex-col'}>
         {/* Messages */}
         <div id="glass-messages-cards" className={'flex flex-col gap-4'}>
           <AnimatePresence mode={'popLayout'}>
@@ -142,11 +159,14 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
                     const isRoleplayPartnerMessage =
                       !isMockMode && sessionMode === 'roleplay' && msg.type === 'partner_message';
 
-                    const partnerLabel: ReactNode = msg.message.role === 'user'
-                      ? <Trans>You</Trans>
-                      : isRoleplayPartnerMessage && conversationPartner?.name
-                        ? conversationPartner.name
-                        : <Trans>Partner</Trans>;
+                    const partnerLabel: ReactNode =
+                      msg.message.role === 'user' ? (
+                        <Trans>You</Trans>
+                      ) : isRoleplayPartnerMessage && conversationPartner?.name ? (
+                        conversationPartner.name
+                      ) : (
+                        <Trans>Partner</Trans>
+                      );
 
                     const timestamp = msg.receivedAt.toLocaleTimeString(undefined, {
                       hour: 'numeric',
@@ -157,14 +177,10 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
                     const messageContent = (
                       <>
                         <div className={'flex items-center justify-between pt-4 px-3'}>
-                          <div
-                            className={cn('text-xs capitalize font-medium leading-none opacity-50 tracking-tight')}
-                          >
+                          <div className={cn('text-xs capitalize font-medium leading-none opacity-50 tracking-tight')}>
                             {partnerLabel}
                           </div>
-                          <div
-                            className={cn('text-xs capitalize font-medium leading-none opacity-50 tracking-tight')}
-                          >
+                          <div className={cn('text-xs capitalize font-medium leading-none opacity-50 tracking-tight')}>
                             {timestamp}
                           </div>
                         </div>
@@ -195,7 +211,9 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
                         />
                       ) : (
                         <div
-                          className={'w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground'}
+                          className={
+                            'w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground'
+                          }
                         >
                           {partnerName.charAt(0).toUpperCase()}
                         </div>

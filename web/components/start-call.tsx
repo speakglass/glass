@@ -289,7 +289,7 @@ export default function StartCall() {
     setScreenSharePreviewStream(null);
   }, []);
 
-  const isConnecting = status.value === 'connecting' || isStartingCall;
+  const isLiveCallStarting = selectedMode === 'live_call' && isStartingCall;
   const glassMode = settings.glassMode ?? false;
   const canStartCall =
     selectedMode === 'roleplay'
@@ -316,6 +316,8 @@ export default function StartCall() {
   const roleplayPartners: ConversationPartner[] = (partnersData ?? []).filter((partner) => partner.kind === 'roleplay');
   const selectedRoleplayPartner = roleplayPartners.find((partner) => partner.id === selectedPartnerId);
   const [hoveredPartner, setHoveredPartner] = useState<ConversationPartner | null>(null);
+  const [hoveredPartnerPreviewTop, setHoveredPartnerPreviewTop] = useState<number | null>(null);
+  const partnerListWrapperRef = useRef<HTMLDivElement | null>(null);
   const partnerListRef = useRef<HTMLDivElement | null>(null);
   const [showPartnerListGradient, setShowPartnerListGradient] = useState(false);
   const updatePartnerListGradient = useCallback(() => {
@@ -445,10 +447,7 @@ export default function StartCall() {
     }
     const userLanguages = { learningLang, nativeLang };
     const previous = profileLanguagesRef.current;
-    const changed =
-      !previous ||
-      previous.learningLang !== learningLang ||
-      previous.nativeLang !== nativeLang;
+    const changed = !previous || previous.learningLang !== learningLang || previous.nativeLang !== nativeLang;
     if (!changed) {
       return;
     }
@@ -833,13 +832,21 @@ export default function StartCall() {
           });
         }
       } catch (error) {
-        console.error('[StartCall] Failed to fetch snapshot for limit check', error);
+        const statusCode =
+          typeof error === 'object' && error && 'status' in error ? (error as { status?: number }).status : null;
+        if (statusCode === 401) {
+          const refreshed = await refresh();
+          latestSnapshot = refreshed?.snapshot ?? latestSnapshot ?? snapshot;
+        } else {
+          console.error('[StartCall] Failed to fetch snapshot for limit check', error);
+        }
       }
     }
 
     if (!latestSnapshot) {
       try {
-        latestSnapshot = (await refresh()) ?? snapshot;
+        const refreshed = await refresh();
+        latestSnapshot = refreshed?.snapshot ?? snapshot;
       } catch (error) {
         console.error('[StartCall] Failed to refresh before proceeding', error);
         toast.error(t`Unable to start call`, {
@@ -914,8 +921,6 @@ export default function StartCall() {
           return;
         }
         screenStreamForSession = pendingScreenStream;
-        screenShareStreamRef.current = null;
-        setScreenSharePreviewStream(null);
         setScreenShareError(null);
       }
 
@@ -1073,8 +1078,12 @@ export default function StartCall() {
             <Button
               size="sm"
               onClick={handleScreenShareSelect}
-              disabled={isRequestingScreenShare}
-              className={cn('cursor-pointer', glassMode ? 'bg-white text-foreground hover:bg-white/90' : '')}
+              disabled={isRequestingScreenShare || isLiveCallStarting}
+              className={cn(
+                'cursor-pointer',
+                glassMode ? 'bg-white text-foreground hover:bg-white/90' : '',
+                (isRequestingScreenShare || isLiveCallStarting) && 'cursor-not-allowed opacity-70'
+              )}
             >
               {isRequestingScreenShare && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {screenSharePreviewStream ? <Trans>Change screen</Trans> : <Trans>Select screen</Trans>}
@@ -1084,7 +1093,8 @@ export default function StartCall() {
                 size="sm"
                 variant={glassMode ? 'ghost' : 'outline'}
                 onClick={handleRemoveScreenShare}
-                className="cursor-pointer"
+                disabled={isLiveCallStarting}
+                className={cn('cursor-pointer', isLiveCallStarting && 'cursor-not-allowed opacity-70')}
               >
                 <Trans>Remove</Trans>
               </Button>
@@ -1123,7 +1133,11 @@ export default function StartCall() {
           <StepHeader step={4} title={<Trans>Start the live call</Trans>} />
           <p className={`${getTextClass('body')} leading-relaxed`}>
             {screenSharePreviewStream ? (
-              <Trans>Press Start Call below to connect. Glass will use your mic plus the shared audio.</Trans>
+              isLiveCallStarting ? (
+                <Trans>Connecting to Glass. Keep your screen share running while we join.</Trans>
+              ) : (
+                <Trans>Press Start Call below to connect. Glass will use your mic plus the shared audio.</Trans>
+              )
             ) : (
               <Trans>Once your screen is shared, the Start Call button will unlock.</Trans>
             )}
@@ -1225,7 +1239,7 @@ export default function StartCall() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className={'flex flex-col items-center gap-6 sm:gap-8 px-1.5'}
+                className={'flex flex-col items-center gap-6 sm:gap-8 px-3 sm:px-1.5'}
               >
                 <div className={'text-center'}>
                   <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
@@ -1236,11 +1250,13 @@ export default function StartCall() {
                   </p>
                 </div>
 
-                <div className={'flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start'}>
+                <div
+                  className={'flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start w-full sm:w-auto'}
+                >
                   <button
                     onClick={() => handleModeSelect('roleplay')}
                     className={cn(
-                      'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0',
+                      'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px]',
                       getCardClass(),
                       getScaleClass()
                     )}
@@ -1265,7 +1281,7 @@ export default function StartCall() {
                   <button
                     onClick={() => handleModeSelect('live_call')}
                     className={cn(
-                      'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px] max-w-[360px] sm:max-w-none mx-auto sm:mx-0 relative',
+                      'px-5 py-4 sm:px-8 sm:py-6 rounded-2xl transition-all cursor-pointer outline-none focus-visible:ring-2 w-full sm:w-[280px] relative',
                       getCardClass(),
                       getScaleClass(),
                       // Disable interactions and subtly dim on mobile
@@ -1370,10 +1386,22 @@ export default function StartCall() {
                     <Trans>Select a conversation partner</Trans>
                   </p>
                 </div>
-                <div className="relative w-full max-w-md mx-auto">
+                <div className="relative w-full max-w-md mx-auto" ref={partnerListWrapperRef}>
+                  {hoveredPartner?.avatarUrl && hoveredPartnerPreviewTop !== null && (
+                    <div
+                      className="hidden sm:block absolute -left-44 -translate-y-1/2 w-40 h-40 rounded-[36px] overflow-hidden shadow-2xl border pointer-events-none transition-all duration-200 opacity-100 translate-x-0 z-0"
+                      style={{ top: hoveredPartnerPreviewTop }}
+                    >
+                      <img
+                        src={hoveredPartner.avatarUrl}
+                        alt={hoveredPartner.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
                   <div
                     ref={partnerListRef}
-                    className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto pr-1 pb-3 sm:pr-2"
+                    className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto pb-4 sm:pb-5 pr-1 sm:pr-2"
                   >
                     {partnersLoading ? (
                       <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
@@ -1384,140 +1412,142 @@ export default function StartCall() {
                         <Trans>No partners available</Trans>
                       </div>
                     ) : (
-                      roleplayPartners.map((partner) => (
-                        <div
-                          key={partner.id}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => handlePartnerSelect(partner.id)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              handlePartnerSelect(partner.id);
-                            }
-                          }}
-                          onMouseEnter={() => setHoveredPartner(partner)}
-                          onMouseLeave={() => setHoveredPartner(null)}
-                          className={cn(
-                            'group px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
-                            getCardClass(),
-                            'hover:scale-[1.01]',
-                            selectedPartnerId === partner.id &&
-                              (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent/50 border-foreground/30')
-                          )}
-                        >
-                          <div className="relative flex items-center gap-3">
-                            {partner.avatarUrl && (
-                              <div
-                                className={cn(
-                                  'hidden sm:block absolute -left-48 top-1/2 -translate-y-1/2 w-40 h-40 rounded-[36px] overflow-hidden shadow-2xl border pointer-events-none transition-all duration-200',
-                                  hoveredPartner?.id === partner.id
-                                    ? 'opacity-100 translate-x-0'
-                                    : 'opacity-0 -translate-x-3'
-                                )}
-                              >
-                                <img
-                                  src={partner.avatarUrl}
-                                  alt={partner.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            )}
-                            <PartnerAvatar
+                      <div className="-mx-1.5 space-y-2">
+                        {roleplayPartners.map((partner) => (
+                          <div key={partner.id} className="px-1.5">
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => handlePartnerSelect(partner.id)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  handlePartnerSelect(partner.id);
+                                }
+                              }}
+                              onMouseEnter={(event) => {
+                                setHoveredPartner(partner);
+                                if (partner.avatarUrl && partnerListWrapperRef.current) {
+                                  const wrapperRect = partnerListWrapperRef.current.getBoundingClientRect();
+                                  const cardRect = event.currentTarget.getBoundingClientRect();
+                                  setHoveredPartnerPreviewTop(cardRect.top - wrapperRect.top + cardRect.height / 2);
+                                } else {
+                                  setHoveredPartnerPreviewTop(null);
+                                }
+                              }}
+                              onMouseLeave={() => {
+                                setHoveredPartner(null);
+                                setHoveredPartnerPreviewTop(null);
+                              }}
                               className={cn(
-                                'h-12 w-12 flex-shrink-0',
-                                glassMode
-                                  ? 'border-white/30 bg-white/10 text-white/80 shadow-none'
-                                  : 'bg-muted text-foreground/80'
+                                'group relative px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 text-left',
+                                getCardClass(),
+                                'hover:z-20 focus-visible:z-20',
+                                selectedPartnerId === partner.id &&
+                                  (glassMode ? 'bg-white/20 border-white/40' : 'bg-accent/50 border-foreground/30')
                               )}
-                              fallbackClassName={glassMode ? 'bg-transparent text-white/80' : undefined}
-                              fallbackSize="md"
-                              name={partner.name}
-                              src={partner.avatarUrl || undefined}
-                              alt={partner.name}
-                            />
-                            <div className={'flex-1 min-w-0 flex items-start gap-2'}>
-                              <div className="flex-1 min-w-0">
-                                <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
-                                  {partner.name}
+                            >
+                              <div className="relative flex items-center gap-3">
+                                <PartnerAvatar
+                                  className={cn(
+                                    'h-12 w-12 flex-shrink-0',
+                                    glassMode
+                                      ? 'border-white/30 bg-white/10 text-white/80 shadow-none'
+                                      : 'bg-muted text-foreground/80'
+                                  )}
+                                  fallbackClassName={glassMode ? 'bg-transparent text-white/80' : undefined}
+                                  fallbackSize="md"
+                                  name={partner.name}
+                                  src={partner.avatarUrl || undefined}
+                                  alt={partner.name}
+                                />
+                                <div className={'flex-1 min-w-0 flex items-start gap-2'}>
+                                  <div className="flex-1 min-w-0">
+                                    <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
+                                      {partner.name}
+                                    </div>
+                                    <div className={`${getTextClass('muted')} text-xs truncate`}>
+                                      {partner.description}
+                                    </div>
+                                  </div>
+                                  {partner.isSystem === false && (
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <button
+                                          type="button"
+                                          onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                          }}
+                                          className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-foreground rounded-lg p-1.5 border border-border/0 hover:border-border bg-muted/60 hover:bg-muted data-[state=open]:opacity-100 data-[state=open]:border-border data-[state=open]:bg-muted"
+                                          aria-label="Partner actions"
+                                        >
+                                          <MoreHorizontal className="w-4 h-4" />
+                                        </button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                          onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            openEditPartnerModal(partner);
+                                          }}
+                                        >
+                                          <Trans>Edit</Trans>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          className="text-destructive focus:text-destructive"
+                                          onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            openDeletePartnerDialog(partner);
+                                          }}
+                                        >
+                                          <Trans>Delete</Trans>
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  )}
                                 </div>
-                                <div className={`${getTextClass('muted')} text-xs truncate`}>{partner.description}</div>
                               </div>
-                              {partner.isSystem === false && (
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <button
-                                      type="button"
-                                      onClick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                      }}
-                                      className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-foreground rounded-lg p-1.5 border border-border/0 hover:border-border bg-muted/60 hover:bg-muted data-[state=open]:opacity-100 data-[state=open]:border-border data-[state=open]:bg-muted"
-                                      aria-label="Partner actions"
-                                    >
-                                      <MoreHorizontal className="w-4 h-4" />
-                                    </button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        openEditPartnerModal(partner);
-                                      }}
-                                    >
-                                      <Trans>Edit</Trans>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      className="text-destructive focus:text-destructive"
-                                      onClick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        openDeletePartnerDialog(partner);
-                                      }}
-                                    >
-                                      <Trans>Delete</Trans>
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              )}
                             </div>
                           </div>
-                        </div>
-                      ))
+                        ))}
+                      </div>
                     )}
 
                     {/* Custom Partner */}
-                    <div className={'w-full'}>
-                      <button
-                        onClick={openCreatePartnerModal}
-                        className={cn(
-                          'w-full px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
-                          getCardClass(),
-                          'hover:scale-[1.01]'
-                        )}
-                      >
-                        <div className={'flex items-center gap-3'}>
-                          <div
-                            className={cn(
-                              'w-12 h-12 rounded-full flex items-center justify-center border',
-                              glassMode
-                                ? 'border-white/30 bg-white/5 text-white/80'
-                                : 'border-border bg-muted text-muted-foreground'
-                            )}
-                          >
-                            <UserRound className="w-6 h-6" strokeWidth={1.75} />
-                          </div>
-                          <div className={'flex-1 min-w-0'}>
-                            <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
-                              <Trans>Custom partner</Trans>
+                    <div className="-mx-1.5">
+                      <div className="px-1.5">
+                        <button
+                          onClick={openCreatePartnerModal}
+                          className={cn(
+                            'w-full px-4 py-3 rounded-xl transition-all cursor-pointer outline-none focus-visible:ring-2 text-left',
+                            getCardClass()
+                          )}
+                        >
+                          <div className={'flex items-center gap-3'}>
+                            <div
+                              className={cn(
+                                'w-12 h-12 rounded-full flex items-center justify-center border',
+                                glassMode
+                                  ? 'border-white/30 bg-white/5 text-white/80'
+                                  : 'border-border bg-muted text-muted-foreground'
+                              )}
+                            >
+                              <UserRound className="w-6 h-6" strokeWidth={1.75} />
                             </div>
-                            <div className={`${getTextClass('muted')} text-xs truncate`}>
-                              <Trans>Create your own conversation partner</Trans>
+                            <div className={'flex-1 min-w-0'}>
+                              <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
+                                <Trans>Custom partner</Trans>
+                              </div>
+                              <div className={`${getTextClass('muted')} text-xs truncate`}>
+                                <Trans>Create your own conversation partner</Trans>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </button>
+                        </button>
+                      </div>
                     </div>
                   </div>
                   {showPartnerListGradient && (

@@ -789,12 +789,14 @@ class ConversationSession:
         """Analyze the full conversation and return scores and overall feedback."""
         full_conversation = self.memory.get_full_conversation()
         conversation_summary = self.memory.get_conversation_context_summary()
+        user_name = self.user_profile.get("name") if self.user_profile else None
         return await self.assistant.analyze_conversation(
             full_conversation,
             self.assistant.all_feedback,
             self.assistant.native_lang,
             self.assistant.learning_lang,
             conversation_summary,
+            user_name,
         )
 
     def set_user_id(self, user_id: str | None) -> None:
