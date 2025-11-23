@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from ..adapters.llm import LLMAdapter
 from ..utils.language import lang_code_to_name
+from . import prompts
 
 LOGGER = logging.getLogger(__name__)
 
@@ -379,52 +380,45 @@ async def _localize_persona_content(
     city: str | None,
     country: str | None,
     interests: list[str],
+    source_language_name: str,
     native_language_name: str,
 ) -> LocalizedPersonaContent:
     """Translate persona summary/background into the learner's native language."""
 
-    system_prompt = dedent(
-        f"""
-        You are a professional translator for language-learning personas.
-        Translate the provided summary and interests so they sound natural to a native {native_language_name} speaker.
-        Preserve the first-person perspective (using "I"), key facts, tone, and names.
-        Avoid mixing other languages. Return interests as a list of short phrases in {native_language_name}.
-        """
-    ).strip()
-    user_prompt = dedent(
-        f"""
-        Summary (original):
-        {summary}
+    async def _translate_field(text: str | None) -> str | None:
+        if not text:
+            return text
+        translated = await _translate_text(
+            llm_adapter,
+            text=text,
+            source_language_name=source_language_name,
+            target_language_name=native_language_name,
+        )
+        return translated or text
 
-        Background (original):
-        {background or ""}
-
-        Occupation (original):
-        {occupation or ""}
-
-        City (original):
-        {city or ""}
-
-        Country (original):
-        {country or ""}
-
-        Interests (original, comma-separated):
-        {", ".join(interests)}
-        """
-    ).strip()
-
-    response = await llm_adapter.call(
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
-        response_schema=LocalizedPersonaContent,
-        temperature=0.2,
+    summary_translated, background_translated, occupation_translated, city_translated, country_translated = (
+        await asyncio.gather(
+            _translate_field(summary),
+            _translate_field(background),
+            _translate_field(occupation),
+            _translate_field(city),
+            _translate_field(country),
+        )
     )
 
-    if isinstance(response, LocalizedPersonaContent):
-        return response
-    if isinstance(response, dict):
-        return LocalizedPersonaContent(**response)
-    return LocalizedPersonaContent.model_validate(response)
+    interests_translated: list[str] = []
+    if interests:
+        translated_list = await asyncio.gather(*(_translate_field(item) for item in interests))
+        interests_translated = [item.strip() for item in translated_list if isinstance(item, str) and item.strip()]
+
+    return LocalizedPersonaContent(
+        summary=summary_translated or summary,
+        background=background_translated or background,
+        occupation=occupation_translated or occupation,
+        city=city_translated or city,
+        country=country_translated or country,
+        interests=interests_translated or interests,
+    )
 
 
 async def generate_partner_persona(
@@ -586,12 +580,19 @@ async def generate_partner_persona(
         persona.occupation,
     )
     localization: LocalizedPersonaContent | None = None
-    if (
-        preferences.learning_lang
-        and preferences.native_lang
-        and preferences.learning_lang != preferences.native_lang
-    ):
+    if preferences.learning_lang and preferences.native_lang and preferences.learning_lang != preferences.native_lang:
+        LOGGER.info("Localizing persona content to native language: %s", preferences.native_lang)
+        LOGGER.info("Persona summary: %s", persona.summary)
+        LOGGER.info("Persona background: %s", persona.background)
+        LOGGER.info("Persona occupation: %s", persona.occupation)
+        LOGGER.info("Persona city: %s", persona.city)
+        LOGGER.info("Persona country: %s", persona.country)
+        LOGGER.info("Persona interests: %s", persona.interests)
+        LOGGER.info("Persona name: %s", persona.name)
+        LOGGER.info("Persona age: %d", persona.age)
+        LOGGER.info("Persona gender: %s", persona.gender)
         native_lang_name = lang_code_to_name(preferences.native_lang)
+        source_lang_name = lang_code_to_name(preferences.learning_lang)
         localization = await _localize_persona_content(
             llm_adapter,
             summary=persona.summary,
@@ -600,8 +601,16 @@ async def generate_partner_persona(
             city=persona.city,
             country=persona.country,
             interests=persona.interests,
+            source_language_name=source_lang_name,
             native_language_name=native_lang_name,
         )
+        LOGGER.info("✓ Persona content localized to native language: %s", native_lang_name)
+        LOGGER.info("Localized persona summary: %s", localization.summary)
+        LOGGER.info("Localized persona background: %s", localization.background)
+        LOGGER.info("Localized persona occupation: %s", localization.occupation)
+        LOGGER.info("Localized persona city: %s", localization.city)
+        LOGGER.info("Localized persona country: %s", localization.country)
+        LOGGER.info("Localized persona interests: %s", localization.interests)
 
     return persona, localization
 
@@ -831,29 +840,7 @@ async def _generate_persona_background(
 
 
 async def _generate_avatar_prompt_text(llm_adapter: LLMAdapter, persona: PersonaLLMResponse) -> str | None:
-    """Call the LLM to turn persona attributes into a natural photo prompt."""
-
-    system_prompt = dedent(
-        """
-        You create portrait photo descriptions for casual profile pictures shot with smartphone cameras.
-        
-        Rules:
-        - Shot with smartphone camera (28mm equivalent, natural perspective)
-        - Focus ONLY on the person and background - NO phone UI, NO timestamps, NO screen elements, NO bezels
-        - Describe natural lighting and simple everyday settings
-        - Mention the subject's appearance, age, expression, and where they're from so the subject is clearly identified
-        - Add a simple background that matches their lifestyle
-        - Keep the smartphone camera aesthetic: slightly wide angle, natural depth of field
-        - Keep it realistic and casual like a selfie or friend-taken photo
-        - No em dashes
-        - Keep the final description under ~60 words (≈350 characters)
-
-        Example style:
-        "Shot with smartphone camera in natural lighting. A friendly-looking guy in his mid-twenties with a warm smile, slightly off-center. Simple coffee shop background with natural bokeh. Clean colors, casual framing typical of phone cameras."
-
-        Focus on the person and setting only - describe the photo itself, not the device UI.
-        """
-    ).strip()
+    """Call the LLM to turn persona attributes into natural photo keywords."""
 
     keywords = persona.avatar_keywords or []
     keyword_text = ", ".join(keywords[:6]) if keywords else "friendly, chill vibe"
@@ -861,42 +848,97 @@ async def _generate_avatar_prompt_text(llm_adapter: LLMAdapter, persona: Persona
     origin_phrase = persona.country or persona.city or ""
     origin_text = f" from {origin_phrase}" if origin_phrase else ""
 
-    # Add appearance keywords based on gender
-    appearance = ""
+    appearance_descriptor = ""
     if persona.gender == "male":
-        appearance = "handsome, "
+        appearance_descriptor = "handsome"
     elif persona.gender == "female":
-        appearance = "pretty, "
+        appearance_descriptor = "pretty"
     elif persona.gender == "non-binary":
-        appearance = "attractive, "
+        appearance_descriptor = "androgynously attractive"
 
-    # Include occupation, city, and interests for better background context
-    occupation_text = f", occupation: {persona.occupation}" if persona.occupation else ""
-    city_text = f", city: {persona.city}" if persona.city else ""
-    interests_text = ""
-    if persona.interests:
-        top_interests = persona.interests[:3]  # Use top 3 interests
-        interests_text = f", interests: {', '.join(top_interests)}"
+    base_keywords = [
+        "Hyperealistic Amateur photography",
+        "Captured on an android phone",
+        "Boring reality",
+        "Candid",
+        "23mm focal length",
+        "detailed",
+        "Realism",
+        "Washed out",
+        "casual photography",
+        "natural lighting",
+        "disposable camera vibe",
+        "background also in focus",
+        "add tiny imperfections",
+        "imperfect",
+        "everyday aesthetic",
+        "2020 vibe",
+        "amateur photo",
+        "slight JPEG artifacts",
+        "shot on mobile phone",
+        "Grain in dark areas",
+        "Overexposed",
+        "unpolished look",
+        "unedited snapshot",
+    ]
 
-    subject_clause = f"{persona.gender or 'person'}, {persona.age or '20s'} years old{origin_text}, "
-    user_prompt = (
-        f"{subject_clause}{appearance}{keyword_text}{occupation_text}{city_text}{interests_text}. "
-        "Ensure the description explicitly names the subject so it is unambiguous."
-    )
+    subject_stub = f"{appearance_descriptor or 'natural-looking'} {persona.gender or 'person'} in their {persona.age or '20s'}{origin_text}".strip()
+    lifestyle_snippet = persona.summary.split(".")[0].strip() if persona.summary else ""
+
+    llm_prompt = dedent(
+        f"""
+        Generate 10 short comma-separated keywords describing a real person for a casual smartphone portrait.
+        Focus on appearance, clothing, posture/expression, and surroundings that fit their lifestyle.
+        Keep it grounded, no fantasy, no props.
+
+        Subject:
+        - {subject_stub}
+        - Occupation: {persona.occupation or 'N/A'}
+        - City: {persona.city or 'N/A'}
+        - Country: {persona.country or 'N/A'}
+        - Interests: {', '.join(persona.interests[:3]) if persona.interests else 'N/A'}
+        - Vibe: {lifestyle_snippet or 'casual everyday moment'}
+
+        Output only keywords separated by commas.
+        """
+    ).strip()
 
     response = await llm_adapter.call(
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
-        temperature=0.5,
+        system="You create concise keyword lists for realistic portrait prompts.",
+        messages=[{"role": "user", "content": llm_prompt}],
+        temperature=0.4,
     )
-    normalized: str | None
+    llm_keywords: list[str] = []
     if isinstance(response, str):
-        normalized = response.strip()
+        llm_keywords = [part.strip() for part in response.split(",") if part.strip()]
     elif isinstance(response, dict):
-        normalized = json.dumps(response, ensure_ascii=False)
-    else:
-        normalized = str(response).strip()
-    return _clamp_avatar_prompt(normalized)
+        text_val = response.get("text")
+        if isinstance(text_val, str):
+            llm_keywords = [part.strip() for part in text_val.split(",") if part.strip()]
+    if not llm_keywords:
+        llm_keywords = ["soft smile", "casual outfit", "relaxed posture", "natural daylight"]
+
+    dynamic_details = [
+        subject_stub,
+        "upper body in frame",
+        "casual outfit with natural posture",
+        keyword_text,
+    ]
+    if persona.occupation:
+        dynamic_details.append(f"{persona.occupation.lower()} context")
+    if persona.city:
+        dynamic_details.append(f"{persona.city} everyday background")
+    if lifestyle_snippet:
+        dynamic_details.append(lifestyle_snippet)
+
+    positive_prompt = ", ".join(base_keywords + dynamic_details + llm_keywords)
+    negative_prompt = dedent(
+        f"""
+        No date and time on photo this isn't a cctv footage, No intense colors, No intense filters, No Cinematic vibe, No vignette, No Background Blur, No perfect composition, subject shouldn't be exactly centered, less symmetry, No low resolution, No grain
+    """
+    ).strip()
+
+    return _clamp_avatar_prompt(f"Positive Prompt: {positive_prompt}\nNegative Prompt: {negative_prompt}")
 
 
 class VoiceSelectionResponse(BaseModel):
@@ -1065,3 +1107,30 @@ async def select_voice_for_persona(
     raise VoiceSelectionError(
         f"LLM returned an invalid voice identifier: {candidate_id!r}. Unable to match against catalog."
     )
+
+
+async def _translate_text(
+    llm_adapter: LLMAdapter,
+    *,
+    text: str,
+    source_language_name: str,
+    target_language_name: str,
+) -> str | None:
+    system_prompt, user_prompt = prompts.build_translation_prompt(text, source_language_name, target_language_name)
+    try:
+        response = await llm_adapter.call(
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+            temperature=0.2,
+        )
+    except Exception as exc:  # pragma: no cover - defensive fallback
+        LOGGER.warning("Translation request failed: %s", exc)
+        return None
+
+    if isinstance(response, str):
+        return response.strip()
+    if isinstance(response, dict):
+        text_value = response.get("text")
+        if isinstance(text_value, str):
+            return text_value.strip()
+    return str(response).strip() if response else None
