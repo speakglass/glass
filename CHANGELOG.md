@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.12](https://github.com/speakglass/glass/compare/v0.1.11...v0.1.12) (2025-11-22)
+
+
+### Bug Fixes
+
+* **assistant:** enhance conversation analysis and feedback generation ([721e647](https://github.com/speakglass/glass/commit/721e647da5576075e7cb04112947adbc378b145d))
+* **start-call:** enhance caching and refetching behavior ([968ea70](https://github.com/speakglass/glass/commit/968ea703e8f5cf18377d6df3928281f2dc472efa))
+* **start-call:** enhance language synchronization and state management ([a178d0a](https://github.com/speakglass/glass/commit/a178d0a6e12492045db311de2c524b66ed218ada))
+* **start-call:** improve account snapshot fetching and limit checking ([97f0cf4](https://github.com/speakglass/glass/commit/97f0cf43722caa2e66247eef0934df3160c801da))
+* **start-call:** improve error handling and loading state management ([949690b](https://github.com/speakglass/glass/commit/949690be99a79e957b3ace9040bbeb84a0b5b5d6))
+* **start-call:** optimize language selection logic with useMemo ([14b5e09](https://github.com/speakglass/glass/commit/14b5e09ef629d5beed89cfc53874d2f90a8d15ab))
+* **start-call:** refine language handling in effect dependencies ([9a01b56](https://github.com/speakglass/glass/commit/9a01b56973c232176233af0f0ee0c784d82f8b5c))
+* **start-call:** simplify language handling by removing unused logic ([1aaf765](https://github.com/speakglass/glass/commit/1aaf765479a17fb32080af6a8511566682341b92))
+* **start-call:** stabilize language selection with useRef ([0e39c76](https://github.com/speakglass/glass/commit/0e39c76461ece4667fa8b9c54dc880e90023d8e6))
+* **start-call:** update UI visibility logic during call connection ([9993a48](https://github.com/speakglass/glass/commit/9993a485e752ad8cdc3af0afad6f13f05ffb7ab5))
+
 ## [0.1.11](https://github.com/speakglass/glass/compare/v0.1.10...v0.1.11) (2025-11-21)
 
 
