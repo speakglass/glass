@@ -305,7 +305,6 @@ class PersonaLLMResponse(BaseModel):
     )
     interests: list[str] = Field(default_factory=list, description="3-5 hobby phrases, e.g., 'hiking', technology'")
     avatar_prompt_text: str | None = Field(default=None, description="Natural language avatar prompt")
-    avatar_keywords: list[str] = Field(default_factory=list, description="Key descriptors for avatar generation")
 
 
 class LocalizedPersonaContent(BaseModel):
@@ -568,7 +567,6 @@ async def generate_partner_persona(
 
     persona.background = background_text or persona.background
     persona.avatar_prompt_text = avatar_prompt_text
-    persona.avatar_keywords = _build_avatar_keywords(persona, nationality, topics)
 
     elapsed = time.time() - start_time
     LOGGER.info(
@@ -689,34 +687,6 @@ def compress_interests(interests: Sequence[str]) -> str:
 
     cleaned = [interest.strip() for interest in interests if interest.strip()]
     return ", ".join(cleaned)
-
-
-def _build_avatar_keywords(
-    persona: PersonaLLMResponse,
-    nationality: str,
-    topics: Sequence[str],
-) -> list[str]:
-    keywords: list[str] = []
-    if persona.gender:
-        keywords.append(persona.gender)
-    if persona.age:
-        if persona.age < 20:
-            keywords.append("teen")
-        elif persona.age < 30:
-            keywords.append("twenties")
-        elif persona.age < 40:
-            keywords.append("thirties")
-        else:
-            keywords.append("forties_plus")
-    if nationality:
-        keywords.append(nationality)
-    elif persona.country:
-        keywords.append(persona.country)
-    if persona.occupation:
-        keywords.append(persona.occupation)
-    keywords.extend(persona.interests[:2])
-    keywords.extend(topic for topic in topics[:2] if topic not in keywords)
-    return [kw.strip() for kw in keywords if kw]
 
 
 async def _generate_persona_core(
@@ -841,10 +811,6 @@ async def _generate_persona_background(
 
 async def _generate_avatar_prompt_text(llm_adapter: LLMAdapter, persona: PersonaLLMResponse) -> str | None:
     """Call the LLM to turn persona attributes into natural photo keywords."""
-
-    keywords = persona.avatar_keywords or []
-    keyword_text = ", ".join(keywords[:6]) if keywords else "friendly, chill vibe"
-
     origin_phrase = persona.country or persona.city or ""
     origin_text = f" from {origin_phrase}" if origin_phrase else ""
 
@@ -856,89 +822,69 @@ async def _generate_avatar_prompt_text(llm_adapter: LLMAdapter, persona: Persona
     elif persona.gender == "non-binary":
         appearance_descriptor = "androgynously attractive"
 
-    base_keywords = [
-        "Hyperealistic Amateur photography",
-        "Captured on an android phone",
-        "Boring reality",
-        "Candid",
-        "23mm focal length",
-        "detailed",
-        "Realism",
-        "Washed out",
-        "casual photography",
-        "natural lighting",
-        "disposable camera vibe",
-        "background also in focus",
-        "add tiny imperfections",
-        "imperfect",
-        "everyday aesthetic",
-        "2020 vibe",
-        "amateur photo",
-        "slight JPEG artifacts",
-        "shot on mobile phone",
-        "Grain in dark areas",
-        "Overexposed",
-        "unpolished look",
-        "unedited snapshot",
-    ]
+    subject_stub = f"{appearance_descriptor or 'natural-looking'} {persona.gender or 'person'} in their {persona.age or '20s'} years old{origin_text}".strip()
 
-    subject_stub = f"{appearance_descriptor or 'natural-looking'} {persona.gender or 'person'} in their {persona.age or '20s'}{origin_text}".strip()
-    lifestyle_snippet = persona.summary.split(".")[0].strip() if persona.summary else ""
-
-    llm_prompt = dedent(
-        f"""
-        Generate 10 short comma-separated keywords describing a real person for a casual smartphone portrait.
-        Focus on appearance, clothing, posture/expression, and surroundings that fit their lifestyle.
-        Keep it grounded, no fantasy, no props.
-
-        Subject:
-        - {subject_stub}
-        - Occupation: {persona.occupation or 'N/A'}
-        - City: {persona.city or 'N/A'}
-        - Country: {persona.country or 'N/A'}
-        - Interests: {', '.join(persona.interests[:3]) if persona.interests else 'N/A'}
-        - Vibe: {lifestyle_snippet or 'casual everyday moment'}
-
-        Output only keywords separated by commas.
+    # Generate detailed photo description keywords using LLM
+    system_prompt = dedent(
+        """
+        You are an expert at generating detailed, comma-separated keywords that describe profile photos.
+        Generate 10 specific, visual keywords that would help create a realistic profile photo.
+        Focus on visual details like appearance, clothing style, setting, expression, and atmosphere.
+        Be specific and descriptive, but keep each keyword concise.
+        Return ONLY the keywords as a comma-separated list, nothing else.
         """
     ).strip()
 
-    response = await llm_adapter.call(
-        system="You create concise keyword lists for realistic portrait prompts.",
-        messages=[{"role": "user", "content": llm_prompt}],
-        temperature=0.4,
-    )
-    llm_keywords: list[str] = []
-    if isinstance(response, str):
-        llm_keywords = [part.strip() for part in response.split(",") if part.strip()]
-    elif isinstance(response, dict):
-        text_val = response.get("text")
-        if isinstance(text_val, str):
-            llm_keywords = [part.strip() for part in text_val.split(",") if part.strip()]
-    if not llm_keywords:
-        llm_keywords = ["soft smile", "casual outfit", "relaxed posture", "natural daylight"]
+    user_prompt = dedent(
+        f"""
+        Generate 10 detailed visual keywords for a profile photo based on this persona:
+        
+        Gender: {persona.gender}
+        Age: {persona.age}
+        Location: {persona.city}, {persona.country}
+        Occupation: {persona.occupation}
+        Interests: {", ".join(persona.interests)}
+        
+        Example output format: "casual streetwear, warm smile, coffee shop background, natural makeup, relaxed posture, friendly eyes, modern hairstyle, smartphone in hand, urban setting, soft afternoon light"
+        
+        Generate 10 keywords that describe the photo itself (not the person's personality):
+        """
+    ).strip()
 
-    dynamic_details = [
-        subject_stub,
-        "upper body in frame",
-        "casual outfit with natural posture",
-        keyword_text,
-    ]
-    if persona.occupation:
-        dynamic_details.append(f"{persona.occupation.lower()} context")
-    if persona.city:
-        dynamic_details.append(f"{persona.city} everyday background")
-    if lifestyle_snippet:
-        dynamic_details.append(lifestyle_snippet)
+    try:
+        response = await llm_adapter.call(
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+            temperature=0.7,
+        )
 
-    positive_prompt = ", ".join(base_keywords + dynamic_details + llm_keywords)
+        if isinstance(response, str):
+            llm_keywords = response.strip()
+        elif isinstance(response, dict):
+            llm_keywords = response.get("keywords", "")
+        else:
+            llm_keywords = str(response).strip()
+
+        # Clean up the keywords
+        llm_keywords = llm_keywords.strip().strip('"').strip("'")
+
+    except Exception as exc:
+        LOGGER.warning("LLM keyword generation failed: %s. Using fallback keywords.", exc)
+        # Fallback to basic keywords
+        llm_keywords = f"casual style, natural expression, {persona.occupation} vibe, friendly demeanor"
+
+    positive_prompt = dedent(
+        f"""
+        Hyperealistic Amateur photography, Captured on an iphone phone, Candid, 23mm focal length, detailed, Realism, casual photography, natural lighting, modern camera vibe, background also in focus, add tiny imperfections, imperfect, everyday aesthetic, 2020 vibe, amateur photo, slight JPEG artifacts, shot on mobile phone, Grain in dark areas, unpolished look, unedited snapshot, {persona.age or '20s'} years old, {persona.gender or 'person'}, {llm_keywords}
+    """
+    ).strip()
     negative_prompt = dedent(
         f"""
         No date and time on photo this isn't a cctv footage, No intense colors, No intense filters, No Cinematic vibe, No vignette, No Background Blur, No perfect composition, subject shouldn't be exactly centered, less symmetry, No low resolution, No grain
     """
     ).strip()
 
-    return _clamp_avatar_prompt(f"Positive Prompt: {positive_prompt}\nNegative Prompt: {negative_prompt}")
+    return f"Positive Prompt: {positive_prompt}\nNegative Prompt: {negative_prompt}"
 
 
 class VoiceSelectionResponse(BaseModel):
@@ -1008,18 +954,6 @@ def _resolve_voice_id(candidate_value: str | None, candidates: list[VoiceProfile
         if voice_id_lower in lowered or voice_name_lower in lowered:
             return voice.id
     return None
-
-
-def _clamp_avatar_prompt(value: str | None, *, max_length: int = 360) -> str | None:
-    """Collapse whitespace and trim overly long prompts for the avatar model."""
-
-    if not value:
-        return None
-    compact = " ".join(value.split())
-    if len(compact) <= max_length:
-        return compact
-    truncated = compact[:max_length].rsplit(" ", 1)[0].rstrip(",.; ")
-    return truncated or compact[:max_length]
 
 
 async def select_voice_for_persona(

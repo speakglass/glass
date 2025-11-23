@@ -40,7 +40,7 @@ class ConversationSession:
         self.events_ports: list[EventsPort] = [events] if events else []
         self.default_lang = default_lang
         self.lang = default_lang
-        self._llm_gate = llm_semaphore or asyncio.Semaphore(4)
+        self._llm_gate = llm_semaphore or asyncio.Semaphore(8)
         self.session_start_time = time.time()
         self.mode: str = "live_call"  # "live_call" or "roleplay"
         self._active_roleplay_task: asyncio.Task | None = None
@@ -636,6 +636,7 @@ class ConversationSession:
         partner_spoken_lang: str | None = None,
     ) -> None:
         """Set session configuration including languages, mode, and partner info."""
+
         def _normalize(code: str | None) -> str | None:
             if isinstance(code, str):
                 trimmed = code.strip().lower()

@@ -1457,7 +1457,7 @@ msgstr "{location}에서 재미있게 대화할 수 있는 사람을 찾고 있�
 #: components/custom-partner-creator.tsx:1067
 #: components/partner-detail-modal.tsx:167
 msgid "Looking for"
-msgstr "찾기"
+msgstr "선호 파트너 유형"
 
 #: components/custom-partner-creator.tsx:230
 msgid "Looking for an AI partner who matches your vibe..."
