@@ -823,6 +823,13 @@ class ConversationSession:
             user_name,
         )
 
+    async def dispose(self) -> None:
+        """Release resources associated with the session."""
+        try:
+            await self.assistant.shutdown()
+        except Exception as exc:
+            LOGGER.debug("Assistant shutdown failed for session %s: %s", self.session_id, exc)
+
     def set_user_id(self, user_id: str | None) -> None:
         """Set user ID for memory operations."""
         self.memory.user_id = user_id
