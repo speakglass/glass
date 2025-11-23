@@ -34,38 +34,6 @@ import {
 import type { LearningLevel } from '@/types/learning-level';
 import { isLearningLevel, needsPronunciationSupport } from '@/types/learning-level';
 
-const LANGUAGE_LEVEL_OPTIONS: {
-  value: LearningLevel;
-  labelKey: string;
-  descriptionKey: string;
-  icon: string;
-}[] = [
-  {
-    value: 'zero',
-    labelKey: 'Zero',
-    descriptionKey: 'I am starting from zero and need full guidance.',
-    icon: '🥚',
-  },
-  {
-    value: 'beginner',
-    labelKey: 'Beginner',
-    descriptionKey: 'I can say simple phrases but need help forming sentences.',
-    icon: '🌱',
-  },
-  {
-    value: 'intermediate',
-    labelKey: 'Intermediate',
-    descriptionKey: 'I can explain ideas, ask follow-up questions, and manage most conversations.',
-    icon: '🌼',
-  },
-  {
-    value: 'advanced',
-    labelKey: 'Advanced',
-    descriptionKey: 'I can discuss complex topics and want to sound more natural.',
-    icon: '🌟',
-  },
-];
-
 function OnboardingTour() {
   const router = useRouter();
   const pathname = usePathname();
@@ -405,6 +373,37 @@ export default function OnboardingClient() {
   const resolvedLevel = (languageLevel || initialLevel || undefined) as LearningLevel | undefined;
   const needsPronunciation = needsPronunciationSupport(resolvedLevel);
 
+  // Define language level options inside component so translations update when language changes
+  const languageLevelOptions = useMemo(
+    () => [
+      {
+        value: 'zero' as LearningLevel,
+        label: t`Zero`,
+        description: t`I am starting from zero and need full guidance.`,
+        icon: '🥚',
+      },
+      {
+        value: 'beginner' as LearningLevel,
+        label: t`Beginner`,
+        description: t`I can say simple phrases but need help forming sentences.`,
+        icon: '🌱',
+      },
+      {
+        value: 'intermediate' as LearningLevel,
+        label: t`Intermediate`,
+        description: t`I can explain ideas, ask follow-up questions, and manage most conversations.`,
+        icon: '🌼',
+      },
+      {
+        value: 'advanced' as LearningLevel,
+        label: t`Advanced`,
+        description: t`I can discuss complex topics and want to sound more natural.`,
+        icon: '🌟',
+      },
+    ],
+    [] // Re-evaluate when component re-renders with new language
+  );
+
   // Persist language selection across page transitions
   useEffect(() => {
     if (languages.nativeLang || languages.learningLang) {
@@ -435,8 +434,8 @@ export default function OnboardingClient() {
     // Change UI language if the selected language is supported
     if (LOCALIZED_LANGUAGE_CODES.includes(code as any)) {
       const newPath = changeLanguage(code, pathname, LOCALIZED_LANGUAGE_CODES);
-      // Use router.push for smoother transition
-      router.push(newPath);
+      // Force full page reload to reinitialize Lingui with new locale
+      window.location.href = newPath;
     }
   };
 
@@ -602,7 +601,7 @@ export default function OnboardingClient() {
           </div>
 
           <div className="flex flex-col gap-2 w-full">
-            {LANGUAGE_LEVEL_OPTIONS.map((option) => {
+            {languageLevelOptions.map((option) => {
               const isActive = languageLevel === option.value;
               return (
                 <button
@@ -623,12 +622,8 @@ export default function OnboardingClient() {
                     {option.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-base mb-0.5">
-                      <Trans>{option.labelKey}</Trans>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      <Trans>{option.descriptionKey}</Trans>
-                    </p>
+                    <div className="font-medium text-base mb-0.5">{option.label}</div>
+                    <p className="text-xs text-muted-foreground">{option.description}</p>
                   </div>
                 </button>
               );

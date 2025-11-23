@@ -39,13 +39,6 @@ const LEARNING_LANGUAGES = [
   { code: 'fr', name: 'Français', flag: '🇫🇷' },
 ];
 
-const LANGUAGE_LEVEL_OPTIONS: { value: LearningLevel; label: string }[] = [
-  { value: 'zero', label: t`Zero` },
-  { value: 'beginner', label: t`Beginner` },
-  { value: 'intermediate', label: t`Intermediate` },
-  { value: 'advanced', label: t`Advanced` },
-];
-
 export default function Settings({ open, onOpenChange }: SettingsProps) {
   const { theme, setTheme } = useTheme();
   const voice = useGlass();
@@ -59,6 +52,17 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
 
   const audioInputs = useMemo(() => devices.filter((d) => d.kind === 'audioinput'), [devices]);
   const appearance: 'light' | 'dark' = (theme as 'light' | 'dark') || 'light';
+
+  // Define language level options inside component so translations update when language changes
+  const languageLevelOptions = useMemo(
+    () => [
+      { value: 'zero' as LearningLevel, label: t`Zero` },
+      { value: 'beginner' as LearningLevel, label: t`Beginner` },
+      { value: 'intermediate' as LearningLevel, label: t`Intermediate` },
+      { value: 'advanced' as LearningLevel, label: t`Advanced` },
+    ],
+    [] // Re-evaluate when component re-renders with new language
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -322,7 +326,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
                 <SelectValue placeholder="Select level" />
               </SelectTrigger>
               <SelectContent>
-                {LANGUAGE_LEVEL_OPTIONS.map((option) => (
+                {languageLevelOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>

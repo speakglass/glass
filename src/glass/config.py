@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # Deepgram ASR
     deepgram_key: str | None = None
     deepgram_utterance_end_ms: int | None = 1000
-    deepgram_endpointing_ms: int | None = 1000
+    deepgram_endpointing_ms: int | None = None
     deepgram_enable_vad_events: bool = True
 
     # ElevenLabs TTS

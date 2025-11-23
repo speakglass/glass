@@ -27,6 +27,11 @@ msgstr "Glass: AI that helps you speak any language"
 msgid "Glass is an AI that helps you speak any language. It uses the latest in AI to help you learn and speak any language."
 msgstr "Glass is an AI that helps you speak any language. It uses the latest in AI to help you learn and speak any language."
 
+#: components/onboarding/onboarding-client.tsx:627
+#: components/onboarding/onboarding-client.tsx:630
+#~ msgid "{0}"
+#~ msgstr "{0}"
+
 #. placeholder {0}: table.getFilteredSelectedRowModel().rows.length
 #. placeholder {1}: table.getFilteredRowModel().rows.length
 #: components/memory/data-table.tsx:221
@@ -107,8 +112,8 @@ msgstr "{totalMemories, plural, one {# matching memory} other {# matching memori
 msgid "{totalMemories, plural, one {# total memory} other {# total memories}}"
 msgstr "{totalMemories, plural, one {# total memory} other {# total memories}}"
 
-#: components/onboarding/onboarding-client.tsx:574
-#: components/onboarding/onboarding-client.tsx:641
+#: components/onboarding/onboarding-client.tsx:573
+#: components/onboarding/onboarding-client.tsx:640
 #: components/start-call-instructions.tsx:67
 #: components/start-call.tsx:992
 msgid "← Back"
@@ -163,8 +168,8 @@ msgstr "Add new memory"
 msgid "Add your own"
 msgstr "Add your own"
 
-#: components/onboarding/onboarding-client.tsx:63
-#: components/settings.tsx:46
+#: components/onboarding/onboarding-client.tsx:399
+#: components/settings.tsx:62
 msgid "Advanced"
 msgstr "Advanced"
 
@@ -263,7 +268,7 @@ msgstr "At least one special character"
 msgid "Authentication failed"
 msgstr "Authentication failed"
 
-#: components/onboarding/onboarding-client.tsx:456
+#: components/onboarding/onboarding-client.tsx:455
 msgid "Authentication is required. Please refresh and try again."
 msgstr "Authentication is required. Please refresh and try again."
 
@@ -301,8 +306,8 @@ msgstr "Beach culture"
 msgid "Beer & Festivals"
 msgstr "Beer & Festivals"
 
-#: components/onboarding/onboarding-client.tsx:51
-#: components/settings.tsx:44
+#: components/onboarding/onboarding-client.tsx:387
+#: components/settings.tsx:60
 msgid "Beginner"
 msgstr "Beginner"
 
@@ -448,7 +453,7 @@ msgstr "Choose monthly or yearly billing and unlock Glass features tailored to y
 msgid "Choose someone to practice with"
 msgstr "Choose someone to practice with"
 
-#: components/onboarding/onboarding-client.tsx:541
+#: components/onboarding/onboarding-client.tsx:540
 msgid "Choose the language you want to practice speaking"
 msgstr "Choose the language you want to practice speaking"
 
@@ -659,7 +664,7 @@ msgstr "Custom AI partners"
 #~ msgid "Custom partner ready"
 #~ msgstr "Custom partner ready"
 
-#: components/settings.tsx:187
+#: components/settings.tsx:191
 msgid "Customize your Glass experience"
 msgstr "Customize your Glass experience"
 
@@ -667,7 +672,7 @@ msgstr "Customize your Glass experience"
 msgid "Daily life"
 msgstr "Daily life"
 
-#: components/settings.tsx:370
+#: components/settings.tsx:374
 msgid "Dark"
 msgstr "Dark"
 
@@ -1208,7 +1213,7 @@ msgstr "Help us improve Glass"
 msgid "Hey! I'm Glass."
 msgstr "Hey! I'm Glass."
 
-#: components/settings.tsx:243
+#: components/settings.tsx:247
 msgid "Hide messages"
 msgstr "Hide messages"
 
@@ -1220,7 +1225,7 @@ msgstr "Hiking & Nature"
 msgid "Home"
 msgstr "Home"
 
-#: components/onboarding/onboarding-client.tsx:597
+#: components/onboarding/onboarding-client.tsx:596
 msgid "How confident are you in this language?"
 msgstr "How confident are you in this language?"
 
@@ -1228,15 +1233,15 @@ msgstr "How confident are you in this language?"
 #~ msgid "How would you like to use Glass?"
 #~ msgstr "How would you like to use Glass?"
 
-#: components/onboarding/onboarding-client.tsx:46
+#: components/onboarding/onboarding-client.tsx:382
 msgid "I am starting from zero and need full guidance."
 msgstr "I am starting from zero and need full guidance."
 
-#: components/onboarding/onboarding-client.tsx:64
+#: components/onboarding/onboarding-client.tsx:400
 msgid "I can discuss complex topics and want to sound more natural."
 msgstr "I can discuss complex topics and want to sound more natural."
 
-#: components/onboarding/onboarding-client.tsx:58
+#: components/onboarding/onboarding-client.tsx:394
 msgid "I can explain ideas, ask follow-up questions, and manage most conversations."
 msgstr "I can explain ideas, ask follow-up questions, and manage most conversations."
 
@@ -1244,7 +1249,7 @@ msgstr "I can explain ideas, ask follow-up questions, and manage most conversati
 #~ msgid "I can hold short chats about daily life with support."
 #~ msgstr "I can hold short chats about daily life with support."
 
-#: components/onboarding/onboarding-client.tsx:52
+#: components/onboarding/onboarding-client.tsx:388
 msgid "I can say simple phrases but need help forming sentences."
 msgstr "I can say simple phrases but need help forming sentences."
 
@@ -1305,8 +1310,8 @@ msgstr "Inactive"
 msgid "Interaction"
 msgstr "Interaction"
 
-#: components/onboarding/onboarding-client.tsx:57
-#: components/settings.tsx:45
+#: components/onboarding/onboarding-client.tsx:393
+#: components/settings.tsx:61
 msgid "Intermediate"
 msgstr "Intermediate"
 
@@ -1376,7 +1381,7 @@ msgstr "Korean food"
 #~ msgid "Language Exchange • Calls"
 #~ msgstr "Language Exchange • Calls"
 
-#: components/settings.tsx:318
+#: components/settings.tsx:322
 msgid "Language level"
 msgstr "Language level"
 
@@ -1392,7 +1397,7 @@ msgstr "Latin culture"
 msgid "Latino music"
 msgstr "Latino music"
 
-#: components/settings.tsx:295
+#: components/settings.tsx:299
 msgid "Learning language"
 msgstr "Learning language"
 
@@ -1408,7 +1413,7 @@ msgstr "Let's Go! 🎉"
 msgid "Let's start your first conversation!"
 msgstr "Let's start your first conversation!"
 
-#: components/settings.tsx:354
+#: components/settings.tsx:358
 msgid "Light"
 msgstr "Light"
 
@@ -1480,13 +1485,21 @@ msgid "Long"
 msgstr "Long"
 
 #: components/custom-partner-creator.tsx:480
-msgid "Looking around {location} for someone fun to talk to..."
-msgstr "Looking around {location} for someone fun to talk to..."
+msgid "Looking around {location} for an AI partner to chat with..."
+msgstr "Looking around {location} for an AI partner to chat with..."
+
+#: components/custom-partner-creator.tsx:480
+#~ msgid "Looking around {location} for someone fun to talk to..."
+#~ msgstr "Looking around {location} for someone fun to talk to..."
 
 #: components/custom-partner-creator.tsx:1071
 #: components/partner-detail-modal.tsx:167
 msgid "Looking for"
 msgstr "Looking for"
+
+#: components/custom-partner-creator.tsx:230
+#~ msgid "Looking for an AI language partner who matches your vibe..."
+#~ msgstr "Looking for an AI language partner who matches your vibe..."
 
 #: components/custom-partner-creator.tsx:230
 msgid "Looking for an AI partner who matches your vibe..."
@@ -1537,8 +1550,16 @@ msgid "Meet your partner"
 msgstr "Meet your partner"
 
 #: components/custom-partner-creator.tsx:231
-msgid "Meeting potential partners..."
-msgstr "Meeting potential partners..."
+#~ msgid "Meeting potential AI language partners..."
+#~ msgstr "Meeting potential AI language partners..."
+
+#: components/custom-partner-creator.tsx:231
+msgid "Meeting potential AI partners..."
+msgstr "Meeting potential AI partners..."
+
+#: components/custom-partner-creator.tsx:231
+#~ msgid "Meeting potential partners..."
+#~ msgstr "Meeting potential partners..."
 
 #: app/[lang]/(app)/memory/page.tsx:28
 #: components/call-summary.tsx:79
@@ -1580,7 +1601,7 @@ msgstr "Memory updated"
 msgid "Memory updated successfully"
 msgstr "Memory updated successfully"
 
-#: components/settings.tsx:196
+#: components/settings.tsx:200
 msgid "Microphone"
 msgstr "Microphone"
 
@@ -1646,15 +1667,15 @@ msgstr "Must be at least 8 characters long."
 msgid "Name"
 msgstr "Name"
 
-#: components/settings.tsx:272
+#: components/settings.tsx:276
 msgid "Native language"
 msgstr "Native language"
 
-#: components/settings.tsx:230
+#: components/settings.tsx:234
 msgid "Native script"
 msgstr "Native script"
 
-#: components/settings.tsx:258
+#: components/settings.tsx:262
 msgid "Never"
 msgstr "Never"
 
@@ -1684,9 +1705,9 @@ msgid "Next"
 msgstr "Next"
 
 #: components/onboarding/glass-onboarding-card.tsx:89
-#: components/onboarding/onboarding-client.tsx:524
-#: components/onboarding/onboarding-client.tsx:583
-#: components/onboarding/onboarding-client.tsx:650
+#: components/onboarding/onboarding-client.tsx:523
+#: components/onboarding/onboarding-client.tsx:582
+#: components/onboarding/onboarding-client.tsx:649
 msgid "Next →"
 msgstr "Next →"
 
@@ -1997,7 +2018,7 @@ msgstr "Pro"
 msgid "Professional practice"
 msgstr "Professional practice"
 
-#: components/settings.tsx:219
+#: components/settings.tsx:223
 msgid "Pronunciation"
 msgstr "Pronunciation"
 
@@ -2088,7 +2109,7 @@ msgstr "Return to login"
 msgid "Roleplay conversations cannot change partner images"
 msgstr "Roleplay conversations cannot change partner images"
 
-#: components/settings.tsx:233
+#: components/settings.tsx:237
 msgid "Romaji (Latin)"
 msgstr "Romaji (Latin)"
 
@@ -2119,7 +2140,7 @@ msgstr "Saved conversations"
 msgid "Saving..."
 msgstr "Saving..."
 
-#: components/onboarding/onboarding-client.tsx:650
+#: components/onboarding/onboarding-client.tsx:649
 msgid "Saving…"
 msgstr "Saving…"
 
@@ -2196,7 +2217,7 @@ msgstr "Select a conversation to view details"
 msgid "Select a language partner"
 msgstr "Select a language partner"
 
-#: components/onboarding/onboarding-client.tsx:452
+#: components/onboarding/onboarding-client.tsx:451
 msgid "Select a level to continue"
 msgstr "Select a level to continue"
 
@@ -2233,17 +2254,21 @@ msgstr "Select screen"
 msgid "Select size"
 msgstr "Select size"
 
-#: components/onboarding/onboarding-client.tsx:600
+#: components/onboarding/onboarding-client.tsx:599
 msgid "Select the description that feels closest to your speaking ability."
 msgstr "Select the description that feels closest to your speaking ability."
 
-#: components/onboarding/onboarding-client.tsx:495
+#: components/onboarding/onboarding-client.tsx:494
 msgid "Select the language you speak fluently"
 msgstr "Select the language you speak fluently"
 
 #: components/custom-partner-creator.tsx:696
-msgid "Select topics to find language partners with similar interests."
-msgstr "Select topics to find language partners with similar interests."
+#~ msgid "Select topics to find AI language partners with similar interests."
+#~ msgstr "Select topics to find AI language partners with similar interests."
+
+#: components/custom-partner-creator.tsx:696
+msgid "Select topics to find AI partners with similar interests."
+msgstr "Select topics to find AI partners with similar interests."
 
 #: contexts/glass-context.tsx:832
 msgid "Selected mic is unavailable. Using the system default instead."
@@ -2270,8 +2295,12 @@ msgid "Sending a match request"
 msgstr "Sending a match request"
 
 #: components/custom-partner-creator.tsx:483
-msgid "Sending out a match request to see who’s available..."
-msgstr "Sending out a match request to see who’s available..."
+msgid "Sending a match request to our AI partner..."
+msgstr "Sending a match request to our AI partner..."
+
+#: components/custom-partner-creator.tsx:483
+#~ msgid "Sending out a match request to see who’s available..."
+#~ msgstr "Sending out a match request to see who’s available..."
 
 #: components/forgot-password-form.tsx:108
 msgid "Sending..."
@@ -2281,7 +2310,7 @@ msgstr "Sending..."
 msgid "Sentence length"
 msgstr "Sentence length"
 
-#: components/settings.tsx:184
+#: components/settings.tsx:188
 #: components/user-menu.tsx:111
 msgid "Settings"
 msgstr "Settings"
@@ -2412,7 +2441,7 @@ msgstr "Summary"
 msgid "Support"
 msgstr "Support"
 
-#: components/settings.tsx:204
+#: components/settings.tsx:208
 msgid "System default"
 msgstr "System default"
 
@@ -2446,8 +2475,12 @@ msgid "Tell us about your requirements"
 msgstr "Tell us about your requirements"
 
 #: components/custom-partner-creator.tsx:798
-msgid "Tell us your preferences for your language partner."
-msgstr "Tell us your preferences for your language partner."
+#~ msgid "Tell us your preferences for your AI language partner."
+#~ msgstr "Tell us your preferences for your AI language partner."
+
+#: components/custom-partner-creator.tsx:798
+msgid "Tell us your preferences for your AI partner."
+msgstr "Tell us your preferences for your AI partner."
 
 #: components/feedback.tsx:53
 msgid "Thank you for your feedback!"
@@ -2465,7 +2498,7 @@ msgstr "The Free plan never expires. Upgrade anytime for unlimited history."
 msgid "The verification link is invalid or has expired."
 msgstr "The verification link is invalid or has expired."
 
-#: components/settings.tsx:338
+#: components/settings.tsx:342
 msgid "Theme"
 msgstr "Theme"
 
@@ -2576,7 +2609,7 @@ msgstr "Unable to open checkout"
 #~ msgid "Unable to play preview"
 #~ msgstr "Unable to play preview"
 
-#: components/onboarding/onboarding-client.tsx:474
+#: components/onboarding/onboarding-client.tsx:473
 msgid "Unable to save level. Please try again."
 msgstr "Unable to save level. Please try again."
 
@@ -2777,13 +2810,17 @@ msgstr "What do you want to say..."
 msgid "What interests you?"
 msgstr "What interests you?"
 
-#: components/onboarding/onboarding-client.tsx:492
+#: components/onboarding/onboarding-client.tsx:491
 msgid "What is your native language?"
 msgstr "What is your native language?"
 
 #: components/custom-partner-creator.tsx:767
-msgid "What kind of language partner are you looking for?"
-msgstr "What kind of language partner are you looking for?"
+#~ msgid "What kind of AI language partner are you looking for?"
+#~ msgstr "What kind of AI language partner are you looking for?"
+
+#: components/custom-partner-creator.tsx:767
+msgid "What kind of AI partner are you looking for?"
+msgstr "What kind of AI partner are you looking for?"
 
 #: components/custom-partner-creator.tsx:1134
 msgid "What type of partner?"
@@ -2797,7 +2834,7 @@ msgstr "What would you like to remember?"
 msgid "What's next"
 msgstr "What's next"
 
-#: components/onboarding/onboarding-client.tsx:538
+#: components/onboarding/onboarding-client.tsx:537
 msgid "Which language do you want to learn?"
 msgstr "Which language do you want to learn?"
 
@@ -2897,7 +2934,7 @@ msgstr "Your partner is tuning their voice a little..."
 msgid "Your saved calls"
 msgstr "Your saved calls"
 
-#: components/onboarding/onboarding-client.tsx:45
-#: components/settings.tsx:43
+#: components/onboarding/onboarding-client.tsx:381
+#: components/settings.tsx:59
 msgid "Zero"
 msgstr "Zero"

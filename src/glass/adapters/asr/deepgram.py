@@ -119,7 +119,10 @@ class DeepgramASRAdapter:
         }
         if self.utterance_end_ms is not None:
             params["utterance_end_ms"] = str(self.utterance_end_ms)
-        if self.endpointing_ms is not None:
+        # Allow disabling endpointing by setting it to None
+        if self.endpointing_ms is None:
+            params["endpointing"] = "false"
+        else:
             params["endpointing"] = str(self.endpointing_ms)
         params["vad_events"] = str(self.vad_events).lower()
         uri = f"{self.endpoint}?{urlencode(params)}"

@@ -228,7 +228,7 @@ const STEP_PACING_MS = [0, 6000, 14000, 24000, 32000]; // Minimum elapsed time t
 
 const FALLBACK_STATUS_MESSAGES: Record<PartnerGenerationStatus, string> = {
   queued: t`Looking for an AI partner who matches your vibe...`,
-  generating_persona: t`Meeting potential partners...`,
+  generating_persona: t`Meeting potential AI partners...`,
   selecting_voice: t`Your partner is tuning their voice a little...`,
   saving_partner: t`Your partner is polishing their profile...`,
   generating_avatar: t`Your partner is picking a friendly photo...`,
@@ -477,10 +477,10 @@ export function CustomPartnerCreator({
     switch (activeStepId) {
       case 'persona':
         return location
-          ? t`Looking around ${location} for someone fun to talk to...`
+          ? t`Looking around ${location} for an AI partner to chat with...`
           : FALLBACK_STATUS_MESSAGES.generating_persona;
       case 'voice':
-        return t`Sending out a match request to see who’s available...`;
+        return t`Sending a match request to our AI partner...`;
       case 'partner':
         return name
           ? t`${name} is putting together a quick profile for you...`
@@ -693,7 +693,7 @@ export function CustomPartnerCreator({
       return (
         <div className="space-y-4 py-2">
           <p className="text-sm text-muted-foreground">
-            <Trans>Select topics to find language partners with similar interests.</Trans>
+            <Trans>Select topics to find AI partners with similar interests.</Trans>
           </p>
           <div className="flex flex-wrap gap-2">
             {conversationTopics.map((topic) => {
@@ -764,7 +764,7 @@ export function CustomPartnerCreator({
       return (
         <div className="space-y-4 py-2">
           <p className="text-sm text-muted-foreground">
-            <Trans>What kind of language partner are you looking for?</Trans>
+            <Trans>What kind of AI partner are you looking for?</Trans>
           </p>
           <div className="grid grid-cols-2 gap-3">
             {partnerTypeOptions.map((option) => {
@@ -795,7 +795,7 @@ export function CustomPartnerCreator({
       return (
         <div className="space-y-5 py-2">
           <p className="text-sm text-muted-foreground">
-            <Trans>Tell us your preferences for your language partner.</Trans>
+            <Trans>Tell us your preferences for your AI partner.</Trans>
           </p>
           <div className="space-y-5">
             <div className="space-y-3">
@@ -1098,9 +1098,9 @@ export function CustomPartnerCreator({
                   {(createdPartner.personaInterestsTranslation || createdPartner.personaInterests || '')
                     .split(',')
                     .map((interest, idx) => (
-                    <Badge key={idx} variant="secondary" className="text-xs capitalize">
-                      {interest.trim()}
-                    </Badge>
+                      <Badge key={idx} variant="secondary" className="text-xs capitalize">
+                        {interest.trim()}
+                      </Badge>
                     ))}
                 </div>
               )}
