@@ -1,12 +1,14 @@
 import { useGlass, LanguageSettings, SessionConfig } from '@/contexts/glass-context';
 import { useAccountSession, type SessionData } from '@/contexts/account-session-context';
 import { AnimatePresence, motion } from 'motion/react';
-import { Loader2, Phone, AlertTriangle, Trash2 } from 'lucide-react';
-import LiquidGlass from './liquid-glass';
-import { ModeSelection } from './start-call-mode-selection';
+import { Loader2, Phone } from 'lucide-react';
 import { PartnerSelection } from './start-call-partner-selection';
 import { StartCallInstructions } from './start-call-instructions';
-import { CustomPartnerCreator, CustomPartnerEditor } from './custom-partner-creator';
+import { CustomPartnerCreator } from './custom-partner-creator';
+import { PartnerDeleteDialog } from './partner-delete-dialog';
+import { PartnerDetailModal } from './partner-detail-modal';
+import { CallLimitDialog } from './call-limit-dialog';
+import { StartCallEntry } from './start-call-entry';
 import { toast } from 'sonner';
 import { useRef, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
@@ -16,34 +18,12 @@ import { cn } from '@/utils';
 import { Trans } from '@lingui/react/macro';
 import { t } from '@lingui/core/macro';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ConversationPartner,
-  fetchPartners,
-  deletePartner,
-  createCheckoutSession,
-  fetchAccountSnapshot,
-} from '@/lib/account-api';
+import { ConversationPartner, fetchPartners, createCheckoutSession, fetchAccountSnapshot } from '@/lib/account-api';
 import { useVoicePreviewPlayer } from '@/hooks/use-voice-preview';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { getLanguageName } from '@/lib/conversation-display';
+import { LANGUAGES } from './onboarding/onboarding-data';
 
-type SetupStep = 'start' | 'languages' | 'level' | 'mode' | 'scenario' | 'instructions';
+type SetupStep = 'start' | 'partner' | 'instructions';
 type DisplayMediaVideoOptions = MediaTrackConstraints & {
   displaySurface?: 'monitor' | 'window' | 'application' | 'browser';
   preferCurrentTab?: boolean;
@@ -67,7 +47,12 @@ export default function StartCall() {
     learningLang: snapshot?.user.learningLang || settings.languages?.learningLang || '',
     nativeLang: snapshot?.user.nativeLang || settings.languages?.nativeLang || '',
   });
-  const [selectedMode, setSelectedMode] = useState<'roleplay' | 'live_call' | null>(null);
+  const [liveCallLanguageMode, setLiveCallLanguageMode] = useState<'shared' | 'custom'>('shared');
+  const [liveCallCustomLanguages, setLiveCallCustomLanguages] = useState<LanguageSettings>({
+    learningLang: snapshot?.user.learningLang || settings.languages?.learningLang || '',
+    nativeLang: snapshot?.user.nativeLang || settings.languages?.nativeLang || '',
+  });
+  const [selectedMode, setSelectedMode] = useState<'roleplay' | 'live_call' | null>('roleplay');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const profileLanguagesRef = useRef<LanguageSettings | null>(null);
   const [isCustomPartnerCreatorOpen, setIsCustomPartnerCreatorOpen] = useState(false);
@@ -76,14 +61,13 @@ export default function StartCall() {
 
   const [isDeletePartnerDialogOpen, setIsDeletePartnerDialogOpen] = useState(false);
   const [partnerPendingDelete, setPartnerPendingDelete] = useState<ConversationPartner | null>(null);
-  const [isDeletingPartner, setIsDeletingPartner] = useState(false);
   const [isStartingCall, setIsStartingCall] = useState(false);
   const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [screenSharePreviewStream, setScreenSharePreviewStream] = useState<MediaStream | null>(null);
   const screenShareStreamRef = useRef<MediaStream | null>(null);
   const screenShareVideoRef = useRef<HTMLVideoElement | null>(null);
-  const step4CardRef = useRef<HTMLDivElement | null>(null);
+  const step5CardRef = useRef<HTMLDivElement | null>(null);
   const [isRequestingScreenShare, setIsRequestingScreenShare] = useState(false);
   const [screenShareError, setScreenShareError] = useState<'denied' | 'cancelled' | 'failed' | 'no_audio' | null>(null);
   const conversationLimit = snapshot?.limits?.conversations || null;
@@ -101,23 +85,38 @@ export default function StartCall() {
     }
     setScreenSharePreviewStream(null);
   }, []);
+  const learningLanguageName =
+    languages.learningLang && languages.learningLang.length > 0
+      ? getLanguageName(languages.learningLang, langSegment)
+      : t`your learning language`;
+  const customUserLanguageName =
+    liveCallCustomLanguages.nativeLang && liveCallCustomLanguages.nativeLang.length > 0
+      ? getLanguageName(liveCallCustomLanguages.nativeLang, langSegment)
+      : t`your language`;
+  const customPartnerLanguageName =
+    liveCallCustomLanguages.learningLang && liveCallCustomLanguages.learningLang.length > 0
+      ? getLanguageName(liveCallCustomLanguages.learningLang, langSegment)
+      : t`their language`;
+  const customLanguageSelectionReady = Boolean(
+    liveCallCustomLanguages.learningLang && liveCallCustomLanguages.nativeLang
+  );
+  const liveLanguagesReady = liveCallLanguageMode === 'shared' || customLanguageSelectionReady;
 
   const isLiveCallStarting = selectedMode === 'live_call' && isStartingCall;
-  const glassMode = settings.glassMode ?? false;
   const canStartCall =
     selectedMode === 'roleplay'
       ? Boolean(selectedPartnerId)
       : selectedMode === 'live_call'
-      ? Boolean(screenSharePreviewStream)
+      ? Boolean(screenSharePreviewStream) && liveLanguagesReady
       : false;
-  const partnersQueryEnabled = !!token && !!snapshot?.user.learningLang;
+  const partnersQueryEnabled = !!token;
   const {
     data: partnersData,
     isLoading: partnersQueryLoading,
     isFetching: partnersFetching,
   } = useQuery({
-    queryKey: ['partners', token, snapshot?.user.learningLang],
-    queryFn: () => fetchPartners(token!, snapshot!.user.learningLang),
+    queryKey: ['partners', token],
+    queryFn: () => fetchPartners(token!),
     enabled: partnersQueryEnabled,
     staleTime: Infinity, // Never mark as stale to prevent automatic refetches
     gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
@@ -143,45 +142,28 @@ export default function StartCall() {
 
   // Helper functions for conditional styling
   const getTextClass = (type: 'title' | 'subtitle' | 'body' | 'muted') => {
-    if (glassMode) {
-      switch (type) {
-        case 'title':
-          return 'text-white';
-        case 'subtitle':
-          return 'text-white/90';
-        case 'body':
-          return 'text-white/70';
-        case 'muted':
-          return 'text-white/60';
-      }
-    } else {
-      switch (type) {
-        case 'title':
-          return 'text-foreground';
-        case 'subtitle':
-          return 'text-foreground';
-        case 'body':
-          return 'text-muted-foreground';
-        case 'muted':
-          return 'text-muted-foreground';
-      }
+    switch (type) {
+      case 'title':
+        return 'text-foreground';
+      case 'subtitle':
+        return 'text-foreground';
+      case 'body':
+        return 'text-muted-foreground';
+      case 'muted':
+        return 'text-muted-foreground';
     }
   };
 
   const getCardClass = () => {
-    return glassMode
-      ? 'backdrop-blur-sm bg-white/10 border border-white/20 hover:bg-white/15 hover:border-white/30'
-      : 'bg-card border border-border hover:bg-accent/50 hover:border-border';
+    return 'bg-card border border-border hover:bg-accent/50 hover:border-border';
   };
 
   const getScaleClass = () => {
-    return glassMode ? 'hover:scale-105 active:scale-95' : 'hover:scale-[1.01] active:scale-[0.99]';
+    return 'hover:scale-[1.01] active:scale-[0.99]';
   };
 
   const getBackButtonClass = () => {
-    return glassMode
-      ? 'text-white/70 hover:text-white text-sm transition-colors'
-      : 'text-muted-foreground hover:text-foreground text-sm transition-colors';
+    return 'text-muted-foreground hover:text-foreground text-sm transition-colors';
   };
 
   useEffect(() => {
@@ -218,6 +200,12 @@ export default function StartCall() {
     updateSettings({ languages: userLanguages });
   }, [snapshot?.user.learningLang, snapshot?.user.nativeLang, updateSettings]);
 
+  useEffect(() => {
+    if (liveCallLanguageMode === 'shared') {
+      setLiveCallCustomLanguages(languages);
+    }
+  }, [languages, liveCallLanguageMode]);
+
   // Reset step when disconnected. Only depend on status changes so quota refreshes
   // don't accidentally clear the local wizard state.
   useEffect(() => {
@@ -234,29 +222,18 @@ export default function StartCall() {
       setSelectedPartnerId('');
       stopOwnedScreenShare();
       setScreenShareError(null);
+      setLiveCallLanguageMode('shared');
+      setLiveCallCustomLanguages((prev) => profileLanguagesRef.current || prev);
     }
   }, [status.value, stopOwnedScreenShare]);
 
-  const handleLanguageSelect = (type: 'learning' | 'native', code: string) => {
-    const newLanguages = {
-      ...languages,
-      [type === 'learning' ? 'learningLang' : 'nativeLang']: code,
-    };
-    setLanguages(newLanguages);
-
-    // Update settings
-    updateSettings({ languages: newLanguages });
-  };
-
   // Removed: Level completion logic moved to onboarding flow
 
-  const handleModeSelect = (mode: 'roleplay' | 'live_call') => {
-    setSelectedMode(mode);
-    if (mode === 'roleplay') {
-      setStep('scenario');
-    } else {
-      setStep('instructions');
-    }
+  const handleCustomLanguageSelect = (type: 'learning' | 'native', code: string) => {
+    setLiveCallCustomLanguages((prev) => ({
+      ...prev,
+      [type === 'learning' ? 'learningLang' : 'nativeLang']: code,
+    }));
   };
 
   useEffect(() => {
@@ -285,7 +262,7 @@ export default function StartCall() {
 
   useEffect(() => {
     if (screenSharePreviewStream) {
-      step4CardRef.current?.scrollIntoView({
+      step5CardRef.current?.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
       });
@@ -382,9 +359,6 @@ export default function StartCall() {
   };
 
   const openEditPartnerModal = (partner: ConversationPartner) => {
-    if (partner.isSystem) {
-      return;
-    }
     setPartnerToEdit(partner);
     stopPreview();
     setIsEditPartnerModalOpen(true);
@@ -418,31 +392,13 @@ export default function StartCall() {
   const handleCancelDeletePartner = () => {
     setIsDeletePartnerDialogOpen(false);
     setPartnerPendingDelete(null);
-    setIsDeletingPartner(false);
   };
 
-  const handleConfirmDeletePartner = async () => {
-    if (!token || !partnerPendingDelete) {
-      return;
+  const handlePartnerDeleted = (partnerId: string) => {
+    if (selectedPartnerId === partnerId) {
+      setSelectedPartnerId('');
     }
-    setIsDeletingPartner(true);
-    try {
-      await deletePartner(token, partnerPendingDelete.id);
-      queryClient.setQueryData<ConversationPartner[] | undefined>(
-        ['partners', token, snapshot?.user.learningLang],
-        (previous) => (previous || []).filter((item) => item.id !== partnerPendingDelete.id)
-      );
-      if (selectedPartnerId === partnerPendingDelete.id) {
-        setSelectedPartnerId('');
-      }
-      toast.success(t`Partner deleted`);
-    } catch (error) {
-      console.error('[StartCall] Failed to delete partner', error);
-      toast.error(t`Unable to delete partner`);
-    } finally {
-      setIsDeletingPartner(false);
-      handleCancelDeletePartner();
-    }
+    handleCancelDeletePartner();
   };
 
   const handlePartnerSelect = (partnerId: string) => {
@@ -512,7 +468,8 @@ export default function StartCall() {
         return;
       }
     }
-    setStep('mode');
+    setSelectedMode('roleplay'); // Set mode to roleplay when starting
+    setStep('partner'); // Skip mode selection, go directly to partner selection
   };
 
   const handleStartCall = async () => {
@@ -534,13 +491,13 @@ export default function StartCall() {
 
       if (selectedMode === 'roleplay') {
         if (!partnerIdForSession) {
-          toast.error(t`Select a conversation partner`);
+          toast.error(t`Select a language partner`);
           setIsStartingCall(false);
           return;
         }
         partnerForSession = roleplayPartners.find((partner) => partner.id === partnerIdForSession) || null;
         if (!partnerForSession) {
-          toast.error(t`Select a conversation partner`);
+          toast.error(t`Select a language partner`);
           setIsStartingCall(false);
           return;
         }
@@ -568,8 +525,28 @@ export default function StartCall() {
         }
       }
 
+      const languagesForSession: LanguageSettings =
+        selectedMode === 'roleplay' && partnerForSession
+          ? {
+              learningLang:
+                partnerForSession.nativeLang ||
+                partnerForSession.learningLang ||
+                languages.nativeLang ||
+                languages.learningLang ||
+                '',
+              nativeLang:
+                partnerForSession.learningLang ||
+                partnerForSession.nativeLang ||
+                languages.learningLang ||
+                languages.nativeLang ||
+                '',
+            }
+          : selectedMode === 'live_call' && liveCallLanguageMode === 'custom'
+          ? liveCallCustomLanguages
+          : languages;
+
       const config: SessionConfig = {
-        languages,
+        languages: languagesForSession,
         mode: selectedMode,
         partnerId: partnerForSession?.id || partnerIdForSession || null,
         partner: partnerForSession,
@@ -631,19 +608,16 @@ export default function StartCall() {
   const renderLiveCallSteps = () => {
     const stepCardBase = cn(
       'rounded-2xl border p-3 sm:p-4 space-y-2.5 transition-colors text-xs sm:text-sm',
-      glassMode ? 'bg-white/10 border-white/20' : 'bg-muted/60 border-border/60'
+      'bg-muted/60 border-border/60'
     );
-    const stepLabelClass = glassMode ? 'text-white/60' : 'text-muted-foreground/70';
-    const step2CardClass = cn(
+    const stepLabelClass = 'text-muted-foreground/70';
+    const step3CardClass = cn(
       stepCardBase,
-      !screenSharePreviewStream &&
-        (glassMode
-          ? 'border-emerald-300/70 shadow-[0_0_0_1px_rgba(16,185,129,0.45)]'
-          : 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]')
+      !screenSharePreviewStream && 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]'
     );
     const previewContainerClass = cn(
       'rounded-xl border border-dashed overflow-hidden flex items-center justify-center h-28 sm:h-32',
-      glassMode ? 'border-white/25 bg-white/5 text-white/70' : 'border-border/70 bg-muted/40 text-muted-foreground'
+      'border-border/70 bg-muted/40 text-muted-foreground'
     );
     const screenShareStatus =
       screenShareError === 'denied'
@@ -659,7 +633,7 @@ export default function StartCall() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className={cn('text-[10px] font-semibold uppercase tracking-[0.25em] mb-0.5', stepLabelClass)}>
-            <Trans>Step {step}</Trans>
+            {t`Step ${step}`}
           </p>
           <div className={`${getTextClass('title')} text-sm font-semibold`}>{title}</div>
         </div>
@@ -667,12 +641,9 @@ export default function StartCall() {
       </div>
     );
 
-    const step4CardClass = cn(
+    const step5CardClass = cn(
       stepCardBase,
-      screenSharePreviewStream &&
-        (glassMode
-          ? 'border-emerald-300/70 shadow-[0_0_0_1px_rgba(16,185,129,0.45)] shadow-emerald-300/30'
-          : 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.2)]')
+      screenSharePreviewStream && 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.2)] shadow-emerald-500/30'
     );
 
     return (
@@ -688,7 +659,7 @@ export default function StartCall() {
                     key={icon.alt}
                     className={cn(
                       'h-6 w-6 rounded-full bg-background/60 border border-border/60 flex items-center justify-center',
-                      glassMode ? 'bg-white/15 border-white/25' : ''
+                      ''
                     )}
                   >
                     <img src={icon.src} alt={icon.alt} className="h-4 w-4 object-contain" />
@@ -702,8 +673,104 @@ export default function StartCall() {
           </p>
         </div>
 
-        <div className={step2CardClass}>
-          <StepHeader step={2} title={<Trans>Share your whole screen with audio</Trans>} />
+        <div className={stepCardBase}>
+          <div className="space-y-2">
+            <p className={cn('text-[10px] font-semibold uppercase tracking-[0.25em] mb-0.5', stepLabelClass)}>
+              {t`Step ${2}`}
+            </p>
+            <div className="flex items-center justify-between gap-3">
+              <div className={`${getTextClass('title')} text-sm font-semibold`}>
+                {t`Both speak ${learningLanguageName} in this call?`}
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  className={cn(
+                    'px-3 py-1 rounded-full text-[11px] font-medium transition-all border cursor-pointer',
+                    liveCallLanguageMode === 'shared'
+                      ? 'bg-primary/10 text-primary border-primary/30'
+                      : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:border-border'
+                  )}
+                  onClick={() => setLiveCallLanguageMode('shared')}
+                >
+                  <Trans>Yes</Trans>
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    'px-3 py-1 rounded-full text-[11px] font-medium transition-all border cursor-pointer',
+                    liveCallLanguageMode === 'custom'
+                      ? 'bg-primary/10 text-primary border-primary/30'
+                      : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:border-border'
+                  )}
+                  onClick={() => setLiveCallLanguageMode('custom')}
+                >
+                  <Trans>No</Trans>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {liveCallLanguageMode === 'custom' && (
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <p className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">
+                  <Trans>You</Trans>
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {LANGUAGES.map((lang) => {
+                    const isSelected = liveCallCustomLanguages.nativeLang === lang.code;
+                    return (
+                      <button
+                        key={`you-${lang.code}`}
+                        type="button"
+                        className={cn(
+                          'px-2 py-1 rounded-lg border text-[11px] flex items-center gap-1.5 transition-all cursor-pointer',
+                          isSelected
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border hover:border-primary/50 hover:bg-primary/5'
+                        )}
+                        onClick={() => handleCustomLanguageSelect('native', lang.code)}
+                      >
+                        <span className="text-sm">{lang.flag}</span>
+                        <span>{lang.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">
+                  <Trans>Partner</Trans>
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {LANGUAGES.map((lang) => {
+                    const isSelected = liveCallCustomLanguages.learningLang === lang.code;
+                    return (
+                      <button
+                        key={`partner-${lang.code}`}
+                        type="button"
+                        className={cn(
+                          'px-2 py-1 rounded-lg border text-[11px] flex items-center gap-1.5 transition-all cursor-pointer',
+                          isSelected
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border hover:border-primary/50 hover:bg-primary/5'
+                        )}
+                        onClick={() => handleCustomLanguageSelect('learning', lang.code)}
+                      >
+                        <span className="text-sm">{lang.flag}</span>
+                        <span>{lang.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className={step3CardClass}>
+          <StepHeader step={3} title={<Trans>Share your whole screen with audio</Trans>} />
           <p className={`${getTextClass('body')} leading-relaxed`}>
             <Trans>
               Share the screen where your call is already open, choose "Entire screen," and toggle "Also share system
@@ -717,7 +784,6 @@ export default function StartCall() {
               disabled={isRequestingScreenShare || isLiveCallStarting}
               className={cn(
                 'cursor-pointer',
-                glassMode ? 'bg-white text-foreground hover:bg-white/90' : '',
                 (isRequestingScreenShare || isLiveCallStarting) && 'cursor-not-allowed opacity-70'
               )}
             >
@@ -727,7 +793,7 @@ export default function StartCall() {
             {screenSharePreviewStream && (
               <Button
                 size="sm"
-                variant={glassMode ? 'ghost' : 'outline'}
+                variant="outline"
                 onClick={handleRemoveScreenShare}
                 disabled={isLiveCallStarting}
                 className={cn('cursor-pointer', isLiveCallStarting && 'cursor-not-allowed opacity-70')}
@@ -759,14 +825,14 @@ export default function StartCall() {
         </div>
 
         <div className={stepCardBase}>
-          <StepHeader step={3} title={<Trans>Clear your view</Trans>} />
+          <StepHeader step={4} title={<Trans>Clear your view</Trans>} />
           <p className={`${getTextClass('body')} leading-relaxed`}>
-            <Trans>Use the browser's “Hide” option on the sharing bar so it doesn't cover Glass.</Trans>
+            <Trans>Use the browser's "Hide" option on the sharing bar so it doesn't cover Glass.</Trans>
           </p>
         </div>
 
-        <div ref={step4CardRef} className={step4CardClass}>
-          <StepHeader step={4} title={<Trans>Start the live call</Trans>} />
+        <div ref={step5CardRef} className={step5CardClass}>
+          <StepHeader step={5} title={<Trans>Start the live call</Trans>} />
           <p className={`${getTextClass('body')} leading-relaxed`}>
             {screenSharePreviewStream ? (
               isLiveCallStarting ? (
@@ -801,16 +867,6 @@ export default function StartCall() {
             key="overlay"
             ref={containerRef}
             className={'fixed inset-0 p-3 sm:p-4 flex items-center justify-center bg-background'}
-            style={
-              glassMode
-                ? {
-                    backgroundImage: 'url(/background.png)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                  }
-                : undefined
-            }
             initial="initial"
             animate="enter"
             exit="exit"
@@ -821,71 +877,12 @@ export default function StartCall() {
             }}
           >
             {/* Start Call Button */}
-            {step === 'start' && (
-              <>
-                <div className={'flex flex-col items-center gap-3'}>
-                  {glassMode ? (
-                    <LiquidGlass
-                      mouseContainer={containerRef}
-                      className={'z-50'}
-                      onClick={handleInitialStart}
-                      style={{ position: 'fixed', top: '50%', left: '50%' }}
-                      displacementScale={64}
-                      blurAmount={0.2}
-                      saturation={130}
-                      aberrationIntensity={2}
-                      elasticity={0.35}
-                      cornerRadius={100}
-                      padding="16px 32px"
-                    >
-                      <div className={'flex items-center gap-2 min-w-[140px] justify-center'}>
-                        <Phone className={'size-4 text-green-400'} />
-                        <span className="text-white font-medium whitespace-nowrap">
-                          <Trans>Start Call</Trans>
-                        </span>
-                      </div>
-                    </LiquidGlass>
-                  ) : (
-                    <motion.div
-                      variants={{
-                        initial: { scale: 0.5 },
-                        enter: { scale: 1 },
-                        exit: { scale: 0.5 },
-                      }}
-                    >
-                      <Button className={'z-50 flex items-center gap-1.5 rounded-full'} onClick={handleInitialStart}>
-                        <span>
-                          <Phone className={'size-4 opacity-50 fill-current'} strokeWidth={0} />
-                        </span>
-                        <span>
-                          <Trans>Start Call</Trans>
-                        </span>
-                      </Button>
-                    </motion.div>
-                  )}
-                </div>
-              </>
-            )}
+            {step === 'start' && <StartCallEntry onStart={handleInitialStart} />}
 
             {/* Removed: Language and Level selection moved to onboarding */}
 
-            {/* Mode Selection */}
-            {step === 'mode' && (
-              <ModeSelection
-                glassMode={glassMode}
-                selectedMode={selectedMode}
-                onSelectMode={handleModeSelect}
-                onBack={() => setStep('start')}
-                onNext={() => setStep(selectedMode === 'roleplay' ? 'scenario' : 'instructions')}
-                getTextClass={getTextClass}
-                getCardClass={getCardClass}
-                getScaleClass={getScaleClass}
-                getBackButtonClass={getBackButtonClass}
-              />
-            )}
-
             {/* Partner Selection (Roleplay Mode Only) */}
-            {step === 'scenario' && (
+            {step === 'partner' && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -893,7 +890,6 @@ export default function StartCall() {
                 className="flex flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5"
               >
                 <PartnerSelection
-                  glassMode={glassMode}
                   roleplayPartners={roleplayPartners}
                   partnersLoading={partnersLoading}
                   selectedPartnerId={selectedPartnerId}
@@ -904,10 +900,15 @@ export default function StartCall() {
                   openEditPartnerModal={openEditPartnerModal}
                   openDeletePartnerDialog={openDeletePartnerDialog}
                   isStartingCall={isStartingCall}
+                  onSwitchToLiveMode={() => {
+                    setSelectedMode('live_call');
+                    setLiveCallLanguageMode('shared');
+                    setStep('instructions');
+                  }}
                 />
                 <div className={'flex justify-between items-center w-full'}>
                   <button
-                    onClick={() => setStep('mode')}
+                    onClick={() => setStep('start')}
                     className={cn(getBackButtonClass(), 'cursor-pointer')}
                     disabled={isStartingCall}
                   >
@@ -925,7 +926,7 @@ export default function StartCall() {
                     {isStartingCall ? (
                       <Loader2 className="size-4 opacity-80 animate-spin" strokeWidth={2.25} />
                     ) : (
-                      <Phone className="size-4 opacity-80" strokeWidth={2.25} />
+                      <Phone className="size-4 opacity-50 fill-current" strokeWidth={0} />
                     )}
                     {isStartingCall ? <Trans>Connecting...</Trans> : <Trans>Start Call</Trans>}
                   </Button>
@@ -937,14 +938,21 @@ export default function StartCall() {
             {step === 'instructions' && selectedMode && (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                 <StartCallInstructions
-                  glassMode={glassMode}
                   selectedMode={selectedMode}
                   selectedRoleplayPartner={selectedRoleplayPartner}
                   getTextClass={getTextClass}
                   getBackButtonClass={getBackButtonClass}
                   canStartCall={canStartCall}
                   isStartingCall={isStartingCall}
-                  onBack={() => setStep('mode')}
+                  onBack={() => {
+                    if (selectedMode === 'live_call') {
+                      setSelectedMode('roleplay');
+                      setStep('partner');
+                    } else {
+                      setSelectedMode('roleplay');
+                      setStep('partner');
+                    }
+                  }}
                   onStartCall={handleStartCall}
                   liveCallSteps={renderLiveCallSteps()}
                 />
@@ -957,95 +965,42 @@ export default function StartCall() {
         open={isCustomPartnerCreatorOpen}
         onClose={handleCloseCreatePartnerModal}
         token={token ?? null}
-        learningLang={snapshot?.user.learningLang ?? undefined}
-        nativeLang={snapshot?.user.nativeLang || null}
+        learningLang={languages.learningLang || undefined}
+        nativeLang={languages.nativeLang || null}
+        languageLevel={settings.languageLevel || snapshot?.user.languageLevel || null}
         limitBlocked={limitBlocked}
         onQuotaBlocked={() => setQuotaDialogOpen(true)}
         onPartnerCreated={handlePartnerCreated}
       />
 
-      <CustomPartnerEditor
+      <PartnerDetailModal
         open={isEditPartnerModalOpen}
         onClose={handleCloseEditPartnerModal}
         partner={partnerToEdit}
-        token={token ?? null}
-        learningLang={snapshot?.user.learningLang ?? undefined}
-        onPartnerUpdated={handlePartnerUpdated}
-        onVoicePreview={handleVoicePreview}
-        loadingVoiceId={loadingVoiceId}
-        playingVoiceId={playingVoiceId}
+        onStartChat={(partnerId) => {
+          setSelectedPartnerId(partnerId);
+          setSelectedMode('roleplay');
+          handleCloseEditPartnerModal();
+        }}
       />
 
-      <AlertDialog open={isDeletePartnerDialogOpen} onOpenChange={(open) => !open && handleCancelDeletePartner()}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              <Trans>Delete partner</Trans>
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {partnerPendingDelete ? (
-                <Trans>
-                  Are you sure you want to delete {partnerPendingDelete.name}? This action cannot be undone.
-                </Trans>
-              ) : (
-                <Trans>This action cannot be undone.</Trans>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDeletePartner}>
-              <Trans>Cancel</Trans>
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(event) => {
-                event.preventDefault();
-                handleConfirmDeletePartner();
-              }}
-              className="bg-destructive text-white hover:bg-destructive/90"
-              disabled={isDeletingPartner}
-            >
-              {isDeletingPartner && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              <Trans>Delete</Trans>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <Dialog open={quotaDialogOpen} onOpenChange={setQuotaDialogOpen}>
-        <DialogContent className="sm:max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle>
-              <Trans>Saved call limit reached</Trans>
-            </DialogTitle>
-            <DialogDescription>
-              <Trans>
-                Free accounts can keep up to 10 conversations. Delete old calls or upgrade for unlimited history.
-              </Trans>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="rounded-2xl border border-border/60 bg-muted/50 px-4 py-5 text-center space-y-3">
-            <div className="inline-flex items-center justify-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              <span className="text-sm font-medium text-muted-foreground">
-                <Trans>Current usage</Trans>
-              </span>
-            </div>
-            <div className="text-3xl font-semibold tracking-tight">{limitUsageLabel || limitDisplayUsed}</div>
-            <p className="text-xs text-muted-foreground">
-              <Trans>Delete a saved call or upgrade to keep recording new ones.</Trans>
-            </p>
-          </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={handleManageHistoryClick} className="cursor-pointer">
-              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-              <Trans>Manage history</Trans>
-            </Button>
-            <Button onClick={handleUpgradeClick} className="cursor-pointer" disabled={checkoutLoading}>
-              {checkoutLoading && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              <Trans>Upgrade plan</Trans>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <PartnerDeleteDialog
+        open={isDeletePartnerDialogOpen}
+        partner={partnerPendingDelete}
+        token={token ?? null}
+        onClose={handleCancelDeletePartner}
+        onPartnerDeleted={handlePartnerDeleted}
+      />
+
+      <CallLimitDialog
+        open={quotaDialogOpen}
+        onOpenChange={setQuotaDialogOpen}
+        limitUsageLabel={limitUsageLabel}
+        limitDisplayUsed={limitDisplayUsed}
+        checkoutLoading={checkoutLoading}
+        onManageHistoryClick={handleManageHistoryClick}
+        onUpgradeClick={handleUpgradeClick}
+      />
     </>
   );
 }
