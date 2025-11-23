@@ -14,6 +14,17 @@ from .entities import EventType
 
 LOGGER = logging.getLogger(__name__)
 
+# Longer endpoint tolerances for lower proficiency speakers; multipliers applied to
+# the adapter's configured utterance_end_ms (default 1000ms).
+LANGUAGE_LEVEL_UTTERANCE_END_MULTIPLIERS: dict[str, float] = {
+    "zero": 3.0,
+    "beginner": 2.2,
+    "intermediate": 1.6,
+    "advanced": 1.2,
+}
+DEFAULT_LEVEL_UTTERANCE_END_MULTIPLIER = 1.5
+DEFAULT_BASE_UTTERANCE_END_MS = 1000
+
 
 class SpeechRecognition:
     """Handle real-time speech-to-text transcription."""
@@ -31,6 +42,8 @@ class SpeechRecognition:
         self._emit = emit_callback
         self._handle_transcript = handle_transcript_callback
         self._speech_activity_callback = speech_activity_callback
+        self._language_level: str | None = None
+        self._base_utterance_end_ms: int | None = getattr(asr, "utterance_end_ms", None)
         
         # Track active utterance per source (for grouping partials)
         self._active_utterance_id: dict[str, str] = {}
@@ -39,6 +52,29 @@ class SpeechRecognition:
         # Track last partial transcript per source in case we need to finalize early
         self._last_partial_payload: dict[str, dict[str, Any]] = {}
         self._audio_cursor = 0.0
+
+    def set_language_level(self, language_level: str | None) -> None:
+        """Persist learner level so ASR endpointing can be tuned per speaker."""
+        if not language_level:
+            self._language_level = None
+            return
+        normalized = str(language_level).strip().lower()
+        self._language_level = normalized or None
+
+    def _resolve_utterance_end_ms(self, source: str | None) -> int | None:
+        if not source:
+            return None
+        normalized_source = str(source).lower()
+        if not normalized_source.startswith("mic"):
+            return None
+        base = self._base_utterance_end_ms or DEFAULT_BASE_UTTERANCE_END_MS
+        level = self._language_level or ""
+        multiplier = LANGUAGE_LEVEL_UTTERANCE_END_MULTIPLIERS.get(
+            level,
+            DEFAULT_LEVEL_UTTERANCE_END_MULTIPLIER,
+        )
+        resolved = int(round(base * multiplier))
+        return max(resolved, base)
 
     def advance_audio_cursor(self, samples: int, sample_rate: int = 16000) -> None:
         if samples <= 0:
@@ -100,7 +136,11 @@ class SpeechRecognition:
             await self._emit_utterance_completed(formatted, source=source)
 
         stream = self.asr.stream(  # type: ignore[attr-defined]
-            self.session_id, queue_iter(), source=source, language=language
+            self.session_id,
+            queue_iter(),
+            source=source,
+            language=language,
+            utterance_end_ms=self._resolve_utterance_end_ms(source),
         )
         async for chunk in stream:
             chunk_source = chunk.get("source") or source

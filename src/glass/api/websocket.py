@@ -143,6 +143,7 @@ async def audio_stream(
         await app_state.set_session_owner(sid, user.user_id)
     history_store = getattr(websocket.app.state, "history_store", None)
     partner_profile: dict[str, Any] | None = None
+    account_user = None
     resolved_learning_lang = (learning_lang or "").strip().lower()
     resolved_native_lang = (native_lang or "").strip().lower()
     if history_store and user:
@@ -204,6 +205,7 @@ async def audio_stream(
         native_lang=native_lang,
         mode=normalized_mode,
         partner=partner_profile,
+        language_level=getattr(account_user, "language_level", None),
         user_spoken_lang=user_spoken_lang,
         partner_spoken_lang=partner_spoken_lang,
     )

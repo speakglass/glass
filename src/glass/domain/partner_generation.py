@@ -37,23 +37,6 @@ LANG_TO_NATIONALITY = {
     "en": ["American", "British", "Australian", "Canadian", "Irish"],
 }
 
-NAME_GUIDANCE = {
-    "Korean": ["Minho", "Jiwon", "Seojun", "Yuna", "Dohyun", "Sora", "Hyunwoo", "Jiho", "Hana", "Gyuwon"],
-    "Japanese": ["Haruto", "Yuki", "Kaito", "Aiko", "Sota", "Hina", "Ren", "Sakura", "Mao", "Itsuki"],
-    "Chinese": ["Wei", "Mei", "Jun", "Ling", "Chen", "Xia", "Haoran", "Yuxin", "Lina", "Guang"],
-    "Spanish": ["Diego", "Sofia", "Mateo", "Isabella", "Lucas", "Valentina", "Hugo", "Camila"],
-    "Mexican": ["Mariana", "Emiliano", "Paulina", "Rodrigo", "Ximena", "Santiago", "Itzel", "Gael"],
-    "Argentinian": ["Camila", "Bautista", "Abril", "Mateo", "Delfina", "Tomás", "Juana", "Lautaro"],
-    "French": ["Julien", "Camille", "Lucas", "Emma", "Antoine", "Léa", "Clara", "Hugo", "Maëlys"],
-    "Belgian": ["Louise", "Arthur", "Lucas", "Clara", "Hugo", "Juliette", "Noor", "Baptiste"],
-    "Québécois": ["Léa", "Olivier", "Maëlle", "Émile", "Florence", "Samuel", "Rosalie", "Mathis"],
-    "American": ["Adrian", "Maya", "Liam", "Zara", "Marcus", "Nova", "Kai", "Sierra", "Asher", "Naomi"],
-    "British": ["Amelia", "Alfie", "Freya", "Theo", "Imogen", "Oliver", "Phoebe", "Callum"],
-    "Australian": ["Matilda", "Cooper", "Isla", "Lachlan", "Talia", "Finn", "Zoe", "Nate"],
-    "Canadian": ["Avery", "Noah", "Chloe", "Ethan", "Harper", "Logan", "Mila", "Declan"],
-    "Irish": ["Saoirse", "Niall", "Aisling", "Cian", "Niamh", "Ronan", "Orla", "Padraig"],
-}
-
 LOW_PROFICIENCY_LEVELS = {"zero", "beginner"}
 
 
@@ -340,15 +323,6 @@ def _choose_nationality(code: str | None) -> str:
     return list(choices)[0]
 
 
-def _build_name_guidance(nationality: str, gender: Literal["male", "female", "non-binary"]) -> str:
-    gender_hint = {
-        "male": "masculine",
-        "female": "feminine",
-        "non-binary": "inclusive or gender-neutral",
-    }.get(gender, "natural-sounding")
-    return f"Choose a {gender_hint} first name that fits a {nationality} background. Generate diverse, varied names each time."
-
-
 async def _localize_background(
     llm_adapter: LLMAdapter,
     *,
@@ -454,7 +428,6 @@ async def generate_partner_persona(
     # Get age range and nationality
     age_range_str = AGE_RANGE_MAP.get(preferences.age_range, "25-35")
     nationality = _choose_nationality(preferences.learning_lang)
-    name_guidance = _build_name_guidance(nationality, selected_gender)
 
     target_lang_name = lang_code_to_name(preferences.learning_lang) if preferences.learning_lang else ""
 
@@ -500,7 +473,6 @@ async def generate_partner_persona(
         nationality=nationality,
         age_range_str=age_range_str,
         selected_gender=selected_gender,
-        name_guidance=name_guidance,
         topics=topics,
         system_prompt=system_prompt,
         variety_instruction=variety_instruction,
@@ -696,7 +668,6 @@ async def _generate_persona_core(
     nationality: str,
     age_range_str: str,
     selected_gender: Literal["male", "female", "non-binary"],
-    name_guidance: str,
     topics: Sequence[str],
     system_prompt: str,
     variety_instruction: str,
@@ -713,7 +684,6 @@ async def _generate_persona_core(
         Age range: {age_range_str}
         Topics: {", ".join(topics)}
         
-        Name guidance: {name_guidance}
         IMPORTANT: Generate a completely unique name each time. Avoid repeating common names like Ethan, Emma, Lucas, etc.
         Be creative and diverse with your name choices while keeping them culturally appropriate.
         

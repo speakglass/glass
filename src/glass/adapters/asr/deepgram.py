@@ -101,6 +101,7 @@ class DeepgramASRAdapter:
         *,
         source: str | None = None,
         language: str | None = None,
+        utterance_end_ms: int | None = None,
     ) -> AsyncIterator[dict]:
         # Resolve language configuration automatically
         lang_code = language or self.language
@@ -108,6 +109,12 @@ class DeepgramASRAdapter:
         stream_language = config.deepgram_code
         stream_model = config.model
         
+        effective_utterance_end_ms = (
+            utterance_end_ms
+            if utterance_end_ms is not None
+            else self.utterance_end_ms
+        )
+
         params = {
             "model": stream_model,
             "language": stream_language,
@@ -117,8 +124,8 @@ class DeepgramASRAdapter:
             "interim_results": str(self.interim_results).lower(),
             "smart_format": "true",
         }
-        if self.utterance_end_ms is not None:
-            params["utterance_end_ms"] = str(self.utterance_end_ms)
+        if effective_utterance_end_ms is not None:
+            params["utterance_end_ms"] = str(effective_utterance_end_ms)
         # Allow disabling endpointing by setting it to None
         if self.endpointing_ms is None:
             params["endpointing"] = "false"

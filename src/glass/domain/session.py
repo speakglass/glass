@@ -615,6 +615,8 @@ class ConversationSession:
     def set_user_profile(self, language_level: str | None, pronunciation_mode: str | None = None) -> None:
         """Set user profile (language level and pronunciation mode)."""
         self.assistant.language_level = language_level
+        if hasattr(self.speech_recognition, "set_language_level"):
+            self.speech_recognition.set_language_level(language_level)
         if pronunciation_mode is not None:
             self.assistant.pronunciation_mode = pronunciation_mode
         if isinstance(self.user_profile, dict):
@@ -844,6 +846,7 @@ class ConversationSession:
         email: str | None = None,
         name: str | None = None,
         avatar_url: str | None = None,
+        language_level: str | None = None,
         learning_lang: str = "en",
         native_lang: str = "en",
         mode: str = "live_call",
@@ -870,8 +873,10 @@ class ConversationSession:
             "email": email,
             "name": name,
             "avatar_url": avatar_url,
+            "language_level": language_level,
         }
         self.roleplay.set_user_name(name)
+        self.set_user_profile(language_level=language_level)
 
         # Parse name for better memory graph construction
         first_name = None

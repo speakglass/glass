@@ -18,6 +18,7 @@ class ASRAdapter(Protocol):
         *,
         source: str | None = None,
         language: str | None = None,
+        utterance_end_ms: int | None = None,
     ): ...
 
 
