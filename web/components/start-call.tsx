@@ -579,59 +579,41 @@ export default function StartCall() {
         }
       }
 
-      const baseLearning = languages.learningLang || languages.nativeLang || 'en';
-      const baseNative = languages.nativeLang || languages.learningLang || 'en';
-      let languagesForSession: LanguageSettings = languages;
-      let spokenLanguages: { user: string; partner: string } | null = null;
+      const userNativeLang = languages.nativeLang || languages.learningLang || 'en';
+      const partnerNativeLang = partnerForSession?.nativeLang || languages.learningLang || languages.nativeLang || 'en';
+      let spokenLanguages: { user: string; partner: string };
+
       if (selectedMode === 'roleplay') {
-        if (partnerForSession) {
-          languagesForSession = {
-            learningLang:
-              partnerForSession.nativeLang ||
-              partnerForSession.learningLang ||
-              languages.nativeLang ||
-              languages.learningLang ||
-              '',
-            nativeLang:
-              partnerForSession.learningLang ||
-              partnerForSession.nativeLang ||
-              languages.learningLang ||
-              languages.nativeLang ||
-              '',
-          };
-          spokenLanguages = {
-            user: partnerForSession.nativeLang || languages.learningLang || '',
-            partner: partnerForSession.learningLang || languages.nativeLang || '',
-          };
-        } else {
-          spokenLanguages = {
-            user: languages.learningLang || languages.nativeLang || '',
-            partner: languages.nativeLang || languages.learningLang || '',
-          };
-        }
-      } else if (selectedMode === 'live_call') {
-        languagesForSession = languages;
+        const sharedLang = partnerNativeLang || userNativeLang;
+        spokenLanguages = {
+          user: sharedLang,
+          partner: sharedLang,
+        };
+      } else {
         if (liveCallLanguageMode === 'shared') {
-          const sharedLang = languages.learningLang || languages.nativeLang || 'en';
+          const sharedLang = languages.learningLang || userNativeLang;
           spokenLanguages = {
             user: sharedLang,
             partner: sharedLang,
           };
         } else {
           spokenLanguages = {
-            user: liveCallCustomPair.youLang || baseNative,
-            partner: liveCallCustomPair.partnerLang || baseLearning,
+            user: liveCallCustomPair.youLang || userNativeLang,
+            partner: liveCallCustomPair.partnerLang || partnerNativeLang,
           };
         }
       }
 
+      const userNativeLanguage =
+        languages.nativeLang || snapshot?.user.nativeLang || settings.languages?.nativeLang || null;
       const config: SessionConfig = {
-        languages: languagesForSession,
+        languages,
         mode: selectedMode,
         partnerId: partnerForSession?.id || partnerIdForSession || null,
         partner: partnerForSession,
         screenStream: screenStreamForSession,
         spokenLanguages,
+        userNativeLanguage,
       };
 
       // Proceed with connection
@@ -793,8 +775,8 @@ export default function StartCall() {
                   onClick={() => {
                     setLiveCallLanguageMode('custom');
                     setLiveCallCustomPair((prev) => ({
-                      youLang: prev.youLang || languages.nativeLang || languages.learningLang || '',
-                      partnerLang: prev.partnerLang || languages.learningLang || languages.nativeLang || '',
+                      youLang: prev.youLang || languages.learningLang || languages.nativeLang || '',
+                      partnerLang: prev.partnerLang || languages.nativeLang || languages.learningLang || '',
                     }));
                   }}
                 >

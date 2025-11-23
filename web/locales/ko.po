@@ -109,8 +109,8 @@ msgstr "{totalMemories, plural, one {#개의 일치하는 메모리} other {#개
 msgid "{totalMemories, plural, one {# total memory} other {# total memories}}"
 msgstr "{totalMemories, plural, one {총 #개의 메모리} other {총 #개의 메모리}}"
 
-#: components/onboarding/onboarding-client.tsx:670
-#: components/onboarding/onboarding-client.tsx:752
+#: components/onboarding/onboarding-client.tsx:574
+#: components/onboarding/onboarding-client.tsx:641
 #: components/start-call-instructions.tsx:65
 #: components/start-call.tsx:1010
 msgid "← Back"
@@ -148,7 +148,7 @@ msgid "Add"
 msgstr "추가"
 
 #: components/call-summary.tsx:1473
-#: components/custom-partner-creator.tsx:1323
+#: components/custom-partner-creator.tsx:1317
 #: components/history/conversation-history.tsx:1861
 msgid "Add a short description"
 msgstr "간단한 설명 추가"
@@ -165,8 +165,8 @@ msgstr "새로운 메모리 추가"
 msgid "Add your own"
 msgstr "사용자 정의 추가"
 
-#: components/onboarding/onboarding-client.tsx:72
-#: components/settings.tsx:47
+#: components/onboarding/onboarding-client.tsx:63
+#: components/settings.tsx:46
 msgid "Advanced"
 msgstr "고급"
 
@@ -261,18 +261,18 @@ msgstr "숫자 하나 이상"
 
 #: components/signup-form.tsx:51
 msgid "At least one special character"
-msgstr "특수 문자를 최소 한 개 포함하세요."
+msgstr "특수 문자 최소 한 개 포함"
 
 #: contexts/glass-context.tsx:1694
 msgid "Authentication failed"
 msgstr "인증 실패"
 
-#: components/onboarding/onboarding-client.tsx:544
+#: components/onboarding/onboarding-client.tsx:456
 msgid "Authentication is required. Please refresh and try again."
 msgstr "인증이 필요합니다. 새로고침 후 다시 시도해 주세요."
 
 #: components/custom-partner-creator.tsx:606
-#: components/custom-partner-creator.tsx:1233
+#: components/custom-partner-creator.tsx:1227
 #: components/partner-delete-dialog.tsx:40
 #: components/start-call.tsx:325
 msgid "Authentication token not available. Please refresh the page."
@@ -305,7 +305,7 @@ msgstr "해변 문화"
 msgid "Beer & Festivals"
 msgstr "맥주 & 축제"
 
-#: components/onboarding/onboarding-client.tsx:54
+#: components/onboarding/onboarding-client.tsx:51
 #: components/settings.tsx:44
 msgid "Beginner"
 msgstr "초보자"
@@ -349,7 +349,7 @@ msgstr "청구 정보가 업데이트되었습니다."
 
 #: components/start-call.tsx:770
 msgid "Both speak {learningLanguageName} in this call?"
-msgstr "이번 통화에서는 두 분 다 {learningLanguageName}으로 대화하시나요?"
+msgstr "이번 통화에서는 두 분 다 {learningLanguageName}로 대화하시나요?"
 
 #: components/custom-partner-creator.tsx:167
 msgid "Brazilian food"
@@ -419,7 +419,7 @@ msgid "Category"
 msgstr "카테고리"
 
 #: components/call-summary.tsx:1427
-#: components/custom-partner-creator.tsx:1283
+#: components/custom-partner-creator.tsx:1277
 #: components/history/conversation-history.tsx:1815
 msgid "Change partner photo"
 msgstr "파트너 사진 변경"
@@ -456,7 +456,7 @@ msgstr "월별 또는 연간 구독을 선택하고 팀에 맞춤화된 Glass �
 msgid "Choose someone to practice with"
 msgstr "연습할 상대를 선택하세요"
 
-#: components/onboarding/onboarding-client.tsx:634
+#: components/onboarding/onboarding-client.tsx:541
 msgid "Choose the language you want to practice speaking"
 msgstr "연습하고 싶은 언어를 선택하세요."
 
@@ -486,7 +486,7 @@ msgstr "전체 요약 보기"
 
 #: components/call-summary.tsx:1405
 #: components/call-summary.tsx:1504
-#: components/custom-partner-creator.tsx:1338
+#: components/custom-partner-creator.tsx:1332
 #: components/history/conversation-history.tsx:1892
 #: components/memory/memory-dialog.tsx:89
 #: components/partner-detail-modal.tsx:201
@@ -647,7 +647,7 @@ msgstr "현재 사용량"
 msgid "Custom AI partners"
 msgstr "맞춤형 AI 파트너"
 
-#: components/settings.tsx:188
+#: components/settings.tsx:187
 msgid "Customize your Glass experience"
 msgstr "Glass를 나에게 맞게 설정해 보세요"
 
@@ -655,7 +655,7 @@ msgstr "Glass를 나에게 맞게 설정해 보세요"
 msgid "Daily life"
 msgstr "일상생활"
 
-#: components/settings.tsx:371
+#: components/settings.tsx:370
 msgid "Dark"
 msgstr "어두운"
 
@@ -749,7 +749,7 @@ msgid "Deleting..."
 msgstr "삭제 중..."
 
 #: components/call-summary.tsx:1468
-#: components/custom-partner-creator.tsx:1318
+#: components/custom-partner-creator.tsx:1312
 #: components/history/conversation-history.tsx:1856
 msgid "Description"
 msgstr "설명"
@@ -787,7 +787,7 @@ msgstr "20대 초반"
 #: components/call-summary.tsx:721
 #: components/call-summary.tsx:782
 #: components/call-summary.tsx:1447
-#: components/custom-partner-creator.tsx:1297
+#: components/custom-partner-creator.tsx:1291
 #: components/history/conversation-history.tsx:1214
 #: components/history/conversation-history.tsx:1286
 #: components/history/conversation-history.tsx:1835
@@ -800,15 +800,10 @@ msgid "Edit memory"
 msgstr "메모리 편집"
 
 #: components/call-summary.tsx:1419
-#: components/custom-partner-creator.tsx:1269
+#: components/custom-partner-creator.tsx:1263
 #: components/history/conversation-history.tsx:1807
 msgid "Edit partner"
 msgstr "파트너 편집"
-
-#: components/onboarding/onboarding-client.tsx:60
-#: components/settings.tsx:45
-msgid "Elementary"
-msgstr "초등"
 
 #: components/billing/billing-content.tsx:197
 #: components/forgot-password-form.tsx:94
@@ -839,7 +834,7 @@ msgid "English"
 msgstr "영어"
 
 #: components/call-summary.tsx:1462
-#: components/custom-partner-creator.tsx:1312
+#: components/custom-partner-creator.tsx:1306
 #: components/history/conversation-history.tsx:1850
 msgid "Enter a name"
 msgstr "이름을 입력하세요"
@@ -850,7 +845,7 @@ msgstr "이름을 입력하세요"
 msgid "Enter a name first"
 msgstr "이름을 먼저 입력하세요"
 
-#: components/custom-partner-creator.tsx:1238
+#: components/custom-partner-creator.tsx:1232
 msgid "Enter a name for your partner"
 msgstr "파트너의 이름을 입력하세요."
 
@@ -1186,7 +1181,7 @@ msgstr "Glass를 더 개선할 수 있도록 도와주세요."
 msgid "Hey! I'm Glass."
 msgstr "안녕하세요! 저는 Glass예요."
 
-#: components/settings.tsx:244
+#: components/settings.tsx:243
 msgid "Hide messages"
 msgstr "자동 메시지 숨김"
 
@@ -1198,27 +1193,23 @@ msgstr "하이킹 & 자연"
 msgid "Home"
 msgstr "홈"
 
-#: components/onboarding/onboarding-client.tsx:696
+#: components/onboarding/onboarding-client.tsx:597
 msgid "How confident are you in this language?"
 msgstr "이 언어에 얼마나 자신 있으신가요?"
 
-#: components/onboarding/onboarding-client.tsx:49
+#: components/onboarding/onboarding-client.tsx:46
 msgid "I am starting from zero and need full guidance."
 msgstr "완전 처음이라 처음부터 끝까지 도움이 필요해요."
 
-#: components/onboarding/onboarding-client.tsx:73
+#: components/onboarding/onboarding-client.tsx:64
 msgid "I can discuss complex topics and want to sound more natural."
 msgstr "복잡한 주제도 문제없지만, 더 자연스럽게 말하고 싶어요."
 
-#: components/onboarding/onboarding-client.tsx:67
+#: components/onboarding/onboarding-client.tsx:58
 msgid "I can explain ideas, ask follow-up questions, and manage most conversations."
 msgstr "의견을 주고받고 질문을 이어가면서 웬만한 대화는 편하게 할 수 있어요."
 
-#: components/onboarding/onboarding-client.tsx:61
-msgid "I can hold short chats about daily life with support."
-msgstr "조금만 도와주면 일상적인 짧은 대화는 가능해요."
-
-#: components/onboarding/onboarding-client.tsx:55
+#: components/onboarding/onboarding-client.tsx:52
 msgid "I can say simple phrases but need help forming sentences."
 msgstr "간단한 표현은 할 수 있지만 문장을 만드는 데 도움이 필요해요."
 
@@ -1287,8 +1278,8 @@ msgstr "비활성화됨"
 msgid "Interaction"
 msgstr "상호작용"
 
-#: components/onboarding/onboarding-client.tsx:66
-#: components/settings.tsx:46
+#: components/onboarding/onboarding-client.tsx:57
+#: components/settings.tsx:45
 msgid "Intermediate"
 msgstr "중급"
 
@@ -1356,7 +1347,7 @@ msgstr "한국 문화"
 msgid "Korean food"
 msgstr "한국 음식"
 
-#: components/settings.tsx:319
+#: components/settings.tsx:318
 msgid "Language level"
 msgstr "언어 수준"
 
@@ -1372,7 +1363,7 @@ msgstr "라틴 문화"
 msgid "Latino music"
 msgstr "라틴 음악"
 
-#: components/settings.tsx:296
+#: components/settings.tsx:295
 msgid "Learning language"
 msgstr "학습 언어"
 
@@ -1388,7 +1379,7 @@ msgstr "시작해볼까요! 🎉"
 msgid "Let's start your first conversation!"
 msgstr "이제 첫 대화를 시작해봐요!"
 
-#: components/settings.tsx:355
+#: components/settings.tsx:354
 msgid "Light"
 msgstr "라이트"
 
@@ -1469,8 +1460,8 @@ msgid "Looking for"
 msgstr "찾기"
 
 #: components/custom-partner-creator.tsx:230
-msgid "Looking for someone who matches your vibe..."
-msgstr "당신과 잘 맞는 사람을 찾고 있습니다..."
+msgid "Looking for an AI partner who matches your vibe..."
+msgstr "당신의 감성과 맞는 AI 파트너를 찾고 계신가요..."
 
 #: lib/conversation-display.ts:30
 msgid "Low"
@@ -1556,7 +1547,7 @@ msgstr "메모리가 업데이트됐어요."
 msgid "Memory updated successfully"
 msgstr "메모리가 업데이트됐어요."
 
-#: components/settings.tsx:197
+#: components/settings.tsx:196
 msgid "Microphone"
 msgstr "마이크"
 
@@ -1617,20 +1608,20 @@ msgid "Must be at least 8 characters long."
 msgstr "8자 이상이어야 합니다."
 
 #: components/call-summary.tsx:1457
-#: components/custom-partner-creator.tsx:1307
+#: components/custom-partner-creator.tsx:1301
 #: components/history/conversation-history.tsx:1845
 msgid "Name"
 msgstr "이름"
 
-#: components/settings.tsx:273
+#: components/settings.tsx:272
 msgid "Native language"
 msgstr "모국어"
 
-#: components/settings.tsx:231
+#: components/settings.tsx:230
 msgid "Native script"
 msgstr "원어 표기"
 
-#: components/settings.tsx:259
+#: components/settings.tsx:258
 msgid "Never"
 msgstr "없음"
 
@@ -1660,9 +1651,9 @@ msgid "Next"
 msgstr "다음"
 
 #: components/onboarding/glass-onboarding-card.tsx:89
-#: components/onboarding/onboarding-client.tsx:617
-#: components/onboarding/onboarding-client.tsx:682
-#: components/onboarding/onboarding-client.tsx:767
+#: components/onboarding/onboarding-client.tsx:524
+#: components/onboarding/onboarding-client.tsx:583
+#: components/onboarding/onboarding-client.tsx:650
 msgid "Next →"
 msgstr "다음 →"
 
@@ -1821,7 +1812,7 @@ msgid "Partner name is required"
 msgstr "파트너 이름은 필수입니다"
 
 #: components/call-summary.tsx:394
-#: components/custom-partner-creator.tsx:1253
+#: components/custom-partner-creator.tsx:1247
 #: components/history/conversation-history.tsx:438
 msgid "Partner updated"
 msgstr "파트너가 업데이트되었습니다."
@@ -1849,7 +1840,7 @@ msgid "Philosophy"
 msgstr "철학"
 
 #: components/call-summary.tsx:1451
-#: components/custom-partner-creator.tsx:1301
+#: components/custom-partner-creator.tsx:1295
 #: components/history/conversation-history.tsx:1839
 msgid "Photo"
 msgstr "사진"
@@ -1963,7 +1954,7 @@ msgstr "프로"
 msgid "Professional practice"
 msgstr "커리어 실무"
 
-#: components/settings.tsx:220
+#: components/settings.tsx:219
 msgid "Pronunciation"
 msgstr "발음 표기"
 
@@ -2050,7 +2041,7 @@ msgstr "로그인 화면으로 돌아가기"
 msgid "Roleplay conversations cannot change partner images"
 msgstr "롤플레잉 대화에서는 파트너 이미지를 변경할 수 없습니다."
 
-#: components/settings.tsx:234
+#: components/settings.tsx:233
 msgid "Romaji (Latin)"
 msgstr "로마자 (라틴어)"
 
@@ -2059,7 +2050,7 @@ msgid "Rows per page"
 msgstr "페이지당 행 수"
 
 #: components/call-summary.tsx:1513
-#: components/custom-partner-creator.tsx:1347
+#: components/custom-partner-creator.tsx:1341
 #: components/history/conversation-history.tsx:1901
 msgid "Save"
 msgstr "저장"
@@ -2081,7 +2072,7 @@ msgstr "저장된 대화"
 msgid "Saving..."
 msgstr "저장 중..."
 
-#: components/onboarding/onboarding-client.tsx:765
+#: components/onboarding/onboarding-client.tsx:650
 msgid "Saving…"
 msgstr "저장 중…"
 
@@ -2134,10 +2125,6 @@ msgstr "검색 파트너"
 msgid "See all features across plans and find what works best for you."
 msgstr "모든 요금제의 기능을 확인하고, 가장 적합한 것을 찾아보세요."
 
-#: components/custom-partner-creator.tsx:232
-msgid "Seeing how the conversation might flow..."
-msgstr "대화가 어떻게 진행될지 살펴보는 중..."
-
 #: components/history/conversation-history.tsx:346
 #: components/history/conversation-history.tsx:539
 msgid "Select a conversation first"
@@ -2152,7 +2139,7 @@ msgstr "대화를 선택하여 세부 정보를 확인하세요"
 msgid "Select a language partner"
 msgstr "언어 파트너 선택"
 
-#: components/onboarding/onboarding-client.tsx:539
+#: components/onboarding/onboarding-client.tsx:452
 msgid "Select a level to continue"
 msgstr "계속하려면 레벨을 선택하세요."
 
@@ -2189,11 +2176,11 @@ msgstr "화면 선택"
 msgid "Select size"
 msgstr "크기 선택"
 
-#: components/onboarding/onboarding-client.tsx:699
+#: components/onboarding/onboarding-client.tsx:600
 msgid "Select the description that feels closest to your speaking ability."
 msgstr "본인의 말하기 수준과 가장 가까운 항목을 선택하세요."
 
-#: components/onboarding/onboarding-client.tsx:584
+#: components/onboarding/onboarding-client.tsx:495
 msgid "Select the language you speak fluently"
 msgstr "유창하게 구사하는 언어를 선택하세요"
 
@@ -2237,7 +2224,7 @@ msgstr "전송 중..."
 msgid "Sentence length"
 msgstr "문장 길이"
 
-#: components/settings.tsx:185
+#: components/settings.tsx:184
 #: components/user-menu.tsx:111
 msgid "Settings"
 msgstr "설정"
@@ -2370,7 +2357,7 @@ msgstr "요약"
 msgid "Support"
 msgstr "지원"
 
-#: components/settings.tsx:205
+#: components/settings.tsx:204
 msgid "System default"
 msgstr "시스템 기본 설정"
 
@@ -2428,7 +2415,7 @@ msgstr "무료 플랜은 만료되지 않아요. 업그레이드 시 제한 없�
 msgid "The verification link is invalid or has expired."
 msgstr "인증 링크가 잘못되었거나 만료되었습니다."
 
-#: components/settings.tsx:339
+#: components/settings.tsx:338
 msgid "Theme"
 msgstr "테마"
 
@@ -2544,12 +2531,12 @@ msgstr "결제 포털을 열 수 없습니다"
 msgid "Unable to open checkout"
 msgstr "결제 창을 열 수 없습니다"
 
-#: components/onboarding/onboarding-client.tsx:563
+#: components/onboarding/onboarding-client.tsx:474
 msgid "Unable to save level. Please try again."
 msgstr "레벨을 저장할 수 없습니다. 다시 시도해 주세요."
 
-#: components/custom-partner-creator.tsx:1232
-#: components/custom-partner-creator.tsx:1258
+#: components/custom-partner-creator.tsx:1226
+#: components/custom-partner-creator.tsx:1252
 msgid "Unable to save partner"
 msgstr "파트너를 저장할 수 없습니다."
 
@@ -2616,7 +2603,7 @@ msgstr "최대 500건"
 msgid "Update"
 msgstr "업데이트"
 
-#: components/custom-partner-creator.tsx:1272
+#: components/custom-partner-creator.tsx:1266
 msgid "Update your custom partner details."
 msgstr "파트너 정보를 업데이트하세요."
 
@@ -2699,8 +2686,8 @@ msgid "We couldn't capture your screen. Try a different window or browser."
 msgstr "화면을 캡처할 수 없습니다. 다른 창이나 브라우저를 시도해 보세요."
 
 #: components/custom-partner-creator.tsx:236
-msgid "We couldn't find the right match"
-msgstr "적합한 항목을 찾을 수 없습니다."
+msgid "We couldn't find the right partner"
+msgstr "적합한 파트너를 찾지 못했습니다."
 
 #: components/billing/billing-content.tsx:598
 msgid "We couldn't load your account details. Please refresh and try again."
@@ -2737,7 +2724,7 @@ msgstr "무엇을 말하고 싶으신가요..."
 msgid "What interests you?"
 msgstr "관심 있는 분야가 무엇인가요?"
 
-#: components/onboarding/onboarding-client.tsx:581
+#: components/onboarding/onboarding-client.tsx:492
 msgid "What is your native language?"
 msgstr "모국어가 무엇인가요?"
 
@@ -2757,7 +2744,7 @@ msgstr "어떤 내용을 메모리에 저장하고 싶으세요?"
 msgid "What's next"
 msgstr "다음 단계"
 
-#: components/onboarding/onboarding-client.tsx:631
+#: components/onboarding/onboarding-client.tsx:538
 msgid "Which language do you want to learn?"
 msgstr "어떤 언어를 배우고 싶으신가요?"
 
@@ -2817,14 +2804,6 @@ msgstr "학습 언어"
 msgid "Your match is choosing a friendly photo."
 msgstr "상대방이 프로필 사진을 고르고 있습니다."
 
-#: components/custom-partner-creator.tsx:234
-msgid "Your match is picking a friendly photo..."
-msgstr "상대방이 프로필 사진을 선택하고 있습니다..."
-
-#: components/custom-partner-creator.tsx:233
-msgid "Your match is polishing their profile..."
-msgstr "상대방이 프로필을 정리하고 있습니다..."
-
 #: components/custom-partner-creator.tsx:454
 msgid "Your match just finished writing a profile for you."
 msgstr "당신의 매칭 상대가 방금 당신의 프로필 작성을 완료했습니다."
@@ -2843,11 +2822,23 @@ msgid ""
 "synced."
 msgstr "새로운 요금제가 활성화되었습니다. 저장된 대화는 안전하게 보관하고 동기화됩니다."
 
+#: components/custom-partner-creator.tsx:234
+msgid "Your partner is picking a friendly photo..."
+msgstr "파트너가 친근한 사진을 선택 중이에요..."
+
+#: components/custom-partner-creator.tsx:233
+msgid "Your partner is polishing their profile..."
+msgstr "파트너가 프로필을 정리하고 있습니다..."
+
+#: components/custom-partner-creator.tsx:232
+msgid "Your partner is tuning their voice a little..."
+msgstr "당신의 파트너가 목소리를 약간 조정하고 있습니다..."
+
 #: app/[lang]/(app)/history/page.tsx:31
 msgid "Your saved calls"
 msgstr "저장된 통화"
 
-#: components/onboarding/onboarding-client.tsx:48
+#: components/onboarding/onboarding-client.tsx:45
 #: components/settings.tsx:43
 msgid "Zero"
 msgstr "제로"
@@ -2881,6 +2872,11 @@ msgstr "제로"
 #~ msgid "Docs"
 #~ msgstr "문서"
 
+#: components/onboarding/onboarding-client.tsx:60
+#: components/settings.tsx:45
+#~ msgid "Elementary"
+#~ msgstr "초등"
+
 #: components/call-limit-dialog.tsx:40
 #~ msgid ""
 #~ "Free accounts can keep up to 10 conversations. Delete old calls or upgrade "
@@ -2903,9 +2899,17 @@ msgstr "제로"
 #~ msgid "How would you like to use Glass?"
 #~ msgstr "Glass를 어떻게 사용하고 싶으신가요?"
 
+#: components/onboarding/onboarding-client.tsx:61
+#~ msgid "I can hold short chats about daily life with support."
+#~ msgstr "조금만 도와주면 일상적인 짧은 대화는 가능해요."
+
 #: components/start-call.tsx:1285
 #~ msgid "Language Exchange • Calls"
 #~ msgstr "언어 교환 • 모임"
+
+#: components/custom-partner-creator.tsx:230
+#~ msgid "Looking for someone who matches your vibe..."
+#~ msgstr "당신과 잘 맞는 사람을 찾고 있습니다..."
 
 #: components/start-call.tsx:1347
 #~ msgid "No partners available"
@@ -2927,6 +2931,10 @@ msgstr "제로"
 #~ msgid "RECOMMENDED"
 #~ msgstr "추천"
 
+#: components/custom-partner-creator.tsx:232
+#~ msgid "Seeing how the conversation might flow..."
+#~ msgstr "대화가 어떻게 진행될지 살펴보는 중..."
+
 #: components/start-call.tsx:862
 #: components/start-call.tsx:867
 #: components/start-call.tsx:1333
@@ -2946,3 +2954,15 @@ msgstr "제로"
 #~ "Use the browser's “Hide” option on the sharing bar so it doesn't cover "
 #~ "Glass."
 #~ msgstr "브라우저의 \"숨기기\" 옵션을 사용하여 공유 바가 Glass를 가리지 않도록 하세요."
+
+#: components/custom-partner-creator.tsx:236
+#~ msgid "We couldn't find the right match"
+#~ msgstr "적합한 항목을 찾을 수 없습니다."
+
+#: components/custom-partner-creator.tsx:234
+#~ msgid "Your match is picking a friendly photo..."
+#~ msgstr "상대방이 프로필 사진을 선택하고 있습니다..."
+
+#: components/custom-partner-creator.tsx:233
+#~ msgid "Your match is polishing their profile..."
+#~ msgstr "상대방이 프로필을 정리하고 있습니다..."

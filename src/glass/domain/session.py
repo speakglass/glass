@@ -636,19 +636,32 @@ class ConversationSession:
         partner_spoken_lang: str | None = None,
     ) -> None:
         """Set session configuration including languages, mode, and partner info."""
-        self.assistant.learning_lang = learning_lang
-        self.assistant.native_lang = native_lang
-        self.roleplay.learning_lang = learning_lang
-        self.roleplay.native_lang = native_lang
+        def _normalize(code: str | None) -> str | None:
+            if isinstance(code, str):
+                trimmed = code.strip().lower()
+                if trimmed:
+                    return trimmed
+            return None
+
+        normalized_native = _normalize(native_lang) or self.assistant.native_lang or self.default_lang
+        normalized_partner_spoken = _normalize(partner_spoken_lang) or _normalize(learning_lang)
+        if not normalized_partner_spoken:
+            normalized_partner_spoken = self.partner_spoken_lang or self.assistant.learning_lang or normalized_native
+        normalized_user_spoken = _normalize(user_spoken_lang) or self.user_spoken_lang or normalized_native
+
+        self.assistant.learning_lang = normalized_partner_spoken
+        self.assistant.native_lang = normalized_native
+        self.roleplay.learning_lang = normalized_partner_spoken
+        self.roleplay.native_lang = normalized_native
         self.mode = mode
         self.assistant.mode = mode
         self._has_real_partner = bool(partner and partner.get("id"))
-        self.partner_profile = self._derive_partner_profile(partner, learning_lang, native_lang, mode)
+        self.partner_profile = self._derive_partner_profile(partner, normalized_partner_spoken, normalized_native, mode)
         self.partner_id = self.partner_profile.get("id")
         self._apply_roleplay_partner(self.partner_profile)
 
-        self.user_spoken_lang = user_spoken_lang or self.user_spoken_lang or native_lang
-        self.partner_spoken_lang = partner_spoken_lang or self.partner_spoken_lang or learning_lang
+        self.user_spoken_lang = normalized_user_spoken
+        self.partner_spoken_lang = normalized_partner_spoken
 
         partner_label = self.roleplay.partner_name
         partner_desc = self.roleplay.partner_description

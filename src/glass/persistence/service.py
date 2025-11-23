@@ -302,6 +302,7 @@ async def create_partner(
     *,
     name: str,
     description: str | None = None,
+    description_translation: str | None = None,
     learning_lang: str | None = None,
     native_lang: str | None = None,
     avatar_url: str | None = None,
@@ -313,7 +314,9 @@ async def create_partner(
     persona_country: str | None = None,
     persona_relationship: str | None = None,
     persona_background: str | None = None,
+    persona_background_translation: str | None = None,
     persona_interests: str | None = None,
+    persona_interests_translation: str | None = None,
 ) -> ConversationPartner:
     """Create a custom partner for a user."""
     async_session_factory = db.session()
@@ -325,6 +328,7 @@ async def create_partner(
             native_lang=native_lang,
             name=name,
             description=description,
+            description_translation=description_translation,
             avatar_url=avatar_url,
             voice_id=voice_id,
             kind=partner_kind,
@@ -335,7 +339,9 @@ async def create_partner(
             persona_country=persona_country,
             persona_relationship=persona_relationship,
             persona_background=persona_background,
+            persona_background_translation=persona_background_translation,
             persona_interests=persona_interests,
+            persona_interests_translation=persona_interests_translation,
             is_active=True,
         )
         session.add(partner)
@@ -351,6 +357,7 @@ async def update_partner(
     *,
     name: str | None = None,
     description: str | None = None,
+    description_translation: str | None = None,
     learning_lang: str | None = None,
     native_lang: str | None = None,
     avatar_url: str | None = None,
@@ -359,7 +366,9 @@ async def update_partner(
     persona_gender: str | None = None,
     persona_relationship: str | None = None,
     persona_background: str | None = None,
+    persona_background_translation: str | None = None,
     persona_interests: str | None = None,
+    persona_interests_translation: str | None = None,
 ) -> ConversationPartner:
     """Update a partner owned by the user."""
     async_session_factory = db.session()
@@ -377,6 +386,8 @@ async def update_partner(
             partner.name = name
         if description is not None:
             partner.description = description
+        if description_translation is not None:
+            partner.description_translation = description_translation
         if learning_lang is not None:
             partner.learning_lang = learning_lang
         if native_lang is not None:
@@ -393,8 +404,12 @@ async def update_partner(
             partner.persona_relationship = persona_relationship
         if persona_background is not None:
             partner.persona_background = persona_background
+        if persona_background_translation is not None:
+            partner.persona_background_translation = persona_background_translation
         if persona_interests is not None:
             partner.persona_interests = persona_interests
+        if persona_interests_translation is not None:
+            partner.persona_interests_translation = persona_interests_translation
         partner.kind = "live_call" if not partner.voice_id else "roleplay"
         session.add(partner)
         await session.commit()

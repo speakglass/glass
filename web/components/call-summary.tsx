@@ -705,7 +705,11 @@ const CallSummary = ({
                 <div className="min-w-0">
                   <p className="font-medium truncate">{partnerProfile?.name || t`Partner`}</p>
                   <p className="text-[11px] text-muted-foreground/90 truncate">
-                    {partnerProfile?.description ? partnerProfile.description : <Trans>No partner assigned</Trans>}
+                    {partnerProfile?.descriptionTranslation || partnerProfile?.description ? (
+                      partnerProfile?.descriptionTranslation || partnerProfile?.description
+                    ) : (
+                      <Trans>No partner assigned</Trans>
+                    )}
                   </p>
                 </div>
               </button>

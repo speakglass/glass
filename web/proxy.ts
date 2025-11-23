@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { LOCALIZED_LANGUAGE_CODES, DEFAULT_LANGUAGE } from './lib/supported-languages';
 
 const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
+const AUTH_PAGES = [
+  'login',
+  'signup',
+  'forgot-password',
+  'reset-password',
+  'verify-email',
+  'verify-email-sent',
+] as const;
+const POST_SIGNUP_VERIFICATION_PAGES = ['verify-email', 'verify-email-sent'] as const;
+const REDIRECT_AUTH_PAGES = AUTH_PAGES.filter(
+  (page) => !(POST_SIGNUP_VERIFICATION_PAGES as readonly string[]).includes(page)
+);
 
 function isValidLocale(locale: string): boolean {
   return LOCALIZED_LANGUAGE_CODES.includes(locale as any);
@@ -60,8 +72,8 @@ export function proxy(request: NextRequest) {
   const pathWithoutLocale = pathname.split('/').slice(2).join('/');
 
   // Define auth pages (pages that don't require authentication)
-  const authPages = ['login', 'signup', 'forgot-password', 'reset-password', 'verify-email', 'verify-email-sent'];
-  const isAuthPage = authPages.some((page) => pathWithoutLocale.startsWith(page));
+  const isAuthPage = AUTH_PAGES.some((page) => pathWithoutLocale.startsWith(page));
+  const shouldRedirectAuthenticatedUsers = REDIRECT_AUTH_PAGES.some((page) => pathWithoutLocale.startsWith(page));
 
   // Check authentication early
   const authenticated = isAuthenticated(request);
@@ -70,7 +82,10 @@ export function proxy(request: NextRequest) {
   if (!isValidLocale(pathnameLocale)) {
     const preferredLocale = getPreferredLocale(request);
     // If not authenticated and trying to access a non-auth page, redirect to login
-    if (!authenticated && !pathname.match(/\/(login|signup|forgot-password|reset-password|verify-email|verify-email-sent)/)) {
+    if (
+      !authenticated &&
+      !pathname.match(/\/(login|signup|forgot-password|reset-password|verify-email|verify-email-sent)/)
+    ) {
       const loginUrl = new URL(`/${preferredLocale}/login`, request.url);
       return NextResponse.redirect(loginUrl);
     }
@@ -85,7 +100,7 @@ export function proxy(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages to dashboard
-  if (authenticated && isAuthPage) {
+  if (authenticated && shouldRedirectAuthenticatedUsers) {
     const dashboardUrl = new URL(`/${pathnameLocale}/dashboard`, request.url);
     return NextResponse.redirect(dashboardUrl);
   }

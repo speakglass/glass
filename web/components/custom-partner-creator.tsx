@@ -227,13 +227,13 @@ const NARRATIVE_STEP_ORDER: NarrativeStepId[] = ['persona', 'voice', 'partner', 
 const STEP_PACING_MS = [0, 6000, 14000, 24000, 32000]; // Minimum elapsed time targets for each step
 
 const FALLBACK_STATUS_MESSAGES: Record<PartnerGenerationStatus, string> = {
-  queued: t`Looking for someone who matches your vibe...`,
+  queued: t`Looking for an AI partner who matches your vibe...`,
   generating_persona: t`Meeting potential partners...`,
-  selecting_voice: t`Seeing how the conversation might flow...`,
-  saving_partner: t`Your match is polishing their profile...`,
-  generating_avatar: t`Your match is picking a friendly photo...`,
+  selecting_voice: t`Your partner is tuning their voice a little...`,
+  saving_partner: t`Your partner is polishing their profile...`,
+  generating_avatar: t`Your partner is picking a friendly photo...`,
   completed: t`Ready to say hi!`,
-  failed: t`We couldn't find the right match`,
+  failed: t`We couldn't find the right partner`,
 };
 
 interface CustomPartnerCreatorProps {
@@ -290,7 +290,11 @@ export function CustomPartnerCreator({
       const splitOnInterests = location.split(/interests?:/i)[0];
       location = splitOnInterests.split('\n')[0].trim();
     }
-    const interestList = persona?.personaInterests?.filter((item) => item && item.trim()) ?? [];
+    const interestSource =
+      persona?.personaInterestsTranslation && persona.personaInterestsTranslation.length > 0
+        ? persona.personaInterestsTranslation
+        : persona?.personaInterests;
+    const interestList = interestSource?.filter((item) => item && item.trim()) ?? [];
     const interest = interestList[0];
     return { name, location, interest };
   }, [generationJob]);
@@ -1079,19 +1083,25 @@ export function CustomPartnerCreator({
               <h4 className="text-lg font-semibold">
                 <Trans>About Me</Trans>
               </h4>
-              {createdPartner?.description && (
-                <p className="text-sm text-foreground leading-relaxed">{createdPartner.description}</p>
+              {(createdPartner?.descriptionTranslation || createdPartner?.description) && (
+                <p className="text-sm text-foreground leading-relaxed">
+                  {createdPartner?.descriptionTranslation || createdPartner?.description}
+                </p>
               )}
-              {createdPartner?.personaBackground && (
-                <p className="text-sm text-muted-foreground leading-relaxed">{createdPartner.personaBackground}</p>
+              {(createdPartner?.personaBackgroundTranslation || createdPartner?.personaBackground) && (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {createdPartner?.personaBackgroundTranslation || createdPartner?.personaBackground}
+                </p>
               )}
-              {createdPartner?.personaInterests && (
+              {(createdPartner?.personaInterestsTranslation || createdPartner?.personaInterests) && (
                 <div className="flex flex-wrap gap-2">
-                  {createdPartner.personaInterests.split(',').map((interest, idx) => (
+                  {(createdPartner.personaInterestsTranslation || createdPartner.personaInterests || '')
+                    .split(',')
+                    .map((interest, idx) => (
                     <Badge key={idx} variant="secondary" className="text-xs capitalize">
                       {interest.trim()}
                     </Badge>
-                  ))}
+                    ))}
                 </div>
               )}
             </div>
@@ -1177,13 +1187,7 @@ interface CustomPartnerEditorProps {
   onPartnerUpdated: (partner: ConversationPartner) => void;
 }
 
-export function CustomPartnerEditor({
-  open,
-  onClose,
-  partner,
-  token,
-  onPartnerUpdated,
-}: CustomPartnerEditorProps) {
+export function CustomPartnerEditor({ open, onClose, partner, token, onPartnerUpdated }: CustomPartnerEditorProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);

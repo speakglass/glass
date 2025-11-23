@@ -40,6 +40,7 @@ export interface ConversationPartnerRef {
   id?: string | null;
   name?: string | null;
   description?: string | null;
+  descriptionTranslation?: string | null;
   avatarUrl?: string | null;
   voiceId?: string | null;
   learningLang?: string | null;
@@ -91,6 +92,7 @@ export interface ConversationPartner {
   id: string;
   name: string;
   description?: string | null;
+  descriptionTranslation?: string | null;
   avatarUrl?: string | null;
   voiceId?: string | null;
   learningLang?: string | null;
@@ -103,7 +105,9 @@ export interface ConversationPartner {
   personaCountry?: string | null;
   personaRelationship?: string | null;
   personaBackground?: string | null;
+  personaBackgroundTranslation?: string | null;
   personaInterests?: string | null;
+  personaInterestsTranslation?: string | null;
   conversationCount?: number;
 }
 
@@ -219,6 +223,7 @@ type ConversationPartnerRefApi = {
   id?: string | null;
   name?: string | null;
   description?: string | null;
+  description_translation?: string | null;
   avatar_url?: string | null;
   voice_id?: string | null;
   learning_lang?: string | null;
@@ -305,6 +310,7 @@ type PartnerApi = {
   id: string;
   name: string;
   description?: string | null;
+  description_translation?: string | null;
   avatar_url?: string | null;
   voice_id?: string | null;
   learning_lang?: string | null;
@@ -317,7 +323,9 @@ type PartnerApi = {
   persona_country?: string | null;
   persona_relationship?: string | null;
   persona_background?: string | null;
+  persona_background_translation?: string | null;
   persona_interests?: string | null;
+  persona_interests_translation?: string | null;
   conversation_count?: number;
 };
 
@@ -413,17 +421,12 @@ function mapPartnerRef(data?: ConversationPartnerRefApi | null): ConversationPar
     return null;
   }
   const normalizedKind =
-    data.kind === 'live_call'
-      ? 'live_call'
-      : data.kind === 'roleplay'
-      ? 'roleplay'
-      : data.voice_id
-      ? 'roleplay'
-      : null;
+    data.kind === 'live_call' ? 'live_call' : data.kind === 'roleplay' ? 'roleplay' : data.voice_id ? 'roleplay' : null;
   return {
     id: data.id ?? null,
     name: data.name ?? null,
     description: data.description ?? null,
+    descriptionTranslation: data.description_translation ?? null,
     avatarUrl: data.avatar_url ?? null,
     voiceId: data.voice_id ?? null,
     learningLang: data.learning_lang ?? null,
@@ -463,6 +466,7 @@ function mapPartner(data: PartnerApi): ConversationPartner {
     id: data.id,
     name: data.name,
     description: data.description,
+    descriptionTranslation: data.description_translation || null,
     avatarUrl: data.avatar_url || null,
     voiceId: data.voice_id || null,
     learningLang: data.learning_lang || null,
@@ -475,7 +479,9 @@ function mapPartner(data: PartnerApi): ConversationPartner {
     personaCountry: data.persona_country || null,
     personaRelationship: data.persona_relationship || null,
     personaBackground: data.persona_background || null,
+    personaBackgroundTranslation: data.persona_background_translation || null,
     personaInterests: data.persona_interests || null,
+    personaInterestsTranslation: data.persona_interests_translation || null,
     conversationCount: data.conversation_count ?? 0,
   };
 }
@@ -487,6 +493,7 @@ function mapPartnerPersonaPreview(data?: PartnerPersonaPreviewApi | null): Partn
   return {
     name: data.name ?? undefined,
     summary: data.summary ?? undefined,
+    summaryTranslation: data.summary_translation ?? undefined,
     personaAge: data.persona_age ?? undefined,
     personaGender: data.persona_gender ?? undefined,
     personaOccupation: data.persona_occupation ?? undefined,
@@ -494,6 +501,8 @@ function mapPartnerPersonaPreview(data?: PartnerPersonaPreviewApi | null): Partn
     personaCountry: data.persona_country ?? undefined,
     personaBackground: data.persona_background ?? undefined,
     personaInterests: data.persona_interests ?? undefined,
+    personaBackgroundTranslation: data.persona_background_translation ?? undefined,
+    personaInterestsTranslation: data.persona_interests_translation ?? undefined,
   };
 }
 
@@ -742,6 +751,7 @@ export async function createContactRequest(
 export interface PartnerCreateInput {
   name: string;
   description?: string | null;
+  descriptionTranslation?: string | null;
   learningLang?: string | null;
   nativeLang?: string | null;
   avatarUrl?: string | null;
@@ -752,7 +762,9 @@ export interface PartnerCreateInput {
   personaCountry?: string | null;
   personaRelationship?: string | null;
   personaBackground?: string | null;
+  personaBackgroundTranslation?: string | null;
   personaInterests?: string | null;
+  personaInterestsTranslation?: string | null;
 }
 
 export interface PartnerPersonaCreateInput {
@@ -779,6 +791,7 @@ export type PartnerGenerationStep = 'persona' | 'voice' | 'partner' | 'avatar';
 export interface PartnerPersonaPreview {
   name?: string | null;
   summary?: string | null;
+  summaryTranslation?: string | null;
   personaAge?: string | null;
   personaGender?: string | null;
   personaOccupation?: string | null;
@@ -786,6 +799,8 @@ export interface PartnerPersonaPreview {
   personaCountry?: string | null;
   personaBackground?: string | null;
   personaInterests?: string[] | null;
+  personaBackgroundTranslation?: string | null;
+  personaInterestsTranslation?: string[] | null;
 }
 
 export interface PartnerGenerationJob {
@@ -801,6 +816,7 @@ export interface PartnerGenerationJob {
 interface PartnerPersonaPreviewApi {
   name?: string | null;
   summary?: string | null;
+  summary_translation?: string | null;
   persona_age?: string | null;
   persona_gender?: string | null;
   persona_occupation?: string | null;
@@ -808,6 +824,8 @@ interface PartnerPersonaPreviewApi {
   persona_country?: string | null;
   persona_background?: string | null;
   persona_interests?: string[] | null;
+  persona_background_translation?: string | null;
+  persona_interests_translation?: string[] | null;
 }
 
 interface PartnerGenerationJobApi {
@@ -829,6 +847,7 @@ export async function createPartner(token: string, payload: PartnerCreateInput):
   const body = {
     name: payload.name,
     description: payload.description,
+    description_translation: payload.descriptionTranslation,
     learning_lang: payload.learningLang,
     native_lang: payload.nativeLang,
     avatar_url: payload.avatarUrl,
@@ -839,7 +858,9 @@ export async function createPartner(token: string, payload: PartnerCreateInput):
     persona_country: payload.personaCountry,
     persona_relationship: payload.personaRelationship,
     persona_background: payload.personaBackground,
+    persona_background_translation: payload.personaBackgroundTranslation,
     persona_interests: payload.personaInterests,
+    persona_interests_translation: payload.personaInterestsTranslation,
   };
   const data = await authedFetch<PartnerApi>('/partners', token, {
     method: 'POST',

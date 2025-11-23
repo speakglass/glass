@@ -107,8 +107,8 @@ msgstr "{totalMemories, plural, one {# matching memory} other {# matching memori
 msgid "{totalMemories, plural, one {# total memory} other {# total memories}}"
 msgstr "{totalMemories, plural, one {# total memory} other {# total memories}}"
 
-#: components/onboarding/onboarding-client.tsx:670
-#: components/onboarding/onboarding-client.tsx:752
+#: components/onboarding/onboarding-client.tsx:574
+#: components/onboarding/onboarding-client.tsx:641
 #: components/start-call-instructions.tsx:65
 #: components/start-call.tsx:1010
 msgid "← Back"
@@ -146,7 +146,7 @@ msgid "Add"
 msgstr "Add"
 
 #: components/call-summary.tsx:1473
-#: components/custom-partner-creator.tsx:1323
+#: components/custom-partner-creator.tsx:1317
 #: components/history/conversation-history.tsx:1861
 msgid "Add a short description"
 msgstr "Add a short description"
@@ -163,8 +163,8 @@ msgstr "Add new memory"
 msgid "Add your own"
 msgstr "Add your own"
 
-#: components/onboarding/onboarding-client.tsx:72
-#: components/settings.tsx:47
+#: components/onboarding/onboarding-client.tsx:63
+#: components/settings.tsx:46
 msgid "Advanced"
 msgstr "Advanced"
 
@@ -263,12 +263,12 @@ msgstr "At least one special character"
 msgid "Authentication failed"
 msgstr "Authentication failed"
 
-#: components/onboarding/onboarding-client.tsx:544
+#: components/onboarding/onboarding-client.tsx:456
 msgid "Authentication is required. Please refresh and try again."
 msgstr "Authentication is required. Please refresh and try again."
 
 #: components/custom-partner-creator.tsx:606
-#: components/custom-partner-creator.tsx:1233
+#: components/custom-partner-creator.tsx:1227
 #: components/partner-delete-dialog.tsx:40
 #: components/start-call.tsx:325
 msgid "Authentication token not available. Please refresh the page."
@@ -301,7 +301,7 @@ msgstr "Beach culture"
 msgid "Beer & Festivals"
 msgstr "Beer & Festivals"
 
-#: components/onboarding/onboarding-client.tsx:54
+#: components/onboarding/onboarding-client.tsx:51
 #: components/settings.tsx:44
 msgid "Beginner"
 msgstr "Beginner"
@@ -413,7 +413,7 @@ msgid "Category"
 msgstr "Category"
 
 #: components/call-summary.tsx:1427
-#: components/custom-partner-creator.tsx:1283
+#: components/custom-partner-creator.tsx:1277
 #: components/history/conversation-history.tsx:1815
 msgid "Change partner photo"
 msgstr "Change partner photo"
@@ -448,7 +448,7 @@ msgstr "Choose monthly or yearly billing and unlock Glass features tailored to y
 msgid "Choose someone to practice with"
 msgstr "Choose someone to practice with"
 
-#: components/onboarding/onboarding-client.tsx:634
+#: components/onboarding/onboarding-client.tsx:541
 msgid "Choose the language you want to practice speaking"
 msgstr "Choose the language you want to practice speaking"
 
@@ -486,7 +486,7 @@ msgstr "Click to view full summary"
 
 #: components/call-summary.tsx:1405
 #: components/call-summary.tsx:1504
-#: components/custom-partner-creator.tsx:1338
+#: components/custom-partner-creator.tsx:1332
 #: components/history/conversation-history.tsx:1892
 #: components/memory/memory-dialog.tsx:89
 #: components/partner-detail-modal.tsx:201
@@ -659,7 +659,7 @@ msgstr "Custom AI partners"
 #~ msgid "Custom partner ready"
 #~ msgstr "Custom partner ready"
 
-#: components/settings.tsx:188
+#: components/settings.tsx:187
 msgid "Customize your Glass experience"
 msgstr "Customize your Glass experience"
 
@@ -667,7 +667,7 @@ msgstr "Customize your Glass experience"
 msgid "Daily life"
 msgstr "Daily life"
 
-#: components/settings.tsx:371
+#: components/settings.tsx:370
 msgid "Dark"
 msgstr "Dark"
 
@@ -761,7 +761,7 @@ msgid "Deleting..."
 msgstr "Deleting..."
 
 #: components/call-summary.tsx:1468
-#: components/custom-partner-creator.tsx:1318
+#: components/custom-partner-creator.tsx:1312
 #: components/history/conversation-history.tsx:1856
 msgid "Description"
 msgstr "Description"
@@ -801,7 +801,7 @@ msgstr "Early 20s"
 #: components/call-summary.tsx:721
 #: components/call-summary.tsx:782
 #: components/call-summary.tsx:1447
-#: components/custom-partner-creator.tsx:1297
+#: components/custom-partner-creator.tsx:1291
 #: components/history/conversation-history.tsx:1214
 #: components/history/conversation-history.tsx:1286
 #: components/history/conversation-history.tsx:1835
@@ -814,15 +814,15 @@ msgid "Edit memory"
 msgstr "Edit memory"
 
 #: components/call-summary.tsx:1419
-#: components/custom-partner-creator.tsx:1269
+#: components/custom-partner-creator.tsx:1263
 #: components/history/conversation-history.tsx:1807
 msgid "Edit partner"
 msgstr "Edit partner"
 
 #: components/onboarding/onboarding-client.tsx:60
 #: components/settings.tsx:45
-msgid "Elementary"
-msgstr "Elementary"
+#~ msgid "Elementary"
+#~ msgstr "Elementary"
 
 #: components/billing/billing-content.tsx:197
 #: components/forgot-password-form.tsx:94
@@ -853,7 +853,7 @@ msgid "English"
 msgstr "English"
 
 #: components/call-summary.tsx:1462
-#: components/custom-partner-creator.tsx:1312
+#: components/custom-partner-creator.tsx:1306
 #: components/history/conversation-history.tsx:1850
 msgid "Enter a name"
 msgstr "Enter a name"
@@ -864,7 +864,7 @@ msgstr "Enter a name"
 msgid "Enter a name first"
 msgstr "Enter a name first"
 
-#: components/custom-partner-creator.tsx:1238
+#: components/custom-partner-creator.tsx:1232
 msgid "Enter a name for your partner"
 msgstr "Enter a name for your partner"
 
@@ -1208,7 +1208,7 @@ msgstr "Help us improve Glass"
 msgid "Hey! I'm Glass."
 msgstr "Hey! I'm Glass."
 
-#: components/settings.tsx:244
+#: components/settings.tsx:243
 msgid "Hide messages"
 msgstr "Hide messages"
 
@@ -1220,7 +1220,7 @@ msgstr "Hiking & Nature"
 msgid "Home"
 msgstr "Home"
 
-#: components/onboarding/onboarding-client.tsx:696
+#: components/onboarding/onboarding-client.tsx:597
 msgid "How confident are you in this language?"
 msgstr "How confident are you in this language?"
 
@@ -1228,23 +1228,23 @@ msgstr "How confident are you in this language?"
 #~ msgid "How would you like to use Glass?"
 #~ msgstr "How would you like to use Glass?"
 
-#: components/onboarding/onboarding-client.tsx:49
+#: components/onboarding/onboarding-client.tsx:46
 msgid "I am starting from zero and need full guidance."
 msgstr "I am starting from zero and need full guidance."
 
-#: components/onboarding/onboarding-client.tsx:73
+#: components/onboarding/onboarding-client.tsx:64
 msgid "I can discuss complex topics and want to sound more natural."
 msgstr "I can discuss complex topics and want to sound more natural."
 
-#: components/onboarding/onboarding-client.tsx:67
+#: components/onboarding/onboarding-client.tsx:58
 msgid "I can explain ideas, ask follow-up questions, and manage most conversations."
 msgstr "I can explain ideas, ask follow-up questions, and manage most conversations."
 
 #: components/onboarding/onboarding-client.tsx:61
-msgid "I can hold short chats about daily life with support."
-msgstr "I can hold short chats about daily life with support."
+#~ msgid "I can hold short chats about daily life with support."
+#~ msgstr "I can hold short chats about daily life with support."
 
-#: components/onboarding/onboarding-client.tsx:55
+#: components/onboarding/onboarding-client.tsx:52
 msgid "I can say simple phrases but need help forming sentences."
 msgstr "I can say simple phrases but need help forming sentences."
 
@@ -1305,8 +1305,8 @@ msgstr "Inactive"
 msgid "Interaction"
 msgstr "Interaction"
 
-#: components/onboarding/onboarding-client.tsx:66
-#: components/settings.tsx:46
+#: components/onboarding/onboarding-client.tsx:57
+#: components/settings.tsx:45
 msgid "Intermediate"
 msgstr "Intermediate"
 
@@ -1376,7 +1376,7 @@ msgstr "Korean food"
 #~ msgid "Language Exchange • Calls"
 #~ msgstr "Language Exchange • Calls"
 
-#: components/settings.tsx:319
+#: components/settings.tsx:318
 msgid "Language level"
 msgstr "Language level"
 
@@ -1392,7 +1392,7 @@ msgstr "Latin culture"
 msgid "Latino music"
 msgstr "Latino music"
 
-#: components/settings.tsx:296
+#: components/settings.tsx:295
 msgid "Learning language"
 msgstr "Learning language"
 
@@ -1408,7 +1408,7 @@ msgstr "Let's Go! 🎉"
 msgid "Let's start your first conversation!"
 msgstr "Let's start your first conversation!"
 
-#: components/settings.tsx:355
+#: components/settings.tsx:354
 msgid "Light"
 msgstr "Light"
 
@@ -1489,8 +1489,12 @@ msgid "Looking for"
 msgstr "Looking for"
 
 #: components/custom-partner-creator.tsx:230
-msgid "Looking for someone who matches your vibe..."
-msgstr "Looking for someone who matches your vibe..."
+msgid "Looking for an AI partner who matches your vibe..."
+msgstr "Looking for an AI partner who matches your vibe..."
+
+#: components/custom-partner-creator.tsx:230
+#~ msgid "Looking for someone who matches your vibe..."
+#~ msgstr "Looking for someone who matches your vibe..."
 
 #: lib/conversation-display.ts:30
 msgid "Low"
@@ -1576,7 +1580,7 @@ msgstr "Memory updated"
 msgid "Memory updated successfully"
 msgstr "Memory updated successfully"
 
-#: components/settings.tsx:197
+#: components/settings.tsx:196
 msgid "Microphone"
 msgstr "Microphone"
 
@@ -1637,20 +1641,20 @@ msgid "Must be at least 8 characters long."
 msgstr "Must be at least 8 characters long."
 
 #: components/call-summary.tsx:1457
-#: components/custom-partner-creator.tsx:1307
+#: components/custom-partner-creator.tsx:1301
 #: components/history/conversation-history.tsx:1845
 msgid "Name"
 msgstr "Name"
 
-#: components/settings.tsx:273
+#: components/settings.tsx:272
 msgid "Native language"
 msgstr "Native language"
 
-#: components/settings.tsx:231
+#: components/settings.tsx:230
 msgid "Native script"
 msgstr "Native script"
 
-#: components/settings.tsx:259
+#: components/settings.tsx:258
 msgid "Never"
 msgstr "Never"
 
@@ -1680,9 +1684,9 @@ msgid "Next"
 msgstr "Next"
 
 #: components/onboarding/glass-onboarding-card.tsx:89
-#: components/onboarding/onboarding-client.tsx:617
-#: components/onboarding/onboarding-client.tsx:682
-#: components/onboarding/onboarding-client.tsx:767
+#: components/onboarding/onboarding-client.tsx:524
+#: components/onboarding/onboarding-client.tsx:583
+#: components/onboarding/onboarding-client.tsx:650
 msgid "Next →"
 msgstr "Next →"
 
@@ -1843,7 +1847,7 @@ msgid "Partner name is required"
 msgstr "Partner name is required"
 
 #: components/call-summary.tsx:394
-#: components/custom-partner-creator.tsx:1253
+#: components/custom-partner-creator.tsx:1247
 #: components/history/conversation-history.tsx:438
 msgid "Partner updated"
 msgstr "Partner updated"
@@ -1871,7 +1875,7 @@ msgid "Philosophy"
 msgstr "Philosophy"
 
 #: components/call-summary.tsx:1451
-#: components/custom-partner-creator.tsx:1301
+#: components/custom-partner-creator.tsx:1295
 #: components/history/conversation-history.tsx:1839
 msgid "Photo"
 msgstr "Photo"
@@ -1993,7 +1997,7 @@ msgstr "Pro"
 msgid "Professional practice"
 msgstr "Professional practice"
 
-#: components/settings.tsx:220
+#: components/settings.tsx:219
 msgid "Pronunciation"
 msgstr "Pronunciation"
 
@@ -2084,7 +2088,7 @@ msgstr "Return to login"
 msgid "Roleplay conversations cannot change partner images"
 msgstr "Roleplay conversations cannot change partner images"
 
-#: components/settings.tsx:234
+#: components/settings.tsx:233
 msgid "Romaji (Latin)"
 msgstr "Romaji (Latin)"
 
@@ -2093,7 +2097,7 @@ msgid "Rows per page"
 msgstr "Rows per page"
 
 #: components/call-summary.tsx:1513
-#: components/custom-partner-creator.tsx:1347
+#: components/custom-partner-creator.tsx:1341
 #: components/history/conversation-history.tsx:1901
 msgid "Save"
 msgstr "Save"
@@ -2115,7 +2119,7 @@ msgstr "Saved conversations"
 msgid "Saving..."
 msgstr "Saving..."
 
-#: components/onboarding/onboarding-client.tsx:765
+#: components/onboarding/onboarding-client.tsx:650
 msgid "Saving…"
 msgstr "Saving…"
 
@@ -2169,8 +2173,8 @@ msgid "See all features across plans and find what works best for you."
 msgstr "See all features across plans and find what works best for you."
 
 #: components/custom-partner-creator.tsx:232
-msgid "Seeing how the conversation might flow..."
-msgstr "Seeing how the conversation might flow..."
+#~ msgid "Seeing how the conversation might flow..."
+#~ msgstr "Seeing how the conversation might flow..."
 
 #: components/history/conversation-history.tsx:346
 #: components/history/conversation-history.tsx:539
@@ -2192,7 +2196,7 @@ msgstr "Select a conversation to view details"
 msgid "Select a language partner"
 msgstr "Select a language partner"
 
-#: components/onboarding/onboarding-client.tsx:539
+#: components/onboarding/onboarding-client.tsx:452
 msgid "Select a level to continue"
 msgstr "Select a level to continue"
 
@@ -2229,11 +2233,11 @@ msgstr "Select screen"
 msgid "Select size"
 msgstr "Select size"
 
-#: components/onboarding/onboarding-client.tsx:699
+#: components/onboarding/onboarding-client.tsx:600
 msgid "Select the description that feels closest to your speaking ability."
 msgstr "Select the description that feels closest to your speaking ability."
 
-#: components/onboarding/onboarding-client.tsx:584
+#: components/onboarding/onboarding-client.tsx:495
 msgid "Select the language you speak fluently"
 msgstr "Select the language you speak fluently"
 
@@ -2277,7 +2281,7 @@ msgstr "Sending..."
 msgid "Sentence length"
 msgstr "Sentence length"
 
-#: components/settings.tsx:185
+#: components/settings.tsx:184
 #: components/user-menu.tsx:111
 msgid "Settings"
 msgstr "Settings"
@@ -2408,7 +2412,7 @@ msgstr "Summary"
 msgid "Support"
 msgstr "Support"
 
-#: components/settings.tsx:205
+#: components/settings.tsx:204
 msgid "System default"
 msgstr "System default"
 
@@ -2461,7 +2465,7 @@ msgstr "The Free plan never expires. Upgrade anytime for unlimited history."
 msgid "The verification link is invalid or has expired."
 msgstr "The verification link is invalid or has expired."
 
-#: components/settings.tsx:339
+#: components/settings.tsx:338
 msgid "Theme"
 msgstr "Theme"
 
@@ -2572,12 +2576,12 @@ msgstr "Unable to open checkout"
 #~ msgid "Unable to play preview"
 #~ msgstr "Unable to play preview"
 
-#: components/onboarding/onboarding-client.tsx:563
+#: components/onboarding/onboarding-client.tsx:474
 msgid "Unable to save level. Please try again."
 msgstr "Unable to save level. Please try again."
 
-#: components/custom-partner-creator.tsx:1232
-#: components/custom-partner-creator.tsx:1258
+#: components/custom-partner-creator.tsx:1226
+#: components/custom-partner-creator.tsx:1252
 msgid "Unable to save partner"
 msgstr "Unable to save partner"
 
@@ -2648,7 +2652,7 @@ msgstr "Up to 500"
 msgid "Update"
 msgstr "Update"
 
-#: components/custom-partner-creator.tsx:1272
+#: components/custom-partner-creator.tsx:1266
 msgid "Update your custom partner details."
 msgstr "Update your custom partner details."
 
@@ -2733,8 +2737,12 @@ msgid "We couldn't capture your screen. Try a different window or browser."
 msgstr "We couldn't capture your screen. Try a different window or browser."
 
 #: components/custom-partner-creator.tsx:236
-msgid "We couldn't find the right match"
-msgstr "We couldn't find the right match"
+#~ msgid "We couldn't find the right match"
+#~ msgstr "We couldn't find the right match"
+
+#: components/custom-partner-creator.tsx:236
+msgid "We couldn't find the right partner"
+msgstr "We couldn't find the right partner"
 
 #: components/billing/billing-content.tsx:598
 msgid "We couldn't load your account details. Please refresh and try again."
@@ -2769,7 +2777,7 @@ msgstr "What do you want to say..."
 msgid "What interests you?"
 msgstr "What interests you?"
 
-#: components/onboarding/onboarding-client.tsx:581
+#: components/onboarding/onboarding-client.tsx:492
 msgid "What is your native language?"
 msgstr "What is your native language?"
 
@@ -2789,7 +2797,7 @@ msgstr "What would you like to remember?"
 msgid "What's next"
 msgstr "What's next"
 
-#: components/onboarding/onboarding-client.tsx:631
+#: components/onboarding/onboarding-client.tsx:538
 msgid "Which language do you want to learn?"
 msgstr "Which language do you want to learn?"
 
@@ -2850,12 +2858,12 @@ msgid "Your match is choosing a friendly photo."
 msgstr "Your match is choosing a friendly photo."
 
 #: components/custom-partner-creator.tsx:234
-msgid "Your match is picking a friendly photo..."
-msgstr "Your match is picking a friendly photo..."
+#~ msgid "Your match is picking a friendly photo..."
+#~ msgstr "Your match is picking a friendly photo..."
 
 #: components/custom-partner-creator.tsx:233
-msgid "Your match is polishing their profile..."
-msgstr "Your match is polishing their profile..."
+#~ msgid "Your match is polishing their profile..."
+#~ msgstr "Your match is polishing their profile..."
 
 #: components/custom-partner-creator.tsx:454
 msgid "Your match just finished writing a profile for you."
@@ -2873,11 +2881,23 @@ msgstr "Your memories"
 msgid "Your new plan is active. We'll keep your saved conversations safe and synced."
 msgstr "Your new plan is active. We'll keep your saved conversations safe and synced."
 
+#: components/custom-partner-creator.tsx:234
+msgid "Your partner is picking a friendly photo..."
+msgstr "Your partner is picking a friendly photo..."
+
+#: components/custom-partner-creator.tsx:233
+msgid "Your partner is polishing their profile..."
+msgstr "Your partner is polishing their profile..."
+
+#: components/custom-partner-creator.tsx:232
+msgid "Your partner is tuning their voice a little..."
+msgstr "Your partner is tuning their voice a little..."
+
 #: app/[lang]/(app)/history/page.tsx:31
 msgid "Your saved calls"
 msgstr "Your saved calls"
 
-#: components/onboarding/onboarding-client.tsx:48
+#: components/onboarding/onboarding-client.tsx:45
 #: components/settings.tsx:43
 msgid "Zero"
 msgstr "Zero"

@@ -45,6 +45,7 @@ PartnerGenerationStep = str  # Narrowed elsewhere ('persona', 'voice', 'partner'
 class PersonaPreview:
     name: str | None = None
     summary: str | None = None
+    summary_translation: str | None = None
     persona_age: str | None = None
     persona_gender: str | None = None
     persona_occupation: str | None = None
@@ -52,6 +53,8 @@ class PersonaPreview:
     persona_country: str | None = None
     persona_background: str | None = None
     persona_interests: list[str] = field(default_factory=list)
+    persona_background_translation: str | None = None
+    persona_interests_translation: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -174,7 +177,7 @@ class PartnerGenerationJobManager:
 
             persona_start = time.time()
             LOGGER.info("[Job %s] STEP 1/5: Starting persona generation...", job_id)
-            persona = await generate_partner_persona(self._llm, preferences)
+            persona, localized_persona = await generate_partner_persona(self._llm, preferences)
             persona_elapsed = time.time() - persona_start
             LOGGER.info(
                 "[Job %s] STEP 1/5: ✓ Persona generated in %.2fs (name=%s, age=%s, gender=%s)",
@@ -187,13 +190,18 @@ class PartnerGenerationJobManager:
             preview = PersonaPreview(
                 name=persona.name,
                 summary=persona.summary,
+                summary_translation=localized_persona.summary if localized_persona else None,
                 persona_age=str(persona.age),
                 persona_gender=persona.gender,
                 persona_occupation=persona.occupation,
                 persona_city=persona.city,
                 persona_country=persona.country,
                 persona_background=persona.background,
+                persona_background_translation=localized_persona.background if localized_persona else None,
                 persona_interests=list(persona.interests),
+                persona_interests_translation=(
+                    list(localized_persona.interests) if localized_persona and localized_persona.interests else []
+                ),
             )
             await self._update_job(
                 job_id,
@@ -276,6 +284,7 @@ class PartnerGenerationJobManager:
                 user_id,
                 name=persona.name,
                 description=persona.summary,
+                description_translation=localized_persona.summary if localized_persona else None,
                 learning_lang=preferences.native_lang,  # Partner learns user's native language
                 native_lang=preferences.learning_lang,  # Partner's native is user's learning language
                 avatar_url=None,
@@ -287,7 +296,13 @@ class PartnerGenerationJobManager:
                 persona_country=persona.country,
                 persona_relationship=preferences.partner_type,
                 persona_background=persona.background,
+                persona_background_translation=localized_persona.background if localized_persona else None,
                 persona_interests=compress_interests(persona.interests),
+                persona_interests_translation=(
+                    compress_interests(localized_persona.interests)
+                    if localized_persona and localized_persona.interests
+                    else None
+                ),
             )
             partner_save_elapsed = time.time() - partner_save_start
             LOGGER.info(

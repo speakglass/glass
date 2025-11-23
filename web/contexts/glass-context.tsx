@@ -85,16 +85,22 @@ export interface SessionConfig {
   partner?: RoleplayPartnerProfile | null;
   screenStream?: MediaStream | null;
   spokenLanguages?: { user: string; partner: string } | null;
+  userNativeLanguage?: string | null;
 }
 
 export interface RoleplayPartnerProfile {
   id: string;
   name: string;
   description?: string | null;
+  descriptionTranslation?: string | null;
   avatarUrl?: string | null;
   voiceId?: string | null;
   learningLang?: string | null;
   nativeLang?: string | null;
+  personaBackground?: string | null;
+  personaBackgroundTranslation?: string | null;
+  personaInterests?: string | null;
+  personaInterestsTranslation?: string | null;
 }
 
 export type StructuredSuggestion = {
@@ -1366,7 +1372,7 @@ export function GlassProvider({
   // Connect to Glass API
   const connect = useCallback(
     async (config: SessionConfig, options?: { resume?: boolean }) => {
-      const { languages, mode, partner, partnerId, screenStream, spokenLanguages } = config;
+      const { languages, mode, partner, partnerId, screenStream, spokenLanguages, userNativeLanguage } = config;
       const resume = options?.resume ?? false;
       lastSessionConfigRef.current = { ...config, screenStream: undefined };
       allowReconnectRef.current = true;
@@ -1552,22 +1558,35 @@ export function GlassProvider({
 
         const apiUrl = process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
         const wsUrl = apiUrl.replace(/^http/, 'ws');
+        const sessionNativeLang =
+          userNativeLanguage ||
+          languages.nativeLang ||
+          snapshot?.user.nativeLang ||
+          settings.languages?.nativeLang ||
+          settings.languages?.learningLang ||
+          'en';
+        const partnerSpokenLang =
+          spokenLanguages?.partner ||
+          languages.learningLang ||
+          snapshot?.user.learningLang ||
+          sessionNativeLang;
+        const userSpokenLang = spokenLanguages?.user || sessionNativeLang;
         const params = new URLSearchParams({
           sid: sessionIdRef.current,
           events: 'true',
-          learning_lang: languages.learningLang,
-          native_lang: languages.nativeLang,
+          learning_lang: partnerSpokenLang,
+          native_lang: sessionNativeLang,
           mode: mode,
         });
         const initialPartnerId = partnerId || partner?.id || null;
         if (initialPartnerId) {
           params.set('partner_id', initialPartnerId);
         }
-        if (spokenLanguages?.user) {
-          params.set('user_spoken_lang', spokenLanguages.user);
+        if (userSpokenLang) {
+          params.set('user_spoken_lang', userSpokenLang);
         }
-        if (spokenLanguages?.partner) {
-          params.set('partner_spoken_lang', spokenLanguages.partner);
+        if (partnerSpokenLang) {
+          params.set('partner_spoken_lang', partnerSpokenLang);
         }
         params.set('auth_token', token);
         const ws = new WebSocket(`${wsUrl}/ws/audio?${params.toString()}`);
@@ -1629,12 +1648,12 @@ export function GlassProvider({
             ws.send(
               JSON.stringify({
                 type: 'session_config',
-                learning_lang: languages.learningLang,
-                native_lang: languages.nativeLang,
+                learning_lang: partnerSpokenLang,
+                native_lang: sessionNativeLang,
                 mode: mode,
                 partner_id: partnerId || partner?.id || null,
-                user_spoken_lang: spokenLanguages?.user || null,
-                partner_spoken_lang: spokenLanguages?.partner || null,
+                user_spoken_lang: userSpokenLang,
+                partner_spoken_lang: partnerSpokenLang,
               })
             );
             ws.send(

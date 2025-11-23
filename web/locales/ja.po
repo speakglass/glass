@@ -109,8 +109,8 @@ msgstr "{totalMemories, plural, one {# 件の該当する思い出} other {# 件
 msgid "{totalMemories, plural, one {# total memory} other {# total memories}}"
 msgstr "{totalMemories, plural, one {合計 # 件のメモリー} other {合計 # 件のメモリー}}"
 
-#: components/onboarding/onboarding-client.tsx:670
-#: components/onboarding/onboarding-client.tsx:752
+#: components/onboarding/onboarding-client.tsx:574
+#: components/onboarding/onboarding-client.tsx:641
 #: components/start-call-instructions.tsx:65
 #: components/start-call.tsx:1010
 msgid "← Back"
@@ -148,7 +148,7 @@ msgid "Add"
 msgstr "追加"
 
 #: components/call-summary.tsx:1473
-#: components/custom-partner-creator.tsx:1323
+#: components/custom-partner-creator.tsx:1317
 #: components/history/conversation-history.tsx:1861
 msgid "Add a short description"
 msgstr "短い説明を追加"
@@ -165,8 +165,8 @@ msgstr "新しいメモリを追加"
 msgid "Add your own"
 msgstr "自分で追加する"
 
-#: components/onboarding/onboarding-client.tsx:72
-#: components/settings.tsx:47
+#: components/onboarding/onboarding-client.tsx:63
+#: components/settings.tsx:46
 msgid "Advanced"
 msgstr "上級"
 
@@ -267,12 +267,12 @@ msgstr "少なくとも1つの特殊文字"
 msgid "Authentication failed"
 msgstr "認証に失敗しました"
 
-#: components/onboarding/onboarding-client.tsx:544
+#: components/onboarding/onboarding-client.tsx:456
 msgid "Authentication is required. Please refresh and try again."
 msgstr "認証が必要です。ページを更新して再試行してください。"
 
 #: components/custom-partner-creator.tsx:606
-#: components/custom-partner-creator.tsx:1233
+#: components/custom-partner-creator.tsx:1227
 #: components/partner-delete-dialog.tsx:40
 #: components/start-call.tsx:325
 msgid "Authentication token not available. Please refresh the page."
@@ -305,7 +305,7 @@ msgstr "ビーチカルチャー"
 msgid "Beer & Festivals"
 msgstr "ビール＆フェスティバル"
 
-#: components/onboarding/onboarding-client.tsx:54
+#: components/onboarding/onboarding-client.tsx:51
 #: components/settings.tsx:44
 msgid "Beginner"
 msgstr "初心者"
@@ -419,7 +419,7 @@ msgid "Category"
 msgstr "カテゴリー"
 
 #: components/call-summary.tsx:1427
-#: components/custom-partner-creator.tsx:1283
+#: components/custom-partner-creator.tsx:1277
 #: components/history/conversation-history.tsx:1815
 msgid "Change partner photo"
 msgstr "パートナーの写真を変更"
@@ -456,7 +456,7 @@ msgstr "月額プランまたは年額プランを選択して、チームに最
 msgid "Choose someone to practice with"
 msgstr "練習相手を選んでください"
 
-#: components/onboarding/onboarding-client.tsx:634
+#: components/onboarding/onboarding-client.tsx:541
 msgid "Choose the language you want to practice speaking"
 msgstr "話す練習をしたい言語を選んでください"
 
@@ -486,7 +486,7 @@ msgstr "クリックして全文を表示"
 
 #: components/call-summary.tsx:1405
 #: components/call-summary.tsx:1504
-#: components/custom-partner-creator.tsx:1338
+#: components/custom-partner-creator.tsx:1332
 #: components/history/conversation-history.tsx:1892
 #: components/memory/memory-dialog.tsx:89
 #: components/partner-detail-modal.tsx:201
@@ -647,7 +647,7 @@ msgstr "現在の使用状況"
 msgid "Custom AI partners"
 msgstr "カスタムAIパートナー"
 
-#: components/settings.tsx:188
+#: components/settings.tsx:187
 msgid "Customize your Glass experience"
 msgstr "Glassの体験をカスタマイズする"
 
@@ -655,7 +655,7 @@ msgstr "Glassの体験をカスタマイズする"
 msgid "Daily life"
 msgstr "日常生活"
 
-#: components/settings.tsx:371
+#: components/settings.tsx:370
 msgid "Dark"
 msgstr "ダーク"
 
@@ -749,7 +749,7 @@ msgid "Deleting..."
 msgstr "削除中…"
 
 #: components/call-summary.tsx:1468
-#: components/custom-partner-creator.tsx:1318
+#: components/custom-partner-creator.tsx:1312
 #: components/history/conversation-history.tsx:1856
 msgid "Description"
 msgstr "説明"
@@ -787,7 +787,7 @@ msgstr "20代前半"
 #: components/call-summary.tsx:721
 #: components/call-summary.tsx:782
 #: components/call-summary.tsx:1447
-#: components/custom-partner-creator.tsx:1297
+#: components/custom-partner-creator.tsx:1291
 #: components/history/conversation-history.tsx:1214
 #: components/history/conversation-history.tsx:1286
 #: components/history/conversation-history.tsx:1835
@@ -800,15 +800,10 @@ msgid "Edit memory"
 msgstr "メモリを編集"
 
 #: components/call-summary.tsx:1419
-#: components/custom-partner-creator.tsx:1269
+#: components/custom-partner-creator.tsx:1263
 #: components/history/conversation-history.tsx:1807
 msgid "Edit partner"
 msgstr "パートナーを編集"
-
-#: components/onboarding/onboarding-client.tsx:60
-#: components/settings.tsx:45
-msgid "Elementary"
-msgstr "初級"
 
 #: components/billing/billing-content.tsx:197
 #: components/forgot-password-form.tsx:94
@@ -839,7 +834,7 @@ msgid "English"
 msgstr "英語"
 
 #: components/call-summary.tsx:1462
-#: components/custom-partner-creator.tsx:1312
+#: components/custom-partner-creator.tsx:1306
 #: components/history/conversation-history.tsx:1850
 msgid "Enter a name"
 msgstr "名前を入力してください"
@@ -850,7 +845,7 @@ msgstr "名前を入力してください"
 msgid "Enter a name first"
 msgstr "最初に名前を入力してください"
 
-#: components/custom-partner-creator.tsx:1238
+#: components/custom-partner-creator.tsx:1232
 msgid "Enter a name for your partner"
 msgstr "パートナーの名前を入力してください"
 
@@ -1182,7 +1177,7 @@ msgstr "Glassの改善にご協力ください"
 msgid "Hey! I'm Glass."
 msgstr "こんにちは！私はGlassです。"
 
-#: components/settings.tsx:244
+#: components/settings.tsx:243
 msgid "Hide messages"
 msgstr "メッセージを非表示"
 
@@ -1194,27 +1189,23 @@ msgstr "ハイキング＆自然"
 msgid "Home"
 msgstr "ホーム"
 
-#: components/onboarding/onboarding-client.tsx:696
+#: components/onboarding/onboarding-client.tsx:597
 msgid "How confident are you in this language?"
 msgstr "この言語をどれくらい自然に使えると感じますか？"
 
-#: components/onboarding/onboarding-client.tsx:49
+#: components/onboarding/onboarding-client.tsx:46
 msgid "I am starting from zero and need full guidance."
 msgstr "まったくの初心者なので、最初からしっかりサポートしてほしいです。"
 
-#: components/onboarding/onboarding-client.tsx:73
+#: components/onboarding/onboarding-client.tsx:64
 msgid "I can discuss complex topics and want to sound more natural."
 msgstr "難しい話題も話せますが、もっと自然に話せるようになりたいです。"
 
-#: components/onboarding/onboarding-client.tsx:67
+#: components/onboarding/onboarding-client.tsx:58
 msgid "I can explain ideas, ask follow-up questions, and manage most conversations."
 msgstr "意見を伝えたり質問を続けたりして、ほとんどの会話はスムーズに進められます。"
 
-#: components/onboarding/onboarding-client.tsx:61
-msgid "I can hold short chats about daily life with support."
-msgstr "少しサポートがあれば、日常の簡単な会話はできます。"
-
-#: components/onboarding/onboarding-client.tsx:55
+#: components/onboarding/onboarding-client.tsx:52
 msgid "I can say simple phrases but need help forming sentences."
 msgstr "簡単なフレーズは言えますが、文章を組み立てるのはまだ難しいです。"
 
@@ -1283,8 +1274,8 @@ msgstr "非アクティブ"
 msgid "Interaction"
 msgstr "インタラクション"
 
-#: components/onboarding/onboarding-client.tsx:66
-#: components/settings.tsx:46
+#: components/onboarding/onboarding-client.tsx:57
+#: components/settings.tsx:45
 msgid "Intermediate"
 msgstr "中級"
 
@@ -1352,7 +1343,7 @@ msgstr "韓国文化"
 msgid "Korean food"
 msgstr "韓国料理"
 
-#: components/settings.tsx:319
+#: components/settings.tsx:318
 msgid "Language level"
 msgstr "言語レベル"
 
@@ -1368,7 +1359,7 @@ msgstr "ラテン文化"
 msgid "Latino music"
 msgstr "ラテン音楽"
 
-#: components/settings.tsx:296
+#: components/settings.tsx:295
 msgid "Learning language"
 msgstr "学習言語"
 
@@ -1384,7 +1375,7 @@ msgstr "さあ、始めましょう！ 🎉"
 msgid "Let's start your first conversation!"
 msgstr "最初の会話を始めましょう！"
 
-#: components/settings.tsx:355
+#: components/settings.tsx:354
 msgid "Light"
 msgstr "ライト"
 
@@ -1465,8 +1456,8 @@ msgid "Looking for"
 msgstr "検索中"
 
 #: components/custom-partner-creator.tsx:230
-msgid "Looking for someone who matches your vibe..."
-msgstr "あなたと波長が合う人を探しています..."
+msgid "Looking for an AI partner who matches your vibe..."
+msgstr "あなたの雰囲気にぴったりのAIパートナーをお探しですか..."
 
 #: lib/conversation-display.ts:30
 msgid "Low"
@@ -1552,7 +1543,7 @@ msgstr "メモリが更新されました"
 msgid "Memory updated successfully"
 msgstr "メモリが正常に更新されました"
 
-#: components/settings.tsx:197
+#: components/settings.tsx:196
 msgid "Microphone"
 msgstr "マイク"
 
@@ -1613,20 +1604,20 @@ msgid "Must be at least 8 characters long."
 msgstr "8文字以上である必要があります。"
 
 #: components/call-summary.tsx:1457
-#: components/custom-partner-creator.tsx:1307
+#: components/custom-partner-creator.tsx:1301
 #: components/history/conversation-history.tsx:1845
 msgid "Name"
 msgstr "名前"
 
-#: components/settings.tsx:273
+#: components/settings.tsx:272
 msgid "Native language"
 msgstr "母国語"
 
-#: components/settings.tsx:231
+#: components/settings.tsx:230
 msgid "Native script"
 msgstr "元の文字"
 
-#: components/settings.tsx:259
+#: components/settings.tsx:258
 msgid "Never"
 msgstr "決して"
 
@@ -1656,9 +1647,9 @@ msgid "Next"
 msgstr "次へ"
 
 #: components/onboarding/glass-onboarding-card.tsx:89
-#: components/onboarding/onboarding-client.tsx:617
-#: components/onboarding/onboarding-client.tsx:682
-#: components/onboarding/onboarding-client.tsx:767
+#: components/onboarding/onboarding-client.tsx:524
+#: components/onboarding/onboarding-client.tsx:583
+#: components/onboarding/onboarding-client.tsx:650
 msgid "Next →"
 msgstr "次へ →"
 
@@ -1817,7 +1808,7 @@ msgid "Partner name is required"
 msgstr "パートナー名は必須です"
 
 #: components/call-summary.tsx:394
-#: components/custom-partner-creator.tsx:1253
+#: components/custom-partner-creator.tsx:1247
 #: components/history/conversation-history.tsx:438
 msgid "Partner updated"
 msgstr "パートナーが更新されました"
@@ -1845,7 +1836,7 @@ msgid "Philosophy"
 msgstr "哲学"
 
 #: components/call-summary.tsx:1451
-#: components/custom-partner-creator.tsx:1301
+#: components/custom-partner-creator.tsx:1295
 #: components/history/conversation-history.tsx:1839
 msgid "Photo"
 msgstr "写真"
@@ -1959,7 +1950,7 @@ msgstr "プロ"
 msgid "Professional practice"
 msgstr "専門実践"
 
-#: components/settings.tsx:220
+#: components/settings.tsx:219
 msgid "Pronunciation"
 msgstr "発音"
 
@@ -2046,7 +2037,7 @@ msgstr "ログイン画面に戻る"
 msgid "Roleplay conversations cannot change partner images"
 msgstr "ロールプレイの会話では、相手の画像を変更できません。"
 
-#: components/settings.tsx:234
+#: components/settings.tsx:233
 msgid "Romaji (Latin)"
 msgstr "ローマ字（ラテン文字）"
 
@@ -2055,7 +2046,7 @@ msgid "Rows per page"
 msgstr "1ページあたりの行数"
 
 #: components/call-summary.tsx:1513
-#: components/custom-partner-creator.tsx:1347
+#: components/custom-partner-creator.tsx:1341
 #: components/history/conversation-history.tsx:1901
 msgid "Save"
 msgstr "保存"
@@ -2077,7 +2068,7 @@ msgstr "保存された会話"
 msgid "Saving..."
 msgstr "保存中..."
 
-#: components/onboarding/onboarding-client.tsx:765
+#: components/onboarding/onboarding-client.tsx:650
 msgid "Saving…"
 msgstr "保存中…"
 
@@ -2130,10 +2121,6 @@ msgstr "検索パートナー"
 msgid "See all features across plans and find what works best for you."
 msgstr "プランごとの全機能を確認し、あなたに最適なプランを見つけましょう。"
 
-#: components/custom-partner-creator.tsx:232
-msgid "Seeing how the conversation might flow..."
-msgstr "会話がどのように進むかを見てみると..."
-
 #: components/history/conversation-history.tsx:346
 #: components/history/conversation-history.tsx:539
 msgid "Select a conversation first"
@@ -2148,7 +2135,7 @@ msgstr "詳細を確認するには会話を選択してください"
 msgid "Select a language partner"
 msgstr "言語パートナーを選択してください"
 
-#: components/onboarding/onboarding-client.tsx:539
+#: components/onboarding/onboarding-client.tsx:452
 msgid "Select a level to continue"
 msgstr "続行するにはレベルを選択してください"
 
@@ -2185,11 +2172,11 @@ msgstr "画面を選択"
 msgid "Select size"
 msgstr "サイズを選択"
 
-#: components/onboarding/onboarding-client.tsx:699
+#: components/onboarding/onboarding-client.tsx:600
 msgid "Select the description that feels closest to your speaking ability."
 msgstr "あなたの会話力に最も近い説明を選んでください。"
 
-#: components/onboarding/onboarding-client.tsx:584
+#: components/onboarding/onboarding-client.tsx:495
 msgid "Select the language you speak fluently"
 msgstr "流暢に話せる言語を選択してください"
 
@@ -2233,7 +2220,7 @@ msgstr "送信中..."
 msgid "Sentence length"
 msgstr "文章の長さ"
 
-#: components/settings.tsx:185
+#: components/settings.tsx:184
 #: components/user-menu.tsx:111
 msgid "Settings"
 msgstr "設定"
@@ -2366,7 +2353,7 @@ msgstr "概要"
 msgid "Support"
 msgstr "サポート"
 
-#: components/settings.tsx:205
+#: components/settings.tsx:204
 msgid "System default"
 msgstr "システムデフォルト"
 
@@ -2424,7 +2411,7 @@ msgstr "無料プランは期限がありません。履歴を無制限にする
 msgid "The verification link is invalid or has expired."
 msgstr "確認リンクが無効または期限切れです。"
 
-#: components/settings.tsx:339
+#: components/settings.tsx:338
 msgid "Theme"
 msgstr "テーマ"
 
@@ -2540,12 +2527,12 @@ msgstr "請求ポータルを開くことができません"
 msgid "Unable to open checkout"
 msgstr "チェックアウトを開けませんでした。"
 
-#: components/onboarding/onboarding-client.tsx:563
+#: components/onboarding/onboarding-client.tsx:474
 msgid "Unable to save level. Please try again."
 msgstr "レベルを保存できませんでした。もう一度お試しください。"
 
-#: components/custom-partner-creator.tsx:1232
-#: components/custom-partner-creator.tsx:1258
+#: components/custom-partner-creator.tsx:1226
+#: components/custom-partner-creator.tsx:1252
 msgid "Unable to save partner"
 msgstr "パートナーを保存できません"
 
@@ -2612,7 +2599,7 @@ msgstr "最大500件"
 msgid "Update"
 msgstr "更新"
 
-#: components/custom-partner-creator.tsx:1272
+#: components/custom-partner-creator.tsx:1266
 msgid "Update your custom partner details."
 msgstr "カスタムパートナー情報を更新してください。"
 
@@ -2695,8 +2682,8 @@ msgid "We couldn't capture your screen. Try a different window or browser."
 msgstr "画面をキャプチャできませんでした。別のウィンドウやブラウザを試してください。"
 
 #: components/custom-partner-creator.tsx:236
-msgid "We couldn't find the right match"
-msgstr "適切な一致が見つかりませんでした。"
+msgid "We couldn't find the right partner"
+msgstr "適切なパートナーを見つけることができませんでした"
 
 #: components/billing/billing-content.tsx:598
 msgid "We couldn't load your account details. Please refresh and try again."
@@ -2733,7 +2720,7 @@ msgstr "何を言いたいですか..."
 msgid "What interests you?"
 msgstr "興味があることは何ですか？"
 
-#: components/onboarding/onboarding-client.tsx:581
+#: components/onboarding/onboarding-client.tsx:492
 msgid "What is your native language?"
 msgstr "母国語は何ですか？"
 
@@ -2753,7 +2740,7 @@ msgstr "どんなことを覚えておきたいですか？"
 msgid "What's next"
 msgstr "次はどうしますか"
 
-#: components/onboarding/onboarding-client.tsx:631
+#: components/onboarding/onboarding-client.tsx:538
 msgid "Which language do you want to learn?"
 msgstr "どの言語を学びたいですか？"
 
@@ -2813,14 +2800,6 @@ msgstr "あなたが学んでいる言語"
 msgid "Your match is choosing a friendly photo."
 msgstr "マッチ相手が親しみやすい写真を選んでいます。"
 
-#: components/custom-partner-creator.tsx:234
-msgid "Your match is picking a friendly photo..."
-msgstr "あなたのマッチが親しみやすい写真を選んでいます…"
-
-#: components/custom-partner-creator.tsx:233
-msgid "Your match is polishing their profile..."
-msgstr "お相手がプロフィールを磨いています..."
-
 #: components/custom-partner-creator.tsx:454
 msgid "Your match just finished writing a profile for you."
 msgstr "あなたのマッチがあなたのプロフィールを書き終えました。"
@@ -2839,11 +2818,23 @@ msgid ""
 "synced."
 msgstr "新しいプランが有効になりました。保存済みの会話は安全に保管され、同期されます。"
 
+#: components/custom-partner-creator.tsx:234
+msgid "Your partner is picking a friendly photo..."
+msgstr "パートナーがフレンドリーな写真を選んでいます..."
+
+#: components/custom-partner-creator.tsx:233
+msgid "Your partner is polishing their profile..."
+msgstr "パートナーがプロフィールを充実させています…"
+
+#: components/custom-partner-creator.tsx:232
+msgid "Your partner is tuning their voice a little..."
+msgstr "パートナーが声を少し調整しています…"
+
 #: app/[lang]/(app)/history/page.tsx:31
 msgid "Your saved calls"
 msgstr "保存された通話"
 
-#: components/onboarding/onboarding-client.tsx:48
+#: components/onboarding/onboarding-client.tsx:45
 #: components/settings.tsx:43
 msgid "Zero"
 msgstr "ゼロ"
@@ -2877,6 +2868,11 @@ msgstr "ゼロ"
 #~ msgid "Docs"
 #~ msgstr "ドキュメント"
 
+#: components/onboarding/onboarding-client.tsx:60
+#: components/settings.tsx:45
+#~ msgid "Elementary"
+#~ msgstr "初級"
+
 #: components/call-limit-dialog.tsx:40
 #~ msgid ""
 #~ "Free accounts can keep up to 10 conversations. Delete old calls or upgrade "
@@ -2899,9 +2895,17 @@ msgstr "ゼロ"
 #~ msgid "How would you like to use Glass?"
 #~ msgstr "Glassをどんなふうに使いたいですか？"
 
+#: components/onboarding/onboarding-client.tsx:61
+#~ msgid "I can hold short chats about daily life with support."
+#~ msgstr "少しサポートがあれば、日常の簡単な会話はできます。"
+
 #: components/start-call.tsx:1285
 #~ msgid "Language Exchange • Calls"
 #~ msgstr "言語交換・ミーティング"
+
+#: components/custom-partner-creator.tsx:230
+#~ msgid "Looking for someone who matches your vibe..."
+#~ msgstr "あなたと波長が合う人を探しています..."
 
 #: components/start-call.tsx:1347
 #~ msgid "No partners available"
@@ -2922,6 +2926,10 @@ msgstr "ゼロ"
 #: components/start-call-mode-selection.tsx:84
 #~ msgid "RECOMMENDED"
 #~ msgstr "おすすめ"
+
+#: components/custom-partner-creator.tsx:232
+#~ msgid "Seeing how the conversation might flow..."
+#~ msgstr "会話がどのように進むかを見てみると..."
 
 #: components/start-call.tsx:862
 #: components/start-call.tsx:867
@@ -2946,3 +2954,15 @@ msgstr "ゼロ"
 #: components/start-call-partner-selection.tsx:223
 #~ msgid "View details"
 #~ msgstr "詳細を表示"
+
+#: components/custom-partner-creator.tsx:236
+#~ msgid "We couldn't find the right match"
+#~ msgstr "適切な一致が見つかりませんでした。"
+
+#: components/custom-partner-creator.tsx:234
+#~ msgid "Your match is picking a friendly photo..."
+#~ msgstr "あなたのマッチが親しみやすい写真を選んでいます…"
+
+#: components/custom-partner-creator.tsx:233
+#~ msgid "Your match is polishing their profile..."
+#~ msgstr "お相手がプロフィールを磨いています..."

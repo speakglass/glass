@@ -63,9 +63,7 @@ def resolve_session_languages(
 ) -> tuple[str, str]:
     """Determine session languages based on mode and partner profile.
 
-    Live calls always use the user's own language prefs. Roleplay flips to the
-    partner's perspective so the AI speaks their native language while the user
-    sees translations into the partner's learning language.
+    Use client-provided spoken languages when available with sensible fallbacks.
     """
 
     def _clean(value: Any) -> str | None:
@@ -75,19 +73,16 @@ def resolve_session_languages(
                 return value
         return None
 
-    normalized_mode = (mode or "").strip().lower() or "live_call"
-    resolved_learning = _clean(learning_lang) or "en"
-    resolved_native = _clean(native_lang) or "en"
+    resolved_learning = _clean(learning_lang)
+    resolved_native = _clean(native_lang)
 
-    if normalized_mode == "roleplay" and partner_profile:
-        partner_native = _clean(partner_profile.get("native_lang"))
-        partner_learning = _clean(partner_profile.get("learning_lang"))
-        if partner_native:
-            resolved_learning = partner_native
-        if partner_learning:
-            resolved_native = partner_learning
+    if partner_profile:
+        if not resolved_learning:
+            resolved_learning = _clean(partner_profile.get("native_lang"))
+        if not resolved_native:
+            resolved_native = _clean(partner_profile.get("learning_lang"))
 
-    return resolved_learning, resolved_native
+    return resolved_learning or "en", resolved_native or "en"
 
 
 async def iter_multiplexed_audio(

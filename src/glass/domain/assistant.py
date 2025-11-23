@@ -94,13 +94,13 @@ class LearningAssistant:
             if translation:
                 self._translations[utterance_id] = translation
                 await self._emit(
-                        event_type_translation,
-                        {
-                            "utterance_id": utterance_id,
-                            "text": translation,
-                            "source_lang": source_code or source_lang or "",
-                            "target_lang": target_code or "",
-                        },
+                    event_type_translation,
+                    {
+                        "utterance_id": utterance_id,
+                        "text": translation,
+                        "source_lang": source_code or source_lang or "",
+                        "target_lang": target_code or "",
+                    },
                     source=source,
                 )
                 LOGGER.info(f"[Translation] Completed for {utterance_id}")
@@ -686,7 +686,7 @@ class LearningAssistant:
     def _get_language_params(self) -> tuple[str, str, str | None]:
         target_lang_name = lang_code_to_name(self.learning_lang)
         native_lang_name = lang_code_to_name(self.native_lang)
-        pron_levels = {"zero", "beginner", "elementary"}
+        pron_levels = {"zero", "beginner"}
         proficiency_level = (self.language_level or "").lower()
         require_pronunciation = proficiency_level in pron_levels
         # Default to "native" mode if pronunciation is required but no mode is set

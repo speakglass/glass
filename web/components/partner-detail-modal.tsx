@@ -179,17 +179,25 @@ export function PartnerDetailModal({ open, onClose, partner, onStartChat }: Part
               <h4 className="text-lg font-semibold">
                 <Trans>About Me</Trans>
               </h4>
-              {partner.description && <p className="text-sm text-foreground leading-relaxed">{partner.description}</p>}
-              {partner.personaBackground && (
-                <p className="text-sm text-muted-foreground leading-relaxed">{partner.personaBackground}</p>
+              {(partner.descriptionTranslation || partner.description) && (
+                <p className="text-sm text-foreground leading-relaxed">
+                  {partner.descriptionTranslation || partner.description}
+                </p>
               )}
-              {partner.personaInterests && (
+              {(partner.personaBackgroundTranslation || partner.personaBackground) && (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {partner.personaBackgroundTranslation || partner.personaBackground}
+                </p>
+              )}
+              {(partner.personaInterestsTranslation || partner.personaInterests) && (
                 <div className="flex flex-wrap gap-2">
-                  {partner.personaInterests.split(',').map((interest, idx) => (
+                  {(partner.personaInterestsTranslation || partner.personaInterests || '')
+                    .split(',')
+                    .map((interest, idx) => (
                     <Badge key={idx} variant="secondary" className="text-xs capitalize">
                       {interest.trim()}
                     </Badge>
-                  ))}
+                    ))}
                 </div>
               )}
             </div>

@@ -24,7 +24,7 @@ from ..utils.discord import send_discord_notification
 
 logger = logging.getLogger(__name__)
 
-LEARNING_LEVELS = {"zero", "beginner", "elementary", "intermediate", "advanced"}
+LEARNING_LEVELS = {"zero", "beginner", "intermediate", "advanced"}
 
 
 def _validate_learning_level(value: str | None) -> str:
@@ -232,6 +232,9 @@ async def oauth_signin(request: Request, payload: OAuthSignInRequest) -> Authent
         updated = False
         async_session_factory = db.session()
         async with async_session_factory() as session:
+            if not user.email_verified:
+                user.email_verified = True
+                updated = True
             if payload.name and payload.name != user.name:
                 user.name = payload.name
                 updated = True
@@ -462,7 +465,7 @@ async def get_onboarding_status(
 class CompleteOnboardingRequest(BaseModel):
     learning_lang: str
     native_lang: str
-    language_level: str  # zero, beginner, elementary, intermediate, or advanced
+    language_level: str  # zero, beginner, intermediate, or advanced
 
     @field_validator("language_level")
     @classmethod

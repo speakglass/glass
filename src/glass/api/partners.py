@@ -32,7 +32,7 @@ LOGGER = logging.getLogger(__name__)
 MAX_AVATAR_BYTES = 5 * 1024 * 1024  # 5MB
 PartnerIdPath = Annotated[str, FastAPIPath(min_length=1)]
 GenerationJobIdPath = Annotated[str, FastAPIPath(min_length=1)]
-LEARNING_LEVELS = {"zero", "beginner", "elementary", "intermediate", "advanced"}
+LEARNING_LEVELS = {"zero", "beginner", "intermediate", "advanced"}
 
 
 async def _account_context(
@@ -68,6 +68,7 @@ class PartnerResponse(BaseModel):
     id: str
     name: str
     description: str | None = None
+    description_translation: str | None = None
     avatar_url: HttpUrl | str | None = None
     voice_id: str | None = None
     learning_lang: str | None = None
@@ -80,7 +81,9 @@ class PartnerResponse(BaseModel):
     persona_country: str | None = None
     persona_relationship: str | None = None
     persona_background: str | None = None
+    persona_background_translation: str | None = None
     persona_interests: str | None = None
+    persona_interests_translation: str | None = None
     conversation_count: int = 0
 
 
@@ -91,6 +94,7 @@ class PartnerListResponse(BaseModel):
 class PartnerCreateRequest(BaseModel):
     name: constr(min_length=1, max_length=255)
     description: constr(max_length=500) | None = None
+    description_translation: constr(max_length=500) | None = None
     learning_lang: constr(min_length=2, max_length=8) | None = None
     native_lang: constr(min_length=2, max_length=8) | None = None
     avatar_url: HttpUrl | str | None = None
@@ -101,12 +105,15 @@ class PartnerCreateRequest(BaseModel):
     persona_country: constr(max_length=128) | None = None
     persona_relationship: constr(max_length=64) | None = None
     persona_background: constr(max_length=1000) | None = None
+    persona_background_translation: constr(max_length=1000) | None = None
     persona_interests: constr(max_length=1000) | None = None
+    persona_interests_translation: constr(max_length=1000) | None = None
 
 
 class PartnerUpdateRequest(BaseModel):
     name: constr(min_length=1, max_length=255) | None = None
     description: constr(max_length=500) | None = None
+    description_translation: constr(max_length=500) | None = None
     learning_lang: constr(min_length=2, max_length=8) | None = None
     native_lang: constr(min_length=2, max_length=8) | None = None
     avatar_url: HttpUrl | str | None = None
@@ -117,7 +124,9 @@ class PartnerUpdateRequest(BaseModel):
     persona_country: constr(max_length=128) | None = None
     persona_relationship: constr(max_length=64) | None = None
     persona_background: constr(max_length=1000) | None = None
+    persona_background_translation: constr(max_length=1000) | None = None
     persona_interests: constr(max_length=1000) | None = None
+    persona_interests_translation: constr(max_length=1000) | None = None
 
 
 class PartnerPersonaGenerateRequest(BaseModel):
@@ -155,13 +164,16 @@ PartnerGenerationStepLiteral = Literal["persona", "voice", "partner", "avatar"]
 class PartnerGenerationPersonaPreview(BaseModel):
     name: str | None = None
     summary: str | None = None
+    summary_translation: str | None = None
     persona_age: str | None = None
     persona_gender: str | None = None
     persona_occupation: str | None = None
     persona_city: str | None = None
     persona_country: str | None = None
     persona_background: str | None = None
+    persona_background_translation: str | None = None
     persona_interests: list[str] = Field(default_factory=list)
+    persona_interests_translation: list[str] = Field(default_factory=list)
 
 
 class PartnerGenerationJobResponse(BaseModel):
@@ -183,6 +195,7 @@ def _serialize_partner(partner) -> PartnerResponse:
         id=partner.id,
         name=partner.name,
         description=partner.description,
+        description_translation=getattr(partner, "description_translation", None),
         avatar_url=partner.avatar_url,
         voice_id=partner.voice_id,
         learning_lang=partner.learning_lang,
@@ -195,7 +208,9 @@ def _serialize_partner(partner) -> PartnerResponse:
         persona_country=getattr(partner, "persona_country", None),
         persona_relationship=getattr(partner, "persona_relationship", None),
         persona_background=getattr(partner, "persona_background", None),
+        persona_background_translation=getattr(partner, "persona_background_translation", None),
         persona_interests=getattr(partner, "persona_interests", None),
+        persona_interests_translation=getattr(partner, "persona_interests_translation", None),
     )
 
 
@@ -205,6 +220,7 @@ def _job_to_response(job: PartnerGenerationJob) -> PartnerGenerationJobResponse:
         persona_preview = PartnerGenerationPersonaPreview(
             name=job.persona_preview.name,
             summary=job.persona_preview.summary,
+            summary_translation=job.persona_preview.summary_translation,
             persona_age=job.persona_preview.persona_age,
             persona_gender=job.persona_preview.persona_gender,
             persona_occupation=job.persona_preview.persona_occupation,
@@ -212,6 +228,8 @@ def _job_to_response(job: PartnerGenerationJob) -> PartnerGenerationJobResponse:
             persona_country=job.persona_preview.persona_country,
             persona_background=job.persona_preview.persona_background,
             persona_interests=list(job.persona_preview.persona_interests),
+            persona_background_translation=job.persona_preview.persona_background_translation,
+            persona_interests_translation=list(job.persona_preview.persona_interests_translation),
         )
     partner_response = _serialize_partner(job.partner) if job.partner else None
     status_value = job.status.value if isinstance(job.status, PartnerGenerationJobStatus) else str(job.status)
@@ -324,6 +342,7 @@ async def create_partner_endpoint(
         account_user.id,
         name=payload.name,
         description=payload.description,
+        description_translation=payload.description_translation,
         learning_lang=payload.learning_lang,
         native_lang=payload.native_lang,
         avatar_url=str(payload.avatar_url) if payload.avatar_url else None,
@@ -331,7 +350,9 @@ async def create_partner_endpoint(
         persona_gender=payload.persona_gender,
         persona_relationship=payload.persona_relationship,
         persona_background=payload.persona_background,
+        persona_background_translation=payload.persona_background_translation,
         persona_interests=payload.persona_interests,
+        persona_interests_translation=payload.persona_interests_translation,
     )
     return _serialize_partner(partner)
 
@@ -355,6 +376,7 @@ async def update_partner_endpoint(
             user_id=account_user.id,
             name=payload.name,
             description=payload.description,
+            description_translation=payload.description_translation,
             learning_lang=payload.learning_lang,
             native_lang=payload.native_lang,
             avatar_url=str(payload.avatar_url) if payload.avatar_url else None,
@@ -362,7 +384,9 @@ async def update_partner_endpoint(
             persona_gender=payload.persona_gender,
             persona_relationship=payload.persona_relationship,
             persona_background=payload.persona_background,
+            persona_background_translation=payload.persona_background_translation,
             persona_interests=payload.persona_interests,
+            persona_interests_translation=payload.persona_interests_translation,
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

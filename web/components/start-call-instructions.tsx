@@ -45,8 +45,10 @@ export function StartCallInstructions({
                   <Trans>Partner</Trans>
                 </p>
                 <p className={'text-base font-medium'}>{selectedRoleplayPartner.name}</p>
-                {selectedRoleplayPartner.description && (
-                  <p className={`${getTextClass('body')} text-sm mt-1`}>{selectedRoleplayPartner.description}</p>
+                {(selectedRoleplayPartner.descriptionTranslation || selectedRoleplayPartner.description) && (
+                  <p className={`${getTextClass('body')} text-sm mt-1`}>
+                    {selectedRoleplayPartner.descriptionTranslation || selectedRoleplayPartner.description}
+                  </p>
                 )}
               </div>
             ) : (

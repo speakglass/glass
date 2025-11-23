@@ -224,7 +224,9 @@ export function PartnerSelection({
                       <div className={'flex-1 min-w-0 flex items-start gap-2'}>
                         <div className="flex-1 min-w-0">
                           <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>{partner.name}</div>
-                          <div className={`${getTextClass('muted')} text-xs truncate`}>{partner.description}</div>
+                          <div className={`${getTextClass('muted')} text-xs truncate`}>
+                            {partner.descriptionTranslation || partner.description}
+                          </div>
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

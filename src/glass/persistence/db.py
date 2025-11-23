@@ -87,6 +87,7 @@ class ConversationPartner(Base):
     native_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    description_translation: Mapped[str | None] = mapped_column(Text, nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     voice_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     kind: Mapped[str] = mapped_column(String(16), nullable=False, default="roleplay")
@@ -97,7 +98,9 @@ class ConversationPartner(Base):
     persona_country: Mapped[str | None] = mapped_column(String(128), nullable=True)
     persona_relationship: Mapped[str | None] = mapped_column(String(64), nullable=True)
     persona_background: Mapped[str | None] = mapped_column(Text, nullable=True)
+    persona_background_translation: Mapped[str | None] = mapped_column(Text, nullable=True)
     persona_interests: Mapped[str | None] = mapped_column(Text, nullable=True)
+    persona_interests_translation: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

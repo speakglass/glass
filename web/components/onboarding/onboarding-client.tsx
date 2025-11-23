@@ -32,10 +32,7 @@ import {
   getDemoMemoryRecords,
 } from './onboarding-data';
 import type { LearningLevel } from '@/types/learning-level';
-import {
-  isLearningLevel,
-  needsPronunciationSupport,
-} from '@/types/learning-level';
+import { isLearningLevel, needsPronunciationSupport } from '@/types/learning-level';
 
 const LANGUAGE_LEVEL_OPTIONS: {
   value: LearningLevel;
@@ -54,12 +51,6 @@ const LANGUAGE_LEVEL_OPTIONS: {
     label: t`Beginner`,
     description: t`I can say simple phrases but need help forming sentences.`,
     icon: '🌱',
-  },
-  {
-    value: 'elementary',
-    label: t`Elementary`,
-    description: t`I can hold short chats about daily life with support.`,
-    icon: '🌿',
   },
   {
     value: 'intermediate',
@@ -82,10 +73,8 @@ function OnboardingTour() {
   const { settings } = useGlass();
   const { snapshot } = useAccountSession();
   const [onboardingHintValue, setOnboardingHintValue] = useState('');
-  const [onboardingRequestingHint, setOnboardingRequestingHint] =
-    useState(false);
-  const [onboardingShowHintResult, setOnboardingShowHintResult] =
-    useState(false);
+  const [onboardingRequestingHint, setOnboardingRequestingHint] = useState(false);
+  const [onboardingShowHintResult, setOnboardingShowHintResult] = useState(false);
   const [onboardingShowTyping, setOnboardingShowTyping] = useState(false);
   const [onboardingFocused, setOnboardingFocused] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -97,12 +86,9 @@ function OnboardingTour() {
     result?: NodeJS.Timeout;
   }>({});
   const clearStep2Timers = () => {
-    if (step2TimersRef.current.typing)
-      clearTimeout(step2TimersRef.current.typing);
-    if (step2TimersRef.current.request)
-      clearTimeout(step2TimersRef.current.request);
-    if (step2TimersRef.current.result)
-      clearTimeout(step2TimersRef.current.result);
+    if (step2TimersRef.current.typing) clearTimeout(step2TimersRef.current.typing);
+    if (step2TimersRef.current.request) clearTimeout(step2TimersRef.current.request);
+    if (step2TimersRef.current.result) clearTimeout(step2TimersRef.current.result);
     step2TimersRef.current = {};
   };
 
@@ -111,24 +97,14 @@ function OnboardingTour() {
   const nativeLang = (settings.languages?.nativeLang || 'en').toLowerCase();
   const learningLocale = normalizeLocale(learningLang);
   const nativeLocale = normalizeLocale(nativeLang);
-  const demoTemplate = useMemo(
-    () => getDemoTemplate(learningLocale),
-    [learningLocale]
-  );
-  const tourLevel = isLearningLevel(settings.languageLevel)
-    ? settings.languageLevel
-    : undefined;
+  const demoTemplate = useMemo(() => getDemoTemplate(learningLocale), [learningLocale]);
+  const tourLevel = isLearningLevel(settings.languageLevel) ? settings.languageLevel : undefined;
   const tourNeedsPronunciation = needsPronunciationSupport(tourLevel);
-  const typewriterText = useMemo(
-    () => getLocalizedText('typingKeywords', nativeLocale),
-    [nativeLocale]
-  );
+  const typewriterText = useMemo(() => getLocalizedText('typingKeywords', nativeLocale), [nativeLocale]);
 
   const onboardingMessages = useMemo(() => {
     const allMessages =
-      currentStep >= 3
-        ? [...demoTemplate.conversation, ...demoTemplate.additionalMessages]
-        : demoTemplate.conversation;
+      currentStep >= 3 ? [...demoTemplate.conversation, ...demoTemplate.additionalMessages] : demoTemplate.conversation;
 
     return allMessages.map((entry) => ({
       role: entry.role,
@@ -140,8 +116,7 @@ function OnboardingTour() {
   // Mock CallSummary data for Step 4
   const mockCallSummaryData = useMemo(() => {
     const partnerMessage =
-      demoTemplate.conversation.find((entry) => entry.role === 'other') ??
-      demoTemplate.conversation[0];
+      demoTemplate.conversation.find((entry) => entry.role === 'other') ?? demoTemplate.conversation[0];
     const userMessage =
       demoTemplate.conversation.find((entry) => entry.role === 'you') ??
       demoTemplate.conversation[demoTemplate.conversation.length - 1] ??
@@ -151,10 +126,7 @@ function OnboardingTour() {
     const userName = snapshot?.user?.name?.split(' ')[0] || '';
 
     // Get language-pair-specific feedback
-    let summaryNative =
-      FEEDBACK_SUMMARIES[learningLocale]?.[nativeLocale] ||
-      FEEDBACK_SUMMARIES.en?.en ||
-      '';
+    let summaryNative = FEEDBACK_SUMMARIES[learningLocale]?.[nativeLocale] || FEEDBACK_SUMMARIES.en?.en || '';
 
     // Add personalized greeting with user's name at the beginning
     if (userName) {
@@ -169,14 +141,9 @@ function OnboardingTour() {
     }
 
     const summaryCombined = summaryNative;
-    const feedbackItemNative =
-      FEEDBACK_ITEMS[learningLocale]?.[nativeLocale] ||
-      FEEDBACK_ITEMS.en?.en ||
-      '';
+    const feedbackItemNative = FEEDBACK_ITEMS[learningLocale]?.[nativeLocale] || FEEDBACK_ITEMS.en?.en || '';
     const partnerFollowUp =
-      demoTemplate.conversation.find(
-        (entry) => entry.role === 'other' && entry !== partnerMessage
-      ) ??
+      demoTemplate.conversation.find((entry) => entry.role === 'other' && entry !== partnerMessage) ??
       demoTemplate.conversation[2] ??
       partnerMessage;
 
@@ -200,29 +167,20 @@ function OnboardingTour() {
       messages: [
         {
           text: partnerMessage.text,
-          translation: getLocalizedText(
-            partnerMessage.translationKey,
-            nativeLocale
-          ),
+          translation: getLocalizedText(partnerMessage.translationKey, nativeLocale),
           utterance_id: 'u1',
           role: 'partner',
           partner_id: 'partner-8f76e9b6-1b2c-4d5e-9f70-123456789abc',
         },
         {
           text: userMessage.text,
-          translation: getLocalizedText(
-            userMessage.translationKey,
-            nativeLocale
-          ),
+          translation: getLocalizedText(userMessage.translationKey, nativeLocale),
           utterance_id: 'u2',
           role: 'user',
         },
         {
           text: partnerFollowUp.text,
-          translation: getLocalizedText(
-            partnerFollowUp.translationKey,
-            nativeLocale
-          ),
+          translation: getLocalizedText(partnerFollowUp.translationKey, nativeLocale),
           utterance_id: 'u3',
           role: 'partner',
           partner_id: 'partner-8f76e9b6-1b2c-4d5e-9f70-123456789abc',
@@ -235,13 +193,7 @@ function OnboardingTour() {
         },
       ],
     };
-  }, [
-    demoTemplate,
-    nativeLocale,
-    learningLocale,
-    tourNeedsPronunciation,
-    snapshot,
-  ]);
+  }, [demoTemplate, nativeLocale, learningLocale, tourNeedsPronunciation, snapshot]);
 
   // Detect mobile screen size
   useEffect(() => {
@@ -297,10 +249,8 @@ function OnboardingTour() {
     setOnboardingRequestingHint(true);
     setOnboardingShowTyping(false);
     setOnboardingHintValue(typewriterText);
-    if (step2TimersRef.current.request)
-      clearTimeout(step2TimersRef.current.request);
-    if (step2TimersRef.current.result)
-      clearTimeout(step2TimersRef.current.result);
+    if (step2TimersRef.current.request) clearTimeout(step2TimersRef.current.request);
+    if (step2TimersRef.current.result) clearTimeout(step2TimersRef.current.result);
 
     step2TimersRef.current.request = setTimeout(() => {
       if (currentStep !== 2) {
@@ -338,8 +288,7 @@ function OnboardingTour() {
 
   const mockSuggestionData = useMemo(() => {
     if (currentStep === 2 && onboardingShowHintResult) {
-      const translation =
-        SUGGESTION_TRANSLATIONS[nativeLocale] ?? SUGGESTION_TRANSLATIONS.en;
+      const translation = SUGGESTION_TRANSLATIONS[nativeLocale] ?? SUGGESTION_TRANSLATIONS.en;
       const pronunciation = tourNeedsPronunciation
         ? SUGGESTION_PRONUNCIATIONS[learningLocale]?.[nativeLocale]
         : undefined;
@@ -351,21 +300,11 @@ function OnboardingTour() {
       };
     }
     return undefined;
-  }, [
-    currentStep,
-    onboardingShowHintResult,
-    demoTemplate,
-    learningLocale,
-    nativeLocale,
-    tourNeedsPronunciation,
-  ]);
+  }, [currentStep, onboardingShowHintResult, demoTemplate, learningLocale, nativeLocale, tourNeedsPronunciation]);
 
   const mockFeedbackData = useMemo(() => {
     if (currentStep === 3) {
-      const translation =
-        FEEDBACK_EXPLANATIONS[learningLocale]?.[nativeLocale] ??
-        FEEDBACK_EXPLANATIONS.en?.en ??
-        '';
+      const translation = FEEDBACK_EXPLANATIONS[learningLocale]?.[nativeLocale] ?? FEEDBACK_EXPLANATIONS.en?.en ?? '';
       const pronunciation = tourNeedsPronunciation
         ? FEEDBACK_PRONUNCIATIONS[learningLocale]?.[nativeLocale]
         : undefined;
@@ -377,13 +316,7 @@ function OnboardingTour() {
       };
     }
     return undefined;
-  }, [
-    currentStep,
-    demoTemplate,
-    learningLocale,
-    nativeLocale,
-    tourNeedsPronunciation,
-  ]);
+  }, [currentStep, demoTemplate, learningLocale, nativeLocale, tourNeedsPronunciation]);
 
   const handleComplete = async () => {
     // Extract language from pathname
@@ -419,9 +352,7 @@ function OnboardingTour() {
         onComplete={handleComplete}
         onSkip={handleSkip}
       >
-        <div
-          className={'fixed top-14 left-0 right-0 bottom-0 bg-background flex'}
-        >
+        <div className={'fixed top-14 left-0 right-0 bottom-0 bg-background flex'}>
           <div
             className={
               'relative flex h-full w-full max-w-6xl mx-auto flex-col overflow-hidden pt-4 pb-28 sm:pb-0 px-4 sm:px-8'
@@ -448,16 +379,9 @@ function OnboardingTour() {
       </NextStep>
 
       {/* CallSummary Modal - Step 3, 4, 5, 6 - Pre-render from step 3 for smooth transition */}
-      {(currentStep === 3 ||
-        currentStep === 4 ||
-        currentStep === 5 ||
-        currentStep === 6) && (
+      {(currentStep === 3 || currentStep === 4 || currentStep === 5 || currentStep === 6) && (
         <div className={currentStep === 3 ? 'invisible' : ''}>
-          <CallSummary
-            {...mockCallSummaryData}
-            conversationCountOverride={3}
-            onClose={() => {}}
-          />
+          <CallSummary {...mockCallSummaryData} conversationCountOverride={3} onClose={() => {}} />
         </div>
       )}
     </>
@@ -465,31 +389,20 @@ function OnboardingTour() {
 }
 
 export default function OnboardingClient() {
-  const { onboardingStatus, markOnboardingComplete, token } =
-    useAccountSession();
+  const { onboardingStatus, markOnboardingComplete, token } = useAccountSession();
   const { updateSettings, settings } = useGlass();
   const router = useRouter();
   const pathname = usePathname();
-  const [step, setStep] = useState<
-    'native-lang' | 'learning-lang' | 'level' | 'tour'
-  >('native-lang');
+  const [step, setStep] = useState<'native-lang' | 'learning-lang' | 'level' | 'tour'>('native-lang');
   const [languages, setLanguages] = useState({
     learningLang: settings.languages?.learningLang || '',
     nativeLang: settings.languages?.nativeLang || '',
   });
-  const initialLevel = isLearningLevel(settings.languageLevel)
-    ? settings.languageLevel
-    : undefined;
-  const [languageLevel, setLanguageLevel] = useState<LearningLevel | ''>(
-    initialLevel ?? ''
-  );
+  const initialLevel = isLearningLevel(settings.languageLevel) ? settings.languageLevel : undefined;
+  const [languageLevel, setLanguageLevel] = useState<LearningLevel | ''>(initialLevel ?? '');
   const [savingLanguageLevel, setSavingLanguageLevel] = useState(false);
-  const [languageLevelError, setLanguageLevelError] = useState<string | null>(
-    null
-  );
-  const resolvedLevel = (languageLevel || initialLevel || undefined) as
-    | LearningLevel
-    | undefined;
+  const [languageLevelError, setLanguageLevelError] = useState<string | null>(null);
+  const resolvedLevel = (languageLevel || initialLevel || undefined) as LearningLevel | undefined;
   const needsPronunciation = needsPronunciationSupport(resolvedLevel);
 
   // Persist language selection across page transitions
@@ -540,9 +453,7 @@ export default function OnboardingClient() {
       return;
     }
     if (!token) {
-      setLanguageLevelError(
-        t`Authentication is required. Please refresh and try again.`
-      );
+      setLanguageLevelError(t`Authentication is required. Please refresh and try again.`);
       return;
     }
     setLanguageLevelError(null);
@@ -593,8 +504,7 @@ export default function OnboardingClient() {
                 size="sm"
                 className={cn(
                   'rounded-full focus-visible:ring-2 transition-all hover:scale-105',
-                  languages.nativeLang === lang.code &&
-                    'bg-accent border-foreground/30 ring-1 ring-foreground/20'
+                  languages.nativeLang === lang.code && 'bg-accent border-foreground/30 ring-1 ring-foreground/20'
                 )}
                 onClick={() => handleNativeLangSelect(lang.code)}
               >
@@ -609,10 +519,7 @@ export default function OnboardingClient() {
             disabled={!languages.nativeLang}
             variant="default"
             size="sm"
-            className={cn(
-              'text-sm',
-              !languages.nativeLang && 'opacity-50 cursor-not-allowed'
-            )}
+            className={cn('text-sm', !languages.nativeLang && 'opacity-50 cursor-not-allowed')}
           >
             <Trans>Next →</Trans>
           </Button>
@@ -647,13 +554,10 @@ export default function OnboardingClient() {
                   className={cn(
                     'rounded-full focus-visible:ring-2 transition-all',
                     !isDisabled && 'hover:scale-105',
-                    languages.learningLang === lang.code &&
-                      'bg-accent border-foreground/30 ring-1 ring-foreground/20',
+                    languages.learningLang === lang.code && 'bg-accent border-foreground/30 ring-1 ring-foreground/20',
                     isDisabled && 'opacity-40 cursor-not-allowed'
                   )}
-                  onClick={() =>
-                    !isDisabled && handleLearningLangSelect(lang.code)
-                  }
+                  onClick={() => !isDisabled && handleLearningLangSelect(lang.code)}
                 >
                   <span className="text-lg">{lang.flag}</span>
                   <span className="font-medium text-sm">{lang.name}</span>
@@ -674,10 +578,7 @@ export default function OnboardingClient() {
               disabled={!languages.learningLang}
               variant="default"
               size="sm"
-              className={cn(
-                'text-sm',
-                !languages.learningLang && 'opacity-50 cursor-not-allowed'
-              )}
+              className={cn('text-sm', !languages.learningLang && 'opacity-50 cursor-not-allowed')}
             >
               <Trans>Next →</Trans>
             </Button>
@@ -690,20 +591,17 @@ export default function OnboardingClient() {
   if (step === 'level') {
     return (
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-6 sm:gap-8 px-1.5 w-full max-w-2xl">
+        <div className="flex flex-col items-center gap-6 sm:gap-8 px-1.5 w-full max-w-md">
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-medium">
               <Trans>How confident are you in this language?</Trans>
             </h2>
             <p className="text-sm text-muted-foreground max-w-lg">
-              <Trans>
-                Select the description that feels closest to your speaking
-                ability.
-              </Trans>
+              <Trans>Select the description that feels closest to your speaking ability.</Trans>
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 w-full">
+          <div className="flex flex-col gap-2 w-full">
             {LANGUAGE_LEVEL_OPTIONS.map((option) => {
               const isActive = languageLevel === option.value;
               return (
@@ -711,40 +609,31 @@ export default function OnboardingClient() {
                   key={option.value}
                   onClick={() => setLanguageLevel(option.value)}
                   className={cn(
-                    'w-full rounded-2xl border border-border/70 bg-card/70 px-4 py-4 flex items-start gap-4 text-left transition hover:border-foreground/50 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring',
-                    isActive &&
-                      'border-foreground/40 ring-2 ring-foreground/20 bg-card'
+                    'w-full rounded-xl border bg-card px-4 py-3 flex items-start gap-3 text-left transition-all cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring',
+                    isActive ? 'bg-accent/50 border-foreground/30' : 'border-border'
                   )}
                 >
                   <div
                     className={cn(
-                      'flex h-12 w-12 items-center justify-center rounded-xl border text-lg',
-                      isActive
-                        ? 'border-foreground bg-foreground/10 text-foreground'
-                        : 'border-border text-muted-foreground'
+                      'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-lg',
+                      isActive ? 'bg-foreground/10 text-foreground' : 'bg-muted/50 text-muted-foreground'
                     )}
                     aria-hidden
                   >
                     {option.icon}
                   </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-base">
-                      {option.label}
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {option.description}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-base mb-0.5">{option.label}</div>
+                    <p className="text-xs text-muted-foreground">{option.description}</p>
                   </div>
                 </button>
               );
             })}
           </div>
 
-          {languageLevelError && (
-            <p className="text-sm text-red-500">{languageLevelError}</p>
-          )}
+          {languageLevelError && <p className="text-sm text-red-500">{languageLevelError}</p>}
 
-          <div className="flex justify-between items-center w-full max-w-xl">
+          <div className="flex justify-between items-center w-full">
             <button
               onClick={() => setStep('learning-lang')}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -756,16 +645,9 @@ export default function OnboardingClient() {
               disabled={!languageLevel || savingLanguageLevel}
               variant="default"
               size="sm"
-              className={cn(
-                'text-sm font-medium',
-                (!languageLevel || savingLanguageLevel) && 'opacity-50'
-              )}
+              className={cn('text-sm font-medium', (!languageLevel || savingLanguageLevel) && 'opacity-50')}
             >
-              {savingLanguageLevel ? (
-                <Trans>Saving…</Trans>
-              ) : (
-                <Trans>Next →</Trans>
-              )}
+              {savingLanguageLevel ? <Trans>Saving…</Trans> : <Trans>Next →</Trans>}
             </Button>
           </div>
         </div>

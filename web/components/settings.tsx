@@ -42,7 +42,6 @@ const LEARNING_LANGUAGES = [
 const LANGUAGE_LEVEL_OPTIONS: { value: LearningLevel; label: string }[] = [
   { value: 'zero', label: t`Zero` },
   { value: 'beginner', label: t`Beginner` },
-  { value: 'elementary', label: t`Elementary` },
   { value: 'intermediate', label: t`Intermediate` },
   { value: 'advanced', label: t`Advanced` },
 ];

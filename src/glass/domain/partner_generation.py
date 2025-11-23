@@ -53,7 +53,7 @@ NAME_GUIDANCE = {
     "Irish": ["Saoirse", "Niall", "Aisling", "Cian", "Niamh", "Ronan", "Orla", "Padraig"],
 }
 
-LOW_PROFICIENCY_LEVELS = {"zero", "beginner", "elementary"}
+LOW_PROFICIENCY_LEVELS = {"zero", "beginner"}
 
 
 class VoiceProfile(BaseModel):
@@ -315,6 +315,9 @@ class LocalizedPersonaContent(BaseModel):
     summary: str = Field(
         ..., max_length=500, description="Self-introduction sentence translated to native language (first person)"
     )
+    background: str | None = Field(
+        None, description="Translated persona background paragraph (first person, native language)"
+    )
     interests: list[str] = Field(default_factory=list, description="Translated list of interests as short phrases")
     occupation: str | None = Field(
         None, max_length=100, description="Translated job title only, e.g., 'English Teacher', 'Software Developer'"
@@ -371,6 +374,7 @@ async def _localize_persona_content(
     llm_adapter: LLMAdapter,
     *,
     summary: str,
+    background: str | None,
     occupation: str | None,
     city: str | None,
     country: str | None,
@@ -391,6 +395,9 @@ async def _localize_persona_content(
         f"""
         Summary (original):
         {summary}
+
+        Background (original):
+        {background or ""}
 
         Occupation (original):
         {occupation or ""}
@@ -423,7 +430,7 @@ async def _localize_persona_content(
 async def generate_partner_persona(
     llm_adapter: LLMAdapter,
     preferences: PersonaPreferences,
-) -> PersonaLLMResponse:
+) -> tuple[PersonaLLMResponse, LocalizedPersonaContent | None]:
     """Call the LLM to synthesize a persona."""
     import time
 
@@ -456,17 +463,14 @@ async def generate_partner_persona(
     nationality = _choose_nationality(preferences.learning_lang)
     name_guidance = _build_name_guidance(nationality, selected_gender)
 
-    should_localize_profile = (
-        bool(preferences.native_lang) and (preferences.language_level or "").lower() in LOW_PROFICIENCY_LEVELS
-    )
-    native_lang_name = lang_code_to_name(preferences.native_lang) if preferences.native_lang else ""
+    target_lang_name = lang_code_to_name(preferences.learning_lang) if preferences.learning_lang else ""
 
     LOGGER.debug(
-        "Persona params: nationality=%s, gender=%s, age_range=%s, localize=%s",
+        "Persona params: nationality=%s, gender=%s, age_range=%s, target_lang=%s",
         nationality,
         selected_gender,
         age_range_str,
-        should_localize_profile,
+        target_lang_name,
     )
 
     system_prompt = dedent(
@@ -478,15 +482,15 @@ async def generate_partner_persona(
     ).strip()
 
     localization_instruction = ""
-    if should_localize_profile and native_lang_name:
+    if target_lang_name:
         localization_instruction = dedent(
             f"""
-            IMPORTANT: Write ALL text fields (summary, background, occupation, city, country, interests) entirely in {native_lang_name}.
-            Make it sound natural for a native {native_lang_name} speaker.
-            Use first-person perspective in {native_lang_name}.
+            IMPORTANT: Write ALL text fields (summary, background, occupation, city, country, interests) entirely in {target_lang_name}.
+            Make it sound natural for a native {target_lang_name} speaker.
+            Use first-person perspective in {target_lang_name}.
             """
         ).strip()
-        LOGGER.info("Generating persona directly in %s (level=%s)", native_lang_name, preferences.language_level)
+        LOGGER.info("Generating persona directly in %s (level=%s)", target_lang_name, preferences.language_level)
 
     variety_instruction = dedent(
         """
@@ -508,7 +512,7 @@ async def generate_partner_persona(
         system_prompt=system_prompt,
         variety_instruction=variety_instruction,
         localization_instruction=localization_instruction,
-        native_lang_name=native_lang_name if should_localize_profile else None,
+        native_lang_name=target_lang_name or None,
     )
     core_elapsed = time.time() - core_start
     LOGGER.info("✓ Persona core generated in %.2fs (name=%s)", core_elapsed, persona_core.name)
@@ -533,7 +537,7 @@ async def generate_partner_persona(
             llm_adapter=llm_adapter,
             persona=persona,
             topics=topics,
-            native_lang_name=native_lang_name if should_localize_profile else None,
+            native_lang_name=target_lang_name or None,
         )
     )
     avatar_prompt_task = asyncio.create_task(_generate_avatar_prompt_text(llm_adapter, persona))
@@ -581,7 +585,25 @@ async def generate_partner_persona(
         persona.gender,
         persona.occupation,
     )
-    return persona
+    localization: LocalizedPersonaContent | None = None
+    if (
+        preferences.learning_lang
+        and preferences.native_lang
+        and preferences.learning_lang != preferences.native_lang
+    ):
+        native_lang_name = lang_code_to_name(preferences.native_lang)
+        localization = await _localize_persona_content(
+            llm_adapter,
+            summary=persona.summary,
+            background=persona.background,
+            occupation=persona.occupation,
+            city=persona.city,
+            country=persona.country,
+            interests=persona.interests,
+            native_language_name=native_lang_name,
+        )
+
+    return persona, localization
 
 
 async def generate_avatar_image_bytes(
@@ -782,6 +804,7 @@ async def _generate_persona_background(
 
     user_prompt = dedent(
         f"""
+        Persona name: {persona.name}
         Persona summary:
         {persona.summary}
 
@@ -791,7 +814,7 @@ async def _generate_persona_background(
         Persona interests: {", ".join(persona.interests)}
         Topics to weave: {", ".join(topics)}
 
-        Write 3-4 sentences in first person (using "I") describing their past, daily routines, and what excites them now.{lang_instruction}
+        Write 3-4 sentences in first person (using "I") describing their past, daily routines, and what excites them now. Mention the persona's name once so it feels like a natural introduction.{lang_instruction}
         """
     ).strip()
 
@@ -818,7 +841,7 @@ async def _generate_avatar_prompt_text(llm_adapter: LLMAdapter, persona: Persona
         - Shot with smartphone camera (28mm equivalent, natural perspective)
         - Focus ONLY on the person and background - NO phone UI, NO timestamps, NO screen elements, NO bezels
         - Describe natural lighting and simple everyday settings
-        - Mention the subject's appearance, age, and expression
+        - Mention the subject's appearance, age, expression, and where they're from so the subject is clearly identified
         - Add a simple background that matches their lifestyle
         - Keep the smartphone camera aesthetic: slightly wide angle, natural depth of field
         - Keep it realistic and casual like a selfie or friend-taken photo
@@ -834,6 +857,9 @@ async def _generate_avatar_prompt_text(llm_adapter: LLMAdapter, persona: Persona
 
     keywords = persona.avatar_keywords or []
     keyword_text = ", ".join(keywords[:6]) if keywords else "friendly, chill vibe"
+
+    origin_phrase = persona.country or persona.city or ""
+    origin_text = f" from {origin_phrase}" if origin_phrase else ""
 
     # Add appearance keywords based on gender
     appearance = ""
@@ -852,7 +878,11 @@ async def _generate_avatar_prompt_text(llm_adapter: LLMAdapter, persona: Persona
         top_interests = persona.interests[:3]  # Use top 3 interests
         interests_text = f", interests: {', '.join(top_interests)}"
 
-    user_prompt = f"{appearance}{keyword_text}, {persona.gender}, {persona.age} years old{occupation_text}{city_text}{interests_text}"
+    subject_clause = f"{persona.gender or 'person'}, {persona.age or '20s'} years old{origin_text}, "
+    user_prompt = (
+        f"{subject_clause}{appearance}{keyword_text}{occupation_text}{city_text}{interests_text}. "
+        "Ensure the description explicitly names the subject so it is unambiguous."
+    )
 
     response = await llm_adapter.call(
         system=system_prompt,
