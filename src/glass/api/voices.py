@@ -43,8 +43,17 @@ async def preview_voice_endpoint(
 
     chunks: list[bytes] = []
     async for chunk in tts_adapter.synthesize_stream(text, voice_id=payload.voice_id):
-        if chunk:
-            chunks.append(chunk)
+        if not chunk:
+            continue
+        audio_chunk: bytes | None = None
+        if isinstance(chunk, dict):
+            audio_candidate = chunk.get("audio")
+            if isinstance(audio_candidate, (bytes, bytearray)):
+                audio_chunk = bytes(audio_candidate)
+        elif isinstance(chunk, (bytes, bytearray)):
+            audio_chunk = bytes(chunk)
+        if audio_chunk:
+            chunks.append(audio_chunk)
 
     if not chunks:
         LOGGER.error("Voice preview synthesis returned no data")

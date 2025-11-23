@@ -137,6 +137,22 @@ export type AITranslation = {
   timestamp: number;
 };
 
+export type TTSWordSegment = {
+  text: string;
+  start_ms: number;
+  end_ms: number;
+  char_start: number;
+  char_end: number;
+};
+
+export interface TTSHighlightState {
+  requestId: string;
+  context: 'ai_message' | 'suggestion';
+  targetId: string;
+  segments: TTSWordSegment[];
+  activeIndex: number;
+}
+
 const DEFAULT_CONVERSATION_SCORES: ConversationScores = {
   fluency: 0,
   accuracy: 0,
@@ -196,9 +212,10 @@ interface GlassContextValue {
   resumeFeedbackTimer: (id: string) => void;
   pauseTranslationTimer: (id: string) => void;
   resumeTranslationTimer: (id: string) => void;
-  speakText: (text: string) => Promise<void>;
+  speakText: (text: string, opts?: { context?: 'suggestion'; targetId?: string }) => Promise<void>;
   isSpeaking: boolean;
   stopSpeaking: () => void;
+  ttsHighlight: TTSHighlightState | null;
   closeSummary: () => void;
   // Onboarding helpers
   loadDemoConversation: (
@@ -269,12 +286,16 @@ export function GlassProvider({
   const [status, setStatus] = useState<VoiceStatus>({ value: 'idle' });
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionMode, setSessionMode] = useState<'roleplay' | 'live_call'>('live_call');
+  const sessionModeRef = useRef<'roleplay' | 'live_call'>(sessionMode);
   const [conversationPartner, setConversationPartner] = useState<RoleplayPartnerProfile | null>(null);
 
   // Debug: Log status changes
   useEffect(() => {
     console.log('[GlassContext] Status changed:', status.value);
   }, [status.value]);
+  useEffect(() => {
+    sessionModeRef.current = sessionMode;
+  }, [sessionMode]);
   const [isMuted, setIsMuted] = useState(false);
   const [micFft, setMicFft] = useState<number[]>(new Array(24).fill(0));
   const [conversationAnalysis, setConversationAnalysis] = useState<ConversationAnalysis | null>(null);
@@ -336,6 +357,10 @@ export function GlassProvider({
   });
   const profileLanguageLevel = snapshot?.user?.languageLevel ?? null;
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const isSpeakingRef = useRef(isSpeaking);
+  useEffect(() => {
+    isSpeakingRef.current = isSpeaking;
+  }, [isSpeaking]);
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
   const [feedbacks, setFeedbacks] = useState<AIFeedback[]>([]);
   const [translations, setTranslations] = useState<AITranslation[]>([]);
@@ -350,6 +375,26 @@ export function GlassProvider({
   const ttsAudioContextRef = useRef<AudioContext | null>(null);
   const ttsAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const ttsAudioChunksRef = useRef<Uint8Array[]>([]);
+  const [ttsHighlight, setTtsHighlight] = useState<TTSHighlightState | null>(null);
+  const ttsRequestContextRef = useRef(
+    new Map<string, { context: 'ai_message' | 'suggestion'; targetId: string }>()
+  );
+  const ttsSegmentsRef = useRef(new Map<string, TTSWordSegment[]>());
+  const currentTtsRequestIdRef = useRef<string | null>(null);
+  const ttsPlaybackStateRef = useRef<
+    | {
+        requestId: string;
+        startedAt: number;
+        audioContextStart: number;
+        audioContext: AudioContext;
+        segments?: TTSWordSegment[];
+        context?: { context: 'ai_message' | 'suggestion'; targetId: string };
+      }
+    | null
+  >(null);
+  const ttsHighlightRafRef = useRef<number | null>(null);
+  const lastHighlightIndexRef = useRef<number>(-1);
+  const ttsPlaybackEnabledRef = useRef(true);
 
   const setOnAISuggestion = useCallback((callback: (payload: any) => void) => {
     onAISuggestionCallbackRef.current = callback;
@@ -984,6 +1029,9 @@ export function GlassProvider({
 
   // Handle TTS audio chunks
   const handleTTSAudioChunk = useCallback(async (data: ArrayBuffer | Blob) => {
+    if (!ttsPlaybackEnabledRef.current) {
+      return;
+    }
     try {
       const arrayBuffer = data instanceof Blob ? await data.arrayBuffer() : data;
       const uint8Array = new Uint8Array(arrayBuffer);
@@ -993,25 +1041,179 @@ export function GlassProvider({
     }
   }, []);
 
+  const stopHighlightLoop = useCallback(() => {
+    if (ttsHighlightRafRef.current !== null) {
+      cancelAnimationFrame(ttsHighlightRafRef.current);
+      ttsHighlightRafRef.current = null;
+    }
+  }, []);
+
+  const resetTtsHighlight = useCallback(() => {
+    stopHighlightLoop();
+    lastHighlightIndexRef.current = -1;
+    ttsPlaybackStateRef.current = null;
+    setTtsHighlight(null);
+  }, [stopHighlightLoop]);
+
+  const cleanupTtsRequest = useCallback((requestId: string | null | undefined) => {
+    if (!requestId) return;
+    ttsRequestContextRef.current.delete(requestId);
+    ttsSegmentsRef.current.delete(requestId);
+    if (currentTtsRequestIdRef.current === requestId) {
+      currentTtsRequestIdRef.current = null;
+    }
+  }, []);
+
+  const startHighlightLoopForRequest = useCallback(
+    (requestId: string) => {
+      const playback = ttsPlaybackStateRef.current;
+      if (!playback || playback.requestId !== requestId) {
+        return;
+      }
+      const context = ttsRequestContextRef.current.get(requestId);
+      const segments = ttsSegmentsRef.current.get(requestId);
+      if (!context || !segments || segments.length === 0) {
+        return;
+      }
+
+      playback.context = context;
+      playback.segments = segments;
+      lastHighlightIndexRef.current = -1;
+      setTtsHighlight({
+        requestId,
+        context: context.context,
+        targetId: context.targetId,
+        segments,
+        activeIndex: -1,
+      });
+      stopHighlightLoop();
+
+      const tick = () => {
+        const activePlayback = ttsPlaybackStateRef.current;
+        if (!activePlayback || activePlayback.requestId !== requestId) {
+          ttsHighlightRafRef.current = null;
+          return;
+        }
+        const { audioContext, audioContextStart } = activePlayback;
+        const elapsedMs = (audioContext.currentTime - audioContextStart) * 1000;
+        const currentSegments = activePlayback.segments || segments;
+        let nextIndex = -1;
+        for (let i = 0; i < currentSegments.length; i += 1) {
+          const seg = currentSegments[i];
+          if (elapsedMs >= seg.start_ms && elapsedMs <= seg.end_ms) {
+            nextIndex = i;
+            break;
+          }
+        }
+        if (
+          nextIndex === -1 &&
+          currentSegments.length > 0 &&
+          elapsedMs > currentSegments[currentSegments.length - 1].end_ms
+        ) {
+          nextIndex = currentSegments.length;
+        }
+        if (nextIndex !== lastHighlightIndexRef.current) {
+          lastHighlightIndexRef.current = nextIndex;
+          setTtsHighlight((prev) => {
+            if (!prev || prev.requestId !== requestId) {
+              return {
+                requestId,
+                context: context.context,
+                targetId: context.targetId,
+                segments: currentSegments,
+                activeIndex: nextIndex,
+              };
+            }
+            if (prev.activeIndex === nextIndex) {
+              return prev;
+            }
+            return { ...prev, activeIndex: nextIndex };
+          });
+        }
+        ttsHighlightRafRef.current = requestAnimationFrame(tick);
+      };
+
+      ttsHighlightRafRef.current = requestAnimationFrame(tick);
+    },
+    [stopHighlightLoop]
+  );
+
   // Handle messages from Glass API
   const handleServerMessage = useCallback(
     (data: any) => {
       // Handle TTS events
+      if (data.t === 'tts_timing') {
+        if (!ttsPlaybackEnabledRef.current) {
+          return;
+        }
+        const requestId = typeof data.request_id === 'string' ? data.request_id : null;
+        if (!requestId || !Array.isArray(data.segments)) {
+          return;
+        }
+        const normalized: TTSWordSegment[] = [];
+        for (const seg of data.segments) {
+          if (!seg || typeof seg.text !== 'string') continue;
+          const startMs = typeof seg.start_ms === 'number' ? seg.start_ms : 0;
+          const endMs = typeof seg.end_ms === 'number' ? seg.end_ms : startMs;
+          const charStart = typeof seg.char_start === 'number' ? seg.char_start : 0;
+          const charEnd = typeof seg.char_end === 'number' ? seg.char_end : charStart + seg.text.length;
+          normalized.push({
+            text: seg.text,
+            start_ms: Math.max(0, startMs),
+            end_ms: Math.max(endMs, startMs),
+            char_start: Math.max(0, charStart),
+            char_end: Math.max(charEnd, charStart),
+          });
+        }
+        if (normalized.length) {
+          ttsSegmentsRef.current.set(requestId, normalized);
+          startHighlightLoopForRequest(requestId);
+        }
+        return;
+      }
+
       if (data.t === 'tts_start') {
+        const requestId = typeof data.request_id === 'string' ? data.request_id : null;
+        if (!ttsPlaybackEnabledRef.current) {
+          cleanupTtsRequest(requestId);
+          ttsAudioChunksRef.current = [];
+          setIsSpeaking(false);
+          return;
+        }
+        currentTtsRequestIdRef.current = requestId;
+        resetTtsHighlight();
         setIsSpeaking(true);
         ttsAudioChunksRef.current = [];
         return;
       }
 
       if (data.t === 'tts_end') {
-        playTTSAudio();
+        const requestId = typeof data.request_id === 'string' ? data.request_id : undefined;
+        if (!ttsPlaybackEnabledRef.current) {
+          if (requestId) {
+            cleanupTtsRequest(requestId);
+          }
+          ttsAudioChunksRef.current = [];
+          setIsSpeaking(false);
+          return;
+        }
+        playTTSAudio(requestId);
         return;
       }
 
       if (data.t === 'tts_error') {
+        const requestId = typeof data.request_id === 'string' ? data.request_id : currentTtsRequestIdRef.current;
+        if (!ttsPlaybackEnabledRef.current) {
+          cleanupTtsRequest(requestId);
+          ttsAudioChunksRef.current = [];
+          setIsSpeaking(false);
+          return;
+        }
         console.error('TTS error:', data.error);
         setIsSpeaking(false);
         ttsAudioChunksRef.current = [];
+        resetTtsHighlight();
+        cleanupTtsRequest(requestId);
         return;
       }
 
@@ -1047,6 +1249,11 @@ export function GlassProvider({
               : 'partner';
         } else if (data.speaker) {
           role = data.speaker === 'user' ? 'user' : 'partner';
+        }
+
+        if (role === 'user' && sessionModeRef.current === 'roleplay' && isSpeakingRef.current) {
+          // Stop AI voice immediately when the user interrupts during roleplay
+          stopSpeaking();
         }
 
         setMessages((prev) => {
@@ -1106,7 +1313,7 @@ export function GlassProvider({
         // Auto-play TTS for AI responses when requested
         if (data.auto_tts && data.source === 'ai') {
           const voiceId = data.voice_id; // Use voice_id from event if available
-          requestTTSForAI(text, voiceId);
+          requestTTSForAI(text, voiceId, utteranceId);
         }
 
         // Determine role from source
@@ -1377,6 +1584,7 @@ export function GlassProvider({
       lastSessionConfigRef.current = { ...config, screenStream: undefined };
       allowReconnectRef.current = true;
       fatalWsErrorRef.current = false;
+      ttsPlaybackEnabledRef.current = true;
       setSessionMode(mode);
       setConversationPartner(partner ?? null);
 
@@ -2026,8 +2234,14 @@ export function GlassProvider({
   }, []);
 
   // Play accumulated TTS audio
-  const playTTSAudio = useCallback(async () => {
-    try {
+  const playTTSAudio = useCallback(
+    async (requestId?: string) => {
+      try {
+        if (!ttsPlaybackEnabledRef.current) {
+          ttsAudioChunksRef.current = [];
+          setIsSpeaking(false);
+          return;
+      }
       if (ttsAudioChunksRef.current.length === 0) {
         setIsSpeaking(false);
         return;
@@ -2078,13 +2292,24 @@ export function GlassProvider({
       source.buffer = audioBuffer;
       source.connect(audioContext.destination);
 
+      const playbackRequestId = requestId ?? currentTtsRequestIdRef.current ?? 'tts_request';
+
       source.onended = () => {
         setIsSpeaking(false);
         ttsAudioSourceRef.current = null;
+        resetTtsHighlight();
+        cleanupTtsRequest(playbackRequestId);
       };
 
       ttsAudioSourceRef.current = source;
       source.start(0);
+      ttsPlaybackStateRef.current = {
+        requestId: playbackRequestId,
+        startedAt: performance.now(),
+        audioContextStart: audioContext.currentTime,
+        audioContext,
+      };
+      startHighlightLoopForRequest(playbackRequestId);
 
       // Clear chunks
       ttsAudioChunksRef.current = [];
@@ -2092,8 +2317,11 @@ export function GlassProvider({
       console.error('Failed to play TTS audio:', error);
       setIsSpeaking(false);
       ttsAudioChunksRef.current = [];
+      resetTtsHighlight();
     }
-  }, []);
+    },
+    [cleanupTtsRequest, resetTtsHighlight, startHighlightLoopForRequest]
+  );
 
   // Stop speaking
   const stopSpeaking = useCallback(() => {
@@ -2107,7 +2335,9 @@ export function GlassProvider({
     }
     setIsSpeaking(false);
     ttsAudioChunksRef.current = [];
-  }, []);
+    resetTtsHighlight();
+    cleanupTtsRequest(currentTtsRequestIdRef.current);
+  }, [cleanupTtsRequest, resetTtsHighlight]);
 
   useEffect(() => {
     if (showSummary) {
@@ -2117,7 +2347,7 @@ export function GlassProvider({
 
   // Request TTS for text
   const speakText = useCallback(
-    async (text: string, voiceId?: string) => {
+    async (text: string, opts?: { voiceId?: string; context?: 'suggestion'; targetId?: string }) => {
       const ws = wsRef.current;
       if (!ws || ws.readyState !== WebSocket.OPEN) {
         throw new Error('WebSocket not connected');
@@ -2127,12 +2357,19 @@ export function GlassProvider({
         stopSpeaking();
       }
 
+      const requestId = Math.random().toString(36).substr(2, 9);
+      const contextType: 'suggestion' | undefined = opts?.context ?? 'suggestion';
+      if (contextType) {
+        const targetId = opts?.targetId ?? requestId;
+        ttsRequestContextRef.current.set(requestId, { context: contextType, targetId });
+      }
+
       ws.send(
         JSON.stringify({
           type: 'request_tts',
           text: text,
-          voice_id: voiceId,
-          request_id: Math.random().toString(36).substr(2, 9),
+          voice_id: opts?.voiceId,
+          request_id: requestId,
         })
       );
     },
@@ -2140,19 +2377,23 @@ export function GlassProvider({
   );
 
   // Request TTS for AI voice (auto-play)
-  const requestTTSForAI = useCallback((text: string, voiceId?: string) => {
+  const requestTTSForAI = useCallback((text: string, voiceId?: string, utteranceId?: string) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       return;
     }
 
     // Use provided voice_id or fallback to default AI voice (Male voice)
+    const requestId = 'ai_' + Math.random().toString(36).substr(2, 9);
+    if (utteranceId) {
+      ttsRequestContextRef.current.set(requestId, { context: 'ai_message', targetId: utteranceId });
+    }
     ws.send(
       JSON.stringify({
         type: 'request_tts',
         text: text,
         voice_id: voiceId || 'iP95p4xoKVk53GoZ742B', // Use provided voice_id or default Male AI voice
-        request_id: 'ai_' + Math.random().toString(36).substr(2, 9),
+        request_id: requestId,
       })
     );
   }, []);
@@ -2181,6 +2422,7 @@ export function GlassProvider({
     fatalWsErrorRef.current = false;
     clearReconnectTimer();
     shouldAutoRecoverMicRef.current = false;
+    ttsPlaybackEnabledRef.current = false;
     try {
       const ws = wsRef.current;
       if (ws && ws.readyState === WebSocket.OPEN) {
@@ -2403,6 +2645,7 @@ export function GlassProvider({
     speakText,
     isSpeaking,
     stopSpeaking,
+    ttsHighlight,
     closeSummary,
     elapsedSeconds,
     loadDemoConversation,

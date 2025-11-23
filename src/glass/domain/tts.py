@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING, AsyncIterable
 
 if TYPE_CHECKING:
-    from .ports import TTSPort
+    from .ports import TTSPort, TTSStreamChunk
 
 LOGGER = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class SpeechSynthesis:
         language: str | None = None,
         source: str = "user",
         voice_id: str | None = None,
-    ) -> AsyncIterable[bytes]:
+    ) -> AsyncIterable["TTSStreamChunk"]:
         """Stream synthesized audio.
         
         Args:
@@ -91,11 +91,11 @@ class SpeechSynthesis:
                 voice_id=voice_id,
                 language=language,
             ):
-                yield chunk
+                if chunk:
+                    yield chunk
             
             LOGGER.info("[TTS] Synthesis completed")
         
         except Exception as e:
             LOGGER.error(f"[TTS] Synthesis failed: {e}", exc_info=True)
             return
-

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, AsyncIterable, Protocol, Sequence
+from typing import Any, AsyncIterable, Protocol, Sequence, TypedDict
 
 from .entities import SessionEvent
 
@@ -166,6 +166,19 @@ class LLMPort(Protocol):
         ...
 
 
+class TTSWordSegment(TypedDict):
+    text: str
+    start_ms: int
+    end_ms: int
+    char_start: int
+    char_end: int
+
+
+class TTSStreamChunk(TypedDict, total=False):
+    audio: bytes
+    segments: list[TTSWordSegment]
+
+
 class TTSPort(Protocol):
     """Text-to-Speech interface."""
 
@@ -175,7 +188,7 @@ class TTSPort(Protocol):
         *,
         voice_id: str | None = None,
         language: str | None = None,
-    ) -> AsyncIterable[bytes]:
+    ) -> AsyncIterable[TTSStreamChunk]:
         """Stream synthesized audio bytes.
 
         Args:
@@ -184,7 +197,7 @@ class TTSPort(Protocol):
             language: Language code for voice selection
 
         Yields:
-            Audio data chunks
+            Chunks carrying audio data and optional timing metadata
         """
         ...
 

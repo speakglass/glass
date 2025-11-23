@@ -4,6 +4,7 @@ import { useGlass, Message } from '@/contexts/glass-context';
 import { AnimatePresence, motion } from 'motion/react';
 import { ComponentRef, forwardRef, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { Trans } from '@lingui/react/macro';
+import { LiveHighlightedText } from '@/components/live-highlighted-text';
 
 type MockMessage = {
   role: 'you' | 'other';
@@ -17,7 +18,7 @@ type MessagesProps = {
 
 const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(function Messages({ mockMessages }, ref) {
   const voice = useGlass();
-  const { messages, sessionMode, conversationPartner } = voice;
+  const { messages, sessionMode, conversationPartner, ttsHighlight } = voice;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [avatarFailed, setAvatarFailed] = useState(false);
@@ -174,6 +175,11 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
                       second: undefined,
                     });
 
+                    const messageHighlight =
+                      ttsHighlight?.context === 'ai_message' && ttsHighlight.targetId === msg.utteranceId
+                        ? ttsHighlight
+                        : null;
+
                     const messageContent = (
                       <>
                         <div className={'flex items-center justify-between pt-4 px-3'}>
@@ -186,9 +192,14 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(func
                         </div>
                         <div className={'pb-3 px-3 space-y-2'}>
                           <span className={'text-sm sm:text-base'}>
-                            {msg.partial
-                              ? `${msg.message.content ? msg.message.content + ' ' : ''}${msg.partial}`
-                              : msg.message.content}
+                            <LiveHighlightedText
+                              text={
+                                msg.partial
+                                  ? `${msg.message.content ? msg.message.content + ' ' : ''}${msg.partial}`
+                                  : msg.message.content
+                              }
+                              highlight={messageHighlight}
+                            />
                           </span>
                           {msg.translation && (
                             <div className={'text-sm opacity-70 pt-1'}>

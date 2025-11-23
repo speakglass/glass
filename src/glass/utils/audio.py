@@ -307,8 +307,21 @@ async def _handle_tts_request(
             source=source,
             voice_id=voice_id,
         ):
-            if chunk:
-                await websocket.send_bytes(chunk)
+            if not chunk:
+                continue
+            audio_chunk = chunk.get("audio") if isinstance(chunk, dict) else None
+            if audio_chunk:
+                await websocket.send_bytes(audio_chunk)
+            segments = chunk.get("segments") if isinstance(chunk, dict) else None
+            if segments:
+                await websocket.send_json(
+                    {
+                        "t": "tts_timing",
+                        "request_id": request_id,
+                        "segments": segments,
+                        "text": text,
+                    }
+                )
 
         # Send TTS end event
         await websocket.send_json({"t": "tts_end", "request_id": request_id})

@@ -17,6 +17,7 @@ import {
 } from '@/contexts/glass-context';
 import { SparkleGlyph } from '@/components/sparkle-glyph';
 import { needsPronunciationSupport } from '@/types/learning-level';
+import { LiveHighlightedText } from '@/components/live-highlighted-text';
 
 type SuggestionBubbleProps = {
   suggestion: AISuggestion;
@@ -28,9 +29,12 @@ type SuggestionBubbleProps = {
 
 const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
   ({ suggestion, onClose, durationSec: _durationIgnored, contentOpacity = 1, pronunciationEnabled }, ref) => {
-    const { speakText, isSpeaking, stopSpeaking, pauseSuggestionTimer, resumeSuggestionTimer } = useGlass();
+    const { speakText, isSpeaking, stopSpeaking, pauseSuggestionTimer, resumeSuggestionTimer, ttsHighlight } =
+      useGlass();
     const [isPlayingThis, setIsPlayingThis] = useState(false);
     const [showPronLoading, setShowPronLoading] = useState(false);
+    const activeHighlight =
+      ttsHighlight?.context === 'suggestion' && ttsHighlight.targetId === suggestion.id ? ttsHighlight : null;
 
     const typeLabel = t`Suggested Answer`;
 
@@ -44,7 +48,7 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
       if (textToSpeak) {
         try {
           setIsPlayingThis(true);
-          await speakText(textToSpeak);
+          await speakText(textToSpeak, { context: 'suggestion', targetId: suggestion.id });
           const interval = setInterval(() => {
             if (!isSpeaking) {
               setIsPlayingThis(false);
@@ -109,7 +113,13 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
                 </div>
               </div>
               <div className={'space-y-1.5'}>
-                {suggestion.target_text && <div className={'text-sm text-foreground'}>{suggestion.target_text}</div>}
+                {suggestion.target_text && (
+                  <LiveHighlightedText
+                    text={suggestion.target_text}
+                    highlight={activeHighlight}
+                    className={'text-sm text-foreground block'}
+                  />
+                )}
                 {suggestion.pronunciation && (
                   <div className={'text-sm text-sky-600 opacity-80'}>{suggestion.pronunciation}</div>
                 )}
