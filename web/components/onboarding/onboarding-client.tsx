@@ -36,32 +36,32 @@ import { isLearningLevel, needsPronunciationSupport } from '@/types/learning-lev
 
 const LANGUAGE_LEVEL_OPTIONS: {
   value: LearningLevel;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   icon: string;
 }[] = [
   {
     value: 'zero',
-    label: t`Zero`,
-    description: t`I am starting from zero and need full guidance.`,
+    labelKey: 'Zero',
+    descriptionKey: 'I am starting from zero and need full guidance.',
     icon: '🥚',
   },
   {
     value: 'beginner',
-    label: t`Beginner`,
-    description: t`I can say simple phrases but need help forming sentences.`,
+    labelKey: 'Beginner',
+    descriptionKey: 'I can say simple phrases but need help forming sentences.',
     icon: '🌱',
   },
   {
     value: 'intermediate',
-    label: t`Intermediate`,
-    description: t`I can explain ideas, ask follow-up questions, and manage most conversations.`,
+    labelKey: 'Intermediate',
+    descriptionKey: 'I can explain ideas, ask follow-up questions, and manage most conversations.',
     icon: '🌼',
   },
   {
     value: 'advanced',
-    label: t`Advanced`,
-    description: t`I can discuss complex topics and want to sound more natural.`,
+    labelKey: 'Advanced',
+    descriptionKey: 'I can discuss complex topics and want to sound more natural.',
     icon: '🌟',
   },
 ];
@@ -623,8 +623,12 @@ export default function OnboardingClient() {
                     {option.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-base mb-0.5">{option.label}</div>
-                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                    <div className="font-medium text-base mb-0.5">
+                      <Trans>{option.labelKey}</Trans>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      <Trans>{option.descriptionKey}</Trans>
+                    </p>
                   </div>
                 </button>
               );
