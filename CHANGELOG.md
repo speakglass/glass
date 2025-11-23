@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.13](https://github.com/speakglass/glass/compare/v0.1.12...v0.1.13) (2025-11-23)
+
+
+### Features
+
+* **partner_generation:** enhance persona localization and avatar prompt generation ([1811001](https://github.com/speakglass/glass/commit/1811001113aa36c42d86e616a9cb8c0671cb132b))
+* **start-call:** enhance partner persona fields and language handling ([0d947d2](https://github.com/speakglass/glass/commit/0d947d2c1257b1abd5f42f886885cdbfea26cb49))
+* **start-call:** enhance partner persona fields and language handling ([e9384e3](https://github.com/speakglass/glass/commit/e9384e361781add77813781661068eb9a4d1b291))
+
+
+### Bug Fixes
+
+* **locales:** update translation keys and improve localization consistency ([b6061a2](https://github.com/speakglass/glass/commit/b6061a2a59553d40fa14399799f04a83b822b92c))
+* **start-call:** enhance partner selection and language handling ([4bb61ab](https://github.com/speakglass/glass/commit/4bb61ab3c5f457bfe50df9229206442735cd7ea1))
+* **start-call:** refactor StartCall component for improved structure and functionality ([37e8080](https://github.com/speakglass/glass/commit/37e80805393526338afe35d48f2c6cb911238a6b))
+
+
+### Code Refactoring
+
+* **partner_generation:** streamline avatar prompt generation and remove unused logic ([b55f90e](https://github.com/speakglass/glass/commit/b55f90eee22a7cad5db7ef2ce149c521ef4dc748))
+
 ## [0.1.12](https://github.com/speakglass/glass/compare/v0.1.11...v0.1.12) (2025-11-22)
 
 
