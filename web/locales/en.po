@@ -62,31 +62,31 @@ msgstr "{diffInYears, plural, one {# year ago} other {# years ago}}"
 msgid "{mins}m {secs}s"
 msgstr "{mins}m {secs}s"
 
-#: components/custom-partner-creator.tsx:458
+#: components/custom-partner-creator.tsx:462
 msgid "{name} is all set!"
 msgstr "{name} is all set!"
 
-#: components/custom-partner-creator.tsx:456
+#: components/custom-partner-creator.tsx:460
 msgid "{name} is picking a friendly photo for you."
 msgstr "{name} is picking a friendly photo for you."
 
-#: components/custom-partner-creator.tsx:482
+#: components/custom-partner-creator.tsx:486
 msgid "{name} is putting together a quick profile for you..."
 msgstr "{name} is putting together a quick profile for you..."
 
-#: components/custom-partner-creator.tsx:487
+#: components/custom-partner-creator.tsx:491
 msgid "{name} is ready to say hi!"
 msgstr "{name} is ready to say hi!"
 
-#: components/custom-partner-creator.tsx:485
+#: components/custom-partner-creator.tsx:489
 msgid "{name} is snapping a friendly photo..."
 msgstr "{name} is snapping a friendly photo..."
 
-#: components/custom-partner-creator.tsx:450
+#: components/custom-partner-creator.tsx:454
 msgid "{name} just accepted the match request."
 msgstr "{name} just accepted the match request."
 
-#: components/custom-partner-creator.tsx:453
+#: components/custom-partner-creator.tsx:457
 msgid "{name} just finished writing a profile for you."
 msgstr "{name} just finished writing a profile for you."
 
@@ -109,8 +109,8 @@ msgstr "{totalMemories, plural, one {# total memory} other {# total memories}}"
 
 #: components/onboarding/onboarding-client.tsx:574
 #: components/onboarding/onboarding-client.tsx:641
-#: components/start-call-instructions.tsx:65
-#: components/start-call.tsx:1010
+#: components/start-call-instructions.tsx:67
+#: components/start-call.tsx:992
 msgid "← Back"
 msgstr "← Back"
 
@@ -122,12 +122,12 @@ msgstr "30s"
 msgid "40+"
 msgstr "40+"
 
-#: components/custom-partner-creator.tsx:1080
+#: components/custom-partner-creator.tsx:1084
 #: components/partner-detail-modal.tsx:180
 msgid "About Me"
 msgstr "About Me"
 
-#: components/call-summary.tsx:1015
+#: components/call-summary.tsx:1019
 #: components/history/conversation-history.tsx:1459
 msgid "Accuracy"
 msgstr "Accuracy"
@@ -141,12 +141,12 @@ msgstr "Actions"
 msgid "Active"
 msgstr "Active"
 
-#: components/call-summary.tsx:721
+#: components/call-summary.tsx:725
 msgid "Add"
 msgstr "Add"
 
-#: components/call-summary.tsx:1473
-#: components/custom-partner-creator.tsx:1317
+#: components/call-summary.tsx:1477
+#: components/custom-partner-creator.tsx:1327
 #: components/history/conversation-history.tsx:1861
 msgid "Add a short description"
 msgstr "Add a short description"
@@ -159,7 +159,7 @@ msgstr "Add memory"
 msgid "Add new memory"
 msgstr "Add new memory"
 
-#: components/custom-partner-creator.tsx:733
+#: components/custom-partner-creator.tsx:737
 msgid "Add your own"
 msgstr "Add your own"
 
@@ -176,7 +176,7 @@ msgstr "After each conversation"
 msgid "After each conversation, I'll give you feedback on your grammar, pronunciation, and vocabulary. So you keep improving naturally."
 msgstr "After each conversation, I'll give you feedback on your grammar, pronunciation, and vocabulary. So you keep improving naturally."
 
-#: components/custom-partner-creator.tsx:824
+#: components/custom-partner-creator.tsx:828
 msgid "Age range"
 msgstr "Age range"
 
@@ -218,7 +218,7 @@ msgstr "An error occurred"
 msgid "Analyzing Conversation"
 msgstr "Analyzing Conversation"
 
-#: components/call-summary.tsx:1256
+#: components/call-summary.tsx:1260
 msgid "Analyzing conversation to extract memories..."
 msgstr "Analyzing conversation to extract memories..."
 
@@ -230,7 +230,7 @@ msgstr "Anime"
 msgid "Annual billing only"
 msgstr "Annual billing only"
 
-#: components/custom-partner-creator.tsx:1125
+#: components/custom-partner-creator.tsx:1135
 msgid "Any preferences?"
 msgstr "Any preferences?"
 
@@ -259,7 +259,7 @@ msgstr "At least one number"
 msgid "At least one special character"
 msgstr "At least one special character"
 
-#: contexts/glass-context.tsx:1694
+#: contexts/glass-context.tsx:1713
 msgid "Authentication failed"
 msgstr "Authentication failed"
 
@@ -267,8 +267,8 @@ msgstr "Authentication failed"
 msgid "Authentication is required. Please refresh and try again."
 msgstr "Authentication is required. Please refresh and try again."
 
-#: components/custom-partner-creator.tsx:606
-#: components/custom-partner-creator.tsx:1227
+#: components/custom-partner-creator.tsx:610
+#: components/custom-partner-creator.tsx:1237
 #: components/partner-delete-dialog.tsx:40
 #: components/start-call.tsx:325
 msgid "Authentication token not available. Please refresh the page."
@@ -288,7 +288,7 @@ msgstr "Auto Response"
 msgid "Average"
 msgstr "Average"
 
-#: components/custom-partner-creator.tsx:1154
+#: components/custom-partner-creator.tsx:1164
 #: components/onboarding/glass-onboarding-card.tsx:85
 msgid "Back"
 msgstr "Back"
@@ -343,7 +343,7 @@ msgstr "Billing is not available"
 msgid "Billing updated"
 msgstr "Billing updated"
 
-#: components/start-call.tsx:770
+#: components/start-call.tsx:752
 msgid "Both speak {learningLanguageName} in this call?"
 msgstr "Both speak {learningLanguageName} in this call?"
 
@@ -372,7 +372,7 @@ msgstr "By clicking continue, you agree to our <0>Terms of Service</0> and <1>Pr
 msgid "call"
 msgstr " call"
 
-#: components/call-summary.tsx:839
+#: components/call-summary.tsx:843
 msgid "Call Summary"
 msgstr "Call Summary"
 
@@ -385,8 +385,8 @@ msgid "calls"
 msgstr " calls"
 
 #: components/billing/billing-content.tsx:813
-#: components/call-summary.tsx:1531
-#: components/custom-partner-creator.tsx:1154
+#: components/call-summary.tsx:1535
+#: components/custom-partner-creator.tsx:1164
 #: components/history/conversation-history.tsx:1788
 #: components/history/conversation-history.tsx:1919
 #: components/memory/memory-dialog.tsx:94
@@ -412,13 +412,13 @@ msgstr "Cars & Engineering"
 msgid "Category"
 msgstr "Category"
 
-#: components/call-summary.tsx:1427
-#: components/custom-partner-creator.tsx:1277
+#: components/call-summary.tsx:1431
+#: components/custom-partner-creator.tsx:1287
 #: components/history/conversation-history.tsx:1815
 msgid "Change partner photo"
 msgstr "Change partner photo"
 
-#: components/start-call.tsx:884
+#: components/start-call.tsx:866
 msgid "Change screen"
 msgstr "Change screen"
 
@@ -460,7 +460,7 @@ msgstr "Choose the language you want to practice speaking"
 #~ msgid "Choose your preferred mode"
 #~ msgstr "Choose your preferred mode"
 
-#: components/start-call.tsx:921
+#: components/start-call.tsx:903
 msgid "Clear your view"
 msgstr "Clear your view"
 
@@ -472,7 +472,7 @@ msgstr "Click the link in the email to verify your account and continue to Glass
 msgid "Click to edit"
 msgstr "Click to edit"
 
-#: components/call-summary.tsx:1321
+#: components/call-summary.tsx:1325
 msgid "Click to edit..."
 msgstr "Click to edit..."
 
@@ -484,12 +484,12 @@ msgstr "Click to view full content"
 msgid "Click to view full summary"
 msgstr "Click to view full summary"
 
-#: components/call-summary.tsx:1405
-#: components/call-summary.tsx:1504
-#: components/custom-partner-creator.tsx:1332
+#: components/call-summary.tsx:1409
+#: components/call-summary.tsx:1508
+#: components/custom-partner-creator.tsx:1342
 #: components/history/conversation-history.tsx:1892
 #: components/memory/memory-dialog.tsx:89
-#: components/partner-detail-modal.tsx:201
+#: components/partner-detail-modal.tsx:209
 msgid "Close"
 msgstr "Close"
 
@@ -526,7 +526,7 @@ msgstr "Company size"
 msgid "Compare plans"
 msgstr "Compare plans"
 
-#: components/call-summary.tsx:1093
+#: components/call-summary.tsx:1097
 #: components/history/conversation-history.tsx:1516
 msgid "Comprehensibility"
 msgstr "Comprehensibility"
@@ -535,12 +535,12 @@ msgstr "Comprehensibility"
 msgid "Confirm Password"
 msgstr "Confirm Password"
 
-#: components/start-call.tsx:932
+#: components/start-call.tsx:914
 msgid "Connecting to Glass. Keep your screen share running while we join."
 msgstr "Connecting to Glass. Keep your screen share running while we join."
 
-#: components/start-call-instructions.tsx:81
-#: components/start-call.tsx:1026
+#: components/start-call-instructions.tsx:83
+#: components/start-call.tsx:1008
 msgid "Connecting..."
 msgstr "Connecting..."
 
@@ -568,7 +568,7 @@ msgstr "Conversation history"
 
 #: components/billing/billing-content.tsx:101
 #: components/billing/billing-content.tsx:177
-#: components/call-summary.tsx:1374
+#: components/call-summary.tsx:1378
 #: components/history/conversation-history.tsx:1684
 msgid "Conversation History"
 msgstr "Conversation History"
@@ -582,9 +582,9 @@ msgstr "Conversation ID"
 msgid "Conversation partner assigned"
 msgstr "Conversation partner assigned"
 
-#: contexts/glass-context.tsx:2289
-#: contexts/glass-context.tsx:2301
-#: contexts/glass-context.tsx:2314
+#: contexts/glass-context.tsx:2308
+#: contexts/glass-context.tsx:2320
+#: contexts/glass-context.tsx:2333
 msgid "Conversation saved"
 msgstr "Conversation saved"
 
@@ -616,7 +616,7 @@ msgstr "Create an account"
 msgid "Create partner"
 msgstr "Create partner"
 
-#: components/start-call-partner-selection.tsx:315
+#: components/start-call-partner-selection.tsx:317
 msgid "Create your ideal language partner"
 msgstr "Create your ideal language partner"
 
@@ -684,7 +684,7 @@ msgstr "Dedicated"
 msgid "Dedicated Support"
 msgstr "Dedicated Support"
 
-#: components/call-summary.tsx:1542
+#: components/call-summary.tsx:1546
 #: components/history/conversation-history.tsx:1343
 #: components/history/conversation-history.tsx:1797
 #: components/history/conversation-history.tsx:1930
@@ -693,7 +693,7 @@ msgstr "Dedicated Support"
 #: components/memory/memory-table.tsx:324
 #: components/memory/memory-table.tsx:361
 #: components/partner-delete-dialog.tsx:89
-#: components/start-call-partner-selection.tsx:261
+#: components/start-call-partner-selection.tsx:263
 msgid "Delete"
 msgstr "Delete"
 
@@ -713,18 +713,18 @@ msgstr "Delete conversation"
 msgid "Delete memory?"
 msgstr "Delete memory?"
 
-#: contexts/glass-context.tsx:1705
+#: contexts/glass-context.tsx:1724
 msgid "Delete older history or upgrade your plan to continue."
 msgstr "Delete older history or upgrade your plan to continue."
 
-#: components/call-summary.tsx:1491
+#: components/call-summary.tsx:1495
 #: components/history/conversation-history.tsx:1879
 #: components/history/conversation-history.tsx:1911
 #: components/partner-delete-dialog.tsx:66
 msgid "Delete partner"
 msgstr "Delete partner"
 
-#: components/call-summary.tsx:1523
+#: components/call-summary.tsx:1527
 msgid "Delete partner?"
 msgstr "Delete partner?"
 
@@ -760,8 +760,8 @@ msgstr "Deleting selected memories..."
 msgid "Deleting..."
 msgstr "Deleting..."
 
-#: components/call-summary.tsx:1468
-#: components/custom-partner-creator.tsx:1312
+#: components/call-summary.tsx:1472
+#: components/custom-partner-creator.tsx:1322
 #: components/history/conversation-history.tsx:1856
 msgid "Description"
 msgstr "Description"
@@ -770,11 +770,11 @@ msgstr "Description"
 msgid "Design & Art"
 msgstr "Design & Art"
 
-#: components/start-call-partner-selection.tsx:306
+#: components/start-call-partner-selection.tsx:308
 msgid "Discover more AI partners"
 msgstr "Discover more AI partners"
 
-#: components/start-call-partner-selection.tsx:304
+#: components/start-call-partner-selection.tsx:306
 msgid "Discover your first AI partner"
 msgstr "Discover your first AI partner"
 
@@ -798,10 +798,10 @@ msgstr "e.g., I love hiking in the mountains, My favorite food is sushi, I'm lea
 msgid "Early 20s"
 msgstr "Early 20s"
 
-#: components/call-summary.tsx:721
-#: components/call-summary.tsx:782
-#: components/call-summary.tsx:1447
-#: components/custom-partner-creator.tsx:1291
+#: components/call-summary.tsx:725
+#: components/call-summary.tsx:786
+#: components/call-summary.tsx:1451
+#: components/custom-partner-creator.tsx:1301
 #: components/history/conversation-history.tsx:1214
 #: components/history/conversation-history.tsx:1286
 #: components/history/conversation-history.tsx:1835
@@ -813,8 +813,8 @@ msgstr "Edit"
 msgid "Edit memory"
 msgstr "Edit memory"
 
-#: components/call-summary.tsx:1419
-#: components/custom-partner-creator.tsx:1263
+#: components/call-summary.tsx:1423
+#: components/custom-partner-creator.tsx:1273
 #: components/history/conversation-history.tsx:1807
 msgid "Edit partner"
 msgstr "Edit partner"
@@ -843,7 +843,7 @@ msgstr "Email verified!"
 msgid "End Call"
 msgstr "End Call"
 
-#: contexts/glass-context.tsx:1465
+#: contexts/glass-context.tsx:1471
 msgid "Ending the call because screen sharing ended."
 msgstr "Ending the call because screen sharing ended."
 
@@ -852,8 +852,8 @@ msgstr "Ending the call because screen sharing ended."
 msgid "English"
 msgstr "English"
 
-#: components/call-summary.tsx:1462
-#: components/custom-partner-creator.tsx:1306
+#: components/call-summary.tsx:1466
+#: components/custom-partner-creator.tsx:1316
 #: components/history/conversation-history.tsx:1850
 msgid "Enter a name"
 msgstr "Enter a name"
@@ -864,7 +864,7 @@ msgstr "Enter a name"
 msgid "Enter a name first"
 msgstr "Enter a name first"
 
-#: components/custom-partner-creator.tsx:1232
+#: components/custom-partner-creator.tsx:1242
 msgid "Enter a name for your partner"
 msgstr "Enter a name for your partner"
 
@@ -1026,7 +1026,7 @@ msgstr "Feedback"
 msgid "Female"
 msgstr "Female"
 
-#: components/custom-partner-creator.tsx:889
+#: components/custom-partner-creator.tsx:893
 msgid "Final touches"
 msgstr "Final touches"
 
@@ -1034,23 +1034,23 @@ msgstr "Final touches"
 msgid "Find a language exchange partner"
 msgstr "Find a language exchange partner"
 
-#: components/custom-partner-creator.tsx:1109
+#: components/custom-partner-creator.tsx:1119
 msgid "Find another"
 msgstr "Find another"
 
-#: components/custom-partner-creator.tsx:1162
+#: components/custom-partner-creator.tsx:1172
 msgid "Find partner"
 msgstr "Find partner"
 
-#: components/custom-partner-creator.tsx:869
+#: components/custom-partner-creator.tsx:873
 msgid "Finding a great match"
 msgstr "Finding a great match"
 
-#: components/custom-partner-creator.tsx:1126
+#: components/custom-partner-creator.tsx:1136
 msgid "Finding a match"
 msgstr "Finding a match"
 
-#: components/call-summary.tsx:932
+#: components/call-summary.tsx:936
 #: components/history/conversation-history.tsx:1402
 msgid "Fluency"
 msgstr "Fluency"
@@ -1069,11 +1069,11 @@ msgstr "Football"
 msgid "Forgot your password?"
 msgstr "Forgot your password?"
 
-#: components/custom-partner-creator.tsx:448
+#: components/custom-partner-creator.tsx:452
 msgid "Found someone promising in {location}."
 msgstr "Found someone promising in {location}."
 
-#: components/custom-partner-creator.tsx:448
+#: components/custom-partner-creator.tsx:452
 msgid "Found someone who shares your interests."
 msgstr "Found someone who shares your interests."
 
@@ -1125,7 +1125,7 @@ msgstr "French cuisine"
 msgid "Full Name"
 msgstr "Full Name"
 
-#: components/custom-partner-creator.tsx:800
+#: components/custom-partner-creator.tsx:804
 msgid "Gender preference"
 msgstr "Gender preference"
 
@@ -1141,7 +1141,7 @@ msgstr "German culture"
 #~ msgid "Get live support during language exchange"
 #~ msgstr "Get live support during language exchange"
 
-#: components/start-call-partner-selection.tsx:368
+#: components/start-call-partner-selection.tsx:370
 msgid "Get live support during real calls or language exchange"
 msgstr "Get live support during real calls or language exchange"
 
@@ -1154,7 +1154,7 @@ msgstr "Get live support during real calls or language exchange"
 msgid "Get Suggestions"
 msgstr "Get Suggestions"
 
-#: components/custom-partner-creator.tsx:879
+#: components/custom-partner-creator.tsx:883
 msgid "Getting their story"
 msgstr "Getting their story"
 
@@ -1196,7 +1196,7 @@ msgstr "Go to previous page"
 msgid "Good"
 msgstr "Good"
 
-#: components/custom-partner-creator.tsx:884
+#: components/custom-partner-creator.tsx:888
 msgid "Grabbing a friendly photo"
 msgstr "Grabbing a friendly photo"
 
@@ -1331,7 +1331,7 @@ msgstr "Japanese culture"
 msgid "Japanese food"
 msgstr "Japanese food"
 
-#: components/start-call.tsx:741
+#: components/start-call.tsx:723
 msgid "Join your call"
 msgstr "Join your call"
 
@@ -1437,11 +1437,11 @@ msgstr "Loading billing…"
 msgid "Loading history…"
 msgstr "Loading history…"
 
-#: components/call-summary.tsx:1227
+#: components/call-summary.tsx:1231
 msgid "Loading memories"
 msgstr "Loading memories"
 
-#: components/call-summary.tsx:1251
+#: components/call-summary.tsx:1255
 #: components/memory/memory-table.tsx:219
 msgid "Loading memories..."
 msgstr "Loading memories..."
@@ -1450,7 +1450,7 @@ msgstr "Loading memories..."
 msgid "Loading partners..."
 msgstr "Loading partners..."
 
-#: components/call-summary.tsx:733
+#: components/call-summary.tsx:737
 #: components/history/conversation-history.tsx:1237
 msgid "Loading partners…"
 msgstr "Loading partners…"
@@ -1479,11 +1479,11 @@ msgstr "Login with your Google account or email"
 msgid "Long"
 msgstr "Long"
 
-#: components/custom-partner-creator.tsx:476
+#: components/custom-partner-creator.tsx:480
 msgid "Looking around {location} for someone fun to talk to..."
 msgstr "Looking around {location} for someone fun to talk to..."
 
-#: components/custom-partner-creator.tsx:1067
+#: components/custom-partner-creator.tsx:1071
 #: components/partner-detail-modal.tsx:167
 msgid "Looking for"
 msgstr "Looking for"
@@ -1532,7 +1532,7 @@ msgstr "Manga"
 msgid "Martial arts"
 msgstr "Martial arts"
 
-#: components/custom-partner-creator.tsx:1127
+#: components/custom-partner-creator.tsx:1137
 msgid "Meet your partner"
 msgstr "Meet your partner"
 
@@ -1543,7 +1543,7 @@ msgstr "Meeting potential partners..."
 #: app/[lang]/(app)/memory/page.tsx:28
 #: components/call-summary.tsx:79
 #: components/call-summary.tsx:83
-#: components/call-summary.tsx:1224
+#: components/call-summary.tsx:1228
 #: components/history/conversation-history.tsx:1625
 #: components/history/conversation-history.tsx:1642
 #: components/memory/columns.tsx:104
@@ -1584,7 +1584,7 @@ msgstr "Memory updated successfully"
 msgid "Microphone"
 msgstr "Microphone"
 
-#: contexts/glass-context.tsx:825
+#: contexts/glass-context.tsx:831
 msgid "Microphone changed"
 msgstr "Microphone changed"
 
@@ -1611,7 +1611,7 @@ msgstr "Missing conversation"
 msgid "Missing email in profile"
 msgstr "Missing email in profile"
 
-#: components/custom-partner-creator.tsx:611
+#: components/custom-partner-creator.tsx:615
 msgid "Missing learning language for your profile"
 msgstr "Missing learning language for your profile"
 
@@ -1640,8 +1640,8 @@ msgstr "Music"
 msgid "Must be at least 8 characters long."
 msgstr "Must be at least 8 characters long."
 
-#: components/call-summary.tsx:1457
-#: components/custom-partner-creator.tsx:1301
+#: components/call-summary.tsx:1461
+#: components/custom-partner-creator.tsx:1311
 #: components/history/conversation-history.tsx:1845
 msgid "Name"
 msgstr "Name"
@@ -1666,12 +1666,12 @@ msgstr "New {displayTerm}"
 msgid "New {trimmedPartnerSearch}"
 msgstr "New {trimmedPartnerSearch}"
 
-#: components/custom-partner-creator.tsx:681
+#: components/custom-partner-creator.tsx:685
 msgid "New friend added!"
 msgstr "New friend added!"
 
 #: components/custom-partner-creator.tsx:186
-#: components/custom-partner-creator.tsx:986
+#: components/custom-partner-creator.tsx:990
 msgid "New friends"
 msgstr "New friends"
 
@@ -1679,7 +1679,7 @@ msgstr "New friends"
 msgid "New Password"
 msgstr "New Password"
 
-#: components/custom-partner-creator.tsx:1162
+#: components/custom-partner-creator.tsx:1172
 msgid "Next"
 msgstr "Next"
 
@@ -1690,7 +1690,7 @@ msgstr "Next"
 msgid "Next →"
 msgstr "Next →"
 
-#: components/start-call.tsx:801
+#: components/start-call.tsx:783
 msgid "No"
 msgstr "No"
 
@@ -1698,7 +1698,7 @@ msgstr "No"
 msgid "No active subscription to manage"
 msgstr "No active subscription to manage"
 
-#: components/start-call.tsx:717
+#: components/start-call.tsx:699
 msgid "No audio detected. Share the window that plays your call and enable audio."
 msgstr "No audio detected. Share the window that plays your call and enable audio."
 
@@ -1719,7 +1719,7 @@ msgstr "No conversations yet"
 msgid "No matching partners."
 msgstr "No matching partners."
 
-#: components/call-summary.tsx:1258
+#: components/call-summary.tsx:1262
 msgid "No memories available yet."
 msgstr "No memories available yet."
 
@@ -1728,7 +1728,7 @@ msgstr "No memories available yet."
 msgid "No messages"
 msgstr "No messages"
 
-#: components/call-summary.tsx:708
+#: components/call-summary.tsx:711
 #: components/history/conversation-history.tsx:1222
 msgid "No partner assigned"
 msgstr "No partner assigned"
@@ -1754,7 +1754,7 @@ msgstr "No rows selected"
 msgid "Off"
 msgstr "Off"
 
-#: components/start-call.tsx:937
+#: components/start-call.tsx:919
 msgid "Once your screen is shared, the Start Call button will unlock."
 msgstr "Once your screen is shared, the Start Call button will unlock."
 
@@ -1762,7 +1762,7 @@ msgstr "Once your screen is shared, the Start Call button will unlock."
 msgid "Open menu"
 msgstr "Open menu"
 
-#: components/start-call.tsx:759
+#: components/start-call.tsx:741
 msgid "Open Zoom, Discord, Meet, or any call app and join the room you're about to share."
 msgstr "Open Zoom, Discord, Meet, or any call app and join the room you're about to share."
 
@@ -1770,7 +1770,7 @@ msgstr "Open Zoom, Discord, Meet, or any call app and join the room you're about
 msgid "Opera & Music"
 msgstr "Opera & Music"
 
-#: components/start-call-partner-selection.tsx:334
+#: components/start-call-partner-selection.tsx:336
 msgid "OR"
 msgstr "OR"
 
@@ -1779,7 +1779,7 @@ msgstr "OR"
 msgid "Or continue with"
 msgstr "Or continue with"
 
-#: components/call-summary.tsx:882
+#: components/call-summary.tsx:886
 #: components/history/conversation-history.tsx:1354
 msgid "Overall Score"
 msgstr "Overall Score"
@@ -1801,8 +1801,8 @@ msgstr "Page {0} of {totalPages}"
 #: components/call-summary.tsx:665
 #: components/call-summary.tsx:702
 #: components/call-summary.tsx:706
-#: components/call-summary.tsx:807
-#: components/call-summary.tsx:1439
+#: components/call-summary.tsx:811
+#: components/call-summary.tsx:1443
 #: components/history/conversation-history.tsx:152
 #: components/history/conversation-history.tsx:900
 #: components/history/conversation-history.tsx:922
@@ -1815,7 +1815,7 @@ msgstr "Page {0} of {totalPages}"
 #: components/messages.tsx:133
 #: components/messages.tsx:168
 #: components/start-call-instructions.tsx:45
-#: components/start-call.tsx:837
+#: components/start-call.tsx:819
 msgid "Partner"
 msgstr "Partner"
 
@@ -1847,7 +1847,7 @@ msgid "Partner name is required"
 msgstr "Partner name is required"
 
 #: components/call-summary.tsx:394
-#: components/custom-partner-creator.tsx:1247
+#: components/custom-partner-creator.tsx:1257
 #: components/history/conversation-history.tsx:438
 msgid "Partner updated"
 msgstr "Partner updated"
@@ -1874,8 +1874,8 @@ msgstr "Personalized Memory"
 msgid "Philosophy"
 msgstr "Philosophy"
 
-#: components/call-summary.tsx:1451
-#: components/custom-partner-creator.tsx:1295
+#: components/call-summary.tsx:1455
+#: components/custom-partner-creator.tsx:1305
 #: components/history/conversation-history.tsx:1839
 msgid "Photo"
 msgstr "Photo"
@@ -1901,26 +1901,26 @@ msgstr "Please complete the required fields"
 msgid "Please enter your feedback"
 msgstr "Please enter your feedback"
 
-#: contexts/glass-context.tsx:1841
+#: contexts/glass-context.tsx:1860
 msgid "Please re-enable microphone permissions or choose another input device."
 msgstr "Please re-enable microphone permissions or choose another input device."
 
-#: contexts/glass-context.tsx:1695
+#: contexts/glass-context.tsx:1714
 msgid "Please refresh the page and try again."
 msgstr "Please refresh the page and try again."
 
-#: contexts/glass-context.tsx:1539
+#: contexts/glass-context.tsx:1545
 msgid "Please share your screen with audio from your call platform (Zoom, Google Meet, Teams)."
 msgstr "Please share your screen with audio from your call platform (Zoom, Google Meet, Teams)."
 
 #: components/billing/billing-content.tsx:508
 #: components/billing/billing-content.tsx:527
 #: components/billing/billing-content.tsx:552
-#: components/start-call.tsx:648
+#: components/start-call.tsx:630
 msgid "Please sign in again"
 msgstr "Please sign in again"
 
-#: contexts/glass-context.tsx:1416
+#: contexts/glass-context.tsx:1422
 msgid "Please sign in again."
 msgstr "Please sign in again."
 
@@ -1933,11 +1933,11 @@ msgstr "Please sign in again."
 msgid "Please try again in a moment."
 msgstr "Please try again in a moment."
 
-#: components/custom-partner-creator.tsx:399
+#: components/custom-partner-creator.tsx:403
 msgid "Please try again."
 msgstr "Please try again."
 
-#: contexts/glass-context.tsx:1379
+#: contexts/glass-context.tsx:1385
 msgid "Please wait for session to load and try again."
 msgstr "Please wait for session to load and try again."
 
@@ -1966,7 +1966,7 @@ msgstr "Post-Call Feedback"
 msgid "Preparing your workspace…"
 msgstr "Preparing your workspace…"
 
-#: components/start-call.tsx:934
+#: components/start-call.tsx:916
 msgid "Press Start Call below to connect. Glass will use your mic plus the shared audio."
 msgstr "Press Start Call below to connect. Glass will use your mic plus the shared audio."
 
@@ -1993,7 +1993,7 @@ msgid "Pro"
 msgstr "Pro"
 
 #: components/custom-partner-creator.tsx:198
-#: components/custom-partner-creator.tsx:988
+#: components/custom-partner-creator.tsx:992
 msgid "Professional practice"
 msgstr "Professional practice"
 
@@ -2031,11 +2031,11 @@ msgstr "Redirecting to login in {countdown} seconds..."
 msgid "Remember your password? <0>Sign in</0>"
 msgstr "Remember your password? <0>Sign in</0>"
 
-#: components/start-call.tsx:894
+#: components/start-call.tsx:876
 msgid "Remove"
 msgstr "Remove"
 
-#: components/call-summary.tsx:1331
+#: components/call-summary.tsx:1335
 msgid "Remove insight"
 msgstr "Remove insight"
 
@@ -2096,18 +2096,18 @@ msgstr "Romaji (Latin)"
 msgid "Rows per page"
 msgstr "Rows per page"
 
-#: components/call-summary.tsx:1513
-#: components/custom-partner-creator.tsx:1341
+#: components/call-summary.tsx:1517
+#: components/custom-partner-creator.tsx:1351
 #: components/history/conversation-history.tsx:1901
 msgid "Save"
 msgstr "Save"
 
-#: components/call-summary.tsx:1409
+#: components/call-summary.tsx:1413
 msgid "Save Call"
 msgstr "Save Call"
 
 #: components/call-limit-dialog.tsx:47
-#: contexts/glass-context.tsx:1704
+#: contexts/glass-context.tsx:1723
 msgid "Saved call limit reached"
 msgstr "Saved call limit reached"
 
@@ -2131,15 +2131,15 @@ msgstr "Scale with the right plan"
 msgid "Scope"
 msgstr "Scope"
 
-#: contexts/glass-context.tsx:1538
+#: contexts/glass-context.tsx:1544
 msgid "Screen audio sharing required"
 msgstr "Screen audio sharing required"
 
-#: contexts/glass-context.tsx:1464
+#: contexts/glass-context.tsx:1470
 msgid "Screen share stopped"
 msgstr "Screen share stopped"
 
-#: components/start-call.tsx:713
+#: components/start-call.tsx:695
 msgid "Screen share was cancelled. Try again when you're ready."
 msgstr "Screen share was cancelled. Try again when you're ready."
 
@@ -2147,11 +2147,11 @@ msgstr "Screen share was cancelled. Try again when you're ready."
 msgid "Screen sharing is not supported in this browser"
 msgstr "Screen sharing is not supported in this browser"
 
-#: components/start-call.tsx:711
+#: components/start-call.tsx:693
 msgid "Screen sharing permission was blocked. Allow access to continue."
 msgstr "Screen sharing permission was blocked. Allow access to continue."
 
-#: components/start-call.tsx:905
+#: components/start-call.tsx:887
 msgid "Screen sharing ready. Keep it running so Glass can listen in."
 msgstr "Screen sharing ready. Keep it running so Glass can listen in."
 
@@ -2204,12 +2204,12 @@ msgstr "Select a level to continue"
 msgid "Select a mode to continue"
 msgstr "Select a mode to continue"
 
-#: components/call-summary.tsx:727
+#: components/call-summary.tsx:731
 #: components/history/conversation-history.tsx:1231
 msgid "Select a partner"
 msgstr "Select a partner"
 
-#: components/start-call-instructions.tsx:54
+#: components/start-call-instructions.tsx:56
 msgid "Select a partner to see details."
 msgstr "Select a partner to see details."
 
@@ -2225,7 +2225,7 @@ msgstr "Select an existing partner or create a new one."
 msgid "Select row"
 msgstr "Select row"
 
-#: components/start-call.tsx:884
+#: components/start-call.tsx:866
 msgid "Select screen"
 msgstr "Select screen"
 
@@ -2241,11 +2241,11 @@ msgstr "Select the description that feels closest to your speaking ability."
 msgid "Select the language you speak fluently"
 msgstr "Select the language you speak fluently"
 
-#: components/custom-partner-creator.tsx:692
+#: components/custom-partner-creator.tsx:696
 msgid "Select topics to find language partners with similar interests."
 msgstr "Select topics to find language partners with similar interests."
 
-#: contexts/glass-context.tsx:826
+#: contexts/glass-context.tsx:832
 msgid "Selected mic is unavailable. Using the system default instead."
 msgstr "Selected mic is unavailable. Using the system default instead."
 
@@ -2265,11 +2265,11 @@ msgstr "Send request"
 msgid "Send reset link"
 msgstr "Send reset link"
 
-#: components/custom-partner-creator.tsx:874
+#: components/custom-partner-creator.tsx:878
 msgid "Sending a match request"
 msgstr "Sending a match request"
 
-#: components/custom-partner-creator.tsx:479
+#: components/custom-partner-creator.tsx:483
 msgid "Sending out a match request to see who’s available..."
 msgstr "Sending out a match request to see who’s available..."
 
@@ -2286,7 +2286,7 @@ msgstr "Sentence length"
 msgid "Settings"
 msgstr "Settings"
 
-#: components/start-call.tsx:868
+#: components/start-call.tsx:850
 msgid "Share the screen where your call is already open, choose \"Entire screen,\" and toggle \"Also share system audio.\""
 msgstr "Share the screen where your call is already open, choose \"Entire screen,\" and toggle \"Also share system audio.\""
 
@@ -2294,7 +2294,7 @@ msgstr "Share the screen where your call is already open, choose \"Entire screen
 msgid "Share your call first"
 msgstr "Share your call first"
 
-#: components/start-call.tsx:866
+#: components/start-call.tsx:848
 msgid "Share your whole screen with audio"
 msgstr "Share your whole screen with audio"
 
@@ -2336,7 +2336,7 @@ msgid "SLA Guarantee"
 msgstr "SLA Guarantee"
 
 #: components/custom-partner-creator.tsx:192
-#: components/custom-partner-creator.tsx:987
+#: components/custom-partner-creator.tsx:991
 msgid "Someone special"
 msgstr "Someone special"
 
@@ -2362,31 +2362,31 @@ msgid "Star on GitHub"
 msgstr "Star on GitHub"
 
 #: components/start-call-entry.tsx:28
-#: components/start-call-instructions.tsx:81
-#: components/start-call.tsx:1026
+#: components/start-call-instructions.tsx:83
+#: components/start-call.tsx:1008
 msgid "Start Call"
 msgstr "Start Call"
 
-#: components/custom-partner-creator.tsx:1112
-#: components/partner-detail-modal.tsx:210
+#: components/custom-partner-creator.tsx:1122
+#: components/partner-detail-modal.tsx:218
 msgid "Start chatting"
 msgstr "Start chatting"
 
-#: components/start-call.tsx:928
+#: components/start-call.tsx:910
 msgid "Start the live call"
 msgstr "Start the live call"
 
 #. placeholder {0}: 2
-#: components/start-call.tsx:766
+#: components/start-call.tsx:748
 msgid "Step {0}"
 msgstr "Step {0}"
 
-#: components/start-call.tsx:723
+#: components/start-call.tsx:705
 msgid "Step {step}"
 msgstr "Step {step}"
 
 #: components/custom-partner-creator.tsx:204
-#: components/custom-partner-creator.tsx:989
+#: components/custom-partner-creator.tsx:993
 msgid "Still figuring it out"
 msgstr "Still figuring it out"
 
@@ -2400,7 +2400,7 @@ msgstr "Suggest"
 msgid "Suggested Answer"
 msgstr "Suggested Answer"
 
-#: components/call-summary.tsx:1312
+#: components/call-summary.tsx:1316
 msgid "Summarize this insight..."
 msgstr "Summarize this insight..."
 
@@ -2445,7 +2445,7 @@ msgstr "Tell us a little about your team and we’ll reach out shortly."
 msgid "Tell us about your requirements"
 msgstr "Tell us about your requirements"
 
-#: components/custom-partner-creator.tsx:794
+#: components/custom-partner-creator.tsx:798
 msgid "Tell us your preferences for your language partner."
 msgstr "Tell us your preferences for your language partner."
 
@@ -2494,7 +2494,7 @@ msgstr "this partner"
 msgid "This table highlights the latest {MEMORY_VISIBLE_LIMIT} memories. Older ones stay archived, so use the search field whenever you want to surface something specific."
 msgstr "This table highlights the latest {MEMORY_VISIBLE_LIMIT} memories. Older ones stay archived, so use the search field whenever you want to surface something specific."
 
-#: components/call-summary.tsx:1526
+#: components/call-summary.tsx:1530
 msgid "This will permanently remove the partner and cannot be undone."
 msgstr "This will permanently remove the partner and cannot be undone."
 
@@ -2522,7 +2522,7 @@ msgstr "Try again"
 msgid "Try using the latest version of Chrome, Edge, or Firefox."
 msgstr "Try using the latest version of Chrome, Edge, or Firefox."
 
-#: components/custom-partner-creator.tsx:748
+#: components/custom-partner-creator.tsx:752
 msgid "Type and press Enter..."
 msgstr "Type and press Enter..."
 
@@ -2531,12 +2531,12 @@ msgstr "Type and press Enter..."
 msgid "Type what you want to say in {nativeLangName}"
 msgstr "Type what you want to say in {nativeLangName}"
 
-#: contexts/glass-context.tsx:1840
+#: contexts/glass-context.tsx:1859
 msgid "Unable to access microphone"
 msgstr "Unable to access microphone"
 
-#: contexts/glass-context.tsx:1378
-#: contexts/glass-context.tsx:1655
+#: contexts/glass-context.tsx:1384
+#: contexts/glass-context.tsx:1674
 msgid "Unable to connect"
 msgstr "Unable to connect"
 
@@ -2553,9 +2553,9 @@ msgstr "Unable to create partner"
 msgid "Unable to delete partner"
 msgstr "Unable to delete partner"
 
-#: components/custom-partner-creator.tsx:398
-#: components/custom-partner-creator.tsx:605
-#: components/custom-partner-creator.tsx:646
+#: components/custom-partner-creator.tsx:402
+#: components/custom-partner-creator.tsx:609
+#: components/custom-partner-creator.tsx:650
 msgid "Unable to find partner"
 msgstr "Unable to find partner"
 
@@ -2568,7 +2568,7 @@ msgid "Unable to open billing portal"
 msgstr "Unable to open billing portal"
 
 #: components/billing/billing-content.tsx:519
-#: components/start-call.tsx:659
+#: components/start-call.tsx:641
 msgid "Unable to open checkout"
 msgstr "Unable to open checkout"
 
@@ -2580,17 +2580,17 @@ msgstr "Unable to open checkout"
 msgid "Unable to save level. Please try again."
 msgstr "Unable to save level. Please try again."
 
-#: components/custom-partner-creator.tsx:1226
-#: components/custom-partner-creator.tsx:1252
+#: components/custom-partner-creator.tsx:1236
+#: components/custom-partner-creator.tsx:1262
 msgid "Unable to save partner"
 msgstr "Unable to save partner"
 
 #: components/start-call.tsx:428
-#: components/start-call.tsx:641
+#: components/start-call.tsx:623
 msgid "Unable to start call"
 msgstr "Unable to start call"
 
-#: contexts/glass-context.tsx:1415
+#: contexts/glass-context.tsx:1421
 msgid "Unable to start conversation"
 msgstr "Unable to start conversation"
 
@@ -2652,11 +2652,11 @@ msgstr "Up to 500"
 msgid "Update"
 msgstr "Update"
 
-#: components/custom-partner-creator.tsx:1266
+#: components/custom-partner-creator.tsx:1276
 msgid "Update your custom partner details."
 msgstr "Update your custom partner details."
 
-#: components/call-summary.tsx:1265
+#: components/call-summary.tsx:1269
 msgid "Updating..."
 msgstr "Updating..."
 
@@ -2692,11 +2692,11 @@ msgstr "Usage Analytics"
 msgid "Use \"Select screen\" in Step 2 so Glass can capture the call audio."
 msgstr "Use \"Select screen\" in Step 2 so Glass can capture the call audio."
 
-#: components/start-call-partner-selection.tsx:365
+#: components/start-call-partner-selection.tsx:367
 msgid "Use during real conversations"
 msgstr "Use during real conversations"
 
-#: components/start-call.tsx:923
+#: components/start-call.tsx:905
 msgid "Use the browser's \"Hide\" option on the sharing bar so it doesn't cover Glass."
 msgstr "Use the browser's \"Hide\" option on the sharing bar so it doesn't cover Glass."
 
@@ -2720,11 +2720,11 @@ msgstr "Verifying your email..."
 msgid "Video games"
 msgstr "Video games"
 
-#: components/start-call-partner-selection.tsx:251
+#: components/start-call-partner-selection.tsx:253
 msgid "View profile"
 msgstr "View profile"
 
-#: contexts/glass-context.tsx:1656
+#: contexts/glass-context.tsx:1675
 msgid "Voice stream failed to initialize. Please try again."
 msgstr "Voice stream failed to initialize. Please try again."
 
@@ -2732,7 +2732,7 @@ msgstr "Voice stream failed to initialize. Please try again."
 msgid "Warm and meaningful connections through language."
 msgstr "Warm and meaningful connections through language."
 
-#: components/start-call.tsx:715
+#: components/start-call.tsx:697
 msgid "We couldn't capture your screen. Try a different window or browser."
 msgstr "We couldn't capture your screen. Try a different window or browser."
 
@@ -2773,7 +2773,7 @@ msgstr "Welcome back"
 msgid "What do you want to say..."
 msgstr "What do you want to say..."
 
-#: components/custom-partner-creator.tsx:1123
+#: components/custom-partner-creator.tsx:1133
 msgid "What interests you?"
 msgstr "What interests you?"
 
@@ -2781,11 +2781,11 @@ msgstr "What interests you?"
 msgid "What is your native language?"
 msgstr "What is your native language?"
 
-#: components/custom-partner-creator.tsx:763
+#: components/custom-partner-creator.tsx:767
 msgid "What kind of language partner are you looking for?"
 msgstr "What kind of language partner are you looking for?"
 
-#: components/custom-partner-creator.tsx:1124
+#: components/custom-partner-creator.tsx:1134
 msgid "What type of partner?"
 msgstr "What type of partner?"
 
@@ -2814,7 +2814,7 @@ msgstr "Would delete {0} memories"
 msgid "Yearly"
 msgstr "Yearly"
 
-#: components/start-call.tsx:783
+#: components/start-call.tsx:765
 msgid "Yes"
 msgstr "Yes"
 
@@ -2822,7 +2822,7 @@ msgstr "Yes"
 #: components/history/conversation-history.tsx:898
 #: components/messages.tsx:133
 #: components/messages.tsx:164
-#: components/start-call.tsx:811
+#: components/start-call.tsx:793
 msgid "You"
 msgstr "You"
 
@@ -2835,9 +2835,9 @@ msgstr "You're all set!"
 msgid "You're ready to have real conversations. No fear, no hesitation."
 msgstr "You're ready to have real conversations. No fear, no hesitation."
 
-#: contexts/glass-context.tsx:2290
-#: contexts/glass-context.tsx:2302
-#: contexts/glass-context.tsx:2315
+#: contexts/glass-context.tsx:2309
+#: contexts/glass-context.tsx:2321
+#: contexts/glass-context.tsx:2334
 msgid "Your conversation has been saved and is now available in History."
 msgstr "Your conversation has been saved and is now available in History."
 
@@ -2853,7 +2853,7 @@ msgstr "Your feedback..."
 msgid "your learning language"
 msgstr "your learning language"
 
-#: components/custom-partner-creator.tsx:456
+#: components/custom-partner-creator.tsx:460
 msgid "Your match is choosing a friendly photo."
 msgstr "Your match is choosing a friendly photo."
 
@@ -2865,11 +2865,11 @@ msgstr "Your match is choosing a friendly photo."
 #~ msgid "Your match is polishing their profile..."
 #~ msgstr "Your match is polishing their profile..."
 
-#: components/custom-partner-creator.tsx:454
+#: components/custom-partner-creator.tsx:458
 msgid "Your match just finished writing a profile for you."
 msgstr "Your match just finished writing a profile for you."
 
-#: components/custom-partner-creator.tsx:450
+#: components/custom-partner-creator.tsx:454
 msgid "Your match just said yes."
 msgstr "Your match just said yes."
 
