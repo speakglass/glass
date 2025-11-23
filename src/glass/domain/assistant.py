@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, Iterable
+import contextlib
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Iterable
 
 from . import prompts
 from ..schemas import ConversationScores, FeedbackResponse, SuggestionResponse
@@ -49,6 +50,41 @@ class LearningAssistant:
         self._suggested_for: set[str] = set()
         self.all_feedback: list[dict] = []
         self._last_suggestion: dict | None = None  # Most recent suggestion (for comparison with next user utterance)
+        # Dedicated queue to isolate LLM work from realtime ASR loop.
+        self._job_queue: asyncio.PriorityQueue[tuple[int, int, Callable[[], Awaitable[None]]]] = asyncio.PriorityQueue()
+        self._job_seq = 0
+        self._worker_task = asyncio.create_task(self._run_llm_queue())
+
+        # LLM job priorities (lower is earlier)
+        self._priority_translation = 0
+        self._priority_feedback = 10
+        self._priority_suggestion = 20
+
+    async def shutdown(self) -> None:
+        """Stop the background LLM worker."""
+        if self._worker_task and not self._worker_task.done():
+            self._worker_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._worker_task
+
+    async def _run_llm_queue(self) -> None:
+        while True:
+            try:
+                priority, _, job_factory = await self._job_queue.get()
+            except asyncio.CancelledError:
+                break
+            try:
+                await job_factory()
+            except asyncio.CancelledError:
+                break
+            except Exception as exc:
+                LOGGER.error(f"[LLMWorker] Job failed (priority={priority}): {exc}", exc_info=True)
+            finally:
+                self._job_queue.task_done()
+
+    def _enqueue_job(self, priority: int, job_factory: Callable[[], Awaitable[None]]) -> None:
+        self._job_seq += 1
+        self._job_queue.put_nowait((priority, self._job_seq, job_factory))
 
     async def do_translation(
         self,
@@ -123,42 +159,52 @@ class LearningAssistant:
         last_partner_message: str | None = None,
     ) -> None:
         """Process utterance: translation, feedback, and suggestions."""
-        tasks = []
+        async def translation_job() -> None:
+            await self.do_translation(text, utterance_id, source_lang, source, is_user, event_type_translation)
 
-        # 1. Translation (always)
-        tasks.append(
-            asyncio.create_task(
-                self.do_translation(text, utterance_id, source_lang, source, is_user, event_type_translation)
-            )
-        )
+        self._enqueue_job(self._priority_translation, translation_job)
 
         if is_user and self.feedback_mode != "off":
-            tasks.append(
-                asyncio.create_task(
-                    self.emit_feedback(
-                        text,
-                        utterance_id,
-                        source,
-                        event_type_feedback,
-                        recent_conversation=recent_conversation,
-                    )
+            async def feedback_job() -> None:
+                await self.emit_feedback(
+                    text,
+                    utterance_id,
+                    source,
+                    event_type_feedback,
+                    recent_conversation=recent_conversation,
                 )
-            )
+
+            self._enqueue_job(self._priority_feedback, feedback_job)
 
         if self.suggest_mode != "off" and not is_user and source != "ai":
-            tasks.append(
-                asyncio.create_task(
-                    self.emit_suggestion(
-                        utterance_id=utterance_id,
-                        event_type=event_type_suggestion,
-                        recent_conversation=recent_conversation,
-                        last_partner_message=last_partner_message,
-                    )
-                )
+            self.enqueue_suggestion_job(
+                utterance_id=utterance_id,
+                event_type=event_type_suggestion,
+                recent_conversation=recent_conversation,
+                last_partner_message=last_partner_message,
             )
 
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
+    def enqueue_suggestion_job(
+        self,
+        *,
+        utterance_id: str | None,
+        event_type,
+        recent_conversation: RecentConversation,
+        last_partner_message: str | None = None,
+        partner_name: str | None = None,
+        user_name: str | None = None,
+    ) -> None:
+        async def suggestion_job() -> None:
+            await self.emit_suggestion(
+                utterance_id=utterance_id,
+                event_type=event_type,
+                recent_conversation=recent_conversation,
+                last_partner_message=last_partner_message,
+                partner_name=partner_name,
+                user_name=user_name,
+            )
+
+        self._enqueue_job(self._priority_suggestion, suggestion_job)
 
     async def emit_feedback(
         self,

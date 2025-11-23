@@ -2,6 +2,7 @@
 set -e
 
 echo "🚀 Starting Glass API..."
+UVICORN_WORKERS=${UVICORN_WORKERS:-4}
 
 # Wait for database to be ready
 echo "🔍 Waiting for database..."
@@ -54,5 +55,5 @@ if [ $? -ne 0 ]; then
 fi
 
 # Start application
-echo "🎬 Starting uvicorn server..."
-exec uvicorn glass.app:create_app --factory --host 0.0.0.0 --port "${PORT:-8000}"
+echo "🎬 Starting uvicorn server with ${UVICORN_WORKERS} workers..."
+exec uvicorn glass.app:create_app --factory --host 0.0.0.0 --port "${PORT:-8000}" --workers "${UVICORN_WORKERS}"

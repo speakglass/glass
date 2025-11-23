@@ -236,14 +236,14 @@ async def audio_stream(
         f"mode={normalized_mode}, partner_id={partner_id}, user_id={user.user_id}"
     )
 
-    mic_queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=8)
+    mic_queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=64)
     source_queues: dict[str, asyncio.Queue[bytes]] = {"mic": mic_queue}
 
     mic_task = asyncio.create_task(pipeline.process_audio_stream(_queue_to_iter(mic_queue), source="mic"))
     tasks: list[asyncio.Task] = [mic_task]
 
     if allow_system_audio:
-        system_queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=8)
+        system_queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=64)
         source_queues["system"] = system_queue
         system_task = asyncio.create_task(pipeline.process_audio_stream(_queue_to_iter(system_queue), source="system"))
         tasks.append(system_task)

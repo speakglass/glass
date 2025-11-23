@@ -104,7 +104,7 @@ class ConversationSession:
         source: str = "mixed",
     ) -> None:
         """Process an incoming audio stream."""
-        asr_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=8)
+        asr_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=64)
 
         source_label = (source or "").lower()
         asr_language = self.partner_spoken_lang or self.assistant.learning_lang or self.default_lang
@@ -302,15 +302,13 @@ class ConversationSession:
                         augmented_lines = self._format_conversation_snippets(recent_conversation + [ai_msg])
                         ai_utt_id = ai_msg.get("utterance_id") or utterance_id
                         ai_text = ai_msg.get("text")
-                        asyncio.create_task(
-                            self.assistant.emit_suggestion(
-                                utterance_id=ai_utt_id,
-                                event_type=EventType.SUGGESTION,
-                                recent_conversation=augmented_lines,
-                                last_partner_message=ai_text,
-                                partner_name=self.roleplay.partner_name if self.mode == "roleplay" else None,
-                                user_name=self.roleplay.user_name if self.mode == "roleplay" else None,
-                            )
+                        self.assistant.enqueue_suggestion_job(
+                            utterance_id=ai_utt_id,
+                            event_type=EventType.SUGGESTION,
+                            recent_conversation=augmented_lines,
+                            last_partner_message=ai_text,
+                            partner_name=self.roleplay.partner_name if self.mode == "roleplay" else None,
+                            user_name=self.roleplay.user_name if self.mode == "roleplay" else None,
                         )
 
     async def _emit(

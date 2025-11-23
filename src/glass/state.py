@@ -67,6 +67,10 @@ class SessionManager:
         async with self._lock:
             pipeline = self._pipelines.pop(session_id, None)
             if pipeline:
+                try:
+                    await pipeline.dispose()
+                except Exception as exc:
+                    LOGGER.warning("Failed to dispose pipeline %s: %s", session_id, exc)
                 LOGGER.info("Disposed pipeline for session %s", session_id)
 
     def _pending_memory_key(self, conversation_id: str) -> str:

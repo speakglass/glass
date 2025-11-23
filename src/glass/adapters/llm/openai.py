@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-import httpx
+from openai import AsyncOpenAI
 
 LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +25,12 @@ class OpenAILLMAdapter:
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        # Reuse a single AsyncOpenAI client so concurrent calls share HTTP/2 connections.
+        self._client = AsyncOpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url,
+            timeout=self.timeout,
+        )
 
     async def call(
         self,
@@ -73,14 +79,6 @@ class OpenAILLMAdapter:
             result = await llm.call("Solve 8x + 7 = -23", response_schema=Answer)
             # result: dict = {"steps": [...], "result": "..."}
         """
-        from openai import AsyncOpenAI
-
-        client = AsyncOpenAI(
-            api_key=self.api_key,
-            base_url=self.base_url,
-            timeout=self.timeout,
-        )
-
         chosen_model = model or self.model
 
         # Build messages
@@ -110,7 +108,7 @@ class OpenAILLMAdapter:
                     )
 
                 # Use Structured Outputs via Responses API
-                response = await client.responses.parse(
+                response = await self._client.responses.parse(
                     model=chosen_model,
                     input=input_messages,
                     text_format=response_schema,
@@ -136,7 +134,7 @@ class OpenAILLMAdapter:
                 if tool_choice:
                     kwargs["tool_choice"] = tool_choice
 
-            completion = await client.chat.completions.create(**kwargs)
+            completion = await self._client.chat.completions.create(**kwargs)
 
             # Check for tool calls
             message = completion.choices[0].message
