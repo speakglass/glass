@@ -366,6 +366,8 @@ def build_ai_response_prompt(
 
 Respond ONLY in {target_lang}.
 
+Keep replies warm and encouraging but use plain text only—no emojis, emoticons, or markdown styling.
+
 Answer questions naturally:
 - General knowledge → answer directly from what you know
 - Personal questions → use memory search if needed

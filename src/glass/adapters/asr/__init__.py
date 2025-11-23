@@ -20,9 +20,10 @@ class ASRAdapter(Protocol):
         language: str | None = None,
     ): ...
 
+
 def build_asr_adapter(settings) -> ASRAdapter:
     provider = getattr(settings, "asr_provider", "deepgram").lower()
-    
+
     if provider == "deepgram":
         api_key = getattr(settings, "deepgram_key", None)
         if not api_key:
@@ -30,10 +31,10 @@ def build_asr_adapter(settings) -> ASRAdapter:
         return DeepgramASRAdapter(  # type: ignore[return-value]
             api_key=api_key,
             utterance_end_ms=getattr(settings, "deepgram_utterance_end_ms", 1000),
-            endpointing_ms=getattr(settings, "deepgram_endpointing_ms", 1000),
+            endpointing_ms=getattr(settings, "deepgram_endpointing_ms", None),
             vad_events=getattr(settings, "deepgram_enable_vad_events", True),
         )
-    
+
     raise ValueError(f"Unknown ASR provider: {provider}")
 
 
