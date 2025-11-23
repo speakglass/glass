@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Iterable
 import uuid
 import secrets
 
-from sqlalchemy import select, delete, or_, func
+from sqlalchemy import select, delete, or_, func, update
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..auth.jwt import AuthenticatedUser
@@ -18,9 +20,60 @@ from .db import (
     ConversationMessage,
     ConversationEvaluation,
     MessageFeedback,
+    MemoryRecord,
     PasswordResetToken,
     PersistenceDatabase,
 )
+
+
+LOGGER = logging.getLogger(__name__)
+
+
+async def _migrate_account_user_id(
+    session: AsyncSession,
+    *,
+    old_user_id: str,
+    new_user_id: str,
+    logger: logging.Logger,
+) -> AccountUser:
+    """Reassign persisted rows when an account's canonical ID changes."""
+    if old_user_id == new_user_id:
+        user = await session.get(AccountUser, old_user_id)
+        if user is None:
+            raise ValueError("Account user not found for migration")
+        return user
+
+    logger.info(
+        "[ensure_user] Reassigning account user id from %s to %s to match auth claims",
+        old_user_id,
+        new_user_id,
+    )
+    tables = (
+        ConversationPartner,
+        AccountConversation,
+        ConversationMessage,
+        ConversationEvaluation,
+        MessageFeedback,
+        MemoryRecord,
+        PasswordResetToken,
+    )
+    for model in tables:
+        result = await session.execute(
+            update(model).where(model.user_id == old_user_id).values(user_id=new_user_id)
+        )
+        if result.rowcount:
+            logger.debug(
+                "[ensure_user] Updated %s rows in %s during user id migration",
+                result.rowcount,
+                model.__tablename__,
+            )
+
+    await session.execute(update(AccountUser).where(AccountUser.id == old_user_id).values(id=new_user_id))
+    await session.flush()
+    migrated_user = await session.get(AccountUser, new_user_id)
+    if migrated_user is None:
+        raise RuntimeError("Failed to reload migrated account user")
+    return migrated_user
 
 
 def _clean_text(value: Any) -> str | None:
@@ -444,38 +497,57 @@ async def ensure_user(
     claims: AuthenticatedUser,
 ) -> AccountUser:
     """Create or update an account user from the authenticated claims."""
-    import logging
-
-    logger = logging.getLogger(__name__)
-
     try:
-        logger.info(f"[ensure_user] Starting for user_id={claims.user_id}, email={claims.email}")
+        LOGGER.info(f"[ensure_user] Starting for user_id={claims.user_id}, email={claims.email}")
         async_session_factory = db.session()
         async with async_session_factory() as session:
             user = await session.scalar(select(AccountUser).where(AccountUser.id == claims.user_id))
             now = datetime.now(timezone.utc)
             if user:
-                logger.info(f"[ensure_user] User exists, updating: {claims.user_id}")
+                LOGGER.info(f"[ensure_user] User exists, updating: {claims.user_id}")
                 user.email = claims.email
                 user.name = claims.name
                 user.avatar_url = claims.avatar_url
                 user.last_login_at = now
             else:
-                logger.info(f"[ensure_user] Creating new user: {claims.user_id}")
-                user = AccountUser(
-                    id=claims.user_id,
-                    email=claims.email,
-                    name=claims.name,
-                    avatar_url=claims.avatar_url,
-                    last_login_at=now,
-                )
-                session.add(user)
+                existing_by_email = None
+                if claims.email:
+                    existing_by_email = await session.scalar(
+                        select(AccountUser).where(AccountUser.email == claims.email)
+                    )
+                if existing_by_email:
+                    LOGGER.info(
+                        "[ensure_user] Found existing user by email (%s) with id=%s, migrating to claims id=%s",
+                        claims.email,
+                        existing_by_email.id,
+                        claims.user_id,
+                    )
+                    user = await _migrate_account_user_id(
+                        session,
+                        old_user_id=existing_by_email.id,
+                        new_user_id=claims.user_id,
+                        logger=LOGGER,
+                    )
+                    user.email = claims.email
+                    user.name = claims.name
+                    user.avatar_url = claims.avatar_url
+                    user.last_login_at = now
+                else:
+                    LOGGER.info(f"[ensure_user] Creating new user: {claims.user_id}")
+                    user = AccountUser(
+                        id=claims.user_id,
+                        email=claims.email,
+                        name=claims.name,
+                        avatar_url=claims.avatar_url,
+                        last_login_at=now,
+                    )
+                    session.add(user)
             await session.commit()
             await session.refresh(user)
-            logger.info(f"[ensure_user] Success for user_id={claims.user_id}")
+            LOGGER.info(f"[ensure_user] Success for user_id={claims.user_id}")
             return user
     except Exception as exc:
-        logger.error(f"[ensure_user] Error for user_id={claims.user_id}: {exc}", exc_info=True)
+        LOGGER.error(f"[ensure_user] Error for user_id={claims.user_id}: {exc}", exc_info=True)
         raise
 
 
