@@ -81,6 +81,8 @@ class ConversationSession:
         self.user_profile: dict[str, Any] | None = None
         self._last_conversation_summary_update: float = 0.0
         self._conversation_summary_task: asyncio.Task | None = None
+        self.user_spoken_lang: str | None = None
+        self.partner_spoken_lang: str | None = None
 
         # TTS processor (optional)
         self.synthesis: TTSProcessor | None = None
@@ -104,12 +106,17 @@ class ConversationSession:
         """Process an incoming audio stream."""
         asr_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=8)
 
+        source_label = (source or "").lower()
+        asr_language = self.partner_spoken_lang or self.assistant.learning_lang or self.default_lang
+        if source_label == "mic" or source_label.startswith("mic"):
+            asr_language = self.user_spoken_lang or self.assistant.native_lang or asr_language
+
         tasks = [
             asyncio.create_task(
                 self.speech_recognition.process_stream(
                     asr_queue,
                     source=source,
-                    language=self.assistant.learning_lang,
+                    language=asr_language,
                     event_type_transcript=EventType.TRANSCRIPT_FINAL,
                     event_type_partial=EventType.TRANSCRIPT_INTERIM,
                 )
@@ -545,7 +552,6 @@ class ConversationSession:
             "voice_id": None,
             "learning_lang": learning_lang,
             "native_lang": native_lang,
-            "is_system": False,
         }
 
     def _apply_roleplay_partner(self, profile: dict[str, Any]) -> None:
@@ -625,6 +631,9 @@ class ConversationSession:
         native_lang: str,
         mode: str,
         partner: dict[str, Any] | None = None,
+        *,
+        user_spoken_lang: str | None = None,
+        partner_spoken_lang: str | None = None,
     ) -> None:
         """Set session configuration including languages, mode, and partner info."""
         self.assistant.learning_lang = learning_lang
@@ -637,6 +646,9 @@ class ConversationSession:
         self.partner_profile = self._derive_partner_profile(partner, learning_lang, native_lang, mode)
         self.partner_id = self.partner_profile.get("id")
         self._apply_roleplay_partner(self.partner_profile)
+
+        self.user_spoken_lang = user_spoken_lang or self.user_spoken_lang or native_lang
+        self.partner_spoken_lang = partner_spoken_lang or self.partner_spoken_lang or learning_lang
 
         partner_label = self.roleplay.partner_name
         partner_desc = self.roleplay.partner_description
@@ -817,6 +829,9 @@ class ConversationSession:
         native_lang: str = "en",
         mode: str = "live_call",
         partner: dict[str, Any] | None = None,
+        *,
+        user_spoken_lang: str | None = None,
+        partner_spoken_lang: str | None = None,
     ) -> None:
         """Initialize session for a user.
 
@@ -856,7 +871,14 @@ class ConversationSession:
         )
 
         # Set session configuration
-        await self.set_session_config(learning_lang, native_lang, mode, partner=partner)
+        await self.set_session_config(
+            learning_lang,
+            native_lang,
+            mode,
+            partner=partner,
+            user_spoken_lang=user_spoken_lang or native_lang,
+            partner_spoken_lang=partner_spoken_lang or learning_lang,
+        )
 
         # Load user context
         await self.load_user_context(user_id)

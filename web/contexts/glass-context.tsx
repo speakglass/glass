@@ -75,7 +75,6 @@ export interface VoiceSettings {
   languageLevel?: LearningLevel;
   pronunciationMode?: 'native' | 'romaji';
   aiMessageDurationSec?: number | null; // null = no time limit
-  glassMode?: boolean;
   showManualSuggestButtons?: boolean;
 }
 
@@ -85,6 +84,7 @@ export interface SessionConfig {
   partnerId?: string | null;
   partner?: RoleplayPartnerProfile | null;
   screenStream?: MediaStream | null;
+  spokenLanguages?: { user: string; partner: string } | null;
 }
 
 export interface RoleplayPartnerProfile {
@@ -95,7 +95,6 @@ export interface RoleplayPartnerProfile {
   voiceId?: string | null;
   learningLang?: string | null;
   nativeLang?: string | null;
-  isSystem?: boolean;
 }
 
 export type StructuredSuggestion = {
@@ -293,7 +292,6 @@ export function GlassProvider({
         languageLevel: undefined,
         pronunciationMode: 'native',
         aiMessageDurationSec: null,
-        glassMode: false,
         showManualSuggestButtons: false,
       };
     try {
@@ -313,7 +311,6 @@ export function GlassProvider({
           languageLevel: isLearningLevel(parsed.languageLevel) ? parsed.languageLevel : undefined,
           pronunciationMode: parsed.pronunciationMode || 'native',
           aiMessageDurationSec: parsed.aiMessageDurationSec ?? null,
-          glassMode: parsed.glassMode ?? false,
           showManualSuggestButtons: parsed.showManualSuggestButtons ?? false,
         };
       }
@@ -328,7 +325,6 @@ export function GlassProvider({
       languageLevel: undefined,
       pronunciationMode: 'native',
       aiMessageDurationSec: null,
-      glassMode: false,
       showManualSuggestButtons: false,
     };
   });
@@ -1370,7 +1366,7 @@ export function GlassProvider({
   // Connect to Glass API
   const connect = useCallback(
     async (config: SessionConfig, options?: { resume?: boolean }) => {
-      const { languages, mode, partner, partnerId, screenStream } = config;
+      const { languages, mode, partner, partnerId, screenStream, spokenLanguages } = config;
       const resume = options?.resume ?? false;
       lastSessionConfigRef.current = { ...config, screenStream: undefined };
       allowReconnectRef.current = true;
@@ -1567,6 +1563,12 @@ export function GlassProvider({
         if (initialPartnerId) {
           params.set('partner_id', initialPartnerId);
         }
+        if (spokenLanguages?.user) {
+          params.set('user_spoken_lang', spokenLanguages.user);
+        }
+        if (spokenLanguages?.partner) {
+          params.set('partner_spoken_lang', spokenLanguages.partner);
+        }
         params.set('auth_token', token);
         const ws = new WebSocket(`${wsUrl}/ws/audio?${params.toString()}`);
         wsRef.current = ws;
@@ -1631,6 +1633,8 @@ export function GlassProvider({
                 native_lang: languages.nativeLang,
                 mode: mode,
                 partner_id: partnerId || partner?.id || null,
+                user_spoken_lang: spokenLanguages?.user || null,
+                partner_spoken_lang: spokenLanguages?.partner || null,
               })
             );
             ws.send(

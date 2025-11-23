@@ -248,8 +248,8 @@ export function ConversationHistory() {
     isLoading: partnerListLoading,
     refetch: refetchPartners,
   } = useQuery({
-    queryKey: ['history-partners', selected?.learningLang, isPartnerManagerOpen],
-    queryFn: () => fetchPartners(token!, selected?.learningLang),
+    queryKey: ['history-partners', token, isPartnerManagerOpen],
+    queryFn: () => fetchPartners(token!),
     enabled: Boolean(token && isPartnerManagerOpen),
     staleTime: 5 * 60 * 1000,
   });
@@ -274,10 +274,7 @@ export function ConversationHistory() {
     setIsPartnerManagerOpen(false);
   }, [selected?.id]);
   const isRoleplayPartner = Boolean(
-    partnerProfile?.kind === 'roleplay' ||
-      selected?.partner?.kind === 'roleplay' ||
-      partnerProfile?.isSystem ||
-      selected?.partner?.isSystem
+    partnerProfile?.kind === 'roleplay' || selected?.partner?.kind === 'roleplay'
   );
   const sessionMode = (isRoleplayPartner ? 'roleplay' : 'live_call') as 'roleplay' | 'live_call';
   const canManagePartner = sessionMode !== 'roleplay';

@@ -182,7 +182,11 @@ export function AccountSessionProvider({ children }: { children: React.ReactNode
         const result = await refetch();
         return result.data ?? null;
       },
-      markOnboardingComplete: async (settings: { learningLang: string; nativeLang: string; languageLevel: LearningLevel }) => {
+      markOnboardingComplete: async (settings: {
+        learningLang: string;
+        nativeLang: string;
+        languageLevel: LearningLevel;
+      }) => {
         await markOnboardingCompleteMutation.mutateAsync(settings);
       },
     }),

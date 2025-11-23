@@ -14,7 +14,6 @@ from .api import router as http_router
 from .api.websocket import router as ws_router
 from .state import AppState, build_app_state
 from .config import get_settings
-from .persistence.service import ensure_default_partners
 
 
 def create_app() -> FastAPI:
@@ -63,7 +62,6 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def _init_history_store() -> None:
         await app.state.history_store.init_models()
-        await ensure_default_partners(app.state.history_store)
 
     logger = logging.getLogger("glass.http")
 

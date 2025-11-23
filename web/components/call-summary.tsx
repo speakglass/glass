@@ -138,8 +138,8 @@ const CallSummary = ({
     isLoading: isPartnerListLoading,
     refetch: refetchPartners,
   } = useQuery({
-    queryKey: ['call-summary-partners', learningLang, isPartnerManagerOpen],
-    queryFn: () => fetchPartners(token!, learningLang || undefined),
+    queryKey: ['call-summary-partners', token, isPartnerManagerOpen],
+    queryFn: () => fetchPartners(token!),
     enabled: Boolean(token && isPartnerManagerOpen),
     staleTime: 5 * 60 * 1000,
   });
@@ -560,9 +560,7 @@ const CallSummary = ({
     return directory;
   }, [partnerProfile, userProfile]);
 
-  const isRoleplayPartner = Boolean(
-    partnerProfile?.kind === 'roleplay' || partner?.kind === 'roleplay' || partnerProfile?.isSystem || partner?.isSystem
-  );
+  const isRoleplayPartner = Boolean(partnerProfile?.kind === 'roleplay' || partner?.kind === 'roleplay');
   const sessionMode = (isRoleplayPartner ? 'roleplay' : 'live_call') as 'roleplay' | 'live_call';
   const canManagePartner = sessionMode !== 'roleplay';
   const preparePartnerEdit = (partner?: {

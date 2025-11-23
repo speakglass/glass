@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconn
 from ..adapters.websocket import WebSocketEventsAdapter
 from ..auth.jwt import AuthenticatedUser, decode_service_token
 from ..config import get_settings
-from ..utils.audio import iter_multiplexed_audio
+from ..utils.audio import iter_multiplexed_audio, resolve_session_languages
 from ..persistence.service import (
     upsert_conversation,
     get_partner_by_id,
@@ -58,7 +58,6 @@ def _partner_to_profile(partner) -> dict[str, Any]:
         "voice_id": partner.voice_id,
         "learning_lang": partner.learning_lang,
         "native_lang": partner.native_lang,
-        "is_system": partner.user_id is None,
     }
 
 
@@ -127,6 +126,8 @@ async def audio_stream(
     native_lang: str = Query(default="ko"),
     mode: str = Query(default="live_call"),
     partner_id: str | None = Query(default=None),
+    user_spoken_lang: str | None = Query(default=None, alias="user_spoken_lang"),
+    partner_spoken_lang: str | None = Query(default=None, alias="partner_spoken_lang"),
 ) -> None:
     """Multiplexed audio: 0x01=mic, 0x02=system."""
     origin = websocket.headers.get("origin")
@@ -172,15 +173,23 @@ async def audio_stream(
         resolved_learning_lang = "en"
     if not resolved_native_lang:
         resolved_native_lang = "en"
-    learning_lang = resolved_learning_lang
-    native_lang = resolved_native_lang
+
+    # Fetch partner profile if roleplay mode
+    normalized_mode = (mode or "").strip().lower() or "live_call"
     if partner_id and user and history_store:
         partner_model = await get_partner_by_id(history_store, partner_id, user_id=user.user_id)
         if partner_model:
             partner_profile = _partner_to_profile(partner_model)
         else:
             LOGGER.warning(f"[Roleplay] Partner {partner_id} not found for user {user.user_id}")
-    normalized_mode = (mode or "").lower()
+
+    learning_lang, native_lang = resolve_session_languages(
+        normalized_mode,
+        resolved_learning_lang,
+        resolved_native_lang,
+        partner_profile,
+    )
+
     allow_system_audio = normalized_mode == "live_call"
     events_adapter = WebSocketEventsAdapter(websocket) if events else None
     pipeline = await app_state.session_manager.get_or_create(sid, events_port=events_adapter)
@@ -193,8 +202,10 @@ async def audio_stream(
         avatar_url=user.avatar_url,
         learning_lang=learning_lang,
         native_lang=native_lang,
-        mode=mode,
+        mode=normalized_mode,
         partner=partner_profile,
+        user_spoken_lang=user_spoken_lang,
+        partner_spoken_lang=partner_spoken_lang,
     )
 
     if not getattr(pipeline, "_discord_notified_start", False):
@@ -212,7 +223,7 @@ async def audio_stream(
                             "inline": False,
                         },
                         {"name": "Session ID", "value": sid, "inline": True},
-                        {"name": "Mode", "value": mode or "unknown", "inline": True},
+                        {"name": "Mode", "value": normalized_mode or "unknown", "inline": True},
                         {"name": "Languages", "value": f"{learning_lang} → {native_lang}", "inline": True},
                     ],
                     "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -222,7 +233,7 @@ async def audio_stream(
 
     LOGGER.info(
         f"WebSocket connected with learning_lang={learning_lang}, native_lang={native_lang}, "
-        f"mode={mode}, partner_id={partner_id}, user_id={user.user_id}"
+        f"mode={normalized_mode}, partner_id={partner_id}, user_id={user.user_id}"
     )
 
     mic_queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=8)
@@ -237,7 +248,7 @@ async def audio_stream(
         system_task = asyncio.create_task(pipeline.process_audio_stream(_queue_to_iter(system_queue), source="system"))
         tasks.append(system_task)
     else:
-        LOGGER.info(f"System audio disabled for session {sid} (mode={mode})")
+        LOGGER.info(f"System audio disabled for session {sid} (mode={normalized_mode})")
 
     LOGGER.debug(
         f"Starting multiplexed audio streams for session {sid} (system_audio={'on' if allow_system_audio else 'off'})"
@@ -584,7 +595,6 @@ async def _maybe_enrich_live_partner(
 ) -> None:
     """Use LLM to extract partner profile hints and update placeholder partners."""
     try:
-        meta = partner.extra_metadata or {}
         if getattr(partner, "kind", None) != "live_call":
             return
         extracted = await extract_partner_profile_with_llm(
@@ -607,14 +617,6 @@ async def _maybe_enrich_live_partner(
             updates["name"] = candidate_name
         if candidate_desc is not None and candidate_desc != partner.description:
             updates["description"] = candidate_desc
-        meta_update = dict(meta)
-        meta_update["last_autofill_session"] = session_id
-        if candidate_name:
-            meta_update["auto_name_source"] = "conversation_llm"
-        if candidate_desc:
-            meta_update["auto_description_source"] = "conversation_llm"
-        if meta_update != meta:
-            updates.setdefault("extra_metadata", meta_update)
         if not updates:
             return
         await update_partner_details(
@@ -622,7 +624,6 @@ async def _maybe_enrich_live_partner(
             partner.id,
             name=updates.get("name"),
             description=updates.get("description"),
-            extra_metadata=updates.get("extra_metadata"),
         )
         LOGGER.info(
             "[AutoSave] Updated live-call partner %s with extracted profile (name=%s)",

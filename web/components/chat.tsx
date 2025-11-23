@@ -16,13 +16,6 @@ export default function Chat() {
   const { status, conversationAnalysis, showSummary, closeSummary } = useGlass();
   const [analysisProgress, setAnalysisProgress] = useState(0);
 
-  // Debug: Log render conditions
-  console.log('[Chat] Rendering with:', {
-    status: status.value,
-    showSummary,
-    hasAnalysis: !!conversationAnalysis,
-  });
-
   // Fade in on mount (after onboarding transition)
   useEffect(() => {
     document.body.style.opacity = '1';

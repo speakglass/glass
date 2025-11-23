@@ -61,11 +61,21 @@ class LearningAssistant:
     ) -> None:
         """Translate text and emit translation event."""
         try:
-            # Determine target language
-            if self.mode in ("roleplay", "live_call"):
-                target_lang = lang_code_to_name(self.native_lang)
+            source_code = (source_lang or "").strip().lower()
+            learning_code = (self.learning_lang or "").strip().lower()
+            native_code = (self.native_lang or "").strip().lower()
+            target_code = native_code if is_user else learning_code
+
+            if source_code and learning_code and source_code == learning_code:
+                target_code = native_code or target_code
+            elif source_code and native_code and source_code == native_code:
+                target_code = learning_code or target_code
             else:
-                target_lang = lang_code_to_name(self.learning_lang if is_user else self.native_lang)
+                if not target_code:
+                    target_code = native_code or learning_code or source_code
+
+            target_code = (target_code or source_code or "en").strip().lower()
+            target_lang = lang_code_to_name(target_code or "en")
 
             LOGGER.info(f"[Translation] Starting for utterance {utterance_id}")
 
@@ -84,13 +94,13 @@ class LearningAssistant:
             if translation:
                 self._translations[utterance_id] = translation
                 await self._emit(
-                    event_type_translation,
-                    {
-                        "utterance_id": utterance_id,
-                        "text": translation,
-                        "source_lang": source_lang,
-                        "target_lang": target_lang.lower(),
-                    },
+                        event_type_translation,
+                        {
+                            "utterance_id": utterance_id,
+                            "text": translation,
+                            "source_lang": source_code or source_lang or "",
+                            "target_lang": target_code or "",
+                        },
                     source=source,
                 )
                 LOGGER.info(f"[Translation] Completed for {utterance_id}")

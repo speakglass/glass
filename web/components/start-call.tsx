@@ -19,7 +19,6 @@ import { Trans } from '@lingui/react/macro';
 import { t } from '@lingui/core/macro';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ConversationPartner, fetchPartners, createCheckoutSession, fetchAccountSnapshot } from '@/lib/account-api';
-import { useVoicePreviewPlayer } from '@/hooks/use-voice-preview';
 import { getLanguageName } from '@/lib/conversation-display';
 import { LANGUAGES } from './onboarding/onboarding-data';
 
@@ -34,7 +33,6 @@ type DisplayMediaVideoOptions = MediaTrackConstraints & {
 export default function StartCall() {
   const { status, connect, updateSettings, settings } = useGlass();
   const { onboardingStatus, snapshot, token, refresh } = useAccountSession();
-  const { playPreview, stopPreview, loadingVoiceId, playingVoiceId } = useVoicePreviewPlayer(token);
   const router = useRouter();
   const pathname = usePathname();
   const langSegment = pathname.split('/')[1] || 'en';
@@ -48,9 +46,9 @@ export default function StartCall() {
     nativeLang: snapshot?.user.nativeLang || settings.languages?.nativeLang || '',
   });
   const [liveCallLanguageMode, setLiveCallLanguageMode] = useState<'shared' | 'custom'>('shared');
-  const [liveCallCustomLanguages, setLiveCallCustomLanguages] = useState<LanguageSettings>({
-    learningLang: snapshot?.user.learningLang || settings.languages?.learningLang || '',
-    nativeLang: snapshot?.user.nativeLang || settings.languages?.nativeLang || '',
+  const [liveCallCustomPair, setLiveCallCustomPair] = useState<{ youLang: string; partnerLang: string }>({
+    youLang: '',
+    partnerLang: '',
   });
   const [selectedMode, setSelectedMode] = useState<'roleplay' | 'live_call' | null>('roleplay');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
@@ -62,7 +60,8 @@ export default function StartCall() {
   const [isDeletePartnerDialogOpen, setIsDeletePartnerDialogOpen] = useState(false);
   const [partnerPendingDelete, setPartnerPendingDelete] = useState<ConversationPartner | null>(null);
   const [isStartingCall, setIsStartingCall] = useState(false);
-  const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
+  const [conversationQuotaDialogOpen, setConversationQuotaDialogOpen] = useState(false);
+  const [partnerQuotaDialogOpen, setPartnerQuotaDialogOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [screenSharePreviewStream, setScreenSharePreviewStream] = useState<MediaStream | null>(null);
   const screenShareStreamRef = useRef<MediaStream | null>(null);
@@ -71,12 +70,22 @@ export default function StartCall() {
   const [isRequestingScreenShare, setIsRequestingScreenShare] = useState(false);
   const [screenShareError, setScreenShareError] = useState<'denied' | 'cancelled' | 'failed' | 'no_audio' | null>(null);
   const conversationLimit = snapshot?.limits?.conversations || null;
-  const limitEnabled = Boolean(conversationLimit?.enabled && conversationLimit?.limit);
-  const limitMax = conversationLimit?.limit ?? null;
-  const limitUsed = conversationLimit?.used ?? 0;
-  const limitDisplayUsed = limitMax !== null ? Math.min(limitUsed, limitMax) : limitUsed;
-  const limitUsageLabel = limitMax !== null ? `${limitDisplayUsed}/${limitMax}` : null;
-  const limitBlocked = Boolean(limitEnabled && conversationLimit?.blocked);
+  const conversationLimitEnabled = Boolean(conversationLimit?.enabled && conversationLimit?.limit);
+  const conversationLimitMax = conversationLimit?.limit ?? null;
+  const conversationLimitUsed = conversationLimit?.used ?? 0;
+  const conversationLimitDisplayUsed =
+    conversationLimitMax !== null ? Math.min(conversationLimitUsed, conversationLimitMax) : conversationLimitUsed;
+  const conversationLimitUsageLabel =
+    conversationLimitMax !== null ? `${conversationLimitDisplayUsed}/${conversationLimitMax}` : null;
+  const conversationLimitBlocked = Boolean(conversationLimitEnabled && conversationLimit?.blocked);
+  const partnerLimit = snapshot?.limits?.partners || null;
+  const partnerLimitEnabled = Boolean(partnerLimit?.enabled && partnerLimit?.limit);
+  const partnerLimitMax = partnerLimit?.limit ?? null;
+  const partnerLimitUsed = partnerLimit?.used ?? 0;
+  const partnerLimitDisplayUsed =
+    partnerLimitMax !== null ? Math.min(partnerLimitUsed, partnerLimitMax) : partnerLimitUsed;
+  const partnerLimitUsageLabel = partnerLimitMax !== null ? `${partnerLimitDisplayUsed}/${partnerLimitMax}` : null;
+  const partnerLimitBlocked = Boolean(partnerLimitEnabled && partnerLimit?.blocked);
   const stopOwnedScreenShare = useCallback(() => {
     const stream = screenShareStreamRef.current;
     if (stream) {
@@ -89,17 +98,7 @@ export default function StartCall() {
     languages.learningLang && languages.learningLang.length > 0
       ? getLanguageName(languages.learningLang, langSegment)
       : t`your learning language`;
-  const customUserLanguageName =
-    liveCallCustomLanguages.nativeLang && liveCallCustomLanguages.nativeLang.length > 0
-      ? getLanguageName(liveCallCustomLanguages.nativeLang, langSegment)
-      : t`your language`;
-  const customPartnerLanguageName =
-    liveCallCustomLanguages.learningLang && liveCallCustomLanguages.learningLang.length > 0
-      ? getLanguageName(liveCallCustomLanguages.learningLang, langSegment)
-      : t`their language`;
-  const customLanguageSelectionReady = Boolean(
-    liveCallCustomLanguages.learningLang && liveCallCustomLanguages.nativeLang
-  );
+  const customLanguageSelectionReady = Boolean(liveCallCustomPair.youLang && liveCallCustomPair.partnerLang);
   const liveLanguagesReady = liveCallLanguageMode === 'shared' || customLanguageSelectionReady;
 
   const isLiveCallStarting = selectedMode === 'live_call' && isStartingCall;
@@ -158,10 +157,6 @@ export default function StartCall() {
     return 'bg-card border border-border hover:bg-accent/50 hover:border-border';
   };
 
-  const getScaleClass = () => {
-    return 'hover:scale-[1.01] active:scale-[0.99]';
-  };
-
   const getBackButtonClass = () => {
     return 'text-muted-foreground hover:text-foreground text-sm transition-colors';
   };
@@ -200,12 +195,6 @@ export default function StartCall() {
     updateSettings({ languages: userLanguages });
   }, [snapshot?.user.learningLang, snapshot?.user.nativeLang, updateSettings]);
 
-  useEffect(() => {
-    if (liveCallLanguageMode === 'shared') {
-      setLiveCallCustomLanguages(languages);
-    }
-  }, [languages, liveCallLanguageMode]);
-
   // Reset step when disconnected. Only depend on status changes so quota refreshes
   // don't accidentally clear the local wizard state.
   useEffect(() => {
@@ -223,16 +212,16 @@ export default function StartCall() {
       stopOwnedScreenShare();
       setScreenShareError(null);
       setLiveCallLanguageMode('shared');
-      setLiveCallCustomLanguages((prev) => profileLanguagesRef.current || prev);
+      setLiveCallCustomPair({ youLang: '', partnerLang: '' });
     }
   }, [status.value, stopOwnedScreenShare]);
 
   // Removed: Level completion logic moved to onboarding flow
 
-  const handleCustomLanguageSelect = (type: 'learning' | 'native', code: string) => {
-    setLiveCallCustomLanguages((prev) => ({
+  const handleCustomLanguageSelect = (target: 'you' | 'partner', code: string) => {
+    setLiveCallCustomPair((prev) => ({
       ...prev,
-      [type === 'learning' ? 'learningLang' : 'nativeLang']: code,
+      [target === 'you' ? 'youLang' : 'partnerLang']: code,
     }));
   };
 
@@ -268,24 +257,6 @@ export default function StartCall() {
       });
     }
   }, [screenSharePreviewStream]);
-
-  const handleVoicePreview = useCallback(
-    async (voiceId: string, sampleText: string) => {
-      try {
-        const fallbackText =
-          sampleText && sampleText.trim().length > 0
-            ? sampleText
-            : "Hi! I'm your Glass roleplay partner. Let's practice together.";
-        await playPreview({ voiceId, sampleText: fallbackText });
-      } catch (error) {
-        console.error('[StartCall] Voice preview failed', error);
-        toast.error(t`Unable to play preview`, {
-          description: error instanceof Error ? error.message : undefined,
-        });
-      }
-    },
-    [playPreview]
-  );
 
   const handleScreenShareSelect = useCallback(async () => {
     if (isRequestingScreenShare) {
@@ -355,12 +326,20 @@ export default function StartCall() {
       });
       return;
     }
-    setIsCustomPartnerCreatorOpen(true);
+    const run = async () => {
+      if (partnerLimitEnabled) {
+        const hasCapacity = await ensurePartnerCapacity();
+        if (!hasCapacity) {
+          return;
+        }
+      }
+      setIsCustomPartnerCreatorOpen(true);
+    };
+    void run();
   };
 
   const openEditPartnerModal = (partner: ConversationPartner) => {
     setPartnerToEdit(partner);
-    stopPreview();
     setIsEditPartnerModalOpen(true);
   };
 
@@ -371,11 +350,13 @@ export default function StartCall() {
   const handleCloseEditPartnerModal = () => {
     setIsEditPartnerModalOpen(false);
     setPartnerToEdit(null);
-    stopPreview();
   };
 
   const handlePartnerCreated = (partner: ConversationPartner) => {
     setSelectedPartnerId(partner.id);
+    if (partner.kind === 'roleplay') {
+      adjustPartnerLimitUsage(1);
+    }
   };
 
   const handlePartnerUpdated = (partner: ConversationPartner) => {
@@ -398,6 +379,9 @@ export default function StartCall() {
     if (selectedPartnerId === partnerId) {
       setSelectedPartnerId('');
     }
+    if (partnerPendingDelete && partnerPendingDelete.id === partnerId && partnerPendingDelete.kind === 'roleplay') {
+      adjustPartnerLimitUsage(-1);
+    }
     handleCancelDeletePartner();
   };
 
@@ -406,7 +390,7 @@ export default function StartCall() {
   };
 
   const ensureConversationCapacity = useCallback(async () => {
-    if (!limitEnabled) {
+    if (!conversationLimitEnabled) {
       return true;
     }
 
@@ -450,24 +434,94 @@ export default function StartCall() {
 
     const latestLimit = latestSnapshot?.limits?.conversations ?? conversationLimit;
     if (latestLimit?.limit && latestLimit.used >= latestLimit.limit) {
-      setQuotaDialogOpen(true);
+      setConversationQuotaDialogOpen(true);
       return false;
     }
     return true;
-  }, [limitEnabled, token, refresh, snapshot, conversationLimit, queryClient]);
+  }, [conversationLimitEnabled, token, refresh, snapshot, conversationLimit, queryClient]);
 
-  const handleInitialStart = () => {
-    if (limitEnabled) {
-      if (limitBlocked) {
-        setQuotaDialogOpen(true);
-        return;
-      }
-      const hasLocalCapacity = !(conversationLimit?.limit && conversationLimit.used >= conversationLimit.limit);
-      if (!hasLocalCapacity) {
-        setQuotaDialogOpen(true);
-        return;
+  const ensurePartnerCapacity = useCallback(async () => {
+    if (!partnerLimitEnabled) {
+      return true;
+    }
+
+    let latestSnapshot = snapshot;
+    if (token) {
+      try {
+        latestSnapshot = await fetchAccountSnapshot(token);
+        if (latestSnapshot) {
+          const snapshotForCache = latestSnapshot;
+          queryClient.setQueryData<SessionData | undefined>(['accountSession'], (previous) => {
+            if (!previous) {
+              return previous;
+            }
+            return { ...previous, snapshot: snapshotForCache };
+          });
+        }
+      } catch (error) {
+        const statusCode =
+          typeof error === 'object' && error && 'status' in error ? (error as { status?: number }).status : null;
+        if (statusCode === 401) {
+          const refreshed = await refresh();
+          latestSnapshot = refreshed?.snapshot ?? latestSnapshot ?? snapshot;
+        } else {
+          console.error('[StartCall] Failed to fetch snapshot for partner limit check', error);
+        }
       }
     }
+
+    if (!latestSnapshot) {
+      try {
+        const refreshed = await refresh();
+        latestSnapshot = refreshed?.snapshot ?? snapshot;
+      } catch (error) {
+        console.error('[StartCall] Failed to refresh before partner action', error);
+        toast.error(t`Unable to create partner`, {
+          description: t`Please try again in a moment.`,
+        });
+        return false;
+      }
+    }
+
+    const latestLimit = latestSnapshot?.limits?.partners ?? partnerLimit;
+    if (latestLimit?.limit && latestLimit.used >= latestLimit.limit) {
+      setPartnerQuotaDialogOpen(true);
+      return false;
+    }
+    return true;
+  }, [partnerLimitEnabled, token, refresh, snapshot, partnerLimit, queryClient]);
+
+  const adjustPartnerLimitUsage = useCallback(
+    (delta: number) => {
+      queryClient.setQueryData<SessionData | undefined>(['accountSession'], (previous) => {
+        if (!previous?.snapshot?.limits?.partners) {
+          return previous;
+        }
+        const partnersLimit = previous.snapshot.limits.partners;
+        const limitValue = partnersLimit.limit;
+        const nextUsed = Math.max(0, partnersLimit.used + delta);
+        const nextRemaining = limitValue !== null ? Math.max(limitValue - nextUsed, 0) : partnersLimit.remaining;
+        return {
+          ...previous,
+          snapshot: {
+            ...previous.snapshot,
+            limits: {
+              ...previous.snapshot.limits,
+              partners: {
+                ...partnersLimit,
+                used: nextUsed,
+                remaining: nextRemaining,
+                blocked: limitValue !== null ? nextUsed >= limitValue : partnersLimit.blocked,
+              },
+            },
+          },
+        };
+      });
+    },
+    [queryClient]
+  );
+
+  const handleInitialStart = () => {
     setSelectedMode('roleplay'); // Set mode to roleplay when starting
     setStep('partner'); // Skip mode selection, go directly to partner selection
   };
@@ -517,7 +571,7 @@ export default function StartCall() {
         setScreenShareError(null);
       }
 
-      if (limitEnabled) {
+      if (conversationLimitEnabled) {
         const hasCapacity = await ensureConversationCapacity();
         if (!hasCapacity) {
           setIsStartingCall(false);
@@ -525,25 +579,51 @@ export default function StartCall() {
         }
       }
 
-      const languagesForSession: LanguageSettings =
-        selectedMode === 'roleplay' && partnerForSession
-          ? {
-              learningLang:
-                partnerForSession.nativeLang ||
-                partnerForSession.learningLang ||
-                languages.nativeLang ||
-                languages.learningLang ||
-                '',
-              nativeLang:
-                partnerForSession.learningLang ||
-                partnerForSession.nativeLang ||
-                languages.learningLang ||
-                languages.nativeLang ||
-                '',
-            }
-          : selectedMode === 'live_call' && liveCallLanguageMode === 'custom'
-          ? liveCallCustomLanguages
-          : languages;
+      const baseLearning = languages.learningLang || languages.nativeLang || 'en';
+      const baseNative = languages.nativeLang || languages.learningLang || 'en';
+      let languagesForSession: LanguageSettings = languages;
+      let spokenLanguages: { user: string; partner: string } | null = null;
+      if (selectedMode === 'roleplay') {
+        if (partnerForSession) {
+          languagesForSession = {
+            learningLang:
+              partnerForSession.nativeLang ||
+              partnerForSession.learningLang ||
+              languages.nativeLang ||
+              languages.learningLang ||
+              '',
+            nativeLang:
+              partnerForSession.learningLang ||
+              partnerForSession.nativeLang ||
+              languages.learningLang ||
+              languages.nativeLang ||
+              '',
+          };
+          spokenLanguages = {
+            user: partnerForSession.nativeLang || languages.learningLang || '',
+            partner: partnerForSession.learningLang || languages.nativeLang || '',
+          };
+        } else {
+          spokenLanguages = {
+            user: languages.learningLang || languages.nativeLang || '',
+            partner: languages.nativeLang || languages.learningLang || '',
+          };
+        }
+      } else if (selectedMode === 'live_call') {
+        languagesForSession = languages;
+        if (liveCallLanguageMode === 'shared') {
+          const sharedLang = languages.learningLang || languages.nativeLang || 'en';
+          spokenLanguages = {
+            user: sharedLang,
+            partner: sharedLang,
+          };
+        } else {
+          spokenLanguages = {
+            user: liveCallCustomPair.youLang || baseNative,
+            partner: liveCallCustomPair.partnerLang || baseLearning,
+          };
+        }
+      }
 
       const config: SessionConfig = {
         languages: languagesForSession,
@@ -551,6 +631,7 @@ export default function StartCall() {
         partnerId: partnerForSession?.id || partnerIdForSession || null,
         partner: partnerForSession,
         screenStream: screenStreamForSession,
+        spokenLanguages,
       };
 
       // Proceed with connection
@@ -582,8 +663,14 @@ export default function StartCall() {
   };
 
   const handleManageHistoryClick = () => {
-    setQuotaDialogOpen(false);
+    setConversationQuotaDialogOpen(false);
     router.push(`/${langSegment}/history`);
+  };
+
+  const handleManagePartnersClick = () => {
+    setPartnerQuotaDialogOpen(false);
+    setStep('partner');
+    setIsCustomPartnerCreatorOpen(false);
   };
 
   const CALL_PLATFORM_ICONS = [
@@ -703,7 +790,13 @@ export default function StartCall() {
                       ? 'bg-primary/10 text-primary border-primary/30'
                       : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:border-border'
                   )}
-                  onClick={() => setLiveCallLanguageMode('custom')}
+                  onClick={() => {
+                    setLiveCallLanguageMode('custom');
+                    setLiveCallCustomPair((prev) => ({
+                      youLang: prev.youLang || languages.nativeLang || languages.learningLang || '',
+                      partnerLang: prev.partnerLang || languages.learningLang || languages.nativeLang || '',
+                    }));
+                  }}
                 >
                   <Trans>No</Trans>
                 </button>
@@ -719,7 +812,7 @@ export default function StartCall() {
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {LANGUAGES.map((lang) => {
-                    const isSelected = liveCallCustomLanguages.nativeLang === lang.code;
+                    const isSelected = liveCallCustomPair.youLang === lang.code;
                     return (
                       <button
                         key={`you-${lang.code}`}
@@ -730,7 +823,7 @@ export default function StartCall() {
                             ? 'border-primary bg-primary text-primary-foreground'
                             : 'border-border hover:border-primary/50 hover:bg-primary/5'
                         )}
-                        onClick={() => handleCustomLanguageSelect('native', lang.code)}
+                        onClick={() => handleCustomLanguageSelect('you', lang.code)}
                       >
                         <span className="text-sm">{lang.flag}</span>
                         <span>{lang.name}</span>
@@ -745,7 +838,7 @@ export default function StartCall() {
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {LANGUAGES.map((lang) => {
-                    const isSelected = liveCallCustomLanguages.learningLang === lang.code;
+                    const isSelected = liveCallCustomPair.partnerLang === lang.code;
                     return (
                       <button
                         key={`partner-${lang.code}`}
@@ -756,7 +849,7 @@ export default function StartCall() {
                             ? 'border-primary bg-primary text-primary-foreground'
                             : 'border-border hover:border-primary/50 hover:bg-primary/5'
                         )}
-                        onClick={() => handleCustomLanguageSelect('learning', lang.code)}
+                        onClick={() => handleCustomLanguageSelect('partner', lang.code)}
                       >
                         <span className="text-sm">{lang.flag}</span>
                         <span>{lang.name}</span>
@@ -905,6 +998,8 @@ export default function StartCall() {
                     setLiveCallLanguageMode('shared');
                     setStep('instructions');
                   }}
+                  partnerLimitBlocked={partnerLimitBlocked}
+                  onPartnerLimitBlocked={() => setPartnerQuotaDialogOpen(true)}
                 />
                 <div className={'flex justify-between items-center w-full'}>
                   <button
@@ -968,8 +1063,8 @@ export default function StartCall() {
         learningLang={languages.learningLang || undefined}
         nativeLang={languages.nativeLang || null}
         languageLevel={settings.languageLevel || snapshot?.user.languageLevel || null}
-        limitBlocked={limitBlocked}
-        onQuotaBlocked={() => setQuotaDialogOpen(true)}
+        partnerLimitBlocked={partnerLimitBlocked}
+        onQuotaBlocked={() => setPartnerQuotaDialogOpen(true)}
         onPartnerCreated={handlePartnerCreated}
       />
 
@@ -993,13 +1088,25 @@ export default function StartCall() {
       />
 
       <CallLimitDialog
-        open={quotaDialogOpen}
-        onOpenChange={setQuotaDialogOpen}
-        limitUsageLabel={limitUsageLabel}
-        limitDisplayUsed={limitDisplayUsed}
+        open={conversationQuotaDialogOpen}
+        onOpenChange={setConversationQuotaDialogOpen}
+        limitUsageLabel={conversationLimitUsageLabel}
+        limitDisplayUsed={conversationLimitDisplayUsed}
+        limitMax={conversationLimitMax}
         checkoutLoading={checkoutLoading}
-        onManageHistoryClick={handleManageHistoryClick}
+        onManageClick={handleManageHistoryClick}
         onUpgradeClick={handleUpgradeClick}
+      />
+      <CallLimitDialog
+        open={partnerQuotaDialogOpen}
+        onOpenChange={setPartnerQuotaDialogOpen}
+        limitUsageLabel={partnerLimitUsageLabel}
+        limitDisplayUsed={partnerLimitDisplayUsed}
+        limitMax={partnerLimitMax}
+        checkoutLoading={checkoutLoading}
+        onManageClick={handleManagePartnersClick}
+        onUpgradeClick={handleUpgradeClick}
+        variant="partners"
       />
     </>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Mic, Sun, Moon, Sparkles, Globe, Clock, Languages, Palette, EyeOff, BookOpen } from 'lucide-react';
+import { Mic, Sun, Moon, Globe, Clock, Languages, Palette, EyeOff, BookOpen } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useGlass } from '@/contexts/glass-context';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
@@ -59,8 +59,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
   const localMicDeviceId = settings.micDeviceId || 'default';
 
   const audioInputs = useMemo(() => devices.filter((d) => d.kind === 'audioinput'), [devices]);
-  const appearance: 'light' | 'dark' | 'glass' =
-    settings.glassMode ?? false ? 'glass' : (theme as 'light' | 'dark') || 'light';
+  const appearance: 'light' | 'dark' = (theme as 'light' | 'dark') || 'light';
 
   useEffect(() => {
     if (!open) return;
@@ -102,13 +101,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
   const setMic = (micDeviceId: string | null) =>
     updateSettings({ micDeviceId: micDeviceId === 'default' ? null : micDeviceId });
 
-  const selectAppearance = (mode: 'light' | 'dark' | 'glass') => {
-    if (mode === 'glass') {
-      updateSettings({ glassMode: true });
-      setTheme('dark');
-      return;
-    }
-    updateSettings({ glassMode: false });
+  const selectAppearance = (mode: 'light' | 'dark') => {
     setTheme(mode);
   };
 
@@ -376,22 +369,6 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
                 </TooltipTrigger>
                 <TooltipContent>
                   <Trans>Dark</Trans>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => selectAppearance('glass')}
-                    className={`h-8 w-10 ${appearance === 'glass' ? 'bg-accent text-accent-foreground' : ''}`}
-                  >
-                    <Sparkles className="size-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <Trans>Glass</Trans>
                 </TooltipContent>
               </Tooltip>
             </div>

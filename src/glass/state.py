@@ -16,6 +16,7 @@ from .domain.session import ConversationSession
 from .persistence.db import PersistenceDatabase
 from .services.email import EmailService
 from .services.billing import StripeService
+from .services.partner_generation import PartnerGenerationJobManager
 
 LOGGER = logging.getLogger(__name__)
 
@@ -169,20 +170,25 @@ class AppState:
                 LOGGER.error(f"❌ Redis connection failed ({error_detail}): {e}")
         self.database = PersistenceDatabase(settings.database_url)
         asr_adapter = build_asr_adapter(settings)
-        llm_adapter = build_llm_adapter(settings)
+        self.llm_adapter = build_llm_adapter(settings)
         memory_adapter = build_memory_adapter(
             settings,
             database=self.database,
             redis_client=self._redis,
-            llm_adapter=llm_adapter,
+            llm_adapter=self.llm_adapter,
         )
         tts_adapter = build_tts_adapter(settings)
         self.session_manager = SessionManager(
             asr_adapter=asr_adapter,
-            llm_adapter=llm_adapter,
+            llm_adapter=self.llm_adapter,
             memory_adapter=memory_adapter,
             tts_adapter=tts_adapter,
             redis_client=self._redis,
+        )
+        self.partner_generation_manager = PartnerGenerationJobManager(
+            database=self.database,
+            settings=settings,
+            llm_adapter=self.llm_adapter,
         )
         # Email service for verification and password reset
         self.email_service = EmailService(

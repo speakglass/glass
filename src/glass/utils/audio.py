@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import AsyncIterator, Iterable
+from typing import Any, AsyncIterator, Iterable
 from collections import deque
 import httpx
 
@@ -22,6 +22,7 @@ async def iter_websocket_audio(websocket) -> AsyncIterator[bytes]:
     """Yield raw audio payloads from a FastAPI WebSocket."""
     try:
         from ..config import get_settings
+
         max_bytes = int(get_settings().ws_max_message_bytes)
     except Exception:
         max_bytes = 131072
@@ -51,8 +52,43 @@ def _partner_to_profile(partner) -> dict:
         "voice_id": partner.voice_id,
         "learning_lang": partner.learning_lang,
         "native_lang": partner.native_lang,
-        "is_system": partner.user_id is None,
     }
+
+
+def resolve_session_languages(
+    mode: str,
+    learning_lang: str | None,
+    native_lang: str | None,
+    partner_profile: dict[str, Any] | None,
+) -> tuple[str, str]:
+    """Determine session languages based on mode and partner profile.
+
+    Live calls always use the user's own language prefs. Roleplay flips to the
+    partner's perspective so the AI speaks their native language while the user
+    sees translations into the partner's learning language.
+    """
+
+    def _clean(value: Any) -> str | None:
+        if isinstance(value, str):
+            value = value.strip().lower()
+            if value:
+                return value
+        return None
+
+    normalized_mode = (mode or "").strip().lower() or "live_call"
+    resolved_learning = _clean(learning_lang) or "en"
+    resolved_native = _clean(native_lang) or "en"
+
+    if normalized_mode == "roleplay" and partner_profile:
+        partner_native = _clean(partner_profile.get("native_lang"))
+        partner_learning = _clean(partner_profile.get("learning_lang"))
+        if partner_native:
+            resolved_learning = partner_native
+        if partner_learning:
+            resolved_native = partner_learning
+
+    return resolved_learning, resolved_native
+
 
 async def iter_multiplexed_audio(
     websocket,
@@ -66,6 +102,7 @@ async def iter_multiplexed_audio(
     """Demultiplex audio: first byte is source ID (0x01=mic, 0x02=system)."""
     try:
         from ..config import get_settings
+
         max_bytes = int(get_settings().ws_max_message_bytes)
     except Exception:
         max_bytes = 131072
@@ -75,7 +112,7 @@ async def iter_multiplexed_audio(
             message = await websocket.receive()
             if message["type"] == "websocket.disconnect":
                 break
-            
+
             if "bytes" in message and message["bytes"] is not None:
                 data = message["bytes"]
                 if len(data) > max_bytes:
@@ -94,7 +131,7 @@ async def iter_multiplexed_audio(
 
                 if len(data) < 2:
                     continue
-                
+
                 source_id = data[0]
                 audio_data = data[1:]
                 if source_id == SOURCE_MICROPHONE:
@@ -107,10 +144,10 @@ async def iter_multiplexed_audio(
                 else:
                     LOGGER.debug(f"Unknown source ID: {source_id}")
                     continue
-                
+
                 if source_name in source_queues:
                     await source_queues[source_name].put(audio_data)
-            
+
             elif "text" in message:
                 text = message["text"]
                 if text == "close":
@@ -119,7 +156,7 @@ async def iter_multiplexed_audio(
                 try:
                     data = json.loads(text)
                     msg_type = data.get("type")
-                    
+
                     if msg_type == "ping":
                         await websocket.send_json({"type": "pong"})
                     elif msg_type == "client_init":
@@ -142,7 +179,10 @@ async def iter_multiplexed_audio(
                         # Set session configuration (languages, mode, partner)
                         learning_lang = data.get("learning_lang", "en")
                         native_lang = data.get("native_lang", "ko")
-                        mode = data.get("mode", "live_call")
+                        user_spoken_lang = data.get("user_spoken_lang")
+                        partner_spoken_lang = data.get("partner_spoken_lang")
+                        requested_mode = data.get("mode", "live_call")
+                        normalized_mode = (requested_mode or "").strip().lower() or "live_call"
                         partner_profile = None
                         partner_id = data.get("partner_id")
                         if partner_id and db and user:
@@ -152,10 +192,24 @@ async def iter_multiplexed_audio(
                         if partner_profile is None:
                             # Preserve existing partner assignment (e.g., live-call placeholder)
                             partner_profile = getattr(pipeline, "partner_profile", None)
-                        await pipeline.set_session_config(learning_lang, native_lang, mode, partner=partner_profile)
+                        resolved_learning, resolved_native = resolve_session_languages(
+                            normalized_mode,
+                            learning_lang,
+                            native_lang,
+                            partner_profile,
+                        )
+                        await pipeline.set_session_config(
+                            resolved_learning,
+                            resolved_native,
+                            normalized_mode,
+                            partner=partner_profile,
+                            user_spoken_lang=user_spoken_lang,
+                            partner_spoken_lang=partner_spoken_lang,
+                        )
                         LOGGER.info(
-                            f"Session config - learning: {learning_lang}, native: {native_lang}, "
-                            f"mode: {mode}, partner_id: {partner_id}"
+                            f"Session config - learning: {resolved_learning}, native: {resolved_native}, "
+                            f"mode: {normalized_mode}, partner_id: {partner_id}, "
+                            f"user_spoken={user_spoken_lang}, partner_spoken={partner_spoken_lang}"
                         )
                     elif msg_type == "set_suggest_mode" and pipeline:
                         mode = data.get("mode", "auto")
@@ -185,9 +239,9 @@ async def iter_multiplexed_audio(
                         source = data.get("source", "user")
                         request_id = data.get("request_id")
                         if text:
-                            asyncio.create_task(_handle_tts_request(
-                                pipeline, websocket, text, voice_id, language, source, request_id
-                            ))
+                            asyncio.create_task(
+                                _handle_tts_request(pipeline, websocket, text, voice_id, language, source, request_id)
+                            )
                     elif msg_type == "end_call":
                         LOGGER.info("Client requested end_call, closing session")
                         if pipeline is not None:
@@ -199,7 +253,7 @@ async def iter_multiplexed_audio(
                         break
                 except (json.JSONDecodeError, KeyError):
                     pass
-            
+
     finally:
         for queue in source_queues.values():
             await queue.put(None)
@@ -209,8 +263,9 @@ async def _handle_suggestion_request(pipeline, text: str = "", request_id: str |
     """Handle suggestion request (with or without hint)."""
     try:
         from ..domain.entities import EventType
+
         suggestion = await pipeline.generate_suggestion(text or None)
-        
+
         if isinstance(suggestion, dict) and suggestion.get("target_text"):
             payload = {
                 "text": suggestion.get("target_text", ""),
@@ -236,18 +291,20 @@ async def _handle_tts_request(
     try:
         if not pipeline.synthesis:
             LOGGER.warning("TTS not configured")
-            await websocket.send_json({
-                "t": "tts_error",
-                "error": "TTS not configured",
-                "request_id": request_id
-            })
+            await websocket.send_json(
+                {
+                    "t": "tts_error",
+                    "error": "TTS not configured",
+                    "request_id": request_id,
+                }
+            )
             return
-        
+
         LOGGER.info(f"Processing TTS request: {text[:50]}...")
-        
+
         # Send TTS start event
         await websocket.send_json({"t": "tts_start", "request_id": request_id})
-        
+
         # Stream audio chunks via SpeechSynthesis
         async for chunk in pipeline.synthesis.synthesize_stream(
             text,
@@ -257,19 +314,21 @@ async def _handle_tts_request(
         ):
             if chunk:
                 await websocket.send_bytes(chunk)
-        
+
         # Send TTS end event
         await websocket.send_json({"t": "tts_end", "request_id": request_id})
         LOGGER.info("TTS streaming completed")
-        
+
     except Exception as e:
         LOGGER.error(f"TTS request failed: {e}", exc_info=True)
         try:
-            await websocket.send_json({
-                "t": "tts_error",
-                "error": str(e),
-                "request_id": request_id
-            })
+            await websocket.send_json(
+                {
+                    "t": "tts_error",
+                    "error": str(e),
+                    "request_id": request_id,
+                }
+            )
         except Exception:
             pass
 

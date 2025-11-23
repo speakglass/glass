@@ -24,9 +24,13 @@ class Settings(BaseSettings):
 
     # Gemini LLM
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-2.5-flash-lite"
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/models"
     gemini_timeout: float = 15.0
+    gemini_image_model: str = "gemini-3-pro-image-preview"
+    gemini_image_size: str = "1K"
+    gemini_image_timeout_seconds: float = 60.0
+    gemini_image_retry_attempts: int = 2
 
     # Deepgram ASR
     deepgram_key: str | None = None
@@ -90,7 +94,8 @@ class Settings(BaseSettings):
     stripe_monthly_amount_cents: int = 2499
     stripe_yearly_amount_cents: int = 19999
     billing_currency: str = "usd"
-    free_tier_conversation_limit: int = 10
+    free_tier_conversation_limit: int | None = None
+    free_tier_roleplay_partner_limit: int | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="GLASS_")
 

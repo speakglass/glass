@@ -9,7 +9,6 @@ from typing import Any
 
 from sqlalchemy import (
     ARRAY,
-    JSON,
     BigInteger,
     Boolean,
     Column,
@@ -21,6 +20,7 @@ from sqlalchemy import (
     func,
     Index,
     UniqueConstraint,
+    JSON,
 )
 
 # Import pgvector types
@@ -83,7 +83,6 @@ class ConversationPartner(Base):
     user_id: Mapped[str | None] = mapped_column(
         String(64), ForeignKey("account_users.id", ondelete="CASCADE"), nullable=True, index=True
     )
-    slug: Mapped[str] = mapped_column(String(64), index=True)
     learning_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
     native_lang: Mapped[str | None] = mapped_column(String(32), nullable=True)
     name: Mapped[str] = mapped_column(String(255))
@@ -91,9 +90,15 @@ class ConversationPartner(Base):
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     voice_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     kind: Mapped[str] = mapped_column(String(16), nullable=False, default="roleplay")
-    extra_metadata: Mapped[dict[str, Any] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    persona_age: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    persona_gender: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    persona_occupation: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    persona_city: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    persona_country: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    persona_relationship: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    persona_background: Mapped[str | None] = mapped_column(Text, nullable=True)
+    persona_interests: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    is_system: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

@@ -518,7 +518,8 @@ def build_analysis_feedback_prompt(
         Write a warm, encouraging summary of their {learning_lang_name} performance:
         - If feedback exists: highlight key patterns and suggest improvements
         - If no feedback: acknowledge their strong performance
-        - Use a supportive, friendly tone
+        - Keep the tone light and conversational, like a supportive study buddy (avoid stiff formal phrasing)
+        - Include a short encouragement about their ongoing practice or motivation
         - This is a summary report, NOT a chat message to them
         - Write plain text only, no formatting
     """

@@ -153,7 +153,8 @@ export function PartnerSelection({
                   <div className="flex items-center gap-1.5">
                     <Phone className="h-3 w-3 flex-shrink-0" />
                     <span>
-                      {hoveredPartner.conversationCount} {hoveredPartner.conversationCount === 1 ? 'call' : 'calls'}
+                      {hoveredPartner.conversationCount}
+                      {hoveredPartner.conversationCount === 1 ? <Trans>call</Trans> : <Trans>calls</Trans>}
                     </span>
                   </div>
                 )}
@@ -247,7 +248,7 @@ export function PartnerSelection({
                                 openEditPartnerModal(partner);
                               }}
                             >
-                              <Trans>View details</Trans>
+                              <Trans>View profile</Trans>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
@@ -296,9 +297,7 @@ export function PartnerSelection({
                       <div
                         className={cn(
                           'font-medium text-base mb-0.5',
-                          roleplayPartners.length === 0
-                            ? 'text-emerald-900 font-semibold'
-                            : getTextClass('title')
+                          roleplayPartners.length === 0 ? 'text-emerald-900 font-semibold' : getTextClass('title')
                         )}
                       >
                         {roleplayPartners.length === 0 ? (
@@ -366,7 +365,7 @@ export function PartnerSelection({
                             <Trans>Use during real conversations</Trans>
                           </div>
                           <div className={`${getTextClass('muted')} text-xs truncate`}>
-                            <Trans>Get live support during language exchange</Trans>
+                            <Trans>Get live support during real calls or language exchange</Trans>
                           </div>
                         </div>
                       </div>

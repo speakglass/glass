@@ -6,7 +6,6 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Iterable
 import uuid
 import secrets
-import re
 
 from sqlalchemy import select, delete, or_, func
 from sqlalchemy.orm import selectinload
@@ -180,370 +179,23 @@ def _build_message_feedback_entries(
 _UNSET = object()
 
 
-DEFAULT_PARTNERS: list[dict[str, Any]] = [
-    {
-        "slug": "en_emma",
-        "learning_lang": "en",
-        "native_lang": "en",
-        "name": "Emma",
-        "description": "London marketer who swaps idioms over coffee chats",
-        "description_i18n": {
-            "en": "London marketer who swaps idioms over coffee chats",
-            "ko": "런던 마케터. 커피 한잔하며 관용구 이야기 나누기 좋아함",
-            "ja": "ロンドンのマーケター。コーヒーを飲みながら慣用句を交換するのが好き",
-            "es": "Marketera de Londres que intercambia modismos tomando café",
-            "fr": "Marketeur londonien qui échange des expressions autour d'un café",
-        },
-        "avatar_asset": "emma.png",
-        "voice_id": "cgSgspJ2msm6clMCkdW9",
-    },
-    {
-        "slug": "en_alex",
-        "learning_lang": "en",
-        "native_lang": "en",
-        "name": "Alex",
-        "description": "New York product lead who loves travel podcasts",
-        "description_i18n": {
-            "en": "New York product lead who loves travel podcasts",
-            "ko": "뉴욕 프로덕트 리드. 여행 팟캐스트 애청자",
-            "ja": "ニューヨークのプロダクトリード。旅行ポッドキャストが大好き",
-            "es": "Product lead de Nueva York amante de los podcasts de viajes",
-            "fr": "Chef de produit new-yorkais passionné de podcasts de voyage",
-        },
-        "avatar_asset": "alex.png",
-        "voice_id": "IKne3meq5aSn9XLyUdCD",
-    },
-    {
-        "slug": "ko_jiwoo",
-        "learning_lang": "ko",
-        "native_lang": "ko",
-        "name": "Jiwoo",
-        "description": "Busan travel vlogger sharing food spots and K-drama gossip",
-        "description_i18n": {
-            "en": "Busan travel vlogger sharing food spots and K-drama gossip",
-            "ko": "부산 여행 브이로거. 맛집과 K-드라마 수다 공유",
-            "ja": "釜山の旅行ブロガー。グルメスポットとK-ドラマのゴシップを共有",
-            "es": "Vlogger de viajes de Busan que comparte lugares de comida y chismes de K-dramas",
-            "fr": "Vloggeuse de voyage de Busan partageant restos et potins K-drama",
-        },
-        "avatar_asset": "jiwoo.png",
-        "voice_id": "8jHHF8rMqMlg8if2mOUe",
-    },
-    {
-        "slug": "ko_minjun",
-        "learning_lang": "ko",
-        "native_lang": "ko",
-        "name": "Minjun",
-        "description": "Seoul software engineer comparing K-pop drops",
-        "description_i18n": {
-            "en": "Seoul software engineer comparing K-pop drops",
-            "ko": "서울 소프트웨어 엔지니어. K-pop 신곡 비교하는 걸 좋아함",
-            "ja": "ソウルのソフトウェアエンジニア。K-popの新曲を比較するのが好き",
-            "es": "Ingeniero de software de Seúl comparando lanzamientos de K-pop",
-            "fr": "Ingénieur logiciel séoulite qui compare les sorties K-pop",
-        },
-        "avatar_asset": "minjun.png",
-        "voice_id": "UgBBYS2sOqTuMpoF3BR0",
-    },
-    {
-        "slug": "ja_yui",
-        "learning_lang": "ja",
-        "native_lang": "ja",
-        "name": "Yui",
-        "description": "Tokyo cafe owner chatting anime and study tips",
-        "description_i18n": {
-            "en": "Tokyo cafe owner chatting anime and study tips",
-            "ko": "도쿄 카페 주인. 애니메이션과 공부 팁 이야기하는 걸 좋아함",
-            "ja": "東京のカフェオーナー。アニメと勉強のコツについておしゃべり",
-            "es": "Dueña de café en Tokio que charla sobre anime y consejos de estudio",
-            "fr": "Propriétaire de café tokyoïte discutant anime et astuces d'étude",
-        },
-        "avatar_asset": "yui.png",
-        "voice_id": "fUjY9K2nAIwlALOwSiwc",
-    },
-    {
-        "slug": "ja_haruto",
-        "learning_lang": "ja",
-        "native_lang": "ja",
-        "name": "Haruto",
-        "description": "Osaka game developer into live music and baseball",
-        "description_i18n": {
-            "en": "Osaka game developer into live music and baseball",
-            "ko": "오사카 게임 개발자. 라이브 음악과 야구 팬",
-            "ja": "大阪のゲーム開発者。ライブ音楽と野球が好き",
-            "es": "Desarrollador de juegos de Osaka aficionado a la música en vivo y el béisbol",
-            "fr": "Développeur de jeux d'Osaka passionné de concerts et de baseball",
-        },
-        "avatar_asset": "haruto.png",
-        "voice_id": "3JDquces8E8bkmvbh6Bc",
-    },
-    {
-        "slug": "es_camila",
-        "learning_lang": "es",
-        "native_lang": "es",
-        "name": "Camila",
-        "description": "Mexico City DJ sharing reggaeton drops",
-        "description_i18n": {
-            "en": "Mexico City DJ sharing reggaeton drops",
-            "ko": "멕시코시티 DJ. 레게톤 신곡 공유하는 걸 좋아함",
-            "ja": "メキシコシティのDJ。レゲトンの新曲をシェア",
-            "es": "DJ de Ciudad de México compartiendo lanzamientos de reggaetón",
-            "fr": "DJ de Mexico City partageant des sorties reggaeton",
-        },
-        "avatar_asset": "camila.png",
-        "voice_id": "qHkrJuifPpn95wK3rm2A",
-    },
-    {
-        "slug": "es_diego",
-        "learning_lang": "es",
-        "native_lang": "es",
-        "name": "Diego",
-        "description": "Madrid sports journalist debating La Liga",
-        "description_i18n": {
-            "en": "Madrid sports journalist debating La Liga",
-            "ko": "마드리드 스포츠 기자. 라리가 토론 좋아함",
-            "ja": "マドリードのスポーツジャーナリスト。ラリーガについて議論",
-            "es": "Periodista deportivo de Madrid debatiendo sobre La Liga",
-            "fr": "Journaliste sportif madrilène débattant de La Liga",
-        },
-        "avatar_asset": "diego.png",
-        "voice_id": "94zOad0g7T7K4oa7zhDq",
-    },
-    {
-        "slug": "fr_claire",
-        "learning_lang": "fr",
-        "native_lang": "fr",
-        "name": "Claire",
-        "description": "Paris strategist mixing pastry tips with work talk",
-        "description_i18n": {
-            "en": "Paris strategist mixing pastry tips with work talk",
-            "ko": "파리 전략가. 페이스트리 팁과 업무 이야기를 섞어서 함",
-            "ja": "パリのストラテジスト。パティスリーのコツと仕事の話を混ぜる",
-            "es": "Estratega parisina mezclando consejos de repostería con charlas de trabajo",
-            "fr": "Stratège parisienne mêlant conseils pâtisserie et discussions pro",
-        },
-        "avatar_asset": "claire.png",
-        "voice_id": "F1toM6PcP54s45kOOAyV",
-    },
-    {
-        "slug": "fr_luc",
-        "learning_lang": "fr",
-        "native_lang": "fr",
-        "name": "Luc",
-        "description": "Lyon designer into cycling tours and indie cinema",
-        "description_i18n": {
-            "en": "Lyon designer into cycling tours and indie cinema",
-            "ko": "리옹 디자이너. 사이클 투어와 인디 영화 팬",
-            "ja": "リヨンのデザイナー。サイクリングツアーとインディ映画が好き",
-            "es": "Diseñador de Lyon aficionado a los tours en bicicleta y el cine indie",
-            "fr": "Designer lyonnais passionné de cyclotourisme et cinéma indépendant",
-        },
-        "avatar_asset": "luc.png",
-        "voice_id": "93nuHbke4dTER9x2pDwE",
-    },
-]
-
-
-def _build_avatar_url(asset: str | None, explicit: str | None = None) -> str | None:
-    if explicit:
-        return explicit
-    if asset:
-        return f"/partners/{asset}"
-    return None
-
-
-def _build_template_metadata(entry: dict[str, Any]) -> dict[str, Any] | None:
-    metadata = dict(entry.get("metadata") or {})
-    avatar_asset = entry.get("avatar_asset")
-    if avatar_asset:
-        metadata.setdefault("avatar_asset", avatar_asset)
-    metadata.setdefault("template_slug", entry["slug"])
-    metadata.setdefault("type", "roleplay")
-    # Include i18n descriptions in metadata for cloning
-    description_i18n = entry.get("description_i18n")
-    if description_i18n:
-        metadata["description_i18n"] = description_i18n
-    return metadata or None
-
-
-def _merge_metadata(existing: dict[str, Any] | None, new_meta: dict[str, Any] | None) -> dict[str, Any] | None:
-    if not new_meta:
-        return existing
-    merged = dict(existing or {})
-    merged.update(new_meta)
-    return merged
-
-
-def _slugify(value: str) -> str:
-    value = value.lower().strip()
-    value = re.sub(r"[^\w\s-]", "", value)
-    value = re.sub(r"[-\s]+", "-", value)
-    return value.strip("-")
-
-
-async def _generate_unique_slug(session, name: str) -> str:
-    base = _slugify(name) or "partner"
-    slug = base
-    suffix = 2
-    while True:
-        exists = await session.scalar(select(ConversationPartner.id).where(ConversationPartner.slug == slug))
-        if not exists:
-            return slug
-        slug = f"{base}-{suffix}"
-        suffix += 1
-
-
-async def ensure_default_partners(db: PersistenceDatabase) -> None:
-    """Seed default partners for each learning language (idempotent)."""
-    async_session_factory = db.session()
-    async with async_session_factory() as session:
-        updated = False
-        for data in DEFAULT_PARTNERS:
-            existing = await session.scalar(select(ConversationPartner).where(ConversationPartner.slug == data["slug"]))
-            avatar_url = _build_avatar_url(data.get("avatar_asset"), data.get("avatar_url"))
-            metadata = _build_template_metadata(data)
-            desired_kind = data.get("kind") or ("live_call" if not data.get("voice_id") else "roleplay")
-            if existing:
-                changed = False
-                for field in ("name", "description", "avatar_url", "learning_lang", "native_lang", "voice_id"):
-                    if field == "avatar_url":
-                        new_value = avatar_url
-                    else:
-                        new_value = data.get(field)
-                    if getattr(existing, field) != new_value:
-                        setattr(existing, field, new_value)
-                        changed = True
-                if existing.kind != desired_kind:
-                    existing.kind = desired_kind
-                    changed = True
-                if not existing.is_system:
-                    existing.is_system = True
-                    changed = True
-                if not existing.is_active:
-                    existing.is_active = True
-                    changed = True
-                if metadata and existing.extra_metadata != metadata:
-                    existing.extra_metadata = metadata
-                    changed = True
-                if changed:
-                    session.add(existing)
-                    updated = True
-            else:
-                partner = ConversationPartner(
-                    slug=data["slug"],
-                    learning_lang=data.get("learning_lang"),
-                    native_lang=data.get("native_lang"),
-                    name=data["name"],
-                    description=data.get("description"),
-                    avatar_url=avatar_url,
-                    voice_id=data.get("voice_id"),
-                    kind=desired_kind,
-                    extra_metadata=metadata,
-                    is_system=True,
-                    is_active=True,
-                )
-                session.add(partner)
-                updated = True
-        if updated:
-            await session.commit()
-
-
-async def ensure_user_partner_templates(db: PersistenceDatabase, user_id: str) -> None:
-    """Ensure user has personalized copies of every system partner template."""
-    async_session_factory = db.session()
-    async with async_session_factory() as session:
-        user_partners_result = await session.scalars(
-            select(ConversationPartner).where(
-                ConversationPartner.user_id == user_id,
-                ConversationPartner.is_active.is_(True),
-            )
-        )
-        user_partners = list(user_partners_result)
-        existing_template_slugs: set[str] = set()
-        for partner in user_partners:
-            meta = partner.extra_metadata or {}
-            if isinstance(meta, dict):
-                template_slug = meta.get("template_slug")
-                if template_slug:
-                    existing_template_slugs.add(template_slug)
-
-        system_partners_result = await session.scalars(
-            select(ConversationPartner)
-            .where(
-                ConversationPartner.is_system.is_(True),
-                ConversationPartner.is_active.is_(True),
-            )
-            .order_by(ConversationPartner.name.asc())
-        )
-        system_partners = list(system_partners_result)
-        created = False
-        for template in system_partners:
-            template_slug = template.slug
-            if template_slug in existing_template_slugs:
-                continue
-            slug = await _generate_unique_slug(session, template.name)
-            clone_metadata = dict(template.extra_metadata or {})
-            clone_metadata["template_slug"] = template_slug
-
-            # Keep original description - will be localized dynamically in list_partners
-            clone = ConversationPartner(
-                user_id=user_id,
-                slug=slug,
-                learning_lang=template.learning_lang,
-                native_lang=template.native_lang,
-                name=template.name,
-                description=template.description,
-                avatar_url=template.avatar_url,
-                voice_id=template.voice_id,
-                kind=template.kind,
-                extra_metadata=clone_metadata or None,
-                is_system=False,
-                is_active=True,
-            )
-            session.add(clone)
-            created = True
-        if created:
-            await session.commit()
-
-
 async def list_partners(
     db: PersistenceDatabase,
     user_id: str,
-    *,
-    learning_lang: str | None = None,
 ) -> list[ConversationPartner]:
-    """List available partners (system defaults + user-custom)."""
-    await ensure_user_partner_templates(db, user_id)
+    """List available partners created by the user."""
     async_session_factory = db.session()
     async with async_session_factory() as session:
-        # Get user's current native language preference
-        user = await session.scalar(select(AccountUser).where(AccountUser.id == user_id))
-        user_native_lang = user.native_lang if user else None
-
         stmt = select(ConversationPartner).where(
             ConversationPartner.is_active.is_(True),
             ConversationPartner.user_id == user_id,
         )
-        if learning_lang:
-            stmt = stmt.where(ConversationPartner.learning_lang == learning_lang)
         stmt = stmt.order_by(
             ConversationPartner.user_id.isnot(None),
             ConversationPartner.name.asc(),
         )
         result = await session.scalars(stmt)
         partners = list(result.all())
-
-        # Localize descriptions based on user's current native language
-        if user_native_lang:
-            for partner in partners:
-                meta = partner.extra_metadata or {}
-                if isinstance(meta, dict):
-                    description_i18n = meta.get("description_i18n")
-                    if isinstance(description_i18n, dict):
-                        # Use localized description if available, fallback to original
-                        localized = description_i18n.get(user_native_lang)
-                        if localized:
-                            partner.description = localized
 
         return partners
 
@@ -554,10 +206,9 @@ async def update_partner_details(
     *,
     name: str | None = None,
     description: str | None = None,
-    extra_metadata: dict[str, Any] | None = None,
 ) -> ConversationPartner | None:
     """Update selected partner fields without enforcing API permissions."""
-    if not any([name, description, extra_metadata]):
+    if not any([name, description]):
         return None
     async_session_factory = db.session()
     async with async_session_factory() as session:
@@ -571,12 +222,6 @@ async def update_partner_details(
         if description is not None and description != partner.description:
             partner.description = description
             changed = True
-        if extra_metadata is not None:
-            merged = dict(partner.extra_metadata or {})
-            merged.update(extra_metadata)
-            if merged != (partner.extra_metadata or {}):
-                partner.extra_metadata = merged
-                changed = True
         if not changed:
             return partner
         session.add(partner)
@@ -661,15 +306,21 @@ async def create_partner(
     native_lang: str | None = None,
     avatar_url: str | None = None,
     voice_id: str | None = None,
+    persona_age: str | None = None,
+    persona_gender: str | None = None,
+    persona_occupation: str | None = None,
+    persona_city: str | None = None,
+    persona_country: str | None = None,
+    persona_relationship: str | None = None,
+    persona_background: str | None = None,
+    persona_interests: str | None = None,
 ) -> ConversationPartner:
     """Create a custom partner for a user."""
     async_session_factory = db.session()
     async with async_session_factory() as session:
-        slug = await _generate_unique_slug(session, name)
         partner_kind = "live_call" if not voice_id else "roleplay"
         partner = ConversationPartner(
             user_id=user_id,
-            slug=slug,
             learning_lang=learning_lang,
             native_lang=native_lang,
             name=name,
@@ -677,7 +328,14 @@ async def create_partner(
             avatar_url=avatar_url,
             voice_id=voice_id,
             kind=partner_kind,
-            is_system=False,
+            persona_age=persona_age,
+            persona_gender=persona_gender,
+            persona_occupation=persona_occupation,
+            persona_city=persona_city,
+            persona_country=persona_country,
+            persona_relationship=persona_relationship,
+            persona_background=persona_background,
+            persona_interests=persona_interests,
             is_active=True,
         )
         session.add(partner)
@@ -697,6 +355,11 @@ async def update_partner(
     native_lang: str | None = None,
     avatar_url: str | None = None,
     voice_id: str | None = None,
+    persona_age: str | None = None,
+    persona_gender: str | None = None,
+    persona_relationship: str | None = None,
+    persona_background: str | None = None,
+    persona_interests: str | None = None,
 ) -> ConversationPartner:
     """Update a partner owned by the user."""
     async_session_factory = db.session()
@@ -722,6 +385,16 @@ async def update_partner(
             partner.avatar_url = avatar_url
         if voice_id is not None:
             partner.voice_id = voice_id
+        if persona_age is not None:
+            partner.persona_age = persona_age
+        if persona_gender is not None:
+            partner.persona_gender = persona_gender
+        if persona_relationship is not None:
+            partner.persona_relationship = persona_relationship
+        if persona_background is not None:
+            partner.persona_background = persona_background
+        if persona_interests is not None:
+            partner.persona_interests = persona_interests
         partner.kind = "live_call" if not partner.voice_id else "roleplay"
         session.add(partner)
         await session.commit()
@@ -958,6 +631,27 @@ async def get_partners_by_ids(
         result = await session.scalars(stmt)
         partners = result.all()
     return {partner.id: partner for partner in partners}
+
+
+async def count_roleplay_partners(
+    db: PersistenceDatabase,
+    *,
+    user_id: str,
+) -> int:
+    """Count active AI partners owned by the user."""
+    async_session_factory = db.session()
+    async with async_session_factory() as session:
+        stmt = (
+            select(func.count())
+            .select_from(ConversationPartner)
+            .where(
+                ConversationPartner.user_id == user_id,
+                ConversationPartner.is_active.is_(True),
+                ConversationPartner.kind == "roleplay",
+            )
+        )
+        result = await session.scalar(stmt)
+        return int(result or 0)
 
 
 async def count_conversations(

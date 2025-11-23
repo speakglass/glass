@@ -6,7 +6,6 @@ import type { ConversationPartner } from '@/lib/account-api';
 import { ReactNode } from 'react';
 
 interface StartCallInstructionsProps {
-  glassMode: boolean;
   selectedMode: 'roleplay' | 'live_call';
   selectedRoleplayPartner: ConversationPartner | undefined;
   getTextClass: (type: 'title' | 'body' | 'muted') => string;
@@ -19,7 +18,6 @@ interface StartCallInstructionsProps {
 }
 
 export function StartCallInstructions({
-  glassMode,
   selectedMode,
   selectedRoleplayPartner,
   getTextClass,
@@ -34,16 +32,11 @@ export function StartCallInstructions({
     <div className={'flex flex-col items-center gap-5 sm:gap-6 max-w-lg mx-auto px-1.5'}>
       <div className={'text-center'}>
         <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
-          {selectedMode === 'roleplay' ? <Trans>AI Roleplay</Trans> : <Trans>Live Call</Trans>}
+          {selectedMode === 'roleplay' ? <Trans>AI Language Exchange</Trans> : <Trans>Live Language Exchange</Trans>}
         </h2>
       </div>
 
-      <div
-        className={cn(
-          'rounded-2xl p-4 sm:p-6',
-          glassMode ? 'bg-white/10 backdrop-blur-sm border border-white/20' : 'bg-card border border-border'
-        )}
-      >
+      <div className={cn('rounded-2xl p-4 sm:p-6', 'bg-card border border-border')}>
         {selectedMode === 'roleplay' ? (
           <div className={getTextClass('title')}>
             {selectedRoleplayPartner ? (
@@ -83,7 +76,7 @@ export function StartCallInstructions({
           {isStartingCall ? (
             <Loader2 className="size-4 opacity-80 animate-spin" strokeWidth={2.25} />
           ) : (
-            <Phone className="size-4 opacity-80" strokeWidth={2.25} />
+            <Phone className="size-4 opacity-50 fill-current" strokeWidth={0} />
           )}
           {isStartingCall ? <Trans>Connecting...</Trans> : <Trans>Start Call</Trans>}
         </Button>

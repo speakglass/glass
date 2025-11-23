@@ -242,7 +242,6 @@ def _serialize_partner(partner: ConversationPartner | None) -> dict[str, Any] | 
         "voice_id": partner.voice_id,
         "learning_lang": partner.learning_lang,
         "native_lang": partner.native_lang,
-        "is_system": partner.user_id is None,
         "kind": partner.kind,
     }
 

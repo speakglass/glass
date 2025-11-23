@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from ..auth.jwt import AuthenticatedUser, require_authenticated_user
 from ..persistence.service import (
     count_conversations,
+    count_roleplay_partners,
     delete_conversation,
     ensure_user,
     get_conversation_detail,
@@ -20,7 +21,12 @@ from ..persistence.service import (
     reassign_conversation_partner,
     update_conversation_title,
 )
-from ..services.limits import conversation_limit_status, ConversationLimitStatus
+from ..services.limits import (
+    conversation_limit_status,
+    ConversationLimitStatus,
+    partner_limit_status,
+    PartnerLimitStatus,
+)
 from .helpers import (
     serialize_detail,
     serialize_summary,
@@ -93,7 +99,6 @@ class PartnerInfo(BaseModel):
     voice_id: str | None = None
     learning_lang: str | None = None
     native_lang: str | None = None
-    is_system: bool | None = None
     kind: Literal["roleplay", "live_call"] | None = None
 
 
@@ -119,7 +124,7 @@ class ConversationDetail(ConversationSummary):
     feedback_items: list[dict[str, Any]] | None = None
 
 
-class ConversationLimitResponse(BaseModel):
+class UsageLimitResponse(BaseModel):
     enabled: bool
     limit: int | None = None
     used: int = 0
@@ -128,7 +133,8 @@ class ConversationLimitResponse(BaseModel):
 
 
 class AccountLimitsResponse(BaseModel):
-    conversations: ConversationLimitResponse | None = None
+    conversations: UsageLimitResponse | None = None
+    partners: UsageLimitResponse | None = None
 
 
 class AccountSnapshot(BaseModel):
@@ -186,6 +192,12 @@ async def account_snapshot_endpoint(
             billing_payload,
             used=total_conversations,
         )
+        total_roleplay_partners = await count_roleplay_partners(db, user_id=account_user.id)
+        partner_quota: PartnerLimitStatus = partner_limit_status(
+            settings,
+            billing_payload,
+            used=total_roleplay_partners,
+        )
 
         return AccountSnapshot(
             user=UserResponse(
@@ -209,13 +221,20 @@ async def account_snapshot_endpoint(
             ),
             billing=BillingStatusResponse(**billing_payload),
             limits=AccountLimitsResponse(
-                conversations=ConversationLimitResponse(
+                conversations=UsageLimitResponse(
                     enabled=quota.enabled,
                     limit=quota.limit,
                     used=quota.used,
                     remaining=quota.remaining,
                     blocked=quota.blocked,
-                )
+                ),
+                partners=UsageLimitResponse(
+                    enabled=partner_quota.enabled,
+                    limit=partner_quota.limit,
+                    used=partner_quota.used,
+                    remaining=partner_quota.remaining,
+                    blocked=partner_quota.blocked,
+                ),
             ),
         )
     except Exception as exc:

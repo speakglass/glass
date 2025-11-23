@@ -104,7 +104,10 @@ class AzureBlobUploader:
         if not self.public_access:
             return
         try:
-            self._container_client.set_container_access_policy(public_access=self.public_access)
+            self._container_client.set_container_access_policy(
+                signed_identifiers={},
+                public_access=self.public_access,
+            )
         except Exception as exc:  # pragma: no cover - azure SDK errors
             LOGGER.warning(
                 "Unable to set public access %s on container %s: %s",

@@ -44,7 +44,6 @@ export interface ConversationPartnerRef {
   voiceId?: string | null;
   learningLang?: string | null;
   nativeLang?: string | null;
-  isSystem?: boolean | null;
   kind?: 'roleplay' | 'live_call' | null;
 }
 
@@ -90,16 +89,22 @@ export interface ConversationScores {
 
 export interface ConversationPartner {
   id: string;
-  slug: string;
   name: string;
   description?: string | null;
   avatarUrl?: string | null;
   voiceId?: string | null;
   learningLang?: string | null;
   nativeLang?: string | null;
-  isSystem: boolean;
   kind: 'roleplay' | 'live_call';
-  extraMetadata?: Record<string, unknown> | null;
+  personaAge?: string | null;
+  personaGender?: string | null;
+  personaOccupation?: string | null;
+  personaCity?: string | null;
+  personaCountry?: string | null;
+  personaRelationship?: string | null;
+  personaBackground?: string | null;
+  personaInterests?: string | null;
+  conversationCount?: number;
 }
 
 export interface ConversationLimitSnapshot {
@@ -112,6 +117,7 @@ export interface ConversationLimitSnapshot {
 
 export interface AccountLimitsSnapshot {
   conversations?: ConversationLimitSnapshot | null;
+  partners?: ConversationLimitSnapshot | null;
 }
 
 export interface AccountSnapshot {
@@ -171,18 +177,8 @@ export interface ConversationMemoriesResponse {
   processing: boolean; // True if extraction is still processing
 }
 
-export interface VoicePreviewResponse {
-  audioBase64: string;
-  mimeType: string;
-}
-
 interface ConversationCreateResponseApi {
   conversation_id: string;
-}
-
-interface VoicePreviewResponseApi {
-  audio_base64: string;
-  mime_type?: string | null;
 }
 
 interface ConversationMemoriesResponseApi {
@@ -227,7 +223,6 @@ type ConversationPartnerRefApi = {
   voice_id?: string | null;
   learning_lang?: string | null;
   native_lang?: string | null;
-  is_system?: boolean | null;
   kind?: 'roleplay' | 'live_call' | null;
 };
 
@@ -274,6 +269,7 @@ interface ConversationLimitSnapshotApi {
 
 interface AccountLimitsSnapshotApi {
   conversations?: ConversationLimitSnapshotApi | null;
+  partners?: ConversationLimitSnapshotApi | null;
 }
 
 interface AccountSnapshotApi {
@@ -307,16 +303,22 @@ interface BillingSnapshotApi {
 
 type PartnerApi = {
   id: string;
-  slug: string;
   name: string;
   description?: string | null;
   avatar_url?: string | null;
   voice_id?: string | null;
   learning_lang?: string | null;
   native_lang?: string | null;
-  is_system?: boolean;
   kind?: 'roleplay' | 'live_call';
-  extra_metadata?: Record<string, unknown> | null;
+  persona_age?: string | null;
+  persona_gender?: string | null;
+  persona_occupation?: string | null;
+  persona_city?: string | null;
+  persona_country?: string | null;
+  persona_relationship?: string | null;
+  persona_background?: string | null;
+  persona_interests?: string | null;
+  conversation_count?: number;
 };
 
 interface PartnerListApi {
@@ -415,7 +417,7 @@ function mapPartnerRef(data?: ConversationPartnerRefApi | null): ConversationPar
       ? 'live_call'
       : data.kind === 'roleplay'
       ? 'roleplay'
-      : data.is_system || data.voice_id
+      : data.voice_id
       ? 'roleplay'
       : null;
   return {
@@ -426,7 +428,6 @@ function mapPartnerRef(data?: ConversationPartnerRefApi | null): ConversationPar
     voiceId: data.voice_id ?? null,
     learningLang: data.learning_lang ?? null,
     nativeLang: data.native_lang ?? null,
-    isSystem: data.is_system ?? null,
     kind: normalizedKind,
   };
 }
@@ -460,16 +461,51 @@ function mapDetail(data: ConversationDetailApi): ConversationDetail {
 function mapPartner(data: PartnerApi): ConversationPartner {
   return {
     id: data.id,
-    slug: data.slug,
     name: data.name,
     description: data.description,
     avatarUrl: data.avatar_url || null,
     voiceId: data.voice_id || null,
     learningLang: data.learning_lang || null,
     nativeLang: data.native_lang || null,
-    isSystem: Boolean(data.is_system),
     kind: data.kind === 'live_call' ? 'live_call' : 'roleplay',
-    extraMetadata: data.extra_metadata || null,
+    personaAge: data.persona_age || null,
+    personaGender: data.persona_gender || null,
+    personaOccupation: data.persona_occupation || null,
+    personaCity: data.persona_city || null,
+    personaCountry: data.persona_country || null,
+    personaRelationship: data.persona_relationship || null,
+    personaBackground: data.persona_background || null,
+    personaInterests: data.persona_interests || null,
+    conversationCount: data.conversation_count ?? 0,
+  };
+}
+
+function mapPartnerPersonaPreview(data?: PartnerPersonaPreviewApi | null): PartnerPersonaPreview | undefined {
+  if (!data) {
+    return undefined;
+  }
+  return {
+    name: data.name ?? undefined,
+    summary: data.summary ?? undefined,
+    personaAge: data.persona_age ?? undefined,
+    personaGender: data.persona_gender ?? undefined,
+    personaOccupation: data.persona_occupation ?? undefined,
+    personaCity: data.persona_city ?? undefined,
+    personaCountry: data.persona_country ?? undefined,
+    personaBackground: data.persona_background ?? undefined,
+    personaInterests: data.persona_interests ?? undefined,
+  };
+}
+
+function mapPartnerGenerationJob(data: PartnerGenerationJobApi): PartnerGenerationJob {
+  return {
+    id: data.job_id,
+    status: data.status,
+    message: data.message ?? undefined,
+    stepsCompleted: data.steps_completed ?? [],
+    personaPreview: mapPartnerPersonaPreview(data.persona_preview),
+    partner: data.partner ? mapPartner(data.partner) : undefined,
+    error: data.error ?? undefined,
   };
 }
 
@@ -524,21 +560,26 @@ function mapBilling(data: BillingSnapshotApi | undefined): BillingSnapshot {
   };
 }
 
-function mapLimits(data: AccountLimitsSnapshotApi | null | undefined): AccountLimitsSnapshot | null {
-  if (!data) return null;
-  if (!data.conversations) {
-    return {
-      conversations: null,
-    };
+function mapLimitSnapshot(entry: ConversationLimitSnapshotApi | null | undefined): ConversationLimitSnapshot | null {
+  if (!entry) {
+    return null;
   }
   return {
-    conversations: {
-      enabled: Boolean(data.conversations.enabled),
-      limit: data.conversations.limit ?? null,
-      used: data.conversations.used ?? 0,
-      remaining: data.conversations.remaining ?? null,
-      blocked: Boolean(data.conversations.blocked),
-    },
+    enabled: Boolean(entry.enabled),
+    limit: entry.limit ?? null,
+    used: entry.used ?? 0,
+    remaining: entry.remaining ?? null,
+    blocked: Boolean(entry.blocked),
+  };
+}
+
+function mapLimits(data: AccountLimitsSnapshotApi | null | undefined): AccountLimitsSnapshot | null {
+  if (!data) return null;
+  const conversations = mapLimitSnapshot(data.conversations);
+  const partners = mapLimitSnapshot(data.partners);
+  return {
+    conversations,
+    partners,
   };
 }
 
@@ -704,12 +745,83 @@ export interface PartnerCreateInput {
   learningLang?: string | null;
   nativeLang?: string | null;
   avatarUrl?: string | null;
-  voiceId?: string | null;
+  personaAge?: string | null;
+  personaGender?: string | null;
+  personaOccupation?: string | null;
+  personaCity?: string | null;
+  personaCountry?: string | null;
+  personaRelationship?: string | null;
+  personaBackground?: string | null;
+  personaInterests?: string | null;
 }
 
-export async function fetchPartners(token: string, learningLang?: string | null): Promise<ConversationPartner[]> {
-  const query = learningLang ? `?learning_lang=${encodeURIComponent(learningLang)}` : '';
-  const data = await authedFetch<PartnerListApi>(`/partners${query}`, token);
+export interface PartnerPersonaCreateInput {
+  learningLang?: string | null;
+  nativeLang?: string | null;
+  languageLevel?: LearningLevel | null;
+  topics: string[];
+  partnerType: 'new_friends' | 'someone_special' | 'professional' | 'figuring_out';
+  gender: 'male' | 'female' | 'beyond_binary' | 'everyone';
+  ageRange: 'teens' | 'early20s' | 'late20s' | 'thirties' | 'forties';
+}
+
+export type PartnerGenerationStatus =
+  | 'queued'
+  | 'generating_persona'
+  | 'selecting_voice'
+  | 'saving_partner'
+  | 'generating_avatar'
+  | 'completed'
+  | 'failed';
+
+export type PartnerGenerationStep = 'persona' | 'voice' | 'partner' | 'avatar';
+
+export interface PartnerPersonaPreview {
+  name?: string | null;
+  summary?: string | null;
+  personaAge?: string | null;
+  personaGender?: string | null;
+  personaOccupation?: string | null;
+  personaCity?: string | null;
+  personaCountry?: string | null;
+  personaBackground?: string | null;
+  personaInterests?: string[] | null;
+}
+
+export interface PartnerGenerationJob {
+  id: string;
+  status: PartnerGenerationStatus;
+  message?: string | null;
+  stepsCompleted: PartnerGenerationStep[];
+  personaPreview?: PartnerPersonaPreview | null;
+  partner?: ConversationPartner | null;
+  error?: string | null;
+}
+
+interface PartnerPersonaPreviewApi {
+  name?: string | null;
+  summary?: string | null;
+  persona_age?: string | null;
+  persona_gender?: string | null;
+  persona_occupation?: string | null;
+  persona_city?: string | null;
+  persona_country?: string | null;
+  persona_background?: string | null;
+  persona_interests?: string[] | null;
+}
+
+interface PartnerGenerationJobApi {
+  job_id: string;
+  status: PartnerGenerationStatus;
+  message?: string | null;
+  steps_completed?: PartnerGenerationStep[];
+  persona_preview?: PartnerPersonaPreviewApi | null;
+  partner?: PartnerApi | null;
+  error?: string | null;
+}
+
+export async function fetchPartners(token: string): Promise<ConversationPartner[]> {
+  const data = await authedFetch<PartnerListApi>(`/partners`, token);
   return data.partners.map(mapPartner);
 }
 
@@ -720,7 +832,14 @@ export async function createPartner(token: string, payload: PartnerCreateInput):
     learning_lang: payload.learningLang,
     native_lang: payload.nativeLang,
     avatar_url: payload.avatarUrl,
-    voice_id: payload.voiceId,
+    persona_age: payload.personaAge,
+    persona_gender: payload.personaGender,
+    persona_occupation: payload.personaOccupation,
+    persona_city: payload.personaCity,
+    persona_country: payload.personaCountry,
+    persona_relationship: payload.personaRelationship,
+    persona_background: payload.personaBackground,
+    persona_interests: payload.personaInterests,
   };
   const data = await authedFetch<PartnerApi>('/partners', token, {
     method: 'POST',
@@ -729,13 +848,45 @@ export async function createPartner(token: string, payload: PartnerCreateInput):
   return mapPartner(data);
 }
 
+export async function startPartnerGeneration(
+  token: string,
+  payload: PartnerPersonaCreateInput
+): Promise<PartnerGenerationJob> {
+  const body = {
+    learning_lang: payload.learningLang,
+    native_lang: payload.nativeLang,
+    language_level: payload.languageLevel,
+    topics: payload.topics,
+    partner_type: payload.partnerType,
+    gender: payload.gender,
+    age_range: payload.ageRange,
+  };
+  const data = await authedFetch<PartnerGenerationJobApi>('/partners/generate', token, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return mapPartnerGenerationJob(data);
+}
+
+export async function fetchPartnerGenerationJob(token: string, jobId: string): Promise<PartnerGenerationJob> {
+  const data = await authedFetch<PartnerGenerationJobApi>(`/partners/generate/${jobId}`, token);
+  return mapPartnerGenerationJob(data);
+}
+
 export interface PartnerUpdateInput {
   name?: string;
   description?: string | null;
   learningLang?: string | null;
   nativeLang?: string | null;
   avatarUrl?: string | null;
-  voiceId?: string | null;
+  personaAge?: string | null;
+  personaGender?: string | null;
+  personaOccupation?: string | null;
+  personaCity?: string | null;
+  personaCountry?: string | null;
+  personaRelationship?: string | null;
+  personaBackground?: string | null;
+  personaInterests?: string | null;
 }
 
 export async function updatePartner(
@@ -749,7 +900,14 @@ export async function updatePartner(
   if (payload.learningLang !== undefined) body.learning_lang = payload.learningLang;
   if (payload.nativeLang !== undefined) body.native_lang = payload.nativeLang;
   if (payload.avatarUrl !== undefined) body.avatar_url = payload.avatarUrl;
-  if (payload.voiceId !== undefined) body.voice_id = payload.voiceId;
+  if (payload.personaAge !== undefined) body.persona_age = payload.personaAge;
+  if (payload.personaGender !== undefined) body.persona_gender = payload.personaGender;
+  if (payload.personaOccupation !== undefined) body.persona_occupation = payload.personaOccupation;
+  if (payload.personaCity !== undefined) body.persona_city = payload.personaCity;
+  if (payload.personaCountry !== undefined) body.persona_country = payload.personaCountry;
+  if (payload.personaRelationship !== undefined) body.persona_relationship = payload.personaRelationship;
+  if (payload.personaBackground !== undefined) body.persona_background = payload.personaBackground;
+  if (payload.personaInterests !== undefined) body.persona_interests = payload.personaInterests;
 
   const data = await authedFetch<PartnerApi>(`/partners/${partnerId}`, token, {
     method: 'PATCH',
@@ -762,24 +920,6 @@ export async function deletePartner(token: string, partnerId: string): Promise<v
   await authedFetch<void>(`/partners/${partnerId}`, token, {
     method: 'DELETE',
   });
-}
-
-export async function fetchVoicePreview(
-  token: string,
-  payload: { voiceId: string; sampleText?: string }
-): Promise<VoicePreviewResponse> {
-  const body = {
-    voice_id: payload.voiceId,
-    sample_text: payload.sampleText,
-  };
-  const data = await authedFetch<VoicePreviewResponseApi>('/voices/preview', token, {
-    method: 'POST',
-    body: JSON.stringify(body),
-  });
-  return {
-    audioBase64: data.audio_base64,
-    mimeType: data.mime_type || 'audio/mpeg',
-  };
 }
 
 export interface ConversationListResponse {
