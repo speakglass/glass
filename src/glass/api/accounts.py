@@ -43,6 +43,9 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str | None = Field(default=None, min_length=8)
     name: str | None = None
+    utm_source: str | None = Field(default=None, max_length=255)
+    utm_campaign: str | None = Field(default=None, max_length=255)
+    utm_content: str | None = Field(default=None, max_length=255)
 
 
 class OAuthSignInRequest(BaseModel):
@@ -110,10 +113,20 @@ async def register_account(request: Request, payload: RegisterRequest) -> Authen
         email=payload.email,
         password_hash=password_hash,
         name=payload.name,
+        utm_source=payload.utm_source,
+        utm_campaign=payload.utm_campaign,
+        utm_content=payload.utm_content,
     )
     # Notify Discord about new signup (best-effort)
     try:
         total_users = await count_total_users(db)
+        utm_fields = []
+        if payload.utm_source:
+            utm_fields.append({"name": "UTM Source", "value": payload.utm_source, "inline": True})
+        if payload.utm_campaign:
+            utm_fields.append({"name": "UTM Campaign", "value": payload.utm_campaign, "inline": True})
+        if payload.utm_content:
+            utm_fields.append({"name": "UTM Content", "value": payload.utm_content, "inline": True})
         await send_discord_notification(
             settings.discord_webhook_url,
             embeds=[
@@ -124,6 +137,7 @@ async def register_account(request: Request, payload: RegisterRequest) -> Authen
                         {"name": "Email", "value": user.email, "inline": False},
                         {"name": "Name", "value": user.name or "—", "inline": True},
                         {"name": "User #", "value": f"#{total_users:,}", "inline": True},
+                        *utm_fields,
                     ],
                 }
             ],

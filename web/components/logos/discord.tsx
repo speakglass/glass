@@ -1,5 +1,5 @@
-import * as React from "react";
-import type { SVGProps } from "react";
+import * as React from 'react';
+import type { SVGProps } from 'react';
 const Discord = (props: SVGProps<SVGSVGElement>) => (
   <svg
     viewBox="0 0 127.14 96.36"
@@ -13,19 +13,3 @@ const Discord = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 export default Discord;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

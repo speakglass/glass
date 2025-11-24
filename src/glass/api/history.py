@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from ..auth.jwt import AuthenticatedUser, require_authenticated_user
 from ..persistence.service import (
+    AccountUserNotFoundError,
     count_conversations,
     count_roleplay_partners,
     delete_conversation,
@@ -154,7 +155,10 @@ async def create_conversation_identifier(
 ) -> ConversationCreateResponse:
     """Generate a new conversation identifier owned by the authenticated user."""
     db = request.app.state.history_store
-    account_user = await ensure_user(db, user)
+    try:
+        account_user = await ensure_user(db, user, create_if_missing=False)
+    except AccountUserNotFoundError as exc:
+        raise HTTPException(status_code=401, detail="Account not found. Please sign in again.") from exc
     app_state = request.app.state.app_state
     billing_service = app_state.billing_service
     billing_payload = billing_service.user_status_payload(account_user)
@@ -182,6 +186,7 @@ async def account_snapshot_endpoint(
         account_user = await ensure_user(
             db,
             user,
+            create_if_missing=False,
         )
         billing_service = request.app.state.app_state.billing_service
         billing_payload = billing_service.user_status_payload(account_user)
@@ -237,6 +242,8 @@ async def account_snapshot_endpoint(
                 ),
             ),
         )
+    except AccountUserNotFoundError as exc:
+        raise HTTPException(status_code=401, detail="Account not found. Please sign in again.") from exc
     except Exception as exc:
         import traceback
 

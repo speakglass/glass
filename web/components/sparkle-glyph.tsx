@@ -1,10 +1,5 @@
 export const SparkleGlyph = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    className={'size-3.5 shrink-0 relative z-10'}
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className={'size-3.5 shrink-0 relative z-10'}>
     <path
       className={
         'fill-current transition-transform duration-300 group-hover:animate-[sparkle_1.5s_ease-in-out_infinite]'
@@ -37,18 +32,3 @@ export const SparkleGlyph = () => (
     ></path>
   </svg>
 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
