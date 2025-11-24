@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.1.14](https://github.com/speakglass/glass/compare/v0.1.13...v0.1.14) (2025-11-24)
+
+
+### Features
+
+* **api:** add UTM parameters to account registration and user management ([cd47e0f](https://github.com/speakglass/glass/commit/cd47e0f94b9825e7ba15210d485375ca45e1bca1))
+* **api:** add UTM tracking and update user management ([3cb7cc5](https://github.com/speakglass/glass/commit/3cb7cc576c05c044d449797f9d475efd1596fd47))
+* **api:** enhance partner generation with localization support ([80993be](https://github.com/speakglass/glass/commit/80993bed1202626e7f7e30be347d9690f677cd17))
+* **asr:** add utterance_end_ms parameter to ASR adapters and improve endpointing logic ([9c6396b](https://github.com/speakglass/glass/commit/9c6396bd970c02baea35464623d22af1fcfe72d7))
+* **persistence:** implement user ID migration for account updates ([d809480](https://github.com/speakglass/glass/commit/d8094808f96cc8e1465a95a3218c92ae4f6cfdb1))
+* **session:** add dispose method to release session resources ([e4bfe0e](https://github.com/speakglass/glass/commit/e4bfe0efb902cebe4507c5ded91724978aa41db5))
+* **start:** enhance server startup configuration and improve LLM job handling ([3b156ef](https://github.com/speakglass/glass/commit/3b156efebbe0770eedfafd04ddac3b323c1c69aa))
+* **tts:** enhance ElevenLabs TTS adapter to support audio segments and alignment metadata ([c59a4b0](https://github.com/speakglass/glass/commit/c59a4b009204cbb63d3dd082ba3b94b5650ea597))
+
+
+### Code Refactoring
+
+* **asr:** update Deepgram endpointing configuration to allow None value ([a976b41](https://github.com/speakglass/glass/commit/a976b4105b223e8bc255a5777c992744b5cb8038))
+* **config:** update Deepgram endpointing configuration and improve UI localization ([b6f0f0f](https://github.com/speakglass/glass/commit/b6f0f0f735c9b9b3a1b3d192f4829ee995bf9c9c))
+* **prompts:** update response guidelines to default to concise answers ([5e0c18c](https://github.com/speakglass/glass/commit/5e0c18c1808424d9fd560ef4850ccf440b8301a2))
+* **ui:** enhance partner selection component for improved localization ([ac27143](https://github.com/speakglass/glass/commit/ac271436f13c5b7b9b7e3bd17a7534c098e9d499))
+* **ui:** improve layout and state management in partner selection components ([a02397a](https://github.com/speakglass/glass/commit/a02397a4675691e5be4b1da7a13e5aaf41b5585a))
+* **ui:** improve localization in partner detail modal and custom partner creator ([626bcbd](https://github.com/speakglass/glass/commit/626bcbdcbfa9e382ea4a53b955e27cb9ca6ebbd0))
+* **ui:** update onboarding language level options to use translation keys ([85958da](https://github.com/speakglass/glass/commit/85958dab7d73f7a4bd31fa23cb3c08cdf6838d80))
+
 ## [0.1.13](https://github.com/speakglass/glass/compare/v0.1.12...v0.1.13) (2025-11-23)
 
 
