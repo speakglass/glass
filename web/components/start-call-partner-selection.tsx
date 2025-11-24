@@ -121,16 +121,29 @@ export function PartnerSelection({
   const generationStatusCopy =
     generationJob && (generationJob.message || GENERATION_STATUS_MESSAGES[generationJob.status]);
   const isGenerationJobFailed = generationJob?.status === 'failed';
-  const generationPreview = generationJob?.partner || generationJob?.personaPreview;
+  const generationPreviewPartner = generationJob?.partner;
+  const generationPreviewPersona = generationJob?.personaPreview;
+  const generationPreviewName = generationPreviewPartner?.name || generationPreviewPersona?.name || '';
   const generationPreviewLocation =
-    generationPreview &&
-    [generationPreview.personaCityTranslation ?? generationPreview.personaCity, generationPreview.personaCountryTranslation ?? generationPreview.personaCountry]
-      .filter(Boolean)
-      .join(', ');
+    generationPreviewPartner || generationPreviewPersona
+      ? [
+          generationPreviewPartner?.personaCity ||
+            generationPreviewPersona?.personaCityTranslation ||
+            generationPreviewPersona?.personaCity,
+          generationPreviewPartner?.personaCountry ||
+            generationPreviewPersona?.personaCountryTranslation ||
+            generationPreviewPersona?.personaCountry,
+        ]
+          .filter(Boolean)
+          .join(', ')
+      : '';
   const generationPreviewSummary =
-    (generationJob?.partner?.descriptionTranslation || generationJob?.partner?.description) ??
-    generationPreview?.summaryTranslation ??
-    generationPreview?.summary;
+    generationPreviewPartner?.descriptionTranslation ||
+    generationPreviewPartner?.description ||
+    generationPreviewPersona?.summaryTranslation ||
+    generationPreviewPersona?.summary ||
+    '';
+  const hasGenerationPreview = generationPreviewName || generationPreviewLocation || generationPreviewSummary;
 
   return (
     <motion.div
@@ -181,10 +194,10 @@ export function PartnerSelection({
                   <p className="text-xs text-muted-foreground break-words">{generationJob.error}</p>
                 )}
               </div>
-              {generationPreview && (
+              {hasGenerationPreview && (
                 <div className="p-3 rounded-xl bg-background/80 border border-border/50 space-y-1 w-full">
                   <p className="text-sm font-medium text-foreground">
-                    {generationPreview.name || <Trans>Unknown partner</Trans>}
+                    {generationPreviewName || <Trans>Unknown partner</Trans>}
                   </p>
                   {generationPreviewLocation && (
                     <p className="text-xs text-muted-foreground">{generationPreviewLocation}</p>
