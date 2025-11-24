@@ -9,6 +9,7 @@ import { NextStepProvider } from 'nextstepjs';
 import { SessionProvider } from 'next-auth/react';
 import { AccountSessionProvider } from '@/contexts/account-session-context';
 import { QueryProvider } from './providers/query-provider';
+import { UtmCapture } from '@/components/utm-capture';
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -16,6 +17,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   }, []);
   return (
     <SessionProvider>
+      <UtmCapture />
       <QueryProvider>
         <AccountSessionProvider>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>

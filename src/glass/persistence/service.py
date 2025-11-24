@@ -30,6 +30,11 @@ from .db import (
 LOGGER = logging.getLogger(__name__)
 
 
+class AccountUserNotFoundError(Exception):
+    """Raised when ensure_user cannot find an existing account record."""
+
+
+
 async def _migrate_account_user_id(
     session: AsyncSession,
     *,
@@ -565,6 +570,8 @@ async def delete_partner(
 async def ensure_user(
     db: PersistenceDatabase,
     claims: AuthenticatedUser,
+    *,
+    create_if_missing: bool = True,
 ) -> AccountUser:
     """Create or update an account user from the authenticated claims."""
     try:
@@ -602,7 +609,7 @@ async def ensure_user(
                     user.name = claims.name
                     user.avatar_url = claims.avatar_url
                     user.last_login_at = now
-                else:
+                elif create_if_missing:
                     LOGGER.info(f"[ensure_user] Creating new user: {claims.user_id}")
                     user = AccountUser(
                         id=claims.user_id,
@@ -612,6 +619,10 @@ async def ensure_user(
                         last_login_at=now,
                     )
                     session.add(user)
+                else:
+                    raise AccountUserNotFoundError(
+                        f"Account user {claims.user_id} not found and auto-create disabled"
+                    )
             await session.commit()
             await session.refresh(user)
             LOGGER.info(f"[ensure_user] Success for user_id={claims.user_id}")
@@ -924,6 +935,9 @@ async def create_local_user(
     email: str,
     password_hash: str | None = None,
     name: str | None = None,
+    utm_source: str | None = None,
+    utm_campaign: str | None = None,
+    utm_content: str | None = None,
     avatar_url: str | None = None,
     email_verified: bool = False,
 ) -> AccountUser:
@@ -936,6 +950,9 @@ async def create_local_user(
             password_hash=password_hash,
             avatar_url=avatar_url,
             email_verified=email_verified,
+            utm_source=utm_source,
+            utm_campaign=utm_campaign,
+            utm_content=utm_content,
         )
         session.add(user)
         await session.commit()

@@ -4,6 +4,18 @@ import { issueSessionToken } from '@/lib/session-token';
 import { fetchAccountSnapshot } from '@/lib/account-api';
 import OnboardingClient from '@/components/onboarding/onboarding-client';
 
+type UnauthorizedError = Error & { status: number };
+
+function isUnauthorizedError(error: unknown): error is UnauthorizedError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    typeof (error as { status?: unknown }).status === 'number' &&
+    (error as { status: number }).status === 401
+  );
+}
+
 export default async function OnboardingPage({ params }: { params: Promise<{ lang: string }> }) {
   const session = await auth();
   const { lang } = await params;
@@ -15,7 +27,15 @@ export default async function OnboardingPage({ params }: { params: Promise<{ lan
 
   // Check email verification status
   const token = await issueSessionToken(session.user);
-  const snapshot = await fetchAccountSnapshot(token);
+  let snapshot: Awaited<ReturnType<typeof fetchAccountSnapshot>>;
+  try {
+    snapshot = await fetchAccountSnapshot(token);
+  } catch (error) {
+    if (isUnauthorizedError(error)) {
+      redirect(`/${lang}/login`);
+    }
+    throw error;
+  }
   
   if (!snapshot.user.emailVerified) {
     redirect(`/${lang}/verify-email-sent?email=${encodeURIComponent(snapshot.user.email)}`);
@@ -23,4 +43,3 @@ export default async function OnboardingPage({ params }: { params: Promise<{ lan
 
   return <OnboardingClient />;
 }
-

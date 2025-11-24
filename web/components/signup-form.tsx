@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useLocale } from '@/hooks/use-locale';
+import { useFirstTouchAttribution } from '@/hooks/use-utm-attribution';
 import { cn } from '@/utils/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +29,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasGoogleOAuth, setHasGoogleOAuth] = useState(false);
+  const utm = useFirstTouchAttribution();
 
   // Check if Google OAuth is configured
   useEffect(() => {
@@ -77,10 +79,15 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
 
     try {
       // Step 1: Create account
+      const utmPayload: Record<string, string> = {};
+      if (utm.utm_source) utmPayload.utm_source = utm.utm_source;
+      if (utm.utm_campaign) utmPayload.utm_campaign = utm.utm_campaign;
+      if (utm.utm_content) utmPayload.utm_content = utm.utm_content;
+
       const response = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, ...utmPayload }),
       });
 
       const data = await response.json().catch(() => null);

@@ -36,6 +36,18 @@ const AccountSessionContext = createContext<AccountSessionContextValue>({
   markOnboardingComplete: async () => {},
 });
 
+type UnauthorizedError = Error & { status: number };
+
+function isUnauthorizedError(error: unknown): error is UnauthorizedError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    typeof (error as { status?: unknown }).status === 'number' &&
+    (error as { status: number }).status === 401
+  );
+}
+
 async function fetchSessionData(): Promise<SessionData> {
   try {
     const response = await fetch('/api/session', {
@@ -51,7 +63,7 @@ async function fetchSessionData(): Promise<SessionData> {
 
       // If 401 Unauthorized, throw a special error that triggers logout
       if (response.status === 401) {
-        const error = new Error('Unauthorized') as Error & { status: number };
+        const error = new Error('Unauthorized') as UnauthorizedError;
         error.status = 401;
         throw error;
       }
@@ -78,6 +90,9 @@ async function fetchSessionData(): Promise<SessionData> {
         onboardingStatus,
       };
     } catch (error) {
+      if (isUnauthorizedError(error)) {
+        throw error;
+      }
       console.error('[Session] failed to fetch onboarding status', error);
       // Fallback to localStorage
       const cached =
@@ -114,7 +129,7 @@ export function AccountSessionProvider({ children }: { children: React.ReactNode
     gcTime: 30 * 60 * 1000, // 30 minutes cache time
     retry: (failureCount, error) => {
       // Don't retry on 401 errors
-      if (error instanceof Error && 'status' in error && (error as Error & { status: number }).status === 401) {
+      if (isUnauthorizedError(error)) {
         return false;
       }
       // Retry up to 3 times for other errors
@@ -128,17 +143,25 @@ export function AccountSessionProvider({ children }: { children: React.ReactNode
 
   // Handle 401 errors by signing out
   useEffect(() => {
-    if (
-      isError &&
-      error instanceof Error &&
-      'status' in error &&
-      (error as Error & { status: number }).status === 401
-    ) {
-      console.warn('[Session] 401 Unauthorized - signing out');
+    if (isError && isUnauthorizedError(error)) {
+      console.warn('[Session] 401 Unauthorized - user not found in database, signing out');
+
+      // Clear local cache immediately
+      queryClient.clear();
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+
       // Sign out and redirect to login
-      void signOut({ redirect: true, callbackUrl: '/login' });
+      // Use window.location to ensure complete page reload and prevent infinite redirects
+      void signOut({ redirect: false }).then(() => {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+      });
     }
-  }, [isError, error]);
+  }, [isError, error, queryClient]);
 
   // Mutation for completing onboarding
   const markOnboardingCompleteMutation = useMutation({

@@ -87,6 +87,7 @@ services:
       - ./web/lib:/app/lib
       - ./web/types:/app/types
       - ./web/auth.ts:/app/auth.ts
+      - ./web/proxy.ts:/app/proxy.ts
       - ./web/public:/app/public
       - ./web/locales:/app/locales
 

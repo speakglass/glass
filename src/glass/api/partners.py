@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field, HttpUrl, constr, field_validator
 from ..auth.jwt import AuthenticatedUser, require_authenticated_user
 from ..config import get_settings
 from ..persistence.service import (
+    AccountUserNotFoundError,
     ensure_user,
     create_partner,
     delete_partner,
@@ -41,7 +42,10 @@ async def _account_context(
     user: AuthenticatedUser,
 ) -> tuple[Any, Any, dict[str, Any], Any]:
     db = request.app.state.history_store
-    account_user = await ensure_user(db, user)
+    try:
+        account_user = await ensure_user(db, user, create_if_missing=False)
+    except AccountUserNotFoundError as exc:
+        raise HTTPException(status_code=401, detail="Account not found. Please sign in again.") from exc
     app_state = getattr(request.app.state, "app_state", None)
     settings = getattr(app_state, "settings", None) or get_settings()
     billing_service = getattr(app_state, "billing_service", None)
