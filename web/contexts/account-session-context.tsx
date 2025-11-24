@@ -144,11 +144,24 @@ export function AccountSessionProvider({ children }: { children: React.ReactNode
   // Handle 401 errors by signing out
   useEffect(() => {
     if (isError && isUnauthorizedError(error)) {
-      console.warn('[Session] 401 Unauthorized - signing out');
+      console.warn('[Session] 401 Unauthorized - user not found in database, signing out');
+
+      // Clear local cache immediately
+      queryClient.clear();
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+
       // Sign out and redirect to login
-      void signOut({ redirect: true, callbackUrl: '/login' });
+      // Use window.location to ensure complete page reload and prevent infinite redirects
+      void signOut({ redirect: false }).then(() => {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+      });
     }
-  }, [isError, error]);
+  }, [isError, error, queryClient]);
 
   // Mutation for completing onboarding
   const markOnboardingCompleteMutation = useMutation({

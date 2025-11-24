@@ -21,9 +21,30 @@ const sanitize = (value: string | null): string | undefined => {
 
 const hasWindow = () => typeof window !== 'undefined';
 
-export const extractUtmParams = (
-  searchParams?: URLSearchParams | ReadonlyURLSearchParams | null
-): UtmParams => {
+export const getCookieStoredUtmParams = (): UtmParams => {
+  if (!hasWindow()) {
+    return {};
+  }
+  try {
+    const prefix = `${UTM_STORAGE_KEY}=`;
+    const cookies = document.cookie ? document.cookie.split(';') : [];
+    const match = cookies.map((cookie) => cookie.trim()).find((cookie) => cookie.startsWith(prefix));
+    if (!match) {
+      return {};
+    }
+    const encodedValue = match.slice(prefix.length);
+    if (!encodedValue) {
+      return {};
+    }
+    const decoded = decodeURIComponent(encodedValue);
+    const parsed = JSON.parse(decoded) as UtmParams;
+    return parsed ?? {};
+  } catch {
+    return {};
+  }
+};
+
+export const extractUtmParams = (searchParams?: URLSearchParams | ReadonlyURLSearchParams | null): UtmParams => {
   if (!searchParams) {
     return {};
   }
@@ -37,8 +58,18 @@ export const extractUtmParams = (
   return params;
 };
 
-export const hasAnyUtmParam = (params: UtmParams): boolean =>
-  UTM_PARAM_KEYS.some((key) => Boolean(params[key]));
+export const hasAnyUtmParam = (params: UtmParams): boolean => UTM_PARAM_KEYS.some((key) => Boolean(params[key]));
+
+const persistUtmParams = (params: UtmParams): void => {
+  if (!hasWindow()) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(params));
+  } catch {
+    // Ignore storage failures (e.g., Safari private browsing)
+  }
+};
 
 export const getStoredUtmParams = (): UtmParams => {
   if (!hasWindow()) {
@@ -53,17 +84,6 @@ export const getStoredUtmParams = (): UtmParams => {
     return parsed ?? {};
   } catch {
     return {};
-  }
-};
-
-const persistUtmParams = (params: UtmParams): void => {
-  if (!hasWindow()) {
-    return;
-  }
-  try {
-    window.localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(params));
-  } catch {
-    // Ignore storage failures (e.g., Safari private browsing)
   }
 };
 
@@ -90,15 +110,20 @@ export const persistFirstTouchUtm = (incoming: UtmParams, existing?: UtmParams):
   return current;
 };
 
-export const ensureFirstTouchUtm = (
-  searchParams?: URLSearchParams | ReadonlyURLSearchParams | null
-): UtmParams => {
+export const ensureFirstTouchUtm = (searchParams?: URLSearchParams | ReadonlyURLSearchParams | null): UtmParams => {
   if (!hasWindow()) {
     return {};
   }
   const stored = getStoredUtmParams();
   const incoming = extractUtmParams(searchParams ?? new URLSearchParams(window.location.search));
   if (!hasAnyUtmParam(incoming)) {
+    if (hasAnyUtmParam(stored)) {
+      return stored;
+    }
+    const cookieParams = getCookieStoredUtmParams();
+    if (hasAnyUtmParam(cookieParams)) {
+      return persistFirstTouchUtm(cookieParams, stored);
+    }
     return stored;
   }
   return persistFirstTouchUtm(incoming, stored);

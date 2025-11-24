@@ -54,6 +54,9 @@ class OAuthSignInRequest(BaseModel):
     email: EmailStr
     name: str | None = None
     avatar_url: str | None = None
+    utm_source: str | None = Field(default=None, max_length=255)
+    utm_campaign: str | None = Field(default=None, max_length=255)
+    utm_content: str | None = Field(default=None, max_length=255)
 
 
 class VerifyRequest(BaseModel):
@@ -256,6 +259,17 @@ async def oauth_signin(request: Request, payload: OAuthSignInRequest) -> Authent
                 user.avatar_url = payload.avatar_url
                 updated = True
 
+            # Update UTM only if not already set (first-touch attribution)
+            if payload.utm_source and not user.utm_source:
+                user.utm_source = payload.utm_source
+                updated = True
+            if payload.utm_campaign and not user.utm_campaign:
+                user.utm_campaign = payload.utm_campaign
+                updated = True
+            if payload.utm_content and not user.utm_content:
+                user.utm_content = payload.utm_content
+                updated = True
+
             if updated:
                 session.add(user)
                 await session.commit()
@@ -276,6 +290,9 @@ async def oauth_signin(request: Request, payload: OAuthSignInRequest) -> Authent
             name=payload.name,
             avatar_url=payload.avatar_url,
             email_verified=True,  # OAuth users are automatically verified
+            utm_source=payload.utm_source,
+            utm_campaign=payload.utm_campaign,
+            utm_content=payload.utm_content,
         )
 
         # Notify Discord about new signup (best-effort)
@@ -573,5 +590,65 @@ async def update_language_settings(
             native_lang=account_user.native_lang,
             language_level=account_user.language_level,
         )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+class UpdateUtmRequest(BaseModel):
+    """Request to update UTM attribution data."""
+
+    utm_source: str | None = Field(default=None, max_length=255)
+    utm_campaign: str | None = Field(default=None, max_length=255)
+    utm_content: str | None = Field(default=None, max_length=255)
+
+
+class UpdateUtmResponse(BaseModel):
+    """Response for UTM update."""
+
+    success: bool
+    message: str
+
+
+@router.patch("/accounts/me/utm", response_model=UpdateUtmResponse)
+async def update_utm(
+    request: Request,
+    payload: UpdateUtmRequest,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> UpdateUtmResponse:
+    """Update the user's UTM attribution data.
+
+    This endpoint uses first-touch attribution: UTM values are only updated
+    if they are not already set. This ensures we capture the original source
+    of user acquisition.
+    """
+    db = request.app.state.history_store
+
+    try:
+        account_user = await get_user_by_id(db, user.user_id)
+        if not account_user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Update only if not already set (first-touch attribution)
+        updated = False
+        async_session_factory = db.session()
+        async with async_session_factory() as session:
+            if payload.utm_source and not account_user.utm_source:
+                account_user.utm_source = payload.utm_source
+                updated = True
+            if payload.utm_campaign and not account_user.utm_campaign:
+                account_user.utm_campaign = payload.utm_campaign
+                updated = True
+            if payload.utm_content and not account_user.utm_content:
+                account_user.utm_content = payload.utm_content
+                updated = True
+
+            if updated:
+                session.add(account_user)
+                await session.commit()
+                await session.refresh(account_user)
+                return UpdateUtmResponse(success=True, message="UTM data updated successfully")
+            else:
+                return UpdateUtmResponse(success=True, message="UTM data already set (first-touch attribution)")
+
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
