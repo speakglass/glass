@@ -1025,7 +1025,7 @@ export default function StartCall() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="flex flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5"
+                className="flex w-full flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5"
               >
                 <PartnerSelection
                   roleplayPartners={roleplayPartners}

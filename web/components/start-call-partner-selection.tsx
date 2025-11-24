@@ -113,8 +113,7 @@ export function PartnerSelection({
     openCreatePartnerModal();
   }, [partnerLimitBlocked, onPartnerLimitBlocked, openCreatePartnerModal]);
 
-  const hoveredOccupation =
-    hoveredPartner?.personaOccupationTranslation || hoveredPartner?.personaOccupation || '';
+  const hoveredOccupation = hoveredPartner?.personaOccupationTranslation || hoveredPartner?.personaOccupation || '';
   const hoveredCity = hoveredPartner?.personaCityTranslation || hoveredPartner?.personaCity || '';
   const hoveredCountry = hoveredPartner?.personaCountryTranslation || hoveredPartner?.personaCountry || '';
   const hoveredLocation = [hoveredCity, hoveredCountry].filter(Boolean).join(', ');
@@ -151,7 +150,7 @@ export function PartnerSelection({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       className={cn(
-        'flex flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5',
+        'flex w-full flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5',
         isStartingCall && 'pointer-events-none'
       )}
     >
@@ -163,75 +162,7 @@ export function PartnerSelection({
           <Trans>Choose someone to practice with</Trans>
         </p>
       </div>
-      <div className="relative w-full max-w-md mx-auto" ref={partnerListWrapperRef}>
-        {generationJob && (
-          <div className="px-1.5 mb-3">
-            <div
-              className={cn(
-                'rounded-2xl border p-4 flex flex-col gap-3 sm:flex-row sm:items-start',
-                isGenerationJobFailed ? 'border-destructive/40 bg-destructive/10' : 'border-primary/30 bg-primary/5'
-              )}
-            >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-background/80 sm:mt-0.5">
-                {isGenerationJobFailed ? (
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
-                ) : (
-                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0 space-y-1">
-                <p className="font-semibold text-sm text-foreground">
-                  {isGenerationJobFailed ? (
-                    <Trans>Custom partner unavailable</Trans>
-                  ) : (
-                    <Trans>Your custom partner is getting ready</Trans>
-                  )}
-                </p>
-                {generationStatusCopy && (
-                  <p className="text-sm text-muted-foreground break-words">{generationStatusCopy}</p>
-                )}
-                {isGenerationJobFailed && generationJob.error && (
-                  <p className="text-xs text-muted-foreground break-words">{generationJob.error}</p>
-                )}
-              </div>
-              {hasGenerationPreview && (
-                <div className="p-3 rounded-xl bg-background/80 border border-border/50 space-y-1 w-full">
-                  <p className="text-sm font-medium text-foreground">
-                    {generationPreviewName || <Trans>Unknown partner</Trans>}
-                  </p>
-                  {generationPreviewLocation && (
-                    <p className="text-xs text-muted-foreground">{generationPreviewLocation}</p>
-                  )}
-                  {generationPreviewSummary && (
-                    <p className="text-sm text-muted-foreground line-clamp-3">{generationPreviewSummary}</p>
-                  )}
-                </div>
-              )}
-              <div className="flex flex-col gap-2 sm:items-end w-full sm:w-auto">
-                {isGenerationJobFailed && (
-                  <Button
-                    size="sm"
-                    disabled={partnerLimitBlocked}
-                    onClick={handleCreatePartnerClick}
-                    className="sm:w-auto w-full"
-                  >
-                    <Trans>Try again</Trans>
-                  </Button>
-                )}
-                {onDismissGenerationJob && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={onDismissGenerationJob}
-                    className="sm:w-auto w-full text-muted-foreground hover:text-foreground"
-                  >
-                    <Trans>Dismiss</Trans>
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+      <div className="relative w-full max-w-[448px] mx-auto" ref={partnerListWrapperRef}>
         {hoveredPartner && hoveredPartnerPreviewTop !== null && (
           <div
             className="hidden sm:block absolute -left-48 -translate-y-1/2 w-44 pointer-events-none transition-all duration-200 opacity-100 translate-x-0 z-0"
@@ -288,14 +219,119 @@ export function PartnerSelection({
         )}
         <div
           ref={partnerListRef}
-          className="flex flex-col gap-2 w-full max-h-[60vh] overflow-y-auto pb-4 sm:pb-5 pr-1 sm:pr-2"
+          className="flex flex-col w-full max-h-[60vh] overflow-y-auto pb-4 sm:pb-5"
+          style={{ scrollbarGutter: 'stable' }}
         >
+          {generationJob && (
+            <div className="-mx-1.5 mb-2">
+              <div className="px-1.5">
+                <div
+                  onMouseEnter={(event) => {
+                    if (generationPreviewPartner) {
+                      setHoveredPartner(generationPreviewPartner);
+                      if (partnerListWrapperRef.current) {
+                        const wrapperRect = partnerListWrapperRef.current.getBoundingClientRect();
+                        const cardRect = event.currentTarget.getBoundingClientRect();
+                        setHoveredPartnerPreviewTop(cardRect.top - wrapperRect.top + cardRect.height / 2);
+                      } else {
+                        setHoveredPartnerPreviewTop(null);
+                      }
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredPartner(null);
+                    setHoveredPartnerPreviewTop(null);
+                  }}
+                  className={cn(
+                    'group relative px-4 py-3 rounded-xl transition-all cursor-default outline-none',
+                    getCardClass(),
+                    isGenerationJobFailed ? 'border-destructive/40 bg-destructive/5' : 'bg-accent/30 border-primary/20'
+                  )}
+                >
+                  <div className="relative flex items-center gap-3">
+                    <div className="relative h-12 w-12 shrink-0">
+                      {generationPreviewPartner?.avatarUrl ? (
+                        <PartnerAvatar
+                          className="h-12 w-12 bg-muted text-foreground/80"
+                          fallbackSize="md"
+                          name={generationPreviewName}
+                          src={generationPreviewPartner.avatarUrl}
+                          alt={generationPreviewName}
+                        />
+                      ) : (
+                        <div className="h-full w-full rounded-full border border-dashed border-primary/40 bg-linear-to-br from-muted/70 via-card/80 to-muted/40 animate-pulse flex items-center justify-center">
+                          <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                    <div className={'flex-1 min-w-0 flex items-start gap-2'}>
+                      <div className="flex-1 min-w-0">
+                        <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
+                          {generationPreviewName || <Trans>Finding AI partner</Trans>}
+                        </div>
+                        <div className={`${getTextClass('muted')} text-xs truncate`}>
+                          {isGenerationJobFailed
+                            ? generationJob.error || t`Unable to create partner`
+                            : generationStatusCopy || t`Creating your partner...`}
+                        </div>
+                      </div>
+                      {onDismissGenerationJob && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-foreground rounded-lg p-1.5 border border-border/0 hover:border-border bg-muted/60 hover:bg-muted data-[state=open]:opacity-100 data-[state=open]:border-border data-[state=open]:bg-muted"
+                              aria-label="Partner actions"
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                onDismissGenerationJob();
+                              }}
+                            >
+                              <Trans>Dismiss</Trans>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                      {!onDismissGenerationJob && (
+                        <button
+                          type="button"
+                          disabled
+                          className="invisible rounded-lg p-1.5 border border-border/0 bg-muted/60"
+                          aria-label="Partner actions"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {isGenerationJobFailed && (
+                    <div className="mt-2 pt-2 border-t border-border/50">
+                      <Button size="sm" disabled={partnerLimitBlocked} onClick={handleCreatePartnerClick}>
+                        <Trans>Try again</Trans>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           {partnersLoading ? (
             <div className={`${getTextClass('muted')} text-sm text-center py-4`}>
               <Trans>Loading partners...</Trans>
             </div>
           ) : roleplayPartners.length > 0 ? (
-            <div className="-mx-1.5 space-y-2">
+            <div className="-mx-1.5 space-y-2 mb-2">
               {roleplayPartners.map((partner) => (
                 <div key={partner.id} className="px-1.5">
                   <div
@@ -407,8 +443,8 @@ export function PartnerSelection({
                     : 'border-border hover:border-primary/40 bg-muted/30 border-dashed'
                 )}
               >
-                <div className={'flex items-center gap-3 justify-between'}>
-                  <div className={'flex items-center gap-3'}>
+                <div className={'flex items-center gap-3 justify-between min-w-0'}>
+                  <div className={'flex items-center gap-3 min-w-0'}>
                     <div
                       className={cn(
                         'w-12 h-12 rounded-full flex items-center justify-center',
@@ -422,7 +458,7 @@ export function PartnerSelection({
                     <div className={'flex-1 min-w-0'}>
                       <div
                         className={cn(
-                          'font-medium text-base mb-0.5',
+                          'font-medium text-base mb-0.5 truncate',
                           roleplayPartners.length === 0 ? 'text-emerald-900 font-semibold' : getTextClass('title')
                         )}
                       >
@@ -469,8 +505,8 @@ export function PartnerSelection({
                       'border-border hover:border-muted-foreground/30 hover:bg-muted/30'
                     )}
                   >
-                    <div className={'flex items-center gap-3 justify-between'}>
-                      <div className={'flex items-center gap-3'}>
+                    <div className={'flex items-center gap-3 justify-between min-w-0'}>
+                      <div className={'flex items-center gap-3 min-w-0'}>
                         <div
                           className={cn(
                             'w-12 h-12 rounded-full flex items-center justify-center',
@@ -487,7 +523,7 @@ export function PartnerSelection({
                           </svg>
                         </div>
                         <div className={'flex-1 min-w-0'}>
-                          <div className={`${getTextClass('title')} font-medium text-base mb-0.5`}>
+                          <div className={`${getTextClass('title')} font-medium text-base mb-0.5 truncate`}>
                             <Trans>Use during real conversations</Trans>
                           </div>
                           <div className={`${getTextClass('muted')} text-xs truncate`}>
