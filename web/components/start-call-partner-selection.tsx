@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Trans } from '@lingui/react/macro';
 import { motion } from 'motion/react';
 import { cn } from '@/utils';
-import { ConversationPartner } from '@/lib/account-api';
+import { ConversationPartner, type PartnerGenerationJob, type PartnerGenerationStatus } from '@/lib/account-api';
 import { PartnerAvatar } from '@/components/partner-avatar';
 import { getLanguageName } from '@/lib/conversation-display';
 import { useLocale } from '@/hooks/use-locale';
@@ -12,7 +12,29 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Search, ArrowRight, Briefcase, MapPin, Phone, Languages, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  MoreHorizontal,
+  Search,
+  ArrowRight,
+  Briefcase,
+  MapPin,
+  Phone,
+  Languages,
+  Loader2,
+  AlertTriangle,
+} from 'lucide-react';
+import { t } from '@lingui/core/macro';
+
+const GENERATION_STATUS_MESSAGES: Record<PartnerGenerationStatus, string> = {
+  queued: t`We're matching you with someone promising...`,
+  generating_persona: t`Meeting potential AI partners...`,
+  selecting_voice: t`Your partner is fine-tuning their voice...`,
+  saving_partner: t`Your partner is polishing their profile...`,
+  generating_avatar: t`Your partner is picking a friendly photo...`,
+  completed: t`Ready to say hi!`,
+  failed: t`We couldn't find the right match.`,
+};
 
 interface PartnerSelectionProps {
   roleplayPartners: ConversationPartner[];
@@ -28,6 +50,8 @@ interface PartnerSelectionProps {
   onSwitchToLiveMode?: () => void;
   partnerLimitBlocked: boolean;
   onPartnerLimitBlocked?: () => void;
+  generationJob?: PartnerGenerationJob | null;
+  onDismissGenerationJob?: () => void;
 }
 
 export function PartnerSelection({
@@ -44,6 +68,8 @@ export function PartnerSelection({
   onSwitchToLiveMode,
   partnerLimitBlocked = false,
   onPartnerLimitBlocked,
+  generationJob,
+  onDismissGenerationJob,
 }: PartnerSelectionProps) {
   const locale = useLocale();
   const [hoveredPartner, setHoveredPartner] = useState<ConversationPartner | null>(null);
@@ -87,6 +113,25 @@ export function PartnerSelection({
     openCreatePartnerModal();
   }, [partnerLimitBlocked, onPartnerLimitBlocked, openCreatePartnerModal]);
 
+  const hoveredOccupation =
+    hoveredPartner?.personaOccupationTranslation || hoveredPartner?.personaOccupation || '';
+  const hoveredCity = hoveredPartner?.personaCityTranslation || hoveredPartner?.personaCity || '';
+  const hoveredCountry = hoveredPartner?.personaCountryTranslation || hoveredPartner?.personaCountry || '';
+  const hoveredLocation = [hoveredCity, hoveredCountry].filter(Boolean).join(', ');
+  const generationStatusCopy =
+    generationJob && (generationJob.message || GENERATION_STATUS_MESSAGES[generationJob.status]);
+  const isGenerationJobFailed = generationJob?.status === 'failed';
+  const generationPreview = generationJob?.partner || generationJob?.personaPreview;
+  const generationPreviewLocation =
+    generationPreview &&
+    [generationPreview.personaCityTranslation ?? generationPreview.personaCity, generationPreview.personaCountryTranslation ?? generationPreview.personaCountry]
+      .filter(Boolean)
+      .join(', ');
+  const generationPreviewSummary =
+    (generationJob?.partner?.descriptionTranslation || generationJob?.partner?.description) ??
+    generationPreview?.summaryTranslation ??
+    generationPreview?.summary;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -106,6 +151,74 @@ export function PartnerSelection({
         </p>
       </div>
       <div className="relative w-full max-w-md mx-auto" ref={partnerListWrapperRef}>
+        {generationJob && (
+          <div className="px-1.5 mb-3">
+            <div
+              className={cn(
+                'rounded-2xl border p-4 flex flex-col gap-3 sm:flex-row sm:items-start',
+                isGenerationJobFailed ? 'border-destructive/40 bg-destructive/10' : 'border-primary/30 bg-primary/5'
+              )}
+            >
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-background/80 sm:mt-0.5">
+                {isGenerationJobFailed ? (
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                ) : (
+                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0 space-y-1">
+                <p className="font-semibold text-sm text-foreground">
+                  {isGenerationJobFailed ? (
+                    <Trans>Custom partner unavailable</Trans>
+                  ) : (
+                    <Trans>Your custom partner is getting ready</Trans>
+                  )}
+                </p>
+                {generationStatusCopy && (
+                  <p className="text-sm text-muted-foreground break-words">{generationStatusCopy}</p>
+                )}
+                {isGenerationJobFailed && generationJob.error && (
+                  <p className="text-xs text-muted-foreground break-words">{generationJob.error}</p>
+                )}
+              </div>
+              {generationPreview && (
+                <div className="p-3 rounded-xl bg-background/80 border border-border/50 space-y-1 w-full">
+                  <p className="text-sm font-medium text-foreground">
+                    {generationPreview.name || <Trans>Unknown partner</Trans>}
+                  </p>
+                  {generationPreviewLocation && (
+                    <p className="text-xs text-muted-foreground">{generationPreviewLocation}</p>
+                  )}
+                  {generationPreviewSummary && (
+                    <p className="text-sm text-muted-foreground line-clamp-3">{generationPreviewSummary}</p>
+                  )}
+                </div>
+              )}
+              <div className="flex flex-col gap-2 sm:items-end w-full sm:w-auto">
+                {isGenerationJobFailed && (
+                  <Button
+                    size="sm"
+                    disabled={partnerLimitBlocked}
+                    onClick={handleCreatePartnerClick}
+                    className="sm:w-auto w-full"
+                  >
+                    <Trans>Try again</Trans>
+                  </Button>
+                )}
+                {onDismissGenerationJob && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={onDismissGenerationJob}
+                    className="sm:w-auto w-full text-muted-foreground hover:text-foreground"
+                  >
+                    <Trans>Dismiss</Trans>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         {hoveredPartner && hoveredPartnerPreviewTop !== null && (
           <div
             className="hidden sm:block absolute -left-48 -translate-y-1/2 w-44 pointer-events-none transition-all duration-200 opacity-100 translate-x-0 z-0"
@@ -135,18 +248,16 @@ export function PartnerSelection({
                     </span>
                   </div>
                 )}
-                {hoveredPartner.personaOccupation && (
+                {hoveredOccupation && (
                   <div className="flex items-center gap-1.5 truncate">
                     <Briefcase className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">{hoveredPartner.personaOccupation}</span>
+                    <span className="truncate">{hoveredOccupation}</span>
                   </div>
                 )}
-                {(hoveredPartner.personaCity || hoveredPartner.personaCountry) && (
+                {hoveredLocation && (
                   <div className="flex items-center gap-1.5 truncate">
                     <MapPin className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">
-                      {[hoveredPartner.personaCity, hoveredPartner.personaCountry].filter(Boolean).join(', ')}
-                    </span>
+                    <span className="truncate">{hoveredLocation}</span>
                   </div>
                 )}
                 {hoveredPartner.conversationCount !== undefined && (

@@ -4,11 +4,12 @@ import asyncio
 import logging
 import uuid
 from contextlib import suppress
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field, replace, asdict
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Sequence
 
+from ..domain.avatar_fallbacks import choose_fallback_avatar
 from ..domain.partner_generation import (
     PersonaPreferences,
     VoiceSelectionError,
@@ -17,7 +18,12 @@ from ..domain.partner_generation import (
     generate_partner_persona,
     select_voice_for_persona,
 )
-from ..persistence.service import create_partner, update_partner, count_roleplay_partners
+from ..persistence.service import (
+    create_partner,
+    update_partner,
+    count_roleplay_partners,
+    upsert_partner_generation_job_record,
+)
 from ..utils.blob_storage import AzureBlobUploader, build_partner_avatar_blob_name
 from ..services.limits import partner_limit_status
 
@@ -49,8 +55,11 @@ class PersonaPreview:
     persona_age: str | None = None
     persona_gender: str | None = None
     persona_occupation: str | None = None
+    persona_occupation_translation: str | None = None
     persona_city: str | None = None
+    persona_city_translation: str | None = None
     persona_country: str | None = None
+    persona_country_translation: str | None = None
     persona_background: str | None = None
     persona_interests: list[str] = field(default_factory=list)
     persona_background_translation: str | None = None
@@ -119,6 +128,8 @@ class PartnerGenerationJobManager:
         async with self._lock:
             self._prune_locked()
             self._jobs[job.id] = job
+            snapshot = job.snapshot()
+        await self._persist_job_snapshot(snapshot)
 
         preferences = PersonaPreferences(
             learning_lang=learning_lang,
@@ -194,8 +205,11 @@ class PartnerGenerationJobManager:
                 persona_age=str(persona.age),
                 persona_gender=persona.gender,
                 persona_occupation=persona.occupation,
+                persona_occupation_translation=localized_persona.occupation if localized_persona else None,
                 persona_city=persona.city,
+                persona_city_translation=localized_persona.city if localized_persona else None,
                 persona_country=persona.country,
+                persona_country_translation=localized_persona.country if localized_persona else None,
                 persona_background=persona.background,
                 persona_background_translation=localized_persona.background if localized_persona else None,
                 persona_interests=list(persona.interests),
@@ -292,8 +306,11 @@ class PartnerGenerationJobManager:
                 persona_age=str(persona.age),
                 persona_gender=persona.gender,
                 persona_occupation=persona.occupation,
+                persona_occupation_translation=localized_persona.occupation if localized_persona else None,
                 persona_city=persona.city,
+                persona_city_translation=localized_persona.city if localized_persona else None,
                 persona_country=persona.country,
+                persona_country_translation=localized_persona.country if localized_persona else None,
                 persona_relationship=preferences.partner_type,
                 persona_background=persona.background,
                 persona_background_translation=localized_persona.background if localized_persona else None,
@@ -320,6 +337,7 @@ class PartnerGenerationJobManager:
             )
 
             avatar_bytes: bytes | None = None
+            fallback_avatar_url: str | None = None
             if avatar_task:
                 await self._update_job(
                     job_id,
@@ -347,9 +365,20 @@ class PartnerGenerationJobManager:
                         job_id,
                         avatar_gen_elapsed,
                     )
+                    fallback_avatar_url = choose_fallback_avatar(
+                        gender=persona.gender,
+                        country=persona.country,
+                        age=persona.age,
+                    )
             else:
                 LOGGER.info("[Job %s] STEP 5/5: Skipping avatar generation (not configured)", job_id)
+                fallback_avatar_url = choose_fallback_avatar(
+                    gender=persona.gender,
+                    country=persona.country,
+                    age=persona.age,
+                )
 
+            selected_avatar_url: str | None = None
             if avatar_bytes and getattr(partner, "id", None):
                 await self._update_job(job_id, message="Posting their new profile photo...")
                 upload_start = time.time()
@@ -379,8 +408,23 @@ class PartnerGenerationJobManager:
                         steps_add=["avatar"],
                         message="Photo looks great!",
                     )
+                    selected_avatar_url = avatar_url
                 else:
                     LOGGER.warning("[Job %s] Avatar upload returned no URL after %.2fs", job_id, upload_elapsed)
+            if not selected_avatar_url and fallback_avatar_url and getattr(partner, "id", None):
+                LOGGER.info("[Job %s] Applying fallback avatar for persona %s", job_id, persona.name)
+                partner = await update_partner(
+                    self._database,
+                    partner_id=partner.id,
+                    user_id=user_id,
+                    avatar_url=fallback_avatar_url,
+                )
+                await self._update_job(
+                    job_id,
+                    partner=partner,
+                    steps_add=["avatar"],
+                    message="Posted a curated profile photo",
+                )
 
             job_elapsed = time.time() - job_start_time
             LOGGER.info(
@@ -537,6 +581,27 @@ class PartnerGenerationJobManager:
                     if step not in job.steps_completed:
                         job.steps_completed.append(step)
             job.updated_at = _utcnow()
+            snapshot = job.snapshot()
+        await self._persist_job_snapshot(snapshot)
+
+    async def _persist_job_snapshot(self, job: PartnerGenerationJob) -> None:
+        preview_dict = asdict(job.persona_preview) if job.persona_preview else None
+        status_value = job.status.value if isinstance(job.status, PartnerGenerationJobStatus) else str(job.status)
+        try:
+            await upsert_partner_generation_job_record(
+                self._database,
+                job_id=job.id,
+                user_id=job.user_id,
+                status=status_value,
+                message=job.message,
+                steps_completed=list(job.steps_completed),
+                persona_preview=preview_dict,
+                partner_id=job.partner_id,
+                voice_id=job.voice_id,
+                error=job.error,
+            )
+        except Exception as exc:  # pragma: no cover - defensive logging
+            LOGGER.warning("Failed to persist partner generation job %s: %s", job.id, exc)
 
     async def _fail_job(self, job_id: str, error_message: str) -> None:
         await self._update_job(

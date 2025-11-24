@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Iterable
+from typing import Any, Iterable, Sequence
 import uuid
 import secrets
 
@@ -21,6 +21,7 @@ from .db import (
     ConversationEvaluation,
     MessageFeedback,
     MemoryRecord,
+    PartnerGenerationJobRecord,
     PasswordResetToken,
     PersistenceDatabase,
 )
@@ -363,8 +364,11 @@ async def create_partner(
     persona_age: str | None = None,
     persona_gender: str | None = None,
     persona_occupation: str | None = None,
+    persona_occupation_translation: str | None = None,
     persona_city: str | None = None,
+    persona_city_translation: str | None = None,
     persona_country: str | None = None,
+    persona_country_translation: str | None = None,
     persona_relationship: str | None = None,
     persona_background: str | None = None,
     persona_background_translation: str | None = None,
@@ -388,8 +392,11 @@ async def create_partner(
             persona_age=persona_age,
             persona_gender=persona_gender,
             persona_occupation=persona_occupation,
+            persona_occupation_translation=persona_occupation_translation,
             persona_city=persona_city,
+            persona_city_translation=persona_city_translation,
             persona_country=persona_country,
+            persona_country_translation=persona_country_translation,
             persona_relationship=persona_relationship,
             persona_background=persona_background,
             persona_background_translation=persona_background_translation,
@@ -417,6 +424,12 @@ async def update_partner(
     voice_id: str | None = None,
     persona_age: str | None = None,
     persona_gender: str | None = None,
+    persona_occupation: str | None = None,
+    persona_occupation_translation: str | None = None,
+    persona_city: str | None = None,
+    persona_city_translation: str | None = None,
+    persona_country: str | None = None,
+    persona_country_translation: str | None = None,
     persona_relationship: str | None = None,
     persona_background: str | None = None,
     persona_background_translation: str | None = None,
@@ -453,6 +466,18 @@ async def update_partner(
             partner.persona_age = persona_age
         if persona_gender is not None:
             partner.persona_gender = persona_gender
+        if persona_occupation is not None:
+            partner.persona_occupation = persona_occupation
+        if persona_occupation_translation is not None:
+            partner.persona_occupation_translation = persona_occupation_translation
+        if persona_city is not None:
+            partner.persona_city = persona_city
+        if persona_city_translation is not None:
+            partner.persona_city_translation = persona_city_translation
+        if persona_country is not None:
+            partner.persona_country = persona_country
+        if persona_country_translation is not None:
+            partner.persona_country_translation = persona_country_translation
         if persona_relationship is not None:
             partner.persona_relationship = persona_relationship
         if persona_background is not None:
@@ -468,6 +493,51 @@ async def update_partner(
         await session.commit()
         await session.refresh(partner)
         return partner
+
+
+async def upsert_partner_generation_job_record(
+    db: PersistenceDatabase,
+    *,
+    job_id: str,
+    user_id: str,
+    status: str,
+    message: str | None,
+    steps_completed: Sequence[str],
+    persona_preview: dict[str, Any] | None,
+    partner_id: str | None,
+    voice_id: str | None,
+    error: str | None,
+) -> None:
+    """Persist the latest snapshot of a partner generation job."""
+    async_session_factory = db.session()
+    async with async_session_factory() as session:
+        record = await session.scalar(select(PartnerGenerationJobRecord).where(PartnerGenerationJobRecord.id == job_id))
+        if not record:
+            record = PartnerGenerationJobRecord(id=job_id, user_id=user_id)
+            session.add(record)
+        record.status = status
+        record.message = message
+        record.steps_completed = list(steps_completed)
+        record.persona_preview = persona_preview
+        record.partner_id = partner_id
+        record.voice_id = voice_id
+        record.error = error
+        await session.commit()
+
+
+async def get_partner_generation_job_record(
+    db: PersistenceDatabase,
+    job_id: str,
+    *,
+    user_id: str | None = None,
+) -> PartnerGenerationJobRecord | None:
+    """Fetch a persisted partner generation job snapshot."""
+    async_session_factory = db.session()
+    async with async_session_factory() as session:
+        stmt = select(PartnerGenerationJobRecord).where(PartnerGenerationJobRecord.id == job_id)
+        if user_id is not None:
+            stmt = stmt.where(PartnerGenerationJobRecord.user_id == user_id)
+        return await session.scalar(stmt)
 
 
 async def delete_partner(

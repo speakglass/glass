@@ -87,6 +87,10 @@ export function PartnerDetailModal({ open, onClose, partner, onStartChat }: Part
     professional: t`Professional practice`,
     figuring_out: t`Still figuring it out`,
   };
+  const occupationLabel = partner.personaOccupationTranslation || partner.personaOccupation;
+  const cityLabel = partner.personaCityTranslation || partner.personaCity;
+  const countryLabel = partner.personaCountryTranslation || partner.personaCountry;
+  const locationLabel = [cityLabel, countryLabel].filter(Boolean).join(', ');
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
@@ -145,16 +149,16 @@ export function PartnerDetailModal({ open, onClose, partner, onStartChat }: Part
                     <span className="capitalize">{partner.personaGender}</span>
                   </div>
                 )}
-                {partner.personaOccupation && (
+                {occupationLabel && (
                   <div className="flex items-center gap-1.5">
                     <Briefcase className="h-3.5 w-3.5" />
-                    <span className="capitalize">{partner.personaOccupation}</span>
+                    <span className="capitalize">{occupationLabel}</span>
                   </div>
                 )}
-                {(partner.personaCity || partner.personaCountry) && (
+                {locationLabel && (
                   <div className="flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5" />
-                    <span>{[partner.personaCity, partner.personaCountry].filter(Boolean).join(', ')}</span>
+                    <span>{locationLabel}</span>
                   </div>
                 )}
               </div>

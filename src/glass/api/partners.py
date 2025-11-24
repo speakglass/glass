@@ -17,6 +17,7 @@ from ..persistence.service import (
     delete_partner,
     count_roleplay_partners,
     get_partner_by_id,
+    get_partner_generation_job_record,
     list_partners,
     update_partner,
 )
@@ -77,8 +78,11 @@ class PartnerResponse(BaseModel):
     persona_age: str | None = None
     persona_gender: str | None = None
     persona_occupation: str | None = None
+    persona_occupation_translation: str | None = None
     persona_city: str | None = None
+    persona_city_translation: str | None = None
     persona_country: str | None = None
+    persona_country_translation: str | None = None
     persona_relationship: str | None = None
     persona_background: str | None = None
     persona_background_translation: str | None = None
@@ -101,8 +105,11 @@ class PartnerCreateRequest(BaseModel):
     persona_age: constr(max_length=32) | None = None
     persona_gender: constr(max_length=32) | None = None
     persona_occupation: constr(max_length=128) | None = None
+    persona_occupation_translation: constr(max_length=128) | None = None
     persona_city: constr(max_length=128) | None = None
+    persona_city_translation: constr(max_length=128) | None = None
     persona_country: constr(max_length=128) | None = None
+    persona_country_translation: constr(max_length=128) | None = None
     persona_relationship: constr(max_length=64) | None = None
     persona_background: constr(max_length=1000) | None = None
     persona_background_translation: constr(max_length=1000) | None = None
@@ -120,8 +127,11 @@ class PartnerUpdateRequest(BaseModel):
     persona_age: constr(max_length=32) | None = None
     persona_gender: constr(max_length=32) | None = None
     persona_occupation: constr(max_length=128) | None = None
+    persona_occupation_translation: constr(max_length=128) | None = None
     persona_city: constr(max_length=128) | None = None
+    persona_city_translation: constr(max_length=128) | None = None
     persona_country: constr(max_length=128) | None = None
+    persona_country_translation: constr(max_length=128) | None = None
     persona_relationship: constr(max_length=64) | None = None
     persona_background: constr(max_length=1000) | None = None
     persona_background_translation: constr(max_length=1000) | None = None
@@ -168,8 +178,11 @@ class PartnerGenerationPersonaPreview(BaseModel):
     persona_age: str | None = None
     persona_gender: str | None = None
     persona_occupation: str | None = None
+    persona_occupation_translation: str | None = None
     persona_city: str | None = None
+    persona_city_translation: str | None = None
     persona_country: str | None = None
+    persona_country_translation: str | None = None
     persona_background: str | None = None
     persona_background_translation: str | None = None
     persona_interests: list[str] = Field(default_factory=list)
@@ -204,8 +217,11 @@ def _serialize_partner(partner) -> PartnerResponse:
         persona_age=getattr(partner, "persona_age", None),
         persona_gender=getattr(partner, "persona_gender", None),
         persona_occupation=getattr(partner, "persona_occupation", None),
+        persona_occupation_translation=getattr(partner, "persona_occupation_translation", None),
         persona_city=getattr(partner, "persona_city", None),
+        persona_city_translation=getattr(partner, "persona_city_translation", None),
         persona_country=getattr(partner, "persona_country", None),
+        persona_country_translation=getattr(partner, "persona_country_translation", None),
         persona_relationship=getattr(partner, "persona_relationship", None),
         persona_background=getattr(partner, "persona_background", None),
         persona_background_translation=getattr(partner, "persona_background_translation", None),
@@ -224,8 +240,11 @@ def _job_to_response(job: PartnerGenerationJob) -> PartnerGenerationJobResponse:
             persona_age=job.persona_preview.persona_age,
             persona_gender=job.persona_preview.persona_gender,
             persona_occupation=job.persona_preview.persona_occupation,
+            persona_occupation_translation=job.persona_preview.persona_occupation_translation,
             persona_city=job.persona_preview.persona_city,
+            persona_city_translation=job.persona_preview.persona_city_translation,
             persona_country=job.persona_preview.persona_country,
+            persona_country_translation=job.persona_preview.persona_country_translation,
             persona_background=job.persona_preview.persona_background,
             persona_interests=list(job.persona_preview.persona_interests),
             persona_background_translation=job.persona_preview.persona_background_translation,
@@ -241,6 +260,61 @@ def _job_to_response(job: PartnerGenerationJob) -> PartnerGenerationJobResponse:
         persona_preview=persona_preview,
         partner=partner_response,
         error=job.error,
+    )
+
+
+async def _job_record_to_response(
+    db,
+    record,
+    *,
+    user_id: str,
+) -> PartnerGenerationJobResponse:
+    persona_preview = None
+    preview_data = getattr(record, "persona_preview", None) or None
+    if isinstance(preview_data, dict):
+        raw_interests = preview_data.get("persona_interests") or []
+        interests = raw_interests if isinstance(raw_interests, list) else [raw_interests]
+        raw_interests_translation = preview_data.get("persona_interests_translation") or []
+        interests_translation = (
+            raw_interests_translation
+            if isinstance(raw_interests_translation, list)
+            else [raw_interests_translation]
+        )
+        persona_preview = PartnerGenerationPersonaPreview(
+            name=preview_data.get("name"),
+            summary=preview_data.get("summary"),
+            summary_translation=preview_data.get("summary_translation"),
+            persona_age=preview_data.get("persona_age"),
+            persona_gender=preview_data.get("persona_gender"),
+            persona_occupation=preview_data.get("persona_occupation"),
+            persona_occupation_translation=preview_data.get("persona_occupation_translation"),
+            persona_city=preview_data.get("persona_city"),
+            persona_city_translation=preview_data.get("persona_city_translation"),
+            persona_country=preview_data.get("persona_country"),
+            persona_country_translation=preview_data.get("persona_country_translation"),
+            persona_background=preview_data.get("persona_background"),
+            persona_background_translation=preview_data.get("persona_background_translation"),
+            persona_interests=[interest for interest in interests if isinstance(interest, str)],
+            persona_interests_translation=[
+                interest for interest in interests_translation if isinstance(interest, str)
+            ],
+        )
+    partner_response = None
+    partner_id = getattr(record, "partner_id", None)
+    if partner_id:
+        partner_obj = await get_partner_by_id(db, partner_id, user_id=user_id)
+        if partner_obj:
+            partner_response = _serialize_partner(partner_obj)
+    steps = getattr(record, "steps_completed", None) or []
+    status_value = getattr(record, "status", "queued")
+    return PartnerGenerationJobResponse(
+        job_id=record.id,
+        status=cast(PartnerGenerationStatusLiteral, status_value),
+        message=getattr(record, "message", None),
+        steps_completed=cast(list[PartnerGenerationStepLiteral], list(steps)),
+        persona_preview=persona_preview,
+        partner=partner_response,
+        error=getattr(record, "error", None),
     )
 
 
@@ -319,15 +393,18 @@ async def get_generation_job_endpoint(
     job_id: GenerationJobIdPath,
     user: AuthenticatedUser = Depends(require_authenticated_user),
 ) -> PartnerGenerationJobResponse:
+    db = request.app.state.history_store
     app_state = getattr(request.app.state, "app_state", None)
     manager = getattr(app_state, "partner_generation_manager", None)
-    if manager is None:
-        raise HTTPException(status_code=503, detail="Persona generation is not configured")
-
-    job = await manager.get_job(job_id, user_id=user.user_id)
-    if job is None:
+    job = None
+    if manager is not None:
+        job = await manager.get_job(job_id, user_id=user.user_id)
+        if job:
+            return _job_to_response(job)
+    record = await get_partner_generation_job_record(db, job_id, user_id=user.user_id)
+    if not record:
         raise HTTPException(status_code=404, detail="Generation job not found")
-    return _job_to_response(job)
+    return await _job_record_to_response(db, record, user_id=user.user_id)
 
 
 @router.post("", response_model=PartnerResponse, status_code=201)
@@ -348,6 +425,12 @@ async def create_partner_endpoint(
         avatar_url=str(payload.avatar_url) if payload.avatar_url else None,
         persona_age=payload.persona_age,
         persona_gender=payload.persona_gender,
+        persona_occupation=payload.persona_occupation,
+        persona_occupation_translation=payload.persona_occupation_translation,
+        persona_city=payload.persona_city,
+        persona_city_translation=payload.persona_city_translation,
+        persona_country=payload.persona_country,
+        persona_country_translation=payload.persona_country_translation,
         persona_relationship=payload.persona_relationship,
         persona_background=payload.persona_background,
         persona_background_translation=payload.persona_background_translation,
@@ -382,6 +465,12 @@ async def update_partner_endpoint(
             avatar_url=str(payload.avatar_url) if payload.avatar_url else None,
             persona_age=payload.persona_age,
             persona_gender=payload.persona_gender,
+            persona_occupation=payload.persona_occupation,
+            persona_occupation_translation=payload.persona_occupation_translation,
+            persona_city=payload.persona_city,
+            persona_city_translation=payload.persona_city_translation,
+            persona_country=payload.persona_country,
+            persona_country_translation=payload.persona_country_translation,
             persona_relationship=payload.persona_relationship,
             persona_background=payload.persona_background,
             persona_background_translation=payload.persona_background_translation,

@@ -1017,7 +1017,7 @@ msgstr "언어 교환 파트너 찾기"
 
 #: components/custom-partner-creator.tsx:1119
 msgid "Find another"
-msgstr "다른 항목 찾기"
+msgstr "다른 파트너 찾기"
 
 #: components/custom-partner-creator.tsx:1172
 msgid "Find partner"

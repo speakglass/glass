@@ -101,8 +101,11 @@ export interface ConversationPartner {
   personaAge?: string | null;
   personaGender?: string | null;
   personaOccupation?: string | null;
+  personaOccupationTranslation?: string | null;
   personaCity?: string | null;
+  personaCityTranslation?: string | null;
   personaCountry?: string | null;
+  personaCountryTranslation?: string | null;
   personaRelationship?: string | null;
   personaBackground?: string | null;
   personaBackgroundTranslation?: string | null;
@@ -319,8 +322,11 @@ type PartnerApi = {
   persona_age?: string | null;
   persona_gender?: string | null;
   persona_occupation?: string | null;
+  persona_occupation_translation?: string | null;
   persona_city?: string | null;
+  persona_city_translation?: string | null;
   persona_country?: string | null;
+  persona_country_translation?: string | null;
   persona_relationship?: string | null;
   persona_background?: string | null;
   persona_background_translation?: string | null;
@@ -475,8 +481,11 @@ function mapPartner(data: PartnerApi): ConversationPartner {
     personaAge: data.persona_age || null,
     personaGender: data.persona_gender || null,
     personaOccupation: data.persona_occupation || null,
+    personaOccupationTranslation: data.persona_occupation_translation || null,
     personaCity: data.persona_city || null,
+    personaCityTranslation: data.persona_city_translation || null,
     personaCountry: data.persona_country || null,
+    personaCountryTranslation: data.persona_country_translation || null,
     personaRelationship: data.persona_relationship || null,
     personaBackground: data.persona_background || null,
     personaBackgroundTranslation: data.persona_background_translation || null,
@@ -497,8 +506,11 @@ function mapPartnerPersonaPreview(data?: PartnerPersonaPreviewApi | null): Partn
     personaAge: data.persona_age ?? undefined,
     personaGender: data.persona_gender ?? undefined,
     personaOccupation: data.persona_occupation ?? undefined,
+    personaOccupationTranslation: data.persona_occupation_translation ?? undefined,
     personaCity: data.persona_city ?? undefined,
+    personaCityTranslation: data.persona_city_translation ?? undefined,
     personaCountry: data.persona_country ?? undefined,
+    personaCountryTranslation: data.persona_country_translation ?? undefined,
     personaBackground: data.persona_background ?? undefined,
     personaInterests: data.persona_interests ?? undefined,
     personaBackgroundTranslation: data.persona_background_translation ?? undefined,
@@ -758,8 +770,11 @@ export interface PartnerCreateInput {
   personaAge?: string | null;
   personaGender?: string | null;
   personaOccupation?: string | null;
+  personaOccupationTranslation?: string | null;
   personaCity?: string | null;
+  personaCityTranslation?: string | null;
   personaCountry?: string | null;
+  personaCountryTranslation?: string | null;
   personaRelationship?: string | null;
   personaBackground?: string | null;
   personaBackgroundTranslation?: string | null;
@@ -795,8 +810,11 @@ export interface PartnerPersonaPreview {
   personaAge?: string | null;
   personaGender?: string | null;
   personaOccupation?: string | null;
+  personaOccupationTranslation?: string | null;
   personaCity?: string | null;
+  personaCityTranslation?: string | null;
   personaCountry?: string | null;
+  personaCountryTranslation?: string | null;
   personaBackground?: string | null;
   personaInterests?: string[] | null;
   personaBackgroundTranslation?: string | null;
@@ -820,8 +838,11 @@ interface PartnerPersonaPreviewApi {
   persona_age?: string | null;
   persona_gender?: string | null;
   persona_occupation?: string | null;
+  persona_occupation_translation?: string | null;
   persona_city?: string | null;
+  persona_city_translation?: string | null;
   persona_country?: string | null;
+  persona_country_translation?: string | null;
   persona_background?: string | null;
   persona_interests?: string[] | null;
   persona_background_translation?: string | null;
@@ -854,8 +875,11 @@ export async function createPartner(token: string, payload: PartnerCreateInput):
     persona_age: payload.personaAge,
     persona_gender: payload.personaGender,
     persona_occupation: payload.personaOccupation,
+    persona_occupation_translation: payload.personaOccupationTranslation,
     persona_city: payload.personaCity,
+    persona_city_translation: payload.personaCityTranslation,
     persona_country: payload.personaCountry,
+    persona_country_translation: payload.personaCountryTranslation,
     persona_relationship: payload.personaRelationship,
     persona_background: payload.personaBackground,
     persona_background_translation: payload.personaBackgroundTranslation,
@@ -903,8 +927,11 @@ export interface PartnerUpdateInput {
   personaAge?: string | null;
   personaGender?: string | null;
   personaOccupation?: string | null;
+  personaOccupationTranslation?: string | null;
   personaCity?: string | null;
+  personaCityTranslation?: string | null;
   personaCountry?: string | null;
+  personaCountryTranslation?: string | null;
   personaRelationship?: string | null;
   personaBackground?: string | null;
   personaInterests?: string | null;
@@ -924,8 +951,13 @@ export async function updatePartner(
   if (payload.personaAge !== undefined) body.persona_age = payload.personaAge;
   if (payload.personaGender !== undefined) body.persona_gender = payload.personaGender;
   if (payload.personaOccupation !== undefined) body.persona_occupation = payload.personaOccupation;
+  if (payload.personaOccupationTranslation !== undefined)
+    body.persona_occupation_translation = payload.personaOccupationTranslation;
   if (payload.personaCity !== undefined) body.persona_city = payload.personaCity;
+  if (payload.personaCityTranslation !== undefined) body.persona_city_translation = payload.personaCityTranslation;
   if (payload.personaCountry !== undefined) body.persona_country = payload.personaCountry;
+  if (payload.personaCountryTranslation !== undefined)
+    body.persona_country_translation = payload.personaCountryTranslation;
   if (payload.personaRelationship !== undefined) body.persona_relationship = payload.personaRelationship;
   if (payload.personaBackground !== undefined) body.persona_background = payload.personaBackground;
   if (payload.personaInterests !== undefined) body.persona_interests = payload.personaInterests;

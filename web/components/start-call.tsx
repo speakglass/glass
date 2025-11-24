@@ -18,7 +18,14 @@ import { cn } from '@/utils';
 import { Trans } from '@lingui/react/macro';
 import { t } from '@lingui/core/macro';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ConversationPartner, fetchPartners, createCheckoutSession, fetchAccountSnapshot } from '@/lib/account-api';
+import {
+  ConversationPartner,
+  fetchPartners,
+  createCheckoutSession,
+  fetchAccountSnapshot,
+  fetchPartnerGenerationJob,
+  type PartnerGenerationJob,
+} from '@/lib/account-api';
 import { getLanguageName } from '@/lib/conversation-display';
 import { LANGUAGES } from './onboarding/onboarding-data';
 
@@ -56,6 +63,7 @@ export default function StartCall() {
   const [isCustomPartnerCreatorOpen, setIsCustomPartnerCreatorOpen] = useState(false);
   const [isEditPartnerModalOpen, setIsEditPartnerModalOpen] = useState(false);
   const [partnerToEdit, setPartnerToEdit] = useState<ConversationPartner | null>(null);
+  const [activeGenerationJob, setActiveGenerationJob] = useState<PartnerGenerationJob | null>(null);
 
   const [isDeletePartnerDialogOpen, setIsDeletePartnerDialogOpen] = useState(false);
   const [partnerPendingDelete, setPartnerPendingDelete] = useState<ConversationPartner | null>(null);
@@ -86,6 +94,9 @@ export default function StartCall() {
     partnerLimitMax !== null ? Math.min(partnerLimitUsed, partnerLimitMax) : partnerLimitUsed;
   const partnerLimitUsageLabel = partnerLimitMax !== null ? `${partnerLimitDisplayUsed}/${partnerLimitMax}` : null;
   const partnerLimitBlocked = Boolean(partnerLimitEnabled && partnerLimit?.blocked);
+  const handleGenerationJobUpdate = useCallback((job: PartnerGenerationJob | null) => {
+    setActiveGenerationJob(job);
+  }, []);
   const stopOwnedScreenShare = useCallback(() => {
     const stream = screenShareStreamRef.current;
     if (stream) {
@@ -176,6 +187,58 @@ export default function StartCall() {
       setSelectedPartnerId(roleplayPartners[0].id);
     }
   }, [roleplayPartners, selectedPartnerId]);
+
+  useEffect(() => {
+    const jobId = activeGenerationJob?.id;
+    const jobStatus = activeGenerationJob?.status;
+    if (!jobId || !token) {
+      return;
+    }
+    if (isCustomPartnerCreatorOpen) {
+      return;
+    }
+    if (jobStatus === 'failed' || jobStatus === 'completed') {
+      return;
+    }
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const poll = async () => {
+      try {
+        const next = await fetchPartnerGenerationJob(token, jobId);
+        if (cancelled) {
+          return;
+        }
+        setActiveGenerationJob(next);
+        if (next.status === 'failed' || next.status === 'completed') {
+          return;
+        }
+        timeoutId = setTimeout(poll, 2000);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        console.error('[StartCall] Failed to poll partner generation job', error);
+        timeoutId = setTimeout(poll, 4000);
+      }
+    };
+    poll();
+    return () => {
+      cancelled = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [activeGenerationJob?.id, activeGenerationJob?.status, isCustomPartnerCreatorOpen, token]);
+
+  useEffect(() => {
+    if (!activeGenerationJob || activeGenerationJob.status !== 'completed') {
+      return;
+    }
+    if (token) {
+      queryClient.invalidateQueries({ queryKey: ['partners', token] });
+    }
+    setActiveGenerationJob(null);
+  }, [activeGenerationJob, queryClient, token]);
 
   // Sync languages from the profile and remember the last good pair for later resets.
   useEffect(() => {
@@ -982,6 +1045,8 @@ export default function StartCall() {
                   }}
                   partnerLimitBlocked={partnerLimitBlocked}
                   onPartnerLimitBlocked={() => setPartnerQuotaDialogOpen(true)}
+                  generationJob={activeGenerationJob}
+                  onDismissGenerationJob={() => setActiveGenerationJob(null)}
                 />
                 <div className={'flex justify-between items-center w-full'}>
                   <button
@@ -1048,6 +1113,7 @@ export default function StartCall() {
         partnerLimitBlocked={partnerLimitBlocked}
         onQuotaBlocked={() => setPartnerQuotaDialogOpen(true)}
         onPartnerCreated={handlePartnerCreated}
+        onGenerationJobUpdate={handleGenerationJobUpdate}
       />
 
       <PartnerDetailModal

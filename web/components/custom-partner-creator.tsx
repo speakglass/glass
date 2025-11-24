@@ -246,6 +246,7 @@ interface CustomPartnerCreatorProps {
   partnerLimitBlocked: boolean;
   onQuotaBlocked: () => void;
   onPartnerCreated: (partner: ConversationPartner) => void;
+  onGenerationJobUpdate?: (job: PartnerGenerationJob | null) => void;
 }
 
 export function CustomPartnerCreator({
@@ -258,6 +259,7 @@ export function CustomPartnerCreator({
   partnerLimitBlocked,
   onQuotaBlocked,
   onPartnerCreated,
+  onGenerationJobUpdate,
 }: CustomPartnerCreatorProps) {
   const locale = useLocale();
   const [flowStep, setFlowStep] = useState<CreateStep>('topics');
@@ -285,7 +287,9 @@ export function CustomPartnerCreator({
     const persona = generationJob?.personaPreview;
     const partner = generationJob?.partner;
     const name = partner?.name || persona?.name || undefined;
-    let location = [persona?.personaCity, persona?.personaCountry].filter(Boolean).join(', ');
+    const city = persona?.personaCityTranslation || persona?.personaCity;
+    const country = persona?.personaCountryTranslation || persona?.personaCountry;
+    let location = [city, country].filter(Boolean).join(', ');
     if (location) {
       const splitOnInterests = location.split(/interests?:/i)[0];
       location = splitOnInterests.split('\n')[0].trim();
@@ -298,6 +302,11 @@ export function CustomPartnerCreator({
     const interest = interestList[0];
     return { name, location, interest };
   }, [generationJob]);
+
+  const createdOccupation = createdPartner?.personaOccupationTranslation || createdPartner?.personaOccupation;
+  const createdCity = createdPartner?.personaCityTranslation || createdPartner?.personaCity;
+  const createdCountry = createdPartner?.personaCountryTranslation || createdPartner?.personaCountry;
+  const createdLocation = [createdCity, createdCountry].filter(Boolean).join(', ');
 
   const targetStepIndex = useMemo(() => {
     if (flowStep !== 'finding' || !generationJob) {
@@ -380,13 +389,15 @@ export function CustomPartnerCreator({
       setFlowStep('meet');
       setIsSaving(false);
       stopJobPolling();
+      onGenerationJobUpdate?.(null);
     },
-    [addPartnerToCache, stopJobPolling]
+    [addPartnerToCache, stopJobPolling, onGenerationJobUpdate]
   );
 
   const handleJobProgress = useCallback(
     (job: PartnerGenerationJob) => {
       setGenerationJob(job);
+      onGenerationJobUpdate?.(job);
       const previewName = job.partner?.name || job.personaPreview?.name;
       if (previewName) {
         setGeneratedName(previewName);
@@ -406,7 +417,7 @@ export function CustomPartnerCreator({
       }
       return false;
     },
-    [finalizePartner, stopJobPolling]
+    [finalizePartner, onGenerationJobUpdate, stopJobPolling]
   );
 
   const beginJobPolling = useCallback(
@@ -423,6 +434,7 @@ export function CustomPartnerCreator({
           return;
         }
         pollingInFlightRef.current = true;
+        let shouldStopAfterError = false;
         try {
           const next = await fetchPartnerGenerationJob(token, jobId);
           const finished = handleJobProgress(next);
@@ -431,9 +443,24 @@ export function CustomPartnerCreator({
           }
         } catch (error) {
           console.error('[CustomPartnerCreator] Failed to poll partner generation job', error);
+          shouldStopAfterError = true;
+          stopJobPolling();
+          setIsSaving(false);
+          setFlowStep('basics');
+          const status = typeof error === 'object' && error && 'status' in (error as Record<string, unknown>)
+            ? (error as { status?: number }).status
+            : undefined;
+          const description =
+            status === 404
+              ? t`The generation job expired. Please start again.`
+              : t`We couldn't reach the server. Please try again.`;
+          toast.error(t`Unable to find partner`, {
+            description,
+          });
+          onGenerationJobUpdate?.(null);
         } finally {
           pollingInFlightRef.current = false;
-          if (pollingJobIdRef.current) {
+          if (pollingJobIdRef.current && !shouldStopAfterError) {
             pollTimeoutRef.current = setTimeout(poll, 2000);
           }
         }
@@ -441,7 +468,7 @@ export function CustomPartnerCreator({
 
       poll();
     },
-    [handleJobProgress, token]
+    [handleJobProgress, onGenerationJobUpdate, setFlowStep, setIsSaving, stopJobPolling, token]
   );
 
   const getStepCompletedLabel = useCallback(
@@ -1045,18 +1072,16 @@ export function CustomPartnerCreator({
                     <span className="capitalize">{createdPartner.personaGender}</span>
                   </div>
                 )}
-                {createdPartner?.personaOccupation && (
+                {createdOccupation && (
                   <div className="flex items-center gap-1.5">
                     <Briefcase className="h-3.5 w-3.5" />
-                    <span className="capitalize">{createdPartner.personaOccupation}</span>
+                    <span className="capitalize">{createdOccupation}</span>
                   </div>
                 )}
-                {(createdPartner?.personaCity || createdPartner?.personaCountry) && (
+                {createdLocation && (
                   <div className="flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5" />
-                    <span>
-                      {[createdPartner.personaCity, createdPartner.personaCountry].filter(Boolean).join(', ')}
-                    </span>
+                    <span>{createdLocation}</span>
                   </div>
                 )}
               </div>

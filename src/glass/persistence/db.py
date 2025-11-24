@@ -94,8 +94,11 @@ class ConversationPartner(Base):
     persona_age: Mapped[str | None] = mapped_column(String(32), nullable=True)
     persona_gender: Mapped[str | None] = mapped_column(String(32), nullable=True)
     persona_occupation: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    persona_occupation_translation: Mapped[str | None] = mapped_column(String(128), nullable=True)
     persona_city: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    persona_city_translation: Mapped[str | None] = mapped_column(String(128), nullable=True)
     persona_country: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    persona_country_translation: Mapped[str | None] = mapped_column(String(128), nullable=True)
     persona_relationship: Mapped[str | None] = mapped_column(String(64), nullable=True)
     persona_background: Mapped[str | None] = mapped_column(Text, nullable=True)
     persona_background_translation: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -108,6 +111,28 @@ class ConversationPartner(Base):
     )
 
     user: Mapped["AccountUser"] = relationship(back_populates="partners")
+
+
+class PartnerGenerationJobRecord(Base):
+    __tablename__ = "partner_generation_jobs"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("account_users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    steps_completed: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    persona_preview: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    partner_id: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("conversation_partners.id", ondelete="SET NULL"), nullable=True
+    )
+    voice_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
 
 class AccountConversation(Base):

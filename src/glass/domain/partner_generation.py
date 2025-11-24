@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from ..adapters.llm import LLMAdapter
 from ..utils.language import lang_code_to_name
 from . import prompts
+from .name_pools import choose_random_name
 
 LOGGER = logging.getLogger(__name__)
 
@@ -428,6 +429,9 @@ async def generate_partner_persona(
     # Get age range and nationality
     age_range_str = AGE_RANGE_MAP.get(preferences.age_range, "25-35")
     nationality = _choose_nationality(preferences.learning_lang)
+    assigned_name = choose_random_name(preferences.learning_lang, selected_gender)
+    if assigned_name:
+        LOGGER.debug("Assigned persona name from language pool: %s", assigned_name)
 
     target_lang_name = lang_code_to_name(preferences.learning_lang) if preferences.learning_lang else ""
 
@@ -478,6 +482,7 @@ async def generate_partner_persona(
         variety_instruction=variety_instruction,
         localization_instruction=localization_instruction,
         native_lang_name=target_lang_name or None,
+        preassigned_name=assigned_name,
     )
     core_elapsed = time.time() - core_start
     LOGGER.info("✓ Persona core generated in %.2fs (name=%s)", core_elapsed, persona_core.name)
@@ -673,7 +678,15 @@ async def _generate_persona_core(
     variety_instruction: str,
     localization_instruction: str,
     native_lang_name: str | None = None,
+    preassigned_name: str | None = None,
 ) -> PersonaCoreResponse:
+    topics_text = ", ".join(topics) if topics else "general conversation"
+    assigned_name_instruction = ""
+    if preassigned_name:
+        assigned_name_instruction = (
+            f"\nAssigned name: {preassigned_name}\n"
+            "Use this exact name for the persona profile. Do not invent a new name."
+        )
     user_prompt = dedent(
         f"""
         Create a unique conversation partner persona:
@@ -682,9 +695,9 @@ async def _generate_persona_core(
         Nationality: {nationality}
         Gender: {selected_gender}
         Age range: {age_range_str}
-        Topics: {", ".join(topics)}
+        Topics: {topics_text}{assigned_name_instruction}
         
-        IMPORTANT: Generate a completely unique name each time. Avoid repeating common names like Ethan, Emma, Lucas, etc.
+        IMPORTANT: Generate a completely unique name each time (or keep the assigned name above). 
         Be creative and diverse with your name choices while keeping them culturally appropriate.
         
         Write the summary field as a self-introduction in first person (using "I").
@@ -724,10 +737,15 @@ async def _generate_persona_core(
         temperature=0.85,
     )
     if isinstance(response, PersonaCoreResponse):
-        return response
-    if isinstance(response, dict):
-        return PersonaCoreResponse(**response)
-    return PersonaCoreResponse.model_validate(response)
+        persona_core = response
+    elif isinstance(response, dict):
+        persona_core = PersonaCoreResponse(**response)
+    else:
+        persona_core = PersonaCoreResponse.model_validate(response)
+
+    if preassigned_name:
+        persona_core.name = preassigned_name
+    return persona_core
 
 
 async def _generate_persona_background(
