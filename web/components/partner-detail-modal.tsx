@@ -3,6 +3,7 @@ import { ConversationPartner } from '@/lib/account-api';
 import { PartnerAvatar } from '@/components/partner-avatar';
 import { Badge } from '@/components/ui/badge';
 import { Trans } from '@lingui/react/macro';
+import { t } from '@lingui/core/macro';
 import { Briefcase, MapPin, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getLanguageName } from '@/lib/conversation-display';
@@ -81,10 +82,11 @@ export function PartnerDetailModal({ open, onClose, partner, onStartChat }: Part
   if (!partner) return null;
 
   const relationshipTypeLabels = {
-    friendly: 'Friendly',
-    professional: 'Professional',
-    romantic: 'Romantic',
-  } as const;
+    new_friends: t`New friends`,
+    someone_special: t`Someone special`,
+    professional: t`Professional practice`,
+    figuring_out: t`Still figuring it out`,
+  };
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
@@ -167,7 +169,7 @@ export function PartnerDetailModal({ open, onClose, partner, onStartChat }: Part
                     <Trans>Looking for</Trans>
                   </span>
                 </p>
-                <p className="text-sm text-muted-foreground mt-1 capitalize">
+                <p className="text-sm text-muted-foreground mt-1">
                   {relationshipTypeLabels[partner.personaRelationship as keyof typeof relationshipTypeLabels] ||
                     partner.personaRelationship}
                 </p>
@@ -194,9 +196,9 @@ export function PartnerDetailModal({ open, onClose, partner, onStartChat }: Part
                   {(partner.personaInterestsTranslation || partner.personaInterests || '')
                     .split(',')
                     .map((interest, idx) => (
-                    <Badge key={idx} variant="secondary" className="text-xs capitalize">
-                      {interest.trim()}
-                    </Badge>
+                      <Badge key={idx} variant="secondary" className="text-xs capitalize">
+                        {interest.trim()}
+                      </Badge>
                     ))}
                 </div>
               )}

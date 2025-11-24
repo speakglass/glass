@@ -1071,7 +1071,7 @@ export function CustomPartnerCreator({
                     <Trans>Looking for</Trans>
                   </span>
                 </p>
-                <p className="text-sm text-muted-foreground mt-1 capitalize">
+                <p className="text-sm text-muted-foreground mt-1">
                   {relationshipTypeLabels[createdPartner.personaRelationship as keyof typeof relationshipTypeLabels] ||
                     createdPartner.personaRelationship}
                 </p>
