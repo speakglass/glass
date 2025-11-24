@@ -10,6 +10,8 @@ import { Trans } from '@lingui/react/macro';
 import { usePathname } from 'next/navigation';
 import { UserMenu } from './user-menu';
 import Feedback from './feedback';
+import { Menu, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export interface NavProps {
   userMenuOpen?: boolean;
@@ -19,10 +21,29 @@ export interface NavProps {
 export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // 뷰포트가 데스크톱 사이즈가 되면 모바일 메뉴를 강제로 닫고 언마운트
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768; // tailwind md 브레이크포인트 기준
+      setIsMobile(mobile);
+      if (!mobile) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const isDark = mounted ? theme === 'dark' : false;
@@ -34,12 +55,15 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
   const billingHref = `/${langSegment}/billing`;
 
   // Check if this is the opensource version (via environment variable)
-  const isOpenSource = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_IS_OPENSOURCE === 'true' : false;
+  const isOpenSource =
+    typeof window !== 'undefined'
+      ? process.env.NEXT_PUBLIC_IS_OPENSOURCE === 'true'
+      : false;
 
   return (
     <div
       className={
-        'fixed top-0 left-0 right-0 px-4 py-2 flex items-center justify-between h-14 z-50 border-b border-border'
+        'fixed top-0 left-0 right-0 px-4 py-2 flex items-center bg-white justify-between h-14 z-50 border-b border-border'
       }
     >
       <div className={'flex items-center gap-2'}>
@@ -55,39 +79,121 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
         </a>
       </div>
       <div className={'flex items-center gap-2'}>
-        {/* Show GitHub only on opensource version */}
-        {isOpenSource && (
+        {/* Desktop actions */}
+        <div className="hidden items-center gap-2 md:flex">
+          {/* Show GitHub only on opensource version */}
+          {isOpenSource && (
+            <Button
+              onClick={() => {
+                window.open(
+                  'https://github.com/speakglass/glass',
+                  '_blank',
+                  'noopener noreferrer'
+                );
+              }}
+              variant={'outline'}
+              size={'sm'}
+              aria-label="Open GitHub"
+              className={'flex items-center gap-1.5 h-8 px-3'}
+            >
+              <Github className={'size-3.5'} />
+              <span>
+                <Trans>Star on GitHub</Trans>
+              </span>
+            </Button>
+          )}
+          <Feedback />
           <Button
             onClick={() => {
-              window.open('https://github.com/speakglass/glass', '_blank', 'noopener noreferrer');
+              window.open(
+                'https://discord.gg/GxJwcgnchM',
+                '_blank',
+                'noopener noreferrer'
+              );
             }}
-            variant={'outline'}
+            variant={'default'}
             size={'sm'}
-            aria-label="Open GitHub"
-            className={'flex items-center gap-1.5 h-8 px-3'}
+            aria-label="Join Community"
+            className={'gap-1.5 h-8 px-3 cursor-pointer'}
           >
-            <Github className={'size-3.5'} />
+            <Discord className={'size-3.5'} />
             <span>
-              <Trans>Star on GitHub</Trans>
+              <Trans>Community</Trans>
             </span>
           </Button>
+        </div>
+
+        {/* Mobile hamburger menu */}
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full cursor-pointer md:hidden"
+            aria-label="Toggle navigation menu"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
         )}
-        <Feedback />
-        <Button
-          onClick={() => {
-            window.open('https://discord.gg/GxJwcgnchM', '_blank', 'noopener noreferrer');
-          }}
-          variant={'default'}
-          size={'sm'}
-          aria-label="Join Community"
-          className={'gap-1.5 h-8 px-3 cursor-pointer'}
-        >
-          <Discord className={'size-3.5'} />
-          <span>
-            <Trans>Community</Trans>
-          </span>
-        </Button>
-        <UserMenu historyHref={historyHref} billingHref={billingHref} open={userMenuOpen} onOpenChange={onUserMenuOpenChange} />
+
+        {/* Dropdown panel */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 top-14 bg-black/20 z-30 md:hidden"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              {/* Menu panel */}
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{
+                  duration: 0.25,
+                  ease: [0.4, 0, 0.2, 1],
+                }}
+                className="fixed top-14 left-0 right-0 bg-background border-b border-border shadow-lg z-40 md:hidden overflow-hidden"
+              >
+                <div className="flex flex-col gap-3 p-4">
+                  <Feedback />
+                  <Button
+                    onClick={() => {
+                      window.open(
+                        'https://discord.gg/GxJwcgnchM',
+                        '_blank',
+                        'noopener noreferrer'
+                      );
+                      setMobileMenuOpen(false);
+                    }}
+                    variant="default"
+                    size="sm"
+                    aria-label="Join Community"
+                    className="gap-1.5 h-8 px-3 cursor-pointer w-full justify-center"
+                  >
+                    <Discord className="size-3.5" />
+                    <span>
+                      <Trans>Community</Trans>
+                    </span>
+                  </Button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* User menu - visible on all screen sizes */}
+        <UserMenu
+          historyHref={historyHref}
+          billingHref={billingHref}
+          open={userMenuOpen}
+          onOpenChange={onUserMenuOpenChange}
+        />
       </div>
     </div>
   );

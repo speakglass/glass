@@ -38,8 +38,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 
@@ -67,10 +80,13 @@ export function DataTable<TData, TValue>({
   defaultHiddenColumns,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => ({
-    ...(defaultHiddenColumns || {}),
-  }));
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>(() => ({
+      ...(defaultHiddenColumns || {}),
+    }));
   const [rowSelection, setRowSelection] = React.useState({});
 
   const table = useReactTable({
@@ -111,7 +127,7 @@ export function DataTable<TData, TValue>({
     <div className="flex flex-col gap-4">
       {/* Toolbar */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex flex-1 items-center gap-2">
             <Input
               placeholder={t`Search memories...`}
@@ -127,7 +143,7 @@ export function DataTable<TData, TValue>({
                   table.getColumn('fact')?.setFilterValue(event.target.value);
                 }
               }}
-              className="h-9 w-[250px] lg:w-[400px]"
+              className="h-9 w-full sm:w-[250px] lg:w-[400px] sm:placeholder:text-base placeholder:text-sm"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -135,32 +151,46 @@ export function DataTable<TData, TValue>({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 text-destructive hover:text-destructive"
+                className="h-9 text-destructive hover:text-destructive flex-1 sm:flex-none"
                 onClick={handleDeleteSelected}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                <Trans>Delete</Trans> ({table.getFilteredSelectedRowModel().rows.length})
+                <span className="hidden sm:inline">
+                  <Trans>Delete</Trans>
+                </span>
+                <span className="sm:hidden">
+                  <Trans>Del</Trans>
+                </span>{' '}
+                ({table.getFilteredSelectedRowModel().rows.length})
               </Button>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9">
                   <LayoutGrid className="h-4 w-4" />
-                  <Trans>Columns</Trans>
-                  <ChevronDown className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-2">
+                    <Trans>Columns</Trans>
+                  </span>
+                  <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 {table
                   .getAllColumns()
-                  .filter((column) => typeof column.accessorFn !== 'undefined' && column.getCanHide())
+                  .filter(
+                    (column) =>
+                      typeof column.accessorFn !== 'undefined' &&
+                      column.getCanHide()
+                  )
                   .map((column) => {
                     return (
                       <DropdownMenuCheckboxItem
                         key={column.id}
                         className="capitalize"
                         checked={column.getIsVisible()}
-                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
                       >
                         {column.id}
                       </DropdownMenuCheckboxItem>
@@ -169,9 +199,18 @@ export function DataTable<TData, TValue>({
               </DropdownMenuContent>
             </DropdownMenu>
             {onAddNew && (
-              <Button size="sm" className="h-9" onClick={onAddNew}>
+              <Button
+                size="sm"
+                className="h-9 flex-1 sm:flex-none"
+                onClick={onAddNew}
+              >
                 <Plus className="h-4 w-4" />
-                <Trans>Add memory</Trans>
+                <span className="hidden sm:inline ml-2">
+                  <Trans>Add memory</Trans>
+                </span>
+                <span className="sm:hidden ml-2">
+                  <Trans>Add</Trans>
+                </span>
               </Button>
             )}
           </div>
@@ -179,7 +218,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-x-auto overflow-y-hidden rounded-lg border">
         <Table>
           <TableHeader className="bg-muted sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -187,7 +226,12 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead key={header.id} colSpan={header.colSpan}>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   );
                 })}
@@ -197,15 +241,26 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   <Trans>No results.</Trans>
                 </TableCell>
               </TableRow>
@@ -215,16 +270,19 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 sm:px-4">
         <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
           {footerNote ??
             t`${table.getFilteredSelectedRowModel().rows.length} of ${
               table.getFilteredRowModel().rows.length
             } rows selected`}
         </div>
-        <div className="flex w-full items-center gap-8 lg:w-fit">
+        <div className="flex w-full sm:w-fit items-center gap-4 sm:gap-8">
           <div className="hidden items-center gap-2 lg:flex">
-            <Label htmlFor="rows-per-page" className="text-sm font-medium">
+            <Label
+              htmlFor="rows-per-page"
+              className="text-sm font-medium whitespace-nowrap"
+            >
               <Trans>Rows per page</Trans>
             </Label>
             <Select
@@ -234,7 +292,9 @@ export function DataTable<TData, TValue>({
               }}
             >
               <SelectTrigger className="h-8 w-20" id="rows-per-page">
-                <SelectValue placeholder={table.getState().pagination.pageSize} />
+                <SelectValue
+                  placeholder={table.getState().pagination.pageSize}
+                />
               </SelectTrigger>
               <SelectContent side="top">
                 {[10, 20, 30, 40, 50].map((pageSize) => (
@@ -245,8 +305,10 @@ export function DataTable<TData, TValue>({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex w-fit items-center justify-center text-sm font-medium">
-            {t`Page ${table.getState().pagination.pageIndex + 1} of ${table.getPageCount()}`}
+          <div className="flex w-fit items-center justify-center text-xs sm:text-sm font-medium whitespace-nowrap">
+            {t`Page ${
+              table.getState().pagination.pageIndex + 1
+            } of ${table.getPageCount()}`}
           </div>
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
             <Button

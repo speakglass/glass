@@ -1,7 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Mic, Sun, Moon, Globe, Clock, Languages, Palette, EyeOff, BookOpen } from 'lucide-react';
+import {
+  Mic,
+  Sun,
+  Moon,
+  Globe,
+  Clock,
+  Languages,
+  Palette,
+  EyeOff,
+  BookOpen,
+} from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useGlass } from '@/contexts/glass-context';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
@@ -10,9 +20,21 @@ import { t } from '@lingui/core/macro';
 import { usePathname } from 'next/navigation';
 import { LOCALIZED_LANGUAGE_CODES } from '@/lib/supported-languages';
 import { changeLanguage } from '@/utils/language';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useAccountSession } from '@/contexts/account-session-context';
 import { updateLanguageSettings } from '@/lib/account-api';
@@ -50,7 +72,10 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
 
   const localMicDeviceId = settings.micDeviceId || 'default';
 
-  const audioInputs = useMemo(() => devices.filter((d) => d.kind === 'audioinput'), [devices]);
+  const audioInputs = useMemo(
+    () => devices.filter((d) => d.kind === 'audioinput'),
+    [devices]
+  );
   const appearance: 'light' | 'dark' = (theme as 'light' | 'dark') || 'light';
 
   // Define language level options inside component so translations update when language changes
@@ -85,7 +110,8 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
       // Remove duplicates by deviceId and filter out 'default' to avoid conflict
       const seen = new Set<string>();
       const uniqueDevices = mapped.filter((d) => {
-        if (!d.deviceId || d.deviceId === 'default' || seen.has(d.deviceId)) return false;
+        if (!d.deviceId || d.deviceId === 'default' || seen.has(d.deviceId))
+          return false;
         seen.add(d.deviceId);
         return true;
       });
@@ -93,7 +119,10 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
       setDevices(uniqueDevices);
 
       // If saved device is not in the list, reset to default
-      if (settings.micDeviceId && !uniqueDevices.some((d) => d.deviceId === settings.micDeviceId)) {
+      if (
+        settings.micDeviceId &&
+        !uniqueDevices.some((d) => d.deviceId === settings.micDeviceId)
+      ) {
         updateSettings({ micDeviceId: null });
       }
     } catch (e) {
@@ -102,7 +131,9 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
   };
 
   const setMic = (micDeviceId: string | null) =>
-    updateSettings({ micDeviceId: micDeviceId === 'default' ? null : micDeviceId });
+    updateSettings({
+      micDeviceId: micDeviceId === 'default' ? null : micDeviceId,
+    });
 
   const selectAppearance = (mode: 'light' | 'dark') => {
     setTheme(mode);
@@ -127,7 +158,11 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
         };
       });
       // Change UI language to match native language
-      const newPath = changeLanguage(langCode, pathname, LOCALIZED_LANGUAGE_CODES);
+      const newPath = changeLanguage(
+        langCode,
+        pathname,
+        LOCALIZED_LANGUAGE_CODES
+      );
       window.location.href = newPath;
     } catch (error) {
       console.error('Failed to update native language:', error);
@@ -160,7 +195,9 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
   const handleLanguageLevelChange = async (level: string) => {
     if (!token || !isLearningLevel(level)) return;
     try {
-      const result = await updateLanguageSettings(token, { languageLevel: level });
+      const result = await updateLanguageSettings(token, {
+        languageLevel: level,
+      });
       const resolvedLevel = result.languageLevel ?? level;
       queryClient.setQueryData(['accountSession'], (old: any) => {
         if (!old?.snapshot) return old;
@@ -182,7 +219,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px] gap-4">
+      <DialogContent className="sm:max-w-[420px] max-h-[90vh] overflow-y-auto gap-4">
         <DialogHeader className="space-y-1">
           <DialogTitle className="text-lg">
             <Trans>Settings</Trans>
@@ -194,13 +231,16 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
 
         <div className="space-y-3">
           {/* Microphone Section */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="microphone" className="flex items-center gap-1.5 text-sm font-medium w-36 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <Label
+              htmlFor="microphone"
+              className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0"
+            >
               <Mic className="size-3.5" />
               <Trans>Microphone</Trans>
             </Label>
             <Select value={localMicDeviceId} onValueChange={setMic}>
-              <SelectTrigger id="microphone" className="h-8 w-48">
+              <SelectTrigger id="microphone" className="h-8 w-full sm:w-48">
                 <SelectValue placeholder="System default" />
               </SelectTrigger>
               <SelectContent>
@@ -217,16 +257,21 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
           </div>
 
           {/* Pronunciation mode */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="pronunciation" className="flex items-center gap-1.5 text-sm font-medium w-36 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <Label
+              htmlFor="pronunciation"
+              className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0"
+            >
               <Languages className="size-3.5" />
               <Trans>Pronunciation</Trans>
             </Label>
             <Select
               value={settings.pronunciationMode || 'native'}
-              onValueChange={(value: 'native' | 'romaji') => updateSettings({ pronunciationMode: value })}
+              onValueChange={(value: 'native' | 'romaji') =>
+                updateSettings({ pronunciationMode: value })
+              }
             >
-              <SelectTrigger id="pronunciation" className="h-8 w-48">
+              <SelectTrigger id="pronunciation" className="h-8 w-full sm:w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -241,20 +286,28 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
           </div>
 
           {/* Auto-hide messages */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="duration" className="flex items-center gap-1.5 text-sm font-medium w-36 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <Label
+              htmlFor="duration"
+              className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0"
+            >
               <EyeOff className="size-3.5" />
               <Trans>Hide messages</Trans>
             </Label>
             <Select
-              value={settings.aiMessageDurationSec === null ? 'none' : String(settings.aiMessageDurationSec ?? 'none')}
+              value={
+                settings.aiMessageDurationSec === null
+                  ? 'none'
+                  : String(settings.aiMessageDurationSec ?? 'none')
+              }
               onValueChange={(value) => {
                 updateSettings({
-                  aiMessageDurationSec: value === 'none' ? null : parseInt(value, 10),
+                  aiMessageDurationSec:
+                    value === 'none' ? null : parseInt(value, 10),
                 });
               }}
             >
-              <SelectTrigger id="duration" className="h-8 w-48">
+              <SelectTrigger id="duration" className="h-8 w-full sm:w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -270,13 +323,19 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
           </div>
 
           {/* Native Language Selection */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="native-lang" className="flex items-center gap-1.5 text-sm font-medium w-36 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <Label
+              htmlFor="native-lang"
+              className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0"
+            >
               <Globe className="size-3.5" />
               <Trans>Native language</Trans>
             </Label>
-            <Select value={snapshot?.user?.nativeLang || ''} onValueChange={handleNativeLangChange}>
-              <SelectTrigger id="native-lang" className="h-8 w-48">
+            <Select
+              value={snapshot?.user?.nativeLang || ''}
+              onValueChange={handleNativeLangChange}
+            >
+              <SelectTrigger id="native-lang" className="h-8 w-full sm:w-48">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
               <SelectContent>
@@ -293,13 +352,19 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
           </div>
 
           {/* Learning Language Selection */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="learning-lang" className="flex items-center gap-1.5 text-sm font-medium w-36 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <Label
+              htmlFor="learning-lang"
+              className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0"
+            >
               <BookOpen className="size-3.5" />
               <Trans>Learning language</Trans>
             </Label>
-            <Select value={snapshot?.user?.learningLang || ''} onValueChange={handleLearningLangChange}>
-              <SelectTrigger id="learning-lang" className="h-8 w-48">
+            <Select
+              value={snapshot?.user?.learningLang || ''}
+              onValueChange={handleLearningLangChange}
+            >
+              <SelectTrigger id="learning-lang" className="h-8 w-full sm:w-48">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
               <SelectContent>
@@ -316,13 +381,19 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
           </div>
 
           {/* Language Level Selection */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="language-level" className="flex items-center gap-1.5 text-sm font-medium w-36 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <Label
+              htmlFor="language-level"
+              className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0"
+            >
               <Clock className="size-3.5" />
               <Trans>Language level</Trans>
             </Label>
-            <Select value={snapshot?.user?.languageLevel || ''} onValueChange={handleLanguageLevelChange}>
-              <SelectTrigger id="language-level" className="h-8 w-48">
+            <Select
+              value={snapshot?.user?.languageLevel || ''}
+              onValueChange={handleLanguageLevelChange}
+            >
+              <SelectTrigger id="language-level" className="h-8 w-full sm:w-48">
                 <SelectValue placeholder="Select level" />
               </SelectTrigger>
               <SelectContent>
@@ -336,12 +407,12 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
           </div>
 
           {/* Theme */}
-          <div className="flex items-center justify-between">
-            <Label className="flex items-center gap-1.5 text-sm font-medium w-36 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <Label className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0">
               <Palette className="size-3.5" />
               <Trans>Theme</Trans>
             </Label>
-            <div className="inline-flex items-center gap-0.5 rounded-lg border border-input bg-background p-0.5">
+            <div className="inline-flex items-center gap-0.5 rounded-lg border border-input bg-background p-0.5 w-full sm:w-auto justify-center sm:justify-start">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -349,7 +420,11 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => selectAppearance('light')}
-                    className={`h-8 w-10 ${appearance === 'light' ? 'bg-accent text-accent-foreground' : ''}`}
+                    className={`h-8 w-10 ${
+                      appearance === 'light'
+                        ? 'bg-accent text-accent-foreground'
+                        : ''
+                    }`}
                   >
                     <Sun className="size-4" />
                   </Button>
@@ -365,7 +440,11 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => selectAppearance('dark')}
-                    className={`h-8 w-10 ${appearance === 'dark' ? 'bg-accent text-accent-foreground' : ''}`}
+                    className={`h-8 w-10  ${
+                      appearance === 'dark'
+                        ? 'bg-accent text-accent-foreground'
+                        : ''
+                    }`}
                   >
                     <Moon className="size-4" />
                   </Button>
