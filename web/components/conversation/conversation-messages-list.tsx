@@ -24,8 +24,14 @@ interface ConversationMessagesListProps {
   resolveParticipantInfo: (message: ConversationMessage) => ParticipantInfo;
   className?: string;
   emptyStateClassName?: string;
-  renderMessageFooter?: (message: ConversationMessage, context: MessageContext) => ReactNode;
-  getMessageKey?: (message: ConversationMessage, index: number) => string | number;
+  renderMessageFooter?: (
+    message: ConversationMessage,
+    context: MessageContext
+  ) => ReactNode;
+  getMessageKey?: (
+    message: ConversationMessage,
+    index: number
+  ) => string | number;
 }
 
 export const ConversationMessagesList = ({
@@ -38,7 +44,12 @@ export const ConversationMessagesList = ({
 }: ConversationMessagesListProps) => {
   if (!messages || messages.length === 0) {
     return (
-      <div className={cn('text-center py-4 text-sm text-muted-foreground', emptyStateClassName)}>
+      <div
+        className={cn(
+          'text-center py-4 text-sm text-muted-foreground',
+          emptyStateClassName
+        )}
+      >
         <Trans>No messages</Trans>
       </div>
     );
@@ -56,7 +67,9 @@ export const ConversationMessagesList = ({
         const speakerName = speakerInfo?.name;
         const avatarUrl = speakerInfo?.avatarUrl;
         const defaultKey =
-          message.utterance_id !== undefined && message.utterance_id !== null && message.utterance_id !== ''
+          message.utterance_id !== undefined &&
+          message.utterance_id !== null &&
+          message.utterance_id !== ''
             ? `utt:${message.utterance_id}-${index}`
             : typeof message.id === 'number'
             ? `msg:${message.id}-${index}`
@@ -64,7 +77,13 @@ export const ConversationMessagesList = ({
         const key = getMessageKey ? getMessageKey(message, index) : defaultKey;
 
         return (
-          <div key={key} className={cn('flex gap-3 py-2', (isUser || isGlass) && 'flex-row-reverse text-right')}>
+          <div
+            key={key}
+            className={cn(
+              'flex gap-3 py-2',
+              (isUser || isGlass) && 'flex-row-reverse text-right'
+            )}
+          >
             {!isUser && !isGlass && (
               <PartnerAvatar
                 className="h-8 w-8"
@@ -75,7 +94,11 @@ export const ConversationMessagesList = ({
             )}
             {isGlass && (
               <Avatar className="h-8 w-8 border border-emerald-200">
-                <AvatarImage className="h-full w-full object-cover" src="/glass-ai.png" alt="Glass AI" />
+                <AvatarImage
+                  className="h-full w-full object-cover"
+                  src="/glass-ai.png"
+                  alt="Glass AI"
+                />
                 <AvatarFallback>AI</AvatarFallback>
               </Avatar>
             )}
@@ -83,14 +106,24 @@ export const ConversationMessagesList = ({
               <div className="text-xs text-muted-foreground">{speakerName}</div>
               <div
                 className={cn(
-                  'rounded-2xl px-3 py-2 text-sm',
-                  isUser ? 'bg-primary/10 ml-auto' : isGlass ? 'bg-emerald-500/10 text-emerald-900 ml-auto' : 'bg-muted/70'
+                  'rounded-2xl px-3 py-2 text-sm leading-[1.3] sm:leading-normal',
+                  isUser
+                    ? 'bg-primary/10 ml-auto'
+                    : isGlass
+                    ? 'bg-emerald-500/10 text-emerald-900 ml-auto'
+                    : 'bg-muted/70'
                 )}
               >
                 {text}
-                {translation && <div className="text-xs text-muted-foreground mt-1 italic">{translation}</div>}
+                {translation && (
+                  <div className="text-xs text-muted-foreground mt-1 italic">
+                    {translation}
+                  </div>
+                )}
               </div>
-              {renderMessageFooter ? renderMessageFooter(message, { isUser, isGlass }) : null}
+              {renderMessageFooter
+                ? renderMessageFooter(message, { isUser, isGlass })
+                : null}
             </div>
           </div>
         );
