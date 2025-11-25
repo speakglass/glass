@@ -902,24 +902,43 @@ export default function StartCall() {
       step: number;
       title: ReactNode;
       extra?: ReactNode;
-    }) => (
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p
-            className={cn(
-              'text-[10px] font-semibold uppercase tracking-[0.25em] mb-0.5',
-              stepLabelClass
-            )}
-          >
-            {t`Step ${step}`}
-          </p>
-          <div className={`${getTextClass('title')} text-sm font-semibold`}>
-            {title}
+    }) => {
+      const stepLabel = (() => {
+        switch (step) {
+          case 1:
+            return t`Step 1`;
+          case 2:
+            return t`Step 2`;
+          case 3:
+            return t`Step 3`;
+          case 4:
+            return t`Step 4`;
+          case 5:
+            return t`Step 5`;
+          default:
+            return t`Step ${step}`;
+        }
+      })();
+
+      return (
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p
+              className={cn(
+                'text-[10px] font-semibold uppercase tracking-[0.25em] mb-0.5',
+                stepLabelClass
+              )}
+            >
+              {stepLabel}
+            </p>
+            <div className={`${getTextClass('title')} text-sm font-semibold`}>
+              {title}
+            </div>
           </div>
+          {extra}
         </div>
-        {extra}
-      </div>
-    );
+      );
+    };
 
     const step5CardClass = cn(
       stepCardBase,
@@ -963,59 +982,52 @@ export default function StartCall() {
 
         <div className={stepCardBase}>
           <div className="space-y-2">
-            <p
-              className={cn(
-                'text-[10px] font-semibold uppercase tracking-[0.25em] mb-0.5',
-                stepLabelClass
-              )}
-            >
-              {t`Step ${2}`}
-            </p>
-            <div className="flex items-center justify-between gap-3">
-              <div className={`${getTextClass('title')} text-sm font-semibold`}>
-                {t`Both speak ${learningLanguageName} in this call?`}
-              </div>
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  className={cn(
-                    'px-3 py-1 rounded-full text-[11px] font-medium transition-all border cursor-pointer',
-                    liveCallLanguageMode === 'shared'
-                      ? 'bg-primary/10 text-primary border-primary/30'
-                      : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:border-border'
-                  )}
-                  onClick={() => setLiveCallLanguageMode('shared')}
-                >
-                  <Trans>Yes</Trans>
-                </button>
-                <button
-                  type="button"
-                  className={cn(
-                    'px-3 py-1 rounded-full text-[11px] font-medium transition-all border cursor-pointer',
-                    liveCallLanguageMode === 'custom'
-                      ? 'bg-primary/10 text-primary border-primary/30'
-                      : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:border-border'
-                  )}
-                  onClick={() => {
-                    setLiveCallLanguageMode('custom');
-                    setLiveCallCustomPair((prev) => ({
-                      youLang:
-                        prev.youLang ||
-                        languages.learningLang ||
-                        languages.nativeLang ||
-                        '',
-                      partnerLang:
-                        prev.partnerLang ||
-                        languages.nativeLang ||
-                        languages.learningLang ||
-                        '',
-                    }));
-                  }}
-                >
-                  <Trans>No</Trans>
-                </button>
-              </div>
-            </div>
+            <StepHeader
+              step={2}
+              title={t`Both speak ${learningLanguageName} in this call?`}
+              extra={
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    className={cn(
+                      'px-3 py-1 rounded-full text-[11px] font-medium transition-all border cursor-pointer',
+                      liveCallLanguageMode === 'shared'
+                        ? 'bg-primary/10 text-primary border-primary/30'
+                        : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:border-border'
+                    )}
+                    onClick={() => setLiveCallLanguageMode('shared')}
+                  >
+                    <Trans>Yes</Trans>
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      'px-3 py-1 rounded-full text-[11px] font-medium transition-all border cursor-pointer',
+                      liveCallLanguageMode === 'custom'
+                        ? 'bg-primary/10 text-primary border-primary/30'
+                        : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:border-border'
+                    )}
+                    onClick={() => {
+                      setLiveCallLanguageMode('custom');
+                      setLiveCallCustomPair((prev) => ({
+                        youLang:
+                          prev.youLang ||
+                          languages.learningLang ||
+                          languages.nativeLang ||
+                          '',
+                        partnerLang:
+                          prev.partnerLang ||
+                          languages.nativeLang ||
+                          languages.learningLang ||
+                          '',
+                      }));
+                    }}
+                  >
+                    <Trans>No</Trans>
+                  </button>
+                </div>
+              }
+            />
           </div>
 
           {liveCallLanguageMode === 'custom' && (
@@ -1265,7 +1277,7 @@ export default function StartCall() {
                 />
                 <div
                   className={
-                    'flex justify-between items-center w-full gap-2 sm:gap-0'
+                    'flex justify-between items-center w-full gap-2 sm:gap-0 max-w-[448px]'
                   }
                 >
                   <button

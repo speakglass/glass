@@ -63,22 +63,22 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
   return (
     <div
       className={
-        'fixed top-0 left-0 right-0 px-4 py-2 flex items-center bg-white justify-between h-14 z-50 border-b border-border'
+        'fixed top-0 left-0 right-0 px-3 py-1.5 flex items-center bg-white justify-between h-12 z-50 border-b border-border sm:px-4 sm:py-2 sm:h-14'
       }
     >
-      <div className={'flex items-center gap-2'}>
+      <div className={'flex items-center gap-1.5 sm:gap-2'}>
         <a href={`/${langSegment}/dashboard`} aria-label="Go to dashboard">
           <Image
             src={logoSrc}
             alt="Glass"
             width={48}
             height={24}
-            className={'object-contain'}
+            className={'object-contain w-10 h-auto sm:w-12'}
             style={{ height: 'auto' }}
           />
         </a>
       </div>
-      <div className={'flex items-center gap-2'}>
+      <div className={'flex items-center gap-1.5 sm:gap-2'}>
         {/* Desktop actions */}
         <div className="hidden items-center gap-2 md:flex">
           {/* Show GitHub only on opensource version */}
@@ -94,9 +94,9 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
               variant={'outline'}
               size={'sm'}
               aria-label="Open GitHub"
-              className={'flex items-center gap-1.5 h-8 px-3'}
+              className={'flex items-center gap-1.5 h-7 px-2.5 sm:h-8 sm:px-3'}
             >
-              <Github className={'size-3.5'} />
+              <Github className={'size-3 sm:size-3.5'} />
               <span>
                 <Trans>Star on GitHub</Trans>
               </span>
@@ -114,9 +114,9 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
             variant={'default'}
             size={'sm'}
             aria-label="Join Community"
-            className={'gap-1.5 h-8 px-3 cursor-pointer'}
+            className={'gap-1.5 h-7 px-2.5 cursor-pointer sm:h-8 sm:px-3'}
           >
-            <Discord className={'size-3.5'} />
+            <Discord className={'size-3 sm:size-3.5'} />
             <span>
               <Trans>Community</Trans>
             </span>
@@ -128,11 +128,11 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full cursor-pointer md:hidden"
+            className="h-7 w-7 rounded-full cursor-pointer md:hidden sm:h-8 sm:w-8"
             aria-label="Toggle navigation menu"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            <Menu className="h-4 w-4" />
+            <Menu className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
         )}
 
@@ -146,7 +146,7 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="fixed inset-0 top-14 bg-black/20 z-30 md:hidden"
+                className="fixed inset-0 top-12 bg-black/20 z-30 md:hidden sm:top-14"
                 onClick={() => setMobileMenuOpen(false)}
               />
               {/* Menu panel */}
@@ -158,9 +158,9 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
                   duration: 0.25,
                   ease: [0.4, 0, 0.2, 1],
                 }}
-                className="fixed top-14 left-0 right-0 bg-background border-b border-border shadow-lg z-40 md:hidden overflow-hidden"
+                className="fixed top-12 left-0 right-0 bg-background border-b border-border shadow-lg z-40 md:hidden overflow-hidden sm:top-14"
               >
-                <div className="flex flex-col gap-3 p-4">
+                <div className="flex flex-col gap-2.5 p-3 sm:gap-3 sm:p-4">
                   <Feedback />
                   <Button
                     onClick={() => {
@@ -174,9 +174,9 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
                     variant="default"
                     size="sm"
                     aria-label="Join Community"
-                    className="gap-1.5 h-8 px-3 cursor-pointer w-full justify-center"
+                    className="gap-1.5 h-7 px-2.5 cursor-pointer w-full justify-center sm:h-8 sm:px-3"
                   >
-                    <Discord className="size-3.5" />
+                    <Discord className="size-3 sm:size-3.5" />
                     <span>
                       <Trans>Community</Trans>
                     </span>

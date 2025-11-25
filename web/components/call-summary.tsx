@@ -764,12 +764,12 @@ const CallSummary = ({
         <button
           type="button"
           className={cn(
-            'inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm transition',
+            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs transition sm:gap-2 sm:px-3 sm:py-1 sm:text-sm',
             'bg-transparent hover:bg-accent/40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40'
           )}
         >
           <PartnerAvatar
-            className="h-7 w-7"
+            className="h-6 w-6 sm:h-7 sm:w-7"
             fallbackSize="md"
             name={partnerProfile?.name || t`Partner`}
             src={partnerAvatarUrl || undefined}
@@ -779,7 +779,7 @@ const CallSummary = ({
           </span>
           <ChevronDown
             className={cn(
-              'h-4 w-4 text-muted-foreground transition-transform',
+              'h-3.5 w-3.5 text-muted-foreground transition-transform sm:h-4 sm:w-4',
               isPartnerManagerOpen && 'rotate-180'
             )}
           />
@@ -950,7 +950,9 @@ const CallSummary = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className={'fixed inset-0 z-50 flex items-center justify-center p-4'}
+        className={
+          'fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4'
+        }
         style={{
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
           backdropFilter: 'blur(8px)',
@@ -964,36 +966,36 @@ const CallSummary = ({
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           className={
-            'relative w-full max-w-3xl max-h-[90vh] overflow-auto bg-card border border-border/50 rounded-2xl shadow-2xl'
+            'relative w-full max-w-3xl max-h-[90vh] overflow-auto bg-card border border-border/50 rounded-xl shadow-2xl sm:rounded-2xl'
           }
         >
           {/* Header */}
           <div
             className={
-              'sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border/30 px-6 py-4'
+              'sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border/30 px-3 py-3 sm:px-6 sm:py-4'
             }
           >
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               <div
                 id="glass-call-summary-header"
                 className={'flex items-center justify-between'}
               >
-                <h2 className={'text-xl font-bold'}>
+                <h2 className={'text-lg font-bold sm:text-xl'}>
                   <Trans>Call Summary</Trans>
                 </h2>
                 <button
                   onClick={onClose}
                   className={
-                    'text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-accent/50'
+                    'text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-accent/50 sm:p-1.5'
                   }
                   aria-label="Close"
                 >
-                  <X className={'size-5'} />
+                  <X className={'size-4 sm:size-5'} />
                 </button>
               </div>
               {(durationLabel || languageLabel || partnerChip) && (
-                <div className="space-y-2 relative">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                <div className="space-y-1.5 sm:space-y-2 relative">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground sm:gap-x-3 sm:text-sm">
                     {durationLabel && <span>{durationLabel}</span>}
                     {languageLabel && (
                       <>
@@ -1014,25 +1016,31 @@ const CallSummary = ({
           </div>
 
           {/* Content */}
-          <div className={'p-4 md:p-6 space-y-6'}>
+          <div className={'p-3 space-y-4 md:p-6 sm:p-4 sm:space-y-6'}>
             {/* Scores and Feedback Container */}
-            <div id="glass-scores-feedback" className="space-y-6">
+            <div id="glass-scores-feedback" className="space-y-4 sm:space-y-6">
               {/* Score Overview */}
               <section>
-                <div className={'flex items-center justify-between mb-6'}>
+                <div
+                  className={'flex items-center justify-between mb-4 sm:mb-6'}
+                >
                   <div>
                     <span
                       className={
-                        'text-sm font-medium text-muted-foreground block mb-1'
+                        'text-xs font-medium text-muted-foreground block mb-0.5 sm:text-sm sm:mb-1'
                       }
                     >
                       <Trans>Overall Score</Trans>
                     </span>
-                    <span className={'text-4xl font-bold'}>{averageScore}</span>
+                    <span className={'text-3xl font-bold sm:text-4xl'}>
+                      {averageScore}
+                    </span>
                   </div>
 
                   {/* Bar Graph Gauge */}
-                  <div className={'flex items-end gap-1 h-12'}>
+                  <div
+                    className={'flex items-end gap-0.5 h-10 sm:gap-1 sm:h-12'}
+                  >
                     {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
                       const scorePercent = averageScore / 100;
                       const segmentThreshold = i / 8;
@@ -1052,7 +1060,7 @@ const CallSummary = ({
                       return (
                         <motion.div
                           key={i}
-                          className={'w-2 rounded-full'}
+                          className={'w-1.5 rounded-full sm:w-2'}
                           style={{
                             height: `${height}%`,
                             backgroundColor: isActive
@@ -1073,16 +1081,20 @@ const CallSummary = ({
                 </div>
 
                 {/* Segmented gauges */}
-                <div className={'space-y-2'}>
+                <div className={'space-y-1.5 sm:space-y-2'}>
                   {/* Fluency */}
                   <div>
-                    <div className={'flex items-center justify-between mb-1.5'}>
+                    <div
+                      className={
+                        'flex items-center justify-between mb-1 sm:mb-1.5'
+                      }
+                    >
                       <span className={'text-xs text-muted-foreground'}>
                         <Trans>Fluency</Trans>
                       </span>
                       <span
                         className={cn(
-                          'text-sm font-medium',
+                          'text-xs font-medium sm:text-sm',
                           getScoreLabel(scores.fluency).color
                         )}
                       >
@@ -1090,7 +1102,7 @@ const CallSummary = ({
                       </span>
                     </div>
                     <div className={'relative'}>
-                      <div className={'flex gap-1 h-2'}>
+                      <div className={'flex gap-0.5 h-1.5 sm:gap-1 sm:h-2'}>
                         {/* 0-20: Low (red) - narrowest */}
                         <motion.div
                           className={cn(
@@ -1174,13 +1186,17 @@ const CallSummary = ({
 
                   {/* Accuracy */}
                   <div>
-                    <div className={'flex items-center justify-between mb-1.5'}>
+                    <div
+                      className={
+                        'flex items-center justify-between mb-1 sm:mb-1.5'
+                      }
+                    >
                       <span className={'text-xs text-muted-foreground'}>
                         <Trans>Accuracy</Trans>
                       </span>
                       <span
                         className={cn(
-                          'text-sm font-medium',
+                          'text-xs font-medium sm:text-sm',
                           getScoreLabel(scores.accuracy).color
                         )}
                       >
@@ -1188,7 +1204,7 @@ const CallSummary = ({
                       </span>
                     </div>
                     <div className={'relative'}>
-                      <div className={'flex gap-1 h-2'}>
+                      <div className={'flex gap-0.5 h-1.5 sm:gap-1 sm:h-2'}>
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
@@ -1253,7 +1269,7 @@ const CallSummary = ({
                       {/* Current position indicator */}
                       <motion.div
                         className={
-                          'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'
+                          'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-400 rounded-full sm:w-1 sm:h-4'
                         }
                         style={{
                           left: `${getScoreIndicatorPosition(
@@ -1269,13 +1285,17 @@ const CallSummary = ({
 
                   {/* Comprehensibility */}
                   <div>
-                    <div className={'flex items-center justify-between mb-1.5'}>
+                    <div
+                      className={
+                        'flex items-center justify-between mb-1 sm:mb-1.5'
+                      }
+                    >
                       <span className={'text-xs text-muted-foreground'}>
                         <Trans>Comprehensibility</Trans>
                       </span>
                       <span
                         className={cn(
-                          'text-sm font-medium',
+                          'text-xs font-medium sm:text-sm',
                           getScoreLabel(scores.comprehensibility).color
                         )}
                       >
@@ -1283,7 +1303,7 @@ const CallSummary = ({
                       </span>
                     </div>
                     <div className={'relative'}>
-                      <div className={'flex gap-1 h-2'}>
+                      <div className={'flex gap-0.5 h-1.5 sm:gap-1 sm:h-2'}>
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
@@ -1352,7 +1372,7 @@ const CallSummary = ({
                       {/* Current position indicator */}
                       <motion.div
                         className={
-                          'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'
+                          'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-400 rounded-full sm:w-1 sm:h-4'
                         }
                         style={{
                           left: `${getScoreIndicatorPosition(
@@ -1371,10 +1391,14 @@ const CallSummary = ({
               {/* Feedback with Glass AI Avatar */}
               {feedback && (
                 <section>
-                  <div className={'inline-flex items-start gap-3 max-w-2xl'}>
+                  <div
+                    className={
+                      'inline-flex items-start gap-2 max-w-2xl sm:gap-3'
+                    }
+                  >
                     {/* Glass AI Avatar */}
                     <div className={'shrink-0'}>
-                      <Avatar className="h-10 w-10 border border-border/50 bg-card/80">
+                      <Avatar className="h-8 w-8 border border-border/50 bg-card/80 sm:h-10 sm:w-10">
                         <AvatarImage
                           className="h-full w-full object-cover"
                           src="/glass-ai.png"
@@ -1387,7 +1411,7 @@ const CallSummary = ({
                     {/* Feedback Bubble */}
                     <div
                       className={
-                        'bg-background/50 border border-border/30 rounded-xl p-4 flex-1'
+                        'bg-background/50 border border-border/30 rounded-lg p-3 flex-1 sm:rounded-xl sm:p-4'
                       }
                     >
                       <p
@@ -1459,7 +1483,7 @@ const CallSummary = ({
                   >
                     <div
                       className={
-                        'mt-2 bg-background/50 border border-border/30 rounded-lg p-3 max-h-96 overflow-auto space-y-2'
+                        'mt-2 bg-background/50 border border-border/30 rounded-lg p-2.5 max-h-96 overflow-auto space-y-1.5 sm:p-3 sm:space-y-2'
                       }
                     >
                       {isLoadingMemories ? (
@@ -1557,7 +1581,7 @@ const CallSummary = ({
                                 <button
                                   type="button"
                                   className={cn(
-                                    'rounded-full p-1.5 text-muted-foreground transition hover:bg-muted/10 hover:text-foreground',
+                                    'rounded-full p-1 text-muted-foreground transition hover:bg-muted/10 hover:text-foreground sm:p-1.5',
                                     isDeleting &&
                                       'pointer-events-none opacity-60'
                                   )}
@@ -1568,9 +1592,9 @@ const CallSummary = ({
                                   disabled={isDeleting}
                                 >
                                   {isDeleting ? (
-                                    <Loader2 className="size-3 animate-spin" />
+                                    <Loader2 className="size-2.5 animate-spin sm:size-3" />
                                   ) : (
-                                    <Trash2 className="size-3" />
+                                    <Trash2 className="size-2.5 sm:size-3" />
                                   )}
                                 </button>
                               </div>
@@ -1633,7 +1657,7 @@ const CallSummary = ({
                   >
                     <div
                       className={
-                        'mt-2 bg-background/50 border border-border/30 rounded-lg p-3 max-h-96 overflow-auto'
+                        'mt-2 bg-background/50 border border-border/30 rounded-lg p-2.5 max-h-96 overflow-auto sm:p-3'
                       }
                     >
                       <ConversationMessagesList
@@ -1650,24 +1674,26 @@ const CallSummary = ({
           {/* Footer Actions */}
           <div
             className={
-              'sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border/30 px-6 py-4'
+              'sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border/30 px-3 py-3 sm:px-6 sm:py-4'
             }
           >
-            <div className={'flex items-center justify-between gap-3'}>
+            <div className={'flex items-center justify-between gap-2 sm:gap-3'}>
               <Button
                 variant="outline"
                 onClick={onClose}
                 size="sm"
-                className={'flex-1'}
+                className={'flex-1 text-xs h-9 sm:text-sm sm:h-10'}
               >
                 <Trans>Close</Trans>
               </Button>
               <Button
                 onClick={handleSaveCall}
                 size="sm"
-                className={'flex-1 bg-primary hover:bg-primary/90'}
+                className={
+                  'flex-1 bg-primary hover:bg-primary/90 text-xs h-9 sm:text-sm sm:h-10'
+                }
               >
-                <Save className={'size-4 mr-2'} />
+                <Save className={'size-3.5 mr-1.5 sm:size-4 sm:mr-2'} />
                 <Trans>Save Call</Trans>
               </Button>
             </div>

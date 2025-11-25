@@ -248,6 +248,7 @@ export function ConversationHistory() {
   const [totalConversations, setTotalConversations] = useState(0);
   const [loadingConversations, setLoadingConversations] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
   const [partnerProfile, setPartnerProfile] = useState<
     ConversationPartnerRef | undefined
   >(selected?.partner || undefined);
@@ -1014,10 +1015,10 @@ export function ConversationHistory() {
   return (
     <>
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_2fr]">
-        {/* Left: Conversation List */}
-        <div className="space-y-3 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto">
-          {/* Search Bar */}
-          <div className="relative">
+        {/* Left: Conversation List (Desktop only) */}
+        <div className="hidden lg:flex lg:flex-col lg:max-h-[calc(100vh-200px)]">
+          {/* Search Bar - Fixed */}
+          <div className="shrink-0 relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t`Search conversations...`}
@@ -1039,84 +1040,88 @@ export function ConversationHistory() {
               </Button>
             )}
           </div>
-          {/* Loading State */}
-          {loadingConversations && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          )}
 
-          {/* Empty State */}
-          {!loadingConversations && conversations.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-8 text-center text-sm text-muted-foreground">
-              {searchQuery ? (
-                <>
-                  <Search className="h-8 w-8 mb-2 opacity-50" />
-                  <Trans>No conversations found</Trans>
-                </>
-              ) : (
-                <>
-                  <BookOpen className="h-8 w-8 mb-2 opacity-50" />
-                  <Trans>No conversations yet</Trans>
-                </>
-              )}
-            </div>
-          )}
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
+            {/* Loading State */}
+            {loadingConversations && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
 
-          {/* Conversation List */}
-          {!loadingConversations &&
-            conversations.map((conversation) => {
-              const isActive = selected?.id === conversation.id;
-              const convScores = conversation.scores ?? null;
-              const avgScore = convScores
-                ? Math.round(
-                    (convScores.fluency +
-                      convScores.accuracy +
-                      convScores.comprehensibility) /
-                      3
-                  )
-                : 0;
+            {/* Empty State */}
+            {!loadingConversations && conversations.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-8 text-center text-sm text-muted-foreground">
+                {searchQuery ? (
+                  <>
+                    <Search className="h-8 w-8 mb-2 opacity-50" />
+                    <Trans>No conversations found</Trans>
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="h-8 w-8 mb-2 opacity-50" />
+                    <Trans>No conversations yet</Trans>
+                  </>
+                )}
+              </div>
+            )}
 
-              return (
-                <button
-                  key={conversation.id}
-                  onClick={() => void handleSelect(conversation)}
-                  className={cn(
-                    'w-full rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer',
-                    isActive
-                      ? 'border-primary/40 bg-primary/5 shadow-sm'
-                      : 'border-border/40 hover:border-border hover:bg-accent/50'
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">
-                        {conversation.title || t`Conversation`}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {formatRelativeTime(conversation.startedAt)}
-                      </p>
-                    </div>
-                    {convScores && avgScore > 0 && (
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span
-                          className={cn(
-                            'text-base font-bold tabular-nums',
-                            isActive ? 'text-primary' : 'text-foreground/70'
-                          )}
-                        >
-                          {avgScore}
-                        </span>
-                      </div>
+            {/* Conversation List */}
+            {!loadingConversations &&
+              conversations.map((conversation) => {
+                const isActive = selected?.id === conversation.id;
+                const convScores = conversation.scores ?? null;
+                const avgScore = convScores
+                  ? Math.round(
+                      (convScores.fluency +
+                        convScores.accuracy +
+                        convScores.comprehensibility) /
+                        3
+                    )
+                  : 0;
+
+                return (
+                  <button
+                    key={conversation.id}
+                    onClick={() => void handleSelect(conversation)}
+                    className={cn(
+                      'w-full rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer',
+                      isActive
+                        ? 'border-primary/40 bg-primary/5 shadow-sm'
+                        : 'border-border/40 hover:border-border hover:bg-accent/50'
                     )}
-                  </div>
-                </button>
-              );
-            })}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">
+                          {conversation.title || t`Conversation`}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatRelativeTime(conversation.startedAt)}
+                        </p>
+                      </div>
+                      {convScores && avgScore > 0 && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={cn(
+                              'text-base font-bold tabular-nums',
+                              isActive ? 'text-primary' : 'text-foreground/70'
+                            )}
+                          >
+                            {avgScore}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+          </div>
 
-          {/* Pagination */}
+          {/* Pagination - Fixed */}
           {totalConversations > 0 && (
-            <div className="flex items-center justify-between gap-2 px-2 py-3 border-t border-border/30">
+            <div className="shrink-0 flex items-center justify-between gap-2 px-2 py-3 border-t border-border/30 mt-3">
               <div className="text-xs text-muted-foreground">
                 {plural(totalConversations, {
                   one: '# conversation',
@@ -1154,6 +1159,203 @@ export function ConversationHistory() {
 
         {/* Right: Conversation Detail */}
         <div className="rounded-2xl sm:rounded-3xl border border-border/50 bg-card/80 lg:sticky lg:top-8 lg:self-start max-h-[600px] lg:max-h-[calc(100vh-240px)] overflow-hidden flex flex-col">
+          {/* Mobile Dropdown Selector */}
+          <div className="lg:hidden border-b border-border/30 p-2.5 sm:p-3">
+            <Popover
+              open={isMobileDropdownOpen}
+              onOpenChange={setIsMobileDropdownOpen}
+            >
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between gap-2 rounded-xl border border-border/40 bg-background/50 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
+                >
+                  <div className="flex-1 min-w-0">
+                    {selected ? (
+                      <>
+                        <p className="font-semibold text-sm truncate">
+                          {selected.title || t`Conversation`}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatRelativeTime(selected.startedAt)}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        <Trans>Select a conversation</Trans>
+                      </p>
+                    )}
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="p-0 rounded-xl overflow-hidden transition-all duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
+                align="start"
+                side="bottom"
+                sideOffset={4}
+                style={{ width: 'var(--radix-popover-trigger-width)' }}
+              >
+                <div className="max-h-[60vh] flex flex-col rounded-xl">
+                  {/* Search Bar */}
+                  <div className="shrink-0 bg-popover border-b border-border/30 p-3 rounded-t-xl">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder={t`Search conversations...`}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 pr-9"
+                      />
+                      {searchQuery && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                          onClick={() => {
+                            setSearchQuery('');
+                            setPage(0);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Scrollable Content */}
+                  <div className="flex-1 overflow-y-auto">
+                    {/* Loading State */}
+                    {loadingConversations && (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+
+                    {/* Empty State */}
+                    {!loadingConversations && conversations.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-8 text-center text-sm text-muted-foreground">
+                        {searchQuery ? (
+                          <>
+                            <Search className="h-8 w-8 mb-2 opacity-50" />
+                            <Trans>No conversations found</Trans>
+                          </>
+                        ) : (
+                          <>
+                            <BookOpen className="h-8 w-8 mb-2 opacity-50" />
+                            <Trans>No conversations yet</Trans>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Conversation List */}
+                    {!loadingConversations && conversations.length > 0 && (
+                      <div className="p-3 space-y-2">
+                        {conversations.map((conversation) => {
+                          const isActive = selected?.id === conversation.id;
+                          const convScores = conversation.scores ?? null;
+                          const avgScore = convScores
+                            ? Math.round(
+                                (convScores.fluency +
+                                  convScores.accuracy +
+                                  convScores.comprehensibility) /
+                                  3
+                              )
+                            : 0;
+
+                          return (
+                            <button
+                              key={conversation.id}
+                              onClick={() => {
+                                void handleSelect(conversation);
+                                setIsMobileDropdownOpen(false);
+                              }}
+                              className={cn(
+                                'w-full rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer',
+                                isActive
+                                  ? 'border-primary/40 bg-primary/5 shadow-sm'
+                                  : 'border-border/40 hover:border-border hover:bg-accent/50'
+                              )}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-sm truncate">
+                                    {conversation.title || t`Conversation`}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {formatRelativeTime(conversation.startedAt)}
+                                  </p>
+                                </div>
+                                {convScores && avgScore > 0 && (
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <span
+                                      className={cn(
+                                        'text-base font-bold tabular-nums',
+                                        isActive
+                                          ? 'text-primary'
+                                          : 'text-foreground/70'
+                                      )}
+                                    >
+                                      {avgScore}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Pagination */}
+                  {totalConversations > 0 && (
+                    <div className="shrink-0 bg-popover border-t border-border/30 px-3 py-3 rounded-b-xl">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-xs text-muted-foreground">
+                          {plural(totalConversations, {
+                            one: '# conversation',
+                            other: '# conversations',
+                          })}
+                          {totalPages > 1 && (
+                            <> • {t`Page ${page + 1} of ${totalPages}`}</>
+                          )}
+                        </div>
+                        {totalPages > 1 && (
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setPage(Math.max(0, page - 1))}
+                              disabled={page === 0 || loadingConversations}
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() =>
+                                setPage(Math.min(totalPages - 1, page + 1))
+                              }
+                              disabled={
+                                page >= totalPages - 1 || loadingConversations
+                              }
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
           {loadingDetail && (
             <div className="flex flex-1 items-center justify-center p-8">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -1178,7 +1380,7 @@ export function ConversationHistory() {
           {!loadingDetail && selected && (
             <div
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6"
+              className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6"
             >
               {/* Header with Actions */}
               <div className="flex items-start justify-between gap-3">
@@ -1190,7 +1392,7 @@ export function ConversationHistory() {
                       onChange={(e) => handleTitleChange(e.target.value)}
                       onBlur={handleTitleBlur}
                       onKeyDown={handleTitleKeyDown}
-                      className="text-xl font-semibold h-auto px-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                      className="md:text-xl text-sm  font-semibold h-auto px-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                       autoFocus
                     />
                   ) : (
@@ -1856,7 +2058,7 @@ export function ConversationHistory() {
 
               {/* Conversation History Section */}
               <section ref={conversationSectionRef} className="relative">
-                <div className="sticky top-6 z-20 pb-3 bg-card/80">
+                <div className="sticky top-0 z-20 pb-3 bg-card/80">
                   <button
                     onClick={() => {
                       setShowConversation(!showConversation);

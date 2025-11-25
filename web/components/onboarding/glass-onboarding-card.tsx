@@ -24,14 +24,23 @@ export const GlassOnboardingCard = ({
     const width = window.innerWidth;
     const isMobile = width < 768;
 
-    // Step 4 (After each conversation) on screens 1366px and below (including mobile from 360px)
+    // Step 2 (I help you speak) - card is above input, move up on mobile to prevent bottom cutoff
+    if (currentStep === 2) {
+      return isMobile ? '!-translate-y-[55px]' : '';
+    }
+    // Step 4 (After each conversation) - adjust positioning
     if (currentStep === 4) {
-      const shouldApply = width >= 360 && width <= 1366;
+      if (isMobile) {
+        // On mobile, move card down to prevent top cutoff
+        return '!translate-y-[100px]';
+      }
+      // On tablet/small desktop, adjust vertical position
+      const shouldApply = width >= 768 && width <= 1366;
       return shouldApply ? 'my-[-100px]' : '';
     }
     // Step 5 (I remember you) on mobile - move card up so memory section is visible
     if (currentStep === 5) {
-      return isMobile ? 'mb-[80px]' : '';
+      return isMobile ? '!-translate-y-[100px]' : '';
     }
     return '';
   })();

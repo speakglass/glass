@@ -29,9 +29,9 @@ export default async function MemoryPage({
   }
 
   return (
-    <div className="min-h-screen pt-14">
+    <div className="min-h-screen pt-12 sm:pt-14">
       {/* Header Section */}
-      <div className="bg-background border-b border-border/30 sticky top-14 z-10">
+      <div className="bg-background border-b border-border/30 sticky top-12 sm:top-14 z-10">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-4 sm:py-6">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">

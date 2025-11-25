@@ -1,4 +1,9 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { ConversationPartner } from '@/lib/account-api';
 import { PartnerAvatar } from '@/components/partner-avatar';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +21,13 @@ interface PartnerDetailModalProps {
   onStartChat?: (partnerId: string) => void;
 }
 
-function GenderIcon({ gender, className }: { gender: string; className?: string }) {
+function GenderIcon({
+  gender,
+  className,
+}: {
+  gender: string;
+  className?: string;
+}) {
   const iconClass = className || 'h-3.5 w-3.5';
 
   if (gender === 'male') {
@@ -76,10 +87,22 @@ function GenderIcon({ gender, className }: { gender: string; className?: string 
   );
 }
 
-export function PartnerDetailModal({ open, onClose, partner, onStartChat }: PartnerDetailModalProps) {
+export function PartnerDetailModal({
+  open,
+  onClose,
+  partner,
+  onStartChat,
+}: PartnerDetailModalProps) {
   const locale = useLocale();
 
   if (!partner) return null;
+
+  const genderLabels = {
+    male: t`Male`,
+    female: t`Female`,
+    'non-binary': t`Non-binary`,
+    other: t`Other`,
+  };
 
   const relationshipTypeLabels = {
     new_friends: t`New friends`,
@@ -87,21 +110,23 @@ export function PartnerDetailModal({ open, onClose, partner, onStartChat }: Part
     professional: t`Professional practice`,
     figuring_out: t`Still figuring it out`,
   };
-  const occupationLabel = partner.personaOccupationTranslation || partner.personaOccupation;
+  const occupationLabel =
+    partner.personaOccupationTranslation || partner.personaOccupation;
   const cityLabel = partner.personaCityTranslation || partner.personaCity;
-  const countryLabel = partner.personaCountryTranslation || partner.personaCountry;
+  const countryLabel =
+    partner.personaCountryTranslation || partner.personaCountry;
   const locationLabel = [cityLabel, countryLabel].filter(Boolean).join(', ');
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent className="sm:max-w-[440px]">
-        <DialogHeader className="pb-1">
-          <DialogTitle className="text-lg">
+      <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto p-4 sm:p-6 sm:max-w-[440px]">
+        <DialogHeader className="pb-1 text-left">
+          <DialogTitle className="text-base sm:text-lg">
             <Trans>Partner Details</Trans>
           </DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col max-h-[600px]">
-          <div className="overflow-y-auto space-y-4">
+        <div className="flex flex-col">
+          <div className="space-y-4">
             {/* Avatar image - compact square */}
             <div className="relative w-full aspect-square overflow-hidden rounded-lg">
               <PartnerAvatar
@@ -114,12 +139,16 @@ export function PartnerDetailModal({ open, onClose, partner, onStartChat }: Part
 
             {/* Name and age with verified badge */}
             <div className="space-y-1">
-              <h3 className="text-3xl font-bold flex items-center gap-2">
+              <h3 className="text-2xl font-bold flex items-center gap-1.5 sm:text-3xl sm:gap-2">
                 {partner.name}
-                {partner.personaAge && <span className="text-2xl font-normal">{partner.personaAge}</span>}
-                <div className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                {partner.personaAge && (
+                  <span className="text-xl font-normal sm:text-2xl">
+                    {partner.personaAge}
+                  </span>
+                )}
+                <div className="h-5 w-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 sm:h-6 sm:w-6">
                   <svg
-                    className="h-4 w-4 text-white"
+                    className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                     xmlns="http://www.w3.org/2000/svg"
@@ -134,30 +163,38 @@ export function PartnerDetailModal({ open, onClose, partner, onStartChat }: Part
               </h3>
 
               {/* Gender, profession, location */}
-              <div className="text-sm text-muted-foreground space-y-0.5">
+              <div className="text-xs text-muted-foreground space-y-0.5 sm:text-sm">
                 {(partner.nativeLang || partner.learningLang) && (
                   <div className="flex items-center gap-1.5">
-                    <Languages className="h-3.5 w-3.5" />
+                    <Languages className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     <span>
-                      {getLanguageName(partner.nativeLang, locale)} → {getLanguageName(partner.learningLang, locale)}
+                      {getLanguageName(partner.nativeLang, locale)} →{' '}
+                      {getLanguageName(partner.learningLang, locale)}
                     </span>
                   </div>
                 )}
                 {partner.personaGender && (
                   <div className="flex items-center gap-1.5">
-                    <GenderIcon gender={partner.personaGender} />
-                    <span className="capitalize">{partner.personaGender}</span>
+                    <GenderIcon
+                      gender={partner.personaGender}
+                      className="h-3 w-3 sm:h-3.5 sm:w-3.5"
+                    />
+                    <span>
+                      {genderLabels[
+                        partner.personaGender as keyof typeof genderLabels
+                      ] || partner.personaGender}
+                    </span>
                   </div>
                 )}
                 {occupationLabel && (
                   <div className="flex items-center gap-1.5">
-                    <Briefcase className="h-3.5 w-3.5" />
+                    <Briefcase className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     <span className="capitalize">{occupationLabel}</span>
                   </div>
                 )}
                 {locationLabel && (
                   <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5" />
+                    <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     <span>{locationLabel}</span>
                   </div>
                 )}
@@ -166,41 +203,53 @@ export function PartnerDetailModal({ open, onClose, partner, onStartChat }: Part
 
             {/* Looking for */}
             {partner.personaRelationship && (
-              <div className="bg-muted/80 rounded-lg px-4 py-3">
-                <p className="text-sm flex items-center gap-2">
-                  <span className="text-base">😊</span>
+              <div className="bg-muted/80 rounded-lg px-3 py-2.5 sm:px-4 sm:py-3">
+                <p className="text-xs flex items-center gap-1.5 sm:text-sm sm:gap-2">
+                  <span className="text-sm sm:text-base">😊</span>
                   <span className="font-medium">
                     <Trans>Looking for</Trans>
                   </span>
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {relationshipTypeLabels[partner.personaRelationship as keyof typeof relationshipTypeLabels] ||
-                    partner.personaRelationship}
+                <p className="text-xs text-muted-foreground mt-1 sm:text-sm">
+                  {relationshipTypeLabels[
+                    partner.personaRelationship as keyof typeof relationshipTypeLabels
+                  ] || partner.personaRelationship}
                 </p>
               </div>
             )}
 
             {/* About Me */}
-            <div className="space-y-3">
-              <h4 className="text-lg font-semibold">
+            <div className="space-y-2 sm:space-y-3">
+              <h4 className="text-base font-semibold sm:text-lg">
                 <Trans>About Me</Trans>
               </h4>
               {(partner.descriptionTranslation || partner.description) && (
-                <p className="text-sm text-foreground leading-relaxed">
+                <p className="text-xs text-foreground leading-relaxed sm:text-sm">
                   {partner.descriptionTranslation || partner.description}
                 </p>
               )}
-              {(partner.personaBackgroundTranslation || partner.personaBackground) && (
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {partner.personaBackgroundTranslation || partner.personaBackground}
+              {(partner.personaBackgroundTranslation ||
+                partner.personaBackground) && (
+                <p className="text-xs text-muted-foreground leading-relaxed sm:text-sm">
+                  {partner.personaBackgroundTranslation ||
+                    partner.personaBackground}
                 </p>
               )}
-              {(partner.personaInterestsTranslation || partner.personaInterests) && (
+              {(partner.personaInterestsTranslation ||
+                partner.personaInterests) && (
                 <div className="flex flex-wrap gap-2">
-                  {(partner.personaInterestsTranslation || partner.personaInterests || '')
+                  {(
+                    partner.personaInterestsTranslation ||
+                    partner.personaInterests ||
+                    ''
+                  )
                     .split(',')
                     .map((interest, idx) => (
-                      <Badge key={idx} variant="secondary" className="text-xs capitalize">
+                      <Badge
+                        key={idx}
+                        variant="secondary"
+                        className="text-xs capitalize"
+                      >
                         {interest.trim()}
                       </Badge>
                     ))}
@@ -211,7 +260,11 @@ export function PartnerDetailModal({ open, onClose, partner, onStartChat }: Part
 
           {/* Action buttons - fixed at bottom */}
           <div className="flex gap-2 border-t pt-4 mt-4">
-            <Button variant="outline" onClick={onClose} className="flex-1 cursor-pointer">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 cursor-pointer"
+            >
               <Trans>Close</Trans>
             </Button>
             {onStartChat && (

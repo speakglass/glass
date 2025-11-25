@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,7 +24,14 @@ interface MemoryDialogProps {
   readOnly?: boolean;
 }
 
-export function MemoryDialog({ open, onClose, onSave, memory, isLoading, readOnly = false }: MemoryDialogProps) {
+export function MemoryDialog({
+  open,
+  onClose,
+  onSave,
+  memory,
+  isLoading,
+  readOnly = false,
+}: MemoryDialogProps) {
   const [value, setValue] = useState('');
 
   useEffect(() => {
@@ -46,11 +59,19 @@ export function MemoryDialog({ open, onClose, onSave, memory, isLoading, readOnl
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={readOnly ? 'sm:max-w-[500px]' : 'sm:max-w-[600px]'}>
+      <DialogContent
+        className={readOnly ? 'sm:max-w-[500px]' : 'sm:max-w-[600px]'}
+      >
         <form onSubmit={handleSubmit}>
           <DialogHeader className={readOnly ? 'pb-3' : ''}>
             <DialogTitle className={readOnly ? 'text-base' : ''}>
-              {readOnly ? <Trans>Memory</Trans> : memory ? <Trans>Edit memory</Trans> : <Trans>Add new memory</Trans>}
+              {readOnly ? (
+                <Trans>Memory</Trans>
+              ) : memory ? (
+                <Trans>Edit memory</Trans>
+              ) : (
+                <Trans>Add new memory</Trans>
+              )}
             </DialogTitle>
           </DialogHeader>
 
@@ -77,7 +98,9 @@ export function MemoryDialog({ open, onClose, onSave, memory, isLoading, readOnl
               />
               {!readOnly && (
                 <p className="text-xs text-muted-foreground">
-                  <Trans>AI will organize and categorize this automatically.</Trans>
+                  <Trans>
+                    AI will organize and categorize this automatically.
+                  </Trans>
                 </p>
               )}
             </div>
@@ -90,11 +113,22 @@ export function MemoryDialog({ open, onClose, onSave, memory, isLoading, readOnl
               </Button>
             ) : (
               <>
-                <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClose}
+                  disabled={isLoading}
+                >
                   <Trans>Cancel</Trans>
                 </Button>
                 <Button type="submit" disabled={isLoading || !value.trim()}>
-                  {isLoading ? <Trans>Saving...</Trans> : memory ? <Trans>Update</Trans> : <Trans>Create</Trans>}
+                  {isLoading ? (
+                    <Trans>Saving...</Trans>
+                  ) : memory ? (
+                    <Trans>Update</Trans>
+                  ) : (
+                    <Trans>Create</Trans>
+                  )}
                 </Button>
               </>
             )}
