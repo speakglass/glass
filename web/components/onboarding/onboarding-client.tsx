@@ -706,49 +706,49 @@ export default function OnboardingClient() {
       <>
         <Nav />
         <div className="fixed top-14 left-0 right-0 bottom-0 flex items-center justify-center p-4">
-          <div className="flex flex-col items-center gap-6 sm:gap-8 max-w-2xl w-full px-1.5">
-            <div className="text-center">
+        <div className="flex flex-col items-center gap-6 sm:gap-8 max-w-2xl w-full px-1.5">
+          <div className="text-center">
               <h2 className="sm:text-2xl text-xl font-medium mb-2">
-                <Trans>What is your native language?</Trans>
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                <Trans>Select the language you speak fluently</Trans>
-              </p>
-            </div>
-
-            <div className="flex gap-1.5 sm:gap-2 flex-wrap justify-center">
-              {LANGUAGES.map((lang: any) => (
-                <Button
-                  key={`native-${lang.code}`}
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    'rounded-full focus-visible:ring-2 transition-all hover:scale-105',
-                    languages.nativeLang === lang.code &&
-                      'bg-accent border-foreground/30 ring-1 ring-foreground/20'
-                  )}
-                  onClick={() => handleNativeLangSelect(lang.code)}
-                >
-                  <span className="text-lg">{lang.flag}</span>
-                  <span className="font-medium text-sm">{lang.name}</span>
-                </Button>
-              ))}
-            </div>
-
-            <Button
-              onClick={() => setStep('learning-lang')}
-              disabled={!languages.nativeLang}
-              variant="default"
-              size="sm"
-              className={cn(
-                'text-sm',
-                !languages.nativeLang && 'opacity-50 cursor-not-allowed'
-              )}
-            >
-              <Trans>Next →</Trans>
-            </Button>
+              <Trans>What is your native language?</Trans>
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              <Trans>Select the language you speak fluently</Trans>
+            </p>
           </div>
+
+          <div className="flex gap-1.5 sm:gap-2 flex-wrap justify-center">
+            {LANGUAGES.map((lang: any) => (
+              <Button
+                key={`native-${lang.code}`}
+                variant="outline"
+                size="sm"
+                className={cn(
+                  'rounded-full focus-visible:ring-2 transition-all hover:scale-105',
+                  languages.nativeLang === lang.code &&
+                    'bg-accent border-foreground/30 ring-1 ring-foreground/20'
+                )}
+                onClick={() => handleNativeLangSelect(lang.code)}
+              >
+                <span className="text-lg">{lang.flag}</span>
+                <span className="font-medium text-sm">{lang.name}</span>
+              </Button>
+            ))}
+          </div>
+
+          <Button
+            onClick={() => setStep('learning-lang')}
+            disabled={!languages.nativeLang}
+            variant="default"
+            size="sm"
+            className={cn(
+              'text-sm',
+              !languages.nativeLang && 'opacity-50 cursor-not-allowed'
+            )}
+          >
+            <Trans>Next →</Trans>
+          </Button>
         </div>
+      </div>
       </>
     );
   }
@@ -759,65 +759,65 @@ export default function OnboardingClient() {
       <>
         <Nav />
         <div className="fixed top-14 left-0 right-0 bottom-0 flex items-center justify-center p-4">
-          <div className="flex flex-col items-center gap-6 sm:gap-8 max-w-2xl w-full px-1.5">
-            <div className="text-center">
+        <div className="flex flex-col items-center gap-6 sm:gap-8 max-w-2xl w-full px-1.5">
+          <div className="text-center">
               <h2 className="sm:text-2xl text-xl font-medium mb-2">
-                <Trans>Which language do you want to learn?</Trans>
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                <Trans>Choose the language you want to practice speaking</Trans>
-              </p>
-            </div>
+              <Trans>Which language do you want to learn?</Trans>
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              <Trans>Choose the language you want to practice speaking</Trans>
+            </p>
+          </div>
 
-            <div className="flex gap-1.5 sm:gap-2 flex-wrap justify-center">
-              {LANGUAGES.map((lang: any) => {
-                const isDisabled = languages.nativeLang === lang.code;
-                return (
-                  <Button
-                    key={`learn-${lang.code}`}
-                    variant="outline"
-                    size="sm"
-                    disabled={isDisabled}
-                    className={cn(
-                      'rounded-full focus-visible:ring-2 transition-all',
-                      !isDisabled && 'hover:scale-105',
-                      languages.learningLang === lang.code &&
-                        'bg-accent border-foreground/30 ring-1 ring-foreground/20',
-                      isDisabled && 'opacity-40 cursor-not-allowed'
-                    )}
-                    onClick={() =>
-                      !isDisabled && handleLearningLangSelect(lang.code)
-                    }
-                  >
-                    <span className="text-lg">{lang.flag}</span>
-                    <span className="font-medium text-sm">{lang.name}</span>
-                  </Button>
-                );
-              })}
-            </div>
+          <div className="flex gap-1.5 sm:gap-2 flex-wrap justify-center">
+            {LANGUAGES.map((lang: any) => {
+              const isDisabled = languages.nativeLang === lang.code;
+              return (
+                <Button
+                  key={`learn-${lang.code}`}
+                  variant="outline"
+                  size="sm"
+                  disabled={isDisabled}
+                  className={cn(
+                    'rounded-full focus-visible:ring-2 transition-all',
+                    !isDisabled && 'hover:scale-105',
+                    languages.learningLang === lang.code &&
+                      'bg-accent border-foreground/30 ring-1 ring-foreground/20',
+                    isDisabled && 'opacity-40 cursor-not-allowed'
+                  )}
+                  onClick={() =>
+                    !isDisabled && handleLearningLangSelect(lang.code)
+                  }
+                >
+                  <span className="text-lg">{lang.flag}</span>
+                  <span className="font-medium text-sm">{lang.name}</span>
+                </Button>
+              );
+            })}
+          </div>
 
-            <div className="flex justify-between items-center w-full">
-              <button
-                onClick={() => setStep('native-lang')}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Trans>← Back</Trans>
-              </button>
-              <Button
-                onClick={() => setStep('level')}
-                disabled={!languages.learningLang}
-                variant="default"
-                size="sm"
-                className={cn(
-                  'text-sm',
-                  !languages.learningLang && 'opacity-50 cursor-not-allowed'
-                )}
-              >
-                <Trans>Next →</Trans>
-              </Button>
-            </div>
+          <div className="flex justify-between items-center w-full">
+            <button
+              onClick={() => setStep('native-lang')}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Trans>← Back</Trans>
+            </button>
+            <Button
+              onClick={() => setStep('level')}
+              disabled={!languages.learningLang}
+              variant="default"
+              size="sm"
+              className={cn(
+                'text-sm',
+                !languages.learningLang && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              <Trans>Next →</Trans>
+            </Button>
           </div>
         </div>
+      </div>
       </>
     );
   }
@@ -828,86 +828,86 @@ export default function OnboardingClient() {
         <Nav />
         <div className="fixed top-14 left-0 right-0 bottom-0 flex items-center justify-center p-4">
           <div className="flex flex-col items-center gap-3 sm:gap-8 px-1.5 w-full max-w-md">
-            <div className="text-center space-y-2">
+          <div className="text-center space-y-2">
               <h2 className="sm:text-2xl text-xl font-medium pt-2 sm:pt-0">
-                <Trans>How confident are you in this language?</Trans>
-              </h2>
-              <p className="text-sm text-muted-foreground max-w-lg">
-                <Trans>
-                  Select the description that feels closest to your speaking
-                  ability.
-                </Trans>
-              </p>
-            </div>
+              <Trans>How confident are you in this language?</Trans>
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-lg">
+              <Trans>
+                Select the description that feels closest to your speaking
+                ability.
+              </Trans>
+            </p>
+          </div>
 
-            <div className="flex flex-col gap-2 w-full">
-              {languageLevelOptions.map((option) => {
-                const isActive = languageLevel === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => setLanguageLevel(option.value)}
-                    className={cn(
+          <div className="flex flex-col gap-2 w-full">
+            {languageLevelOptions.map((option) => {
+              const isActive = languageLevel === option.value;
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => setLanguageLevel(option.value)}
+                  className={cn(
                       'w-full rounded-xl border bg-card px-3 py-2.5 sm:px-4 sm:py-3 flex items-start gap-2.5 sm:gap-3 text-left transition-all cursor-pointer hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring',
-                      isActive
-                        ? 'bg-accent/50 border-foreground/30'
-                        : 'border-border'
-                    )}
-                  >
-                    <div
-                      className={cn(
+                    isActive
+                      ? 'bg-accent/50 border-foreground/30'
+                      : 'border-border'
+                  )}
+                >
+                  <div
+                    className={cn(
                         'flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full text-base sm:text-lg',
-                        isActive
-                          ? 'bg-foreground/10 text-foreground'
-                          : 'bg-muted/50 text-muted-foreground'
-                      )}
-                      aria-hidden
-                    >
-                      {option.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
+                      isActive
+                        ? 'bg-foreground/10 text-foreground'
+                        : 'bg-muted/50 text-muted-foreground'
+                    )}
+                    aria-hidden
+                  >
+                    {option.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm sm:text-base mb-0.5">
-                        {option.label}
-                      </div>
-                      <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug">
-                        {option.description}
-                      </p>
+                      {option.label}
                     </div>
-                  </button>
-                );
-              })}
-            </div>
+                      <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug">
+                      {option.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
-            {languageLevelError && (
-              <p className="text-sm text-red-500">{languageLevelError}</p>
-            )}
+          {languageLevelError && (
+            <p className="text-sm text-red-500">{languageLevelError}</p>
+          )}
 
-            <div className="flex justify-between items-center w-full">
-              <button
-                onClick={() => setStep('learning-lang')}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Trans>← Back</Trans>
-              </button>
-              <Button
-                onClick={handleLanguageLevelNext}
-                disabled={!languageLevel || savingLanguageLevel}
-                variant="default"
-                size="sm"
-                className={cn(
-                  'text-sm font-medium',
-                  (!languageLevel || savingLanguageLevel) && 'opacity-50'
-                )}
-              >
-                {savingLanguageLevel ? (
-                  <Trans>Saving…</Trans>
-                ) : (
-                  <Trans>Next →</Trans>
-                )}
-              </Button>
-            </div>
+          <div className="flex justify-between items-center w-full">
+            <button
+              onClick={() => setStep('learning-lang')}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Trans>← Back</Trans>
+            </button>
+            <Button
+              onClick={handleLanguageLevelNext}
+              disabled={!languageLevel || savingLanguageLevel}
+              variant="default"
+              size="sm"
+              className={cn(
+                'text-sm font-medium',
+                (!languageLevel || savingLanguageLevel) && 'opacity-50'
+              )}
+            >
+              {savingLanguageLevel ? (
+                <Trans>Saving…</Trans>
+              ) : (
+                <Trans>Next →</Trans>
+              )}
+            </Button>
           </div>
         </div>
+      </div>
       </>
     );
   }

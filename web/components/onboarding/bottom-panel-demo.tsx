@@ -186,12 +186,20 @@ export default function OnboardingBottomPanel({
                 </div>
               )}
               {suggestion.pronunciation && (
-                <div className={'text-sm text-sky-600 opacity-80'}>
+                <div
+                  className={
+                    'text-sm text-sky-600 opacity-80 leading-[1.3] sm:leading-normal'
+                  }
+                >
                   {suggestion.pronunciation}
                 </div>
               )}
               {suggestion.translation && (
-                <div className={'text-sm text-muted-foreground'}>
+                <div
+                  className={
+                    'text-sm text-muted-foreground leading-[1.3] sm:leading-normal'
+                  }
+                >
                   {suggestion.translation}
                 </div>
               )}
@@ -240,17 +248,29 @@ export default function OnboardingBottomPanel({
             </div>
             <div className={'space-y-1.5'}>
               {feedback.translation && (
-                <div className={'text-sm text-foreground'}>
+                <div
+                  className={
+                    'text-sm text-foreground leading-[1.3] sm:leading-normal'
+                  }
+                >
                   {feedback.translation}
                 </div>
               )}
               {feedback.targetText && (
-                <div className={'text-sm text-muted-foreground'}>
+                <div
+                  className={
+                    'text-sm text-muted-foreground leading-[1.3] sm:leading-normal'
+                  }
+                >
                   {feedback.targetText}
                 </div>
               )}
               {feedback.pronunciation && (
-                <div className={'text-sm text-sky-600 opacity-80'}>
+                <div
+                  className={
+                    'text-sm text-sky-600 opacity-80 leading-[1.3] sm:leading-normal'
+                  }
+                >
                   {feedback.pronunciation}
                 </div>
               )}
@@ -264,7 +284,7 @@ export default function OnboardingBottomPanel({
   const suggestMode: SuggestMode = settings.suggestMode ?? 'auto';
 
   // Adjust height based on current step
-  const minHeight = currentStep === 1 ? 'min-h-[40vh]' : 'min-h-[50vh]';
+  const minHeight = currentStep === 1 ? 'min-h-[40dvh]' : 'min-h-[50dvh]';
 
   return (
     <div className={cn('mx-auto w-full', minHeight)}>
@@ -542,7 +562,11 @@ export default function OnboardingBottomPanel({
                                 }
                               />
                             </span>
-                            <span className={'text-sm text-muted-foreground'}>
+                            <span
+                              className={
+                                'text-sm text-muted-foreground leading-[1.3] sm:leading-normal'
+                              }
+                            >
                               <Trans>
                                 Listening. Say anything when you're ready.
                               </Trans>

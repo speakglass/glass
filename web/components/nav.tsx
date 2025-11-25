@@ -192,7 +192,13 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
           historyHref={historyHref}
           billingHref={billingHref}
           open={userMenuOpen}
-          onOpenChange={onUserMenuOpenChange}
+          onOpenChange={(open) => {
+            onUserMenuOpenChange?.(open);
+            // Close mobile menu when user menu opens
+            if (open && mobileMenuOpen) {
+              setMobileMenuOpen(false);
+            }
+          }}
         />
       </div>
     </div>

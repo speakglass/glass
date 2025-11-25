@@ -170,14 +170,14 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(
                       </div>
                       <div
                         className={
-                          'pb-2.5 px-2.5 space-y-1.5 sm:pb-3 sm:px-3 sm:space-y-2'
+                          'pb-2.5 px-2.5 space-y-1 sm:pb-3 sm:px-3 sm:space-y-2'
                         }
                       >
                         <span className={'text-sm sm:text-base'}>
                           {msg.text}
                         </span>
                         {msg.translation && (
-                          <div className={'text-sm opacity-70 pt-1'}>
+                          <div className={'text-sm opacity-70'}>
                             <span>{msg.translation}</span>
                           </div>
                         )}
@@ -254,10 +254,14 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(
                           </div>
                           <div
                             className={
-                              'pb-2.5 px-2.5 space-y-1.5 sm:pb-3 sm:px-3 sm:space-y-2'
+                              'pb-2.5 px-2.5 space-y-1 sm:pb-3 sm:px-3 sm:space-y-2'
                             }
                           >
-                            <span className={'text-sm sm:text-base'}>
+                            <span
+                              className={
+                                'text-sm block leading-[1.3] sm:text-base sm:leading-normal'
+                              }
+                            >
                               <LiveHighlightedText
                                 text={
                                   msg.partial
@@ -272,7 +276,11 @@ const Messages = forwardRef<ComponentRef<typeof motion.div>, MessagesProps>(
                               />
                             </span>
                             {msg.translation && (
-                              <div className={'text-sm opacity-70 pt-1'}>
+                              <div
+                                className={
+                                  'text-sm opacity-70 leading-[1.3] sm:leading-normal'
+                                }
+                              >
                                 <span>{msg.translation}</span>
                               </div>
                             )}
