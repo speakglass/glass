@@ -1,14 +1,14 @@
-<img width="979" height="518" alt="glass-mock" src="https://github.com/user-attachments/assets/66779581-eddc-422b-ad9c-05aeaa59afe0" />
+<img src=".github/assets/glass-demo.gif" alt="Glass Demo" width="100%" />
 
-# Glass
+<p align="center"><strong>AI tool for language exchange and real-world practice.</strong></p>
 
-AI that helps you learn any language in the real world.
+<p align="center"><i>Learn any language by speaking it from day one, not by studying it.</i></p>
 
-Glass is your live language coach: speak in the moment with real-time feedback,
-sentence suggestions, and pronunciation you can read—even if you can’t read the
-script yet. This repo hosts both the FastAPI backend (speech → understanding → suggestions) and the Next.js app that streams microphone/screen audio and renders the real-time UI.
+<p align="center">
+  <sub>🏆 <b>#1 Way To Learn Languages</b> • <i>Probably</i></sub>
+</p>
 
-<p>
+<p align="center">
   <a href="https://discord.gg/GxJwcgnchM">
     <img alt="Discord" src="https://img.shields.io/badge/discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" />
   </a>
@@ -26,68 +26,29 @@ script yet. This repo hosts both the FastAPI backend (speech → understanding �
   </a>
 </p>
 
-## Features
+# Glass
 
-- 🎧 Real-time feedback, sentence suggestions, and pronunciation hints/romanization
-- 🔤 Keyword → natural sentence translation with context awareness (Gemini 2.5 Flash by default)
-- 🗣️ Practice mode with on-device mic + optional AI voice partner
-- 🧠 Semantic memory powered by pgvector + OpenAI embeddings that recalls context intelligently
-- 🤖 AI roleplay with tool calling to search past conversations dynamically
-- 💾 Meeting history, transcripts, and summaries stored in Postgres
-- 🌐 Fully localized Next.js 16 app (Lingui PO workflows + dark mode UI)
+Glass gives you real-time feedback and suggestions during live conversations. Talk with AI partners that remember you, or use it in real meetings and language exchanges.
+
+#### Why Glass?
+
+- **Speak from day one** – We'll show you how to say it, start talking immediately
+- **Never stuck for words** – Get real-time suggestions when you don't know what to say
+- **Use in real conversations** – Works during actual meetings, calls, and live exchanges
+- **Learn from every conversation** – Instant corrections and post-call insights
+- **Can't find a practice partner?** – Talk to AI partners right now, they remember you
+
+<p align="center">
+  <a href="https://app.speakglass.com"><strong>Demo</strong></a> • 
+  <a href="https://docs.speakglass.com/"><strong>Documentation</strong></a> • 
+  <a href="https://discord.gg/GxJwcgnchM"><strong>Discord</strong></a>
+</p>
 
 ## Use cases
 
-- 🧑‍💻 Online meetings (Zoom, Meet, Teams) using screen audio capture
-- 🌐 Language exchanges and live tutoring sessions
-- 🎯 Interview prep, presentations, and impromptu conversation practice
-
-## Memory architecture
-
-Glass uses **semantic memory** powered by pgvector to recall context intelligently. Each memory record stores:
-
-| Field                                      | Purpose                                                     |
-| ------------------------------------------ | ----------------------------------------------------------- |
-| `user_id`, `conversation_id`, `partner_id` | Scope (user-scoped, partner-scoped, or conversation-scoped) |
-| `category`                                 | One of fact / preference / skill / context / rule           |
-| `retention`                                | short_term / long_term / permanent (with optional expiry)   |
-| `text`, `summary`                          | Canonical fact text (used for embeddings)                   |
-| `embedding`                                | 1536-dim vector (OpenAI text-embedding-3-small)             |
-| `importance`                               | Used for hybrid ranking in search results                   |
-
-### Semantic search
-
-When generating suggestions or answering questions, Glass:
-
-1. **Embeds the query** (user hint or question)
-2. **Searches by vector similarity** (cosine distance < 0.15 threshold)
-3. **Groups by scope** (user facts, partner facts, interactions)
-4. **Includes in LLM prompt** with relative timestamps
-
-| Operation                                | Query                                                                                                        |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| “Tell me about the user”                 | `SELECT * FROM memory_records WHERE user_id = :user AND partner_id IS NULL ORDER BY importance DESC LIMIT N` |
-| “Remind me what this partner likes”      | `... WHERE user_id = :user AND partner_id = :partner`                                                        |
-| “Give me the last session’s commitments” | `... WHERE conversation_id = :conversation ORDER BY updated_at DESC`                                         |
-
-That's it—no complex RAG pipelines. Session history streams through Redis, durable semantic memory lives in Postgres + pgvector.
-
-### Conceptual memory layers
-
-| Layer                                      | Description                                                                                                   | Lifetime                              |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| Live context buffer                        | Deques in `ConversationMemory` + Redis for current session turns. Feeds prompts, never persisted long term.   | Seconds–minutes                       |
-| Semantic facts (`memory_records`)          | Vector-embedded memories with scope/category/retention. Drives intelligent suggestions and AI partner recall. | Days–forever (depending on retention) |
-| Session metadata (`account_conversations`) | Minimal rows noting session/partner/time for audit + history lists. No transcripts stored here.               | Historical reference                  |
-
-Every feature maps to one of these abstractions: capture context in-memory, condense into semantic facts with embeddings, recall intelligently via vector search.
-
-## Tech stack
-
-- **Backend:** Python 3.11+, FastAPI, WebSockets, SQLAlchemy, pgvector, Redis, Deepgram, Gemini (default) with OpenAI fallback, ElevenLabs
-- **Frontend:** Next.js 16 App Router, React 18, NextAuth, TanStack Query/Table, Lingui, Tailwind tooling
-- **Data & infra:** Postgres + pgvector for semantic memory, Redis for usage metering, Docker images for api/web, pnpm-managed frontend
-- **Testing & tooling:** Pytest, Next lint, Lingui extraction/compile, Husky + Commitlint
+- 🌐 Language exchange with native speakers or tutors
+- 🗣️ Speaking practice for language learning with AI partners
+- 🎯 Interview prep and presentation rehearsal
 
 ## Setup
 
@@ -107,12 +68,15 @@ cp web/.env.example web/.env
 
 3. Edit `.env` with your provider API keys:
 
-   - `GLASS_LLM_PROVIDER` - defaults to `gemini`, set to `openai` only if you want that adapter
-   - `GLASS_GEMINI_API_KEY` - Google AI Studio key for Gemini 2.5 Flash LLM (required unless switching to OpenAI)
-   - `GLASS_OPENAI_API_KEY` - OpenAI API key (only when `GLASS_LLM_PROVIDER=openai`)
+   **Required:**
+
+   - `GLASS_OPENAI_API_KEY` - OpenAI API key (required for embeddings)
+   - `GLASS_GEMINI_API_KEY` - Google AI Studio key for Gemini 2.5 Flash LLM
    - `GLASS_ELEVENLABS_API_KEY` - ElevenLabs API key for TTS
    - `GLASS_DEEPGRAM_KEY` - Deepgram API key for ASR
    - `GLASS_AUTH_JWT_SECRET` - Generate with `openssl rand -hex 32`
+   - `GLASS_DATABASE_URL` - Postgres connection string (default: `postgresql+asyncpg://glass:glass@db:5432/glass`)
+   - `GLASS_REDIS_URL` - Redis connection string (default: `redis://redis:6379/0`)
 
 4. Edit `web/.env` with the same JWT secret:
 
@@ -129,6 +93,23 @@ docker compose up --build
 
 - Web app: http://localhost:3000
 - API docs: http://localhost:8000/docs
+
+## Tech stack
+
+- **Backend:** Python 3.11+, FastAPI, WebSockets, SQLAlchemy, pgvector, Redis, Deepgram, Gemini (default) with OpenAI fallback, ElevenLabs
+- **Frontend:** Next.js 16 App Router, React 18, NextAuth, TanStack Query/Table, Lingui, Tailwind tooling
+- **Data & infra:** Postgres + pgvector for semantic memory, Redis for usage metering, Docker images for api/web, pnpm-managed frontend
+- **Testing & tooling:** Pytest, Next lint, Lingui extraction/compile, Husky + Commitlint
+
+## Memory architecture
+
+Glass uses **semantic memory** powered by pgvector to recall context intelligently:
+
+- **Live context**: Current session turns stored in Redis for real-time prompts
+- **Semantic facts**: Vector-embedded memories with scope/category/retention stored in Postgres
+- **Session metadata**: Historical sessions for audit and history
+
+When you talk, Glass embeds your context, searches by vector similarity, and includes relevant memories in prompts—no complex RAG pipelines needed.
 
 ## Roadmap
 
