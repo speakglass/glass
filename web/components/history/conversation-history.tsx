@@ -1971,8 +1971,8 @@ export function ConversationHistory() {
                         <AvatarFallback>AI</AvatarFallback>
                       </Avatar>
                     </div>
-                    <div className="flex-1 bg-background/50 border border-border/30 rounded-xl p-4">
-                      <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                    <div className="flex-1 bg-background/50 border border-border/30 rounded-xl p-3 sm:p-4">
+                      <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-[1.3] sm:leading-normal">
                         {selected.feedback}
                       </p>
                     </div>
@@ -2061,7 +2061,7 @@ export function ConversationHistory() {
 
               {/* Conversation History Section */}
               <section ref={conversationSectionRef} className="relative">
-                <div className="sticky top-[-12px] z-20 bg-card/80">
+                <div className="sticky sm:top-[-24px] top-[-12px] z-20 bg-card/80">
                   <button
                     onClick={() => {
                       setShowConversation(!showConversation);
@@ -2098,7 +2098,7 @@ export function ConversationHistory() {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="mt-2 bg-background/50 border border-border/30 rounded-lg p-3 space-y-3">
+                      <div className="mt-2 bg-background/50 border border-border/30 rounded-lg p-3 sm:space-y-3 space-y-1">
                         {selected.messages && selected.messages.length > 0 ? (
                           selected.messages.map((message, idx) => {
                             const speakerRole = getMessageRole(message);
@@ -2144,7 +2144,7 @@ export function ConversationHistory() {
                                   </div>
                                   <div
                                     className={cn(
-                                      'rounded-2xl px-3 py-2 text-sm',
+                                      'rounded-2xl px-3 py-2 text-sm leading-[1.3] sm:leading-normal',
                                       isUser
                                         ? 'bg-primary/10 ml-auto'
                                         : isGlass

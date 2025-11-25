@@ -994,7 +994,7 @@ const CallSummary = ({
                 </button>
               </div>
               {(durationLabel || languageLabel || partnerChip) && (
-                <div className="space-y-1.5 sm:space-y-2 relative">
+                <div className="space-y-1 sm:space-y-2 relative">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground sm:gap-x-3 sm:text-sm">
                     {durationLabel && <span>{durationLabel}</span>}
                     {languageLabel && (
@@ -1081,7 +1081,7 @@ const CallSummary = ({
                 </div>
 
                 {/* Segmented gauges */}
-                <div className={'space-y-1.5 sm:space-y-2'}>
+                <div className={'space-y-1 sm:space-y-2'}>
                   {/* Fluency */}
                   <div>
                     <div
@@ -1416,7 +1416,7 @@ const CallSummary = ({
                     >
                       <p
                         className={
-                          'text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed'
+                          'text-sm text-foreground/90 whitespace-pre-wrap leading-[1.3] sm:leading-normal'
                         }
                       >
                         {feedback}
@@ -1483,7 +1483,7 @@ const CallSummary = ({
                   >
                     <div
                       className={
-                        'mt-2 bg-background/50 border border-border/30 rounded-lg p-2.5 max-h-96 overflow-auto space-y-1.5 sm:p-3 sm:space-y-2'
+                        'mt-2 bg-background/50 border border-border/30 rounded-lg p-2.5 max-h-96 overflow-auto space-y-1 sm:p-3 sm:space-y-2'
                       }
                     >
                       {isLoadingMemories ? (

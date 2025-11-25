@@ -261,7 +261,7 @@ export function PartnerSelection({
         )}
         <div
           ref={partnerListRef}
-          className="flex flex-col w-full h-full sm:h-auto sm:max-h-[60dvh] overflow-y-auto pb-4 sm:pb-5"
+          className="flex flex-col w-full h-full sm:h-auto sm:max-h-[60vh] overflow-y-auto pb-4 sm:pb-5"
           style={{ scrollbarGutter: 'stable' }}
         >
           {generationJob && (
