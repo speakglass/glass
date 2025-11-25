@@ -47,6 +47,7 @@ export type OnboardingBottomPanelProps = {
   typewriterText?: string;
   onTypingComplete?: () => void;
   onHintChange?: (value: string) => void;
+  currentStep?: number;
 };
 
 export default function OnboardingBottomPanel({
@@ -60,6 +61,7 @@ export default function OnboardingBottomPanel({
   typewriterText = 'Nice to meet you',
   onTypingComplete,
   onHintChange,
+  currentStep = 0,
 }: OnboardingBottomPanelProps) {
   const { settings, isSpeaking } = useGlass();
   const [showManualButtons, setShowManualButtons] = useState(false);
@@ -261,8 +263,11 @@ export default function OnboardingBottomPanel({
 
   const suggestMode: SuggestMode = settings.suggestMode ?? 'auto';
 
+  // Adjust height based on current step
+  const minHeight = currentStep === 1 ? 'min-h-[40vh]' : 'min-h-[50vh]';
+
   return (
-    <div className={'mx-auto w-full min-h-[50vh]'}>
+    <div className={cn('mx-auto w-full', minHeight)}>
       <div
         className={
           'max-w-2xl mx-auto w-full px-4 h-full flex flex-col pt-20 sm:pt-32'

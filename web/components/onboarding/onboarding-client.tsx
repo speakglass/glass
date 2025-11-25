@@ -539,6 +539,7 @@ function OnboardingTour() {
               typewriterText={typewriterText}
               onTypingComplete={handleTypingComplete}
               onHintChange={setOnboardingHintValue}
+              currentStep={currentStep}
             />
           </div>
         </div>
