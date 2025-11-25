@@ -1169,9 +1169,9 @@ export function CustomPartnerCreator({
       };
 
       return (
-        <div className="flex flex-col">
+        <div className="flex flex-col h-full">
           {/* Scrollable content including image */}
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 overflow-y-auto pb-4">
             {/* Avatar image - compact square */}
             <div className="relative w-full aspect-square overflow-hidden rounded-lg">
               <PartnerAvatar
@@ -1305,7 +1305,7 @@ export function CustomPartnerCreator({
           </div>
 
           {/* Action buttons - fixed at bottom */}
-          <div className="flex gap-2 border-t pt-4 mt-4">
+          <div className="flex gap-2 border-t py-4 bg-background sticky -bottom-[16px] sm:-bottom-[24px]">
             <Button
               variant="outline"
               onClick={() => {
@@ -1343,7 +1343,7 @@ export function CustomPartnerCreator({
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <DialogContent
         className={cn(
-          'max-h-[calc(100vh-2rem)] overflow-y-auto p-4 sm:p-6 sm:max-w-[540px]',
+          'max-h-[calc(85dvh-2rem)] overflow-y-auto p-4 sm:p-6 sm:max-w-[540px]',
           flowStep === 'meet' && 'sm:max-w-[440px]'
         )}
       >

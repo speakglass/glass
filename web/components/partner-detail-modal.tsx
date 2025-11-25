@@ -119,7 +119,7 @@ export function PartnerDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto p-4 sm:p-6 sm:max-w-[440px]">
+      <DialogContent className="max-h-[calc(85dvh-2rem)] overflow-y-auto p-4 sm:p-6 sm:max-w-[440px]">
         <DialogHeader className="pb-1 text-left">
           <DialogTitle className="text-base sm:text-lg">
             <Trans>Partner Details</Trans>
@@ -259,7 +259,7 @@ export function PartnerDetailModal({
           </div>
 
           {/* Action buttons - fixed at bottom */}
-          <div className="flex gap-2 border-t pt-4 mt-4">
+          <div className="flex gap-2 border-t py-4 bg-background sticky -bottom-[16px] sm:-bottom-[24px]">
             <Button
               variant="outline"
               onClick={onClose}
