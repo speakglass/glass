@@ -1405,7 +1405,7 @@ export function ConversationHistory() {
                     </h2>
                   )}
                   <div className="space-y-2 mt-1 relative">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 text-xs sm:text-sm text-muted-foreground">
                       <span>
                         {selected.startedAt
                           ? formatRelativeTime(selected.startedAt)

@@ -87,9 +87,7 @@ export default function Controls() {
             ) : null}
 
             <Button
-              className={
-                'flex items-center gap-0.5 sm:gap-1 rounded-full h-8 sm:h-auto'
-              }
+              className={'flex items-center gap-0.5 sm:gap-1 rounded-full h-8'}
               size="sm"
               onClick={() => {
                 disconnect();

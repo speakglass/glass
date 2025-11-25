@@ -1682,7 +1682,7 @@ const CallSummary = ({
                 variant="outline"
                 onClick={onClose}
                 size="sm"
-                className={'flex-1 text-xs h-9 sm:text-sm sm:h-10'}
+                className={'flex-1 h-9 text-sm sm:h-10'}
               >
                 <Trans>Close</Trans>
               </Button>
@@ -1690,7 +1690,7 @@ const CallSummary = ({
                 onClick={handleSaveCall}
                 size="sm"
                 className={
-                  'flex-1 bg-primary hover:bg-primary/90 text-xs h-9 sm:text-sm sm:h-10'
+                  'flex-1 bg-primary hover:bg-primary/90 text-sm h-9 sm:h-10'
                 }
               >
                 <Save className={'size-3.5 mr-1.5 sm:size-4 sm:mr-2'} />
