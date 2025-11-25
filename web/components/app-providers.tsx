@@ -10,10 +10,13 @@ import { SessionProvider } from 'next-auth/react';
 import { AccountSessionProvider } from '@/contexts/account-session-context';
 import { QueryProvider } from './providers/query-provider';
 import { UtmCapture } from '@/components/utm-capture';
+import { initializeNativeFeatures } from '@/lib/capacitor';
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     void initAnalytics();
+    // Initialize native mobile features
+    void initializeNativeFeatures();
   }, []);
   return (
     <SessionProvider>

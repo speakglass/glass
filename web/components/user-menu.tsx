@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
 import {
@@ -11,6 +11,7 @@ import {
   BookOpen,
   ArrowUpRight,
   CreditCard,
+  User,
 } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
 import Settings from './settings';
@@ -27,21 +28,31 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAccountSession } from '@/contexts/account-session-context';
+import { cn } from '@/utils';
 
 export function UserMenu({
   historyHref,
   billingHref,
   open,
   onOpenChange,
+  variant = 'default',
+  tabLabel,
+  className,
 }: {
   historyHref: string;
   billingHref: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  variant?: 'default' | 'tab';
+  tabLabel?: ReactNode;
+  className?: string;
 }) {
   const { data: session, status: sessionStatus } = useSession();
   const { snapshot } = useAccountSession();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = typeof open === 'boolean';
+  const menuOpen = isControlled ? Boolean(open) : internalOpen;
   const showBillingLink = Boolean(
     snapshot?.billing && !snapshot.billing.selfHosted
   );
@@ -68,28 +79,68 @@ export function UserMenu({
     return null;
   }
 
+  let trigger: ReactNode;
+  if (variant === 'tab') {
+    const labelNode = tabLabel ?? <Trans>Account</Trans>;
+    trigger = (
+      <button
+        type="button"
+        className={cn(
+          'flex w-full flex-col items-center gap-0.5 rounded-xl px-3 py-2 text-[11px] font-medium leading-tight transition-colors',
+          menuOpen ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+          className
+        )}
+        aria-label="Open user menu"
+      >
+        {avatar ? (
+          <Avatar className="h-6 w-6 border border-border">
+            <AvatarImage src={avatar || undefined} alt={user?.name || 'User'} />
+            <AvatarFallback className="text-xs font-semibold">{initials}</AvatarFallback>
+          </Avatar>
+        ) : (
+          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background">
+            <User className="h-4 w-4" aria-hidden />
+          </div>
+        )}
+        <span>{labelNode}</span>
+      </button>
+    );
+  } else {
+    trigger = (
+      <Button
+        id="glass-user-menu"
+        variant="ghost"
+        className={cn(
+          'relative sm:h-8 sm:w-8 h-7 w-7 rounded-full p-0 hover:bg-transparent cursor-pointer',
+          className
+        )}
+        aria-label="Open user menu"
+      >
+        <Avatar className="sm:h-8 sm:w-8 h-7 w-7 cursor-pointer">
+          <AvatarImage
+            src={avatar || undefined}
+            alt={user?.name || 'User'}
+          />
+          <AvatarFallback className="text-sm font-semibold">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+      </Button>
+    );
+  }
+
+  const handleOpenChange = (next: boolean) => {
+    if (!isControlled) {
+      setInternalOpen(next);
+    }
+    onOpenChange?.(next);
+  };
+
   return (
     <>
       <Settings open={settingsOpen} onOpenChange={setSettingsOpen} />
-      <DropdownMenu open={open} onOpenChange={onOpenChange}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            id="glass-user-menu"
-            variant="ghost"
-            className="relative sm:h-8 sm:w-8 h-7 w-7 rounded-full p-0 hover:bg-transparent cursor-pointer"
-            aria-label="Open user menu"
-          >
-            <Avatar className="sm:h-8 sm:w-8 h-7 w-7 cursor-pointer">
-              <AvatarImage
-                src={avatar || undefined}
-                alt={user?.name || 'User'}
-              />
-              <AvatarFallback className="text-sm font-semibold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-          </Button>
-        </DropdownMenuTrigger>
+      <DropdownMenu open={menuOpen} onOpenChange={handleOpenChange}>
+        <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
         <DropdownMenuContent
           className="w-64 border-t-2 border-border"
           align="end"

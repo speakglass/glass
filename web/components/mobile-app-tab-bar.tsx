@@ -4,7 +4,7 @@ import type { ComponentType, ReactNode, SVGProps } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Trans } from '@lingui/react/macro';
-import { History, LayoutDashboard } from 'lucide-react';
+import { History, MessageCircleMore } from 'lucide-react';
 import { cn } from '@/utils';
 import { useLangNavigation } from '@/hooks/use-lang-navigation';
 import { UserMenu } from './user-menu';
@@ -40,7 +40,7 @@ export const MobileAppTabBar = ({ userMenuOpen, onUserMenuOpenChange }: NavProps
       id: 'dashboard',
       label: <Trans>Practice</Trans>,
       href: dashboardHref,
-      icon: LayoutDashboard,
+      icon: MessageCircleMore,
       activePath: '/dashboard',
       ariaLabel: 'Go to dashboard',
     },
@@ -52,7 +52,7 @@ export const MobileAppTabBar = ({ userMenuOpen, onUserMenuOpenChange }: NavProps
       aria-label="Mobile navigation"
     >
       <div className="mx-auto w-full max-w-3xl px-4 py-2" style={{ paddingBottom: safeAreaPadding }}>
-        <div className="flex items-center gap-1.5 rounded-2xl border border-border/60 bg-background/80 p-1 shadow-sm">
+        <div className="flex items-center gap-1.5 bg-transparent p-1" style={{ transform: 'translateY(-0.5rem)' }}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const activePath = `/${langSegment}${tab.activePath ?? ''}`;
@@ -63,12 +63,7 @@ export const MobileAppTabBar = ({ userMenuOpen, onUserMenuOpenChange }: NavProps
                 key={tab.id}
                 href={tab.href}
                 aria-label={tab.ariaLabel}
-                className={cn(
-                  tabBaseClass,
-                  isActive
-                    ? 'bg-primary/90 text-primary-foreground shadow-[0_4px_10px_rgba(0,0,0,0.15)]'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
+                className={cn(tabBaseClass, isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground')}
               >
                 <Icon className="h-5 w-5" aria-hidden />
                 <span>{tab.label}</span>

@@ -120,6 +120,10 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  body.has-native-tab-bar {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* GlassButton styles (advanced) */

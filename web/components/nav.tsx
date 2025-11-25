@@ -7,11 +7,11 @@ import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Trans } from '@lingui/react/macro';
-import { usePathname } from 'next/navigation';
 import { UserMenu } from './user-menu';
 import Feedback from './feedback';
-import { Menu, X } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLangNavigation } from '@/hooks/use-lang-navigation';
 
 export interface NavProps {
   userMenuOpen?: boolean;
@@ -23,7 +23,7 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const pathname = usePathname();
+  const { langSegment, dashboardHref, historyHref, billingHref } = useLangNavigation();
 
   useEffect(() => {
     setMounted(true);
@@ -49,16 +49,8 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
   const isDark = mounted ? theme === 'dark' : false;
   const logoSrc = isDark ? '/logo-white.png' : '/logo-black.png';
 
-  const segments = pathname?.split('/').filter(Boolean) ?? [];
-  const langSegment = segments[0] || 'en';
-  const historyHref = `/${langSegment}/history`;
-  const billingHref = `/${langSegment}/billing`;
-
   // Check if this is the opensource version (via environment variable)
-  const isOpenSource =
-    typeof window !== 'undefined'
-      ? process.env.NEXT_PUBLIC_IS_OPENSOURCE === 'true'
-      : false;
+  const isOpenSource = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_IS_OPENSOURCE === 'true' : false;
 
   return (
     <div
@@ -67,7 +59,7 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
       }
     >
       <div className={'flex items-center gap-1.5 sm:gap-2'}>
-        <a href={`/${langSegment}/dashboard`} aria-label="Go to dashboard">
+        <a href={dashboardHref} aria-label="Go to dashboard">
           <Image
             src={logoSrc}
             alt="Glass"
@@ -85,11 +77,7 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
           {isOpenSource && (
             <Button
               onClick={() => {
-                window.open(
-                  'https://github.com/speakglass/glass',
-                  '_blank',
-                  'noopener noreferrer'
-                );
+                window.open('https://github.com/speakglass/glass', '_blank', 'noopener noreferrer');
               }}
               variant={'outline'}
               size={'sm'}
@@ -105,11 +93,7 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
           <Feedback />
           <Button
             onClick={() => {
-              window.open(
-                'https://discord.gg/GxJwcgnchM',
-                '_blank',
-                'noopener noreferrer'
-              );
+              window.open('https://discord.gg/GxJwcgnchM', '_blank', 'noopener noreferrer');
             }}
             variant={'default'}
             size={'sm'}
@@ -164,11 +148,7 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
                   <Feedback />
                   <Button
                     onClick={() => {
-                      window.open(
-                        'https://discord.gg/GxJwcgnchM',
-                        '_blank',
-                        'noopener noreferrer'
-                      );
+                      window.open('https://discord.gg/GxJwcgnchM', '_blank', 'noopener noreferrer');
                       setMobileMenuOpen(false);
                     }}
                     variant="default"

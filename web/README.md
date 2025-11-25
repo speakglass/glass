@@ -122,3 +122,42 @@ npm run lint
 - Safari 15.4+
 
 **Note**: Screen audio capture requires Chrome/Edge or Firefox. Safari does not support audio capture from `getDisplayMedia()`.
+
+## 📱 iOS App (Capacitor)
+
+Glass can also be used as a native iOS app using Capacitor.
+
+### Building the iOS App
+
+```bash
+# Build web app with static export and sync to iOS
+pnpm run cap:build
+
+# Open iOS project in Xcode
+pnpm run cap:ios
+
+# Run directly in iOS simulator
+pnpm run ios:dev
+```
+
+### Development Mode
+
+For real-time development, you can use the local development server:
+
+1. Configure `server.url` in `capacitor.config.ts`
+2. Run Next.js dev server with `pnpm dev`
+3. Run app from Xcode
+
+For more details, see the [iOS README](./ios/README.md).
+
+### Native Features
+
+The iOS app supports the following native features:
+
+- 🔊 Status Bar styling
+- ⌨️ Keyboard management
+- 📳 Haptic Feedback
+- 📱 App State management
+- 🔙 Android Back Button handling
+
+Native features are managed in `lib/capacitor.ts` and automatically disabled in the web version.

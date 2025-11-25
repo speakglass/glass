@@ -15,7 +15,7 @@ import { Trans } from '@lingui/react/macro';
 import { cn } from '@/utils';
 import { changeLanguage } from '@/utils/language';
 import { LOCALIZED_LANGUAGE_CODES } from '@/lib/supported-languages';
-import { Nav } from '@/components/nav';
+import { AppNavShell } from '@/components/app-nav-shell';
 import {
   type DemoLocale,
   SUGGESTION_TRANSLATIONS,
@@ -504,7 +504,7 @@ function OnboardingTour() {
 
   return (
     <>
-      <Nav />
+      <AppNavShell />
       <NextStep
         steps={tours}
         cardComponent={(props) => {
@@ -704,7 +704,7 @@ export default function OnboardingClient() {
   if (step === 'native-lang') {
     return (
       <>
-        <Nav />
+        <AppNavShell />
         <div className="fixed top-14 left-0 right-0 bottom-0 flex items-center justify-center p-4">
           <div className="flex flex-col items-center gap-6 sm:gap-8 max-w-2xl w-full px-1.5">
             <div className="text-center">
@@ -757,7 +757,7 @@ export default function OnboardingClient() {
   if (step === 'learning-lang') {
     return (
       <>
-        <Nav />
+        <AppNavShell />
         <div className="fixed top-14 left-0 right-0 bottom-0 flex items-center justify-center p-4">
           <div className="flex flex-col items-center gap-6 sm:gap-8 max-w-2xl w-full px-1.5">
             <div className="text-center">
@@ -825,7 +825,7 @@ export default function OnboardingClient() {
   if (step === 'level') {
     return (
       <>
-        <Nav />
+        <AppNavShell />
         <div className="fixed top-14 left-0 right-0 bottom-0 flex items-center justify-center p-4">
           <div className="flex flex-col items-center gap-3 sm:gap-8 px-1.5 w-full max-w-md">
             <div className="text-center space-y-2">
