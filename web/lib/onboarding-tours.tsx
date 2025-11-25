@@ -67,7 +67,7 @@ export const getGlassTours = (): Tour[] => [
           </p>
         ),
         selector: '#glass-input-and-suggestion',
-        side: 'top',
+        side: 'bottom',
         showControls: false,
         showSkip: false,
         pointerPadding: 10,

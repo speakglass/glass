@@ -2,7 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Loader2, Sparkles, MessageCircleMore, Volume2, X, SlidersHorizontal, Languages } from 'lucide-react';
+import {
+  Loader2,
+  Sparkles,
+  MessageCircleMore,
+  Volume2,
+  X,
+  SlidersHorizontal,
+  Languages,
+} from 'lucide-react';
 // @ts-ignore - no types provided
 import Typewriter from 'typewriter-effect';
 import { Button } from '@/components/ui/button';
@@ -55,7 +63,9 @@ export default function OnboardingBottomPanel({
 }: OnboardingBottomPanelProps) {
   const { settings, isSpeaking } = useGlass();
   const [showManualButtons, setShowManualButtons] = useState(false);
-  const manualButtonsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const manualButtonsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const hintInputRef = useRef<HTMLInputElement>(null);
   const [hintFocused, setHintFocused] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
@@ -87,7 +97,10 @@ export default function OnboardingBottomPanel({
       }
       return;
     }
-    manualButtonsTimerRef.current = setTimeout(() => setShowManualButtons(true), 2000);
+    manualButtonsTimerRef.current = setTimeout(
+      () => setShowManualButtons(true),
+      2000
+    );
     return () => {
       if (manualButtonsTimerRef.current) {
         clearTimeout(manualButtonsTimerRef.current);
@@ -106,7 +119,9 @@ export default function OnboardingBottomPanel({
       en: t`English`,
     };
     const nativeLangName = langNames[nativeLang] || 'your language';
-    return short ? t`What do you want to say...` : t`Type what you want to say in ${nativeLangName}`;
+    return short
+      ? t`What do you want to say...`
+      : t`Type what you want to say in ${nativeLangName}`;
   };
 
   const handleHintKeyDown = (e: React.KeyboardEvent) => {
@@ -121,13 +136,23 @@ export default function OnboardingBottomPanel({
   const renderMockSuggestion = () => {
     if (!suggestion) return null;
     return (
-      <motion.div key={'mock-suggestion'} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div
+        key={'mock-suggestion'}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         <div className={'relative'}>
-          <div className={'p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-xl overflow-hidden'}>
+          <div
+            className={
+              'p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-xl overflow-hidden'
+            }
+          >
             <div className={'flex items-start justify-between gap-2 mb-2'}>
               <div className={'flex items-center gap-2'}>
                 <Sparkles className={'size-4 text-primary'} />
-                <span className={'text-xs font-medium text-muted-foreground'}>{t`Suggested Answer`}</span>
+                <span
+                  className={'text-xs font-medium text-muted-foreground'}
+                >{t`Suggested Answer`}</span>
               </div>
               <div className={'flex items-center gap-1'}>
                 <button
@@ -141,7 +166,9 @@ export default function OnboardingBottomPanel({
                   <Volume2 className={'size-3.5'} />
                 </button>
                 <button
-                  className={'text-muted-foreground/70 cursor-not-allowed transition-colors p-1'}
+                  className={
+                    'text-muted-foreground/70 cursor-not-allowed transition-colors p-1'
+                  }
                   aria-label="Close"
                   type="button"
                   disabled
@@ -151,12 +178,20 @@ export default function OnboardingBottomPanel({
               </div>
             </div>
             <div className={'space-y-1.5'}>
-              {suggestion.targetText && <div className={'text-sm text-foreground'}>{suggestion.targetText}</div>}
+              {suggestion.targetText && (
+                <div className={'text-sm text-foreground'}>
+                  {suggestion.targetText}
+                </div>
+              )}
               {suggestion.pronunciation && (
-                <div className={'text-sm text-sky-600 opacity-80'}>{suggestion.pronunciation}</div>
+                <div className={'text-sm text-sky-600 opacity-80'}>
+                  {suggestion.pronunciation}
+                </div>
               )}
               {suggestion.translation && (
-                <div className={'text-sm text-muted-foreground'}>{suggestion.translation}</div>
+                <div className={'text-sm text-muted-foreground'}>
+                  {suggestion.translation}
+                </div>
               )}
             </div>
           </div>
@@ -168,9 +203,21 @@ export default function OnboardingBottomPanel({
   const renderMockFeedback = () => {
     if (!feedback) return null;
     return (
-      <motion.div key={'mock-feedback'} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className={'relative'} id="glass-feedback-message" data-tour="feedback">
-          <div className={'p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-xl overflow-hidden'}>
+      <motion.div
+        key={'mock-feedback'}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div
+          className={'relative'}
+          id="glass-feedback-message"
+          data-tour="feedback"
+        >
+          <div
+            className={
+              'p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-xl overflow-hidden'
+            }
+          >
             <div className={'flex items-start justify-between gap-2 mb-2'}>
               <div className={'flex items-center gap-2'}>
                 <MessageCircleMore className={'size-4 text-primary'} />
@@ -179,7 +226,9 @@ export default function OnboardingBottomPanel({
                 </span>
               </div>
               <button
-                className={'text-muted-foreground/70 cursor-not-allowed transition-colors p-1'}
+                className={
+                  'text-muted-foreground/70 cursor-not-allowed transition-colors p-1'
+                }
                 aria-label="Close"
                 type="button"
                 disabled
@@ -188,10 +237,20 @@ export default function OnboardingBottomPanel({
               </button>
             </div>
             <div className={'space-y-1.5'}>
-              {feedback.translation && <div className={'text-sm text-foreground'}>{feedback.translation}</div>}
-              {feedback.targetText && <div className={'text-sm text-muted-foreground'}>{feedback.targetText}</div>}
+              {feedback.translation && (
+                <div className={'text-sm text-foreground'}>
+                  {feedback.translation}
+                </div>
+              )}
+              {feedback.targetText && (
+                <div className={'text-sm text-muted-foreground'}>
+                  {feedback.targetText}
+                </div>
+              )}
               {feedback.pronunciation && (
-                <div className={'text-sm text-sky-600 opacity-80'}>{feedback.pronunciation}</div>
+                <div className={'text-sm text-sky-600 opacity-80'}>
+                  {feedback.pronunciation}
+                </div>
               )}
             </div>
           </div>
@@ -204,9 +263,16 @@ export default function OnboardingBottomPanel({
 
   return (
     <div className={'mx-auto w-full min-h-[50vh]'}>
-      <div className={'max-w-2xl mx-auto w-full px-4 h-full flex flex-col'}>
+      <div
+        className={
+          'max-w-2xl mx-auto w-full px-4 h-full flex flex-col pt-20 sm:pt-32'
+        }
+      >
         <div id="glass-input-and-suggestion">
-          <div id="glass-translate-section" className={'border-t border-border/30 pt-3 pb-3 shrink-0'}>
+          <div
+            id="glass-translate-section"
+            className={'border-t border-border/30 pt-3 pb-3 shrink-0'}
+          >
             <div className={'flex items-center gap-2 md:gap-3 mb-3'}>
               <div className={'relative flex-1 min-w-0'}>
                 <Languages
@@ -231,7 +297,10 @@ export default function OnboardingBottomPanel({
                           })
                           .start();
                       }}
-                      options={{ cursor: '|', cursorClassName: 'text-foreground' }}
+                      options={{
+                        cursor: '|',
+                        cursorClassName: 'text-foreground',
+                      }}
                     />
                   </div>
                 ) : (
@@ -244,7 +313,10 @@ export default function OnboardingBottomPanel({
                     onBlur={() => setHintFocused(false)}
                     onKeyDown={handleHintKeyDown}
                     placeholder={getHintPlaceholder(isMobile)}
-                    className={cn('h-10 pl-9 pr-20 text-sm placeholder:text-sm w-full bg-muted', 'text-foreground')}
+                    className={cn(
+                      'h-10 pl-9 pr-20 text-sm placeholder:text-sm w-full bg-muted',
+                      'text-foreground'
+                    )}
                     disabled
                   />
                 )}
@@ -285,7 +357,9 @@ export default function OnboardingBottomPanel({
                         )}
                       </AnimatePresence>
                       <motion.span
-                        className={'text-xs font-medium whitespace-nowrap overflow-hidden relative z-10'}
+                        className={
+                          'text-xs font-medium whitespace-nowrap overflow-hidden relative z-10'
+                        }
                         animate={{
                           maxWidth: showButtonLabel ? 120 : 0,
                           opacity: showButtonLabel ? 1 : 0,
@@ -325,7 +399,11 @@ export default function OnboardingBottomPanel({
                       >
                         <div className={'space-y-3'}>
                           <div>
-                            <div className={'text-[11px] font-medium text-muted-foreground mb-2'}>
+                            <div
+                              className={
+                                'text-[11px] font-medium text-muted-foreground mb-2'
+                              }
+                            >
                               <Trans>Suggest</Trans>
                             </div>
                             <div
@@ -333,13 +411,16 @@ export default function OnboardingBottomPanel({
                                 'inline-flex items-center gap-0.5 rounded-md border border-input bg-background p-0.5 w-full'
                               }
                             >
-                              {(['always', 'auto', 'off'] as FeedbackMode[]).map((mode) => (
+                              {(
+                                ['always', 'auto', 'off'] as FeedbackMode[]
+                              ).map((mode) => (
                                 <button
                                   key={mode}
                                   type="button"
                                   className={cn(
                                     'flex-1 rounded-sm px-2 py-1 text-[11px] font-medium transition-colors',
-                                    mode === settings.feedbackMode && 'bg-primary text-primary-foreground'
+                                    mode === settings.feedbackMode &&
+                                      'bg-primary text-primary-foreground'
                                   )}
                                   disabled
                                 >
@@ -349,7 +430,11 @@ export default function OnboardingBottomPanel({
                             </div>
                           </div>
                           <div>
-                            <div className={'text-[11px] font-medium text-muted-foreground mb-2'}>
+                            <div
+                              className={
+                                'text-[11px] font-medium text-muted-foreground mb-2'
+                              }
+                            >
                               <Trans>Auto Response</Trans>
                             </div>
                             <div
@@ -357,19 +442,23 @@ export default function OnboardingBottomPanel({
                                 'inline-flex items-center gap-0.5 rounded-md border border-input bg-background p-0.5 w-full'
                               }
                             >
-                              {(['always', 'auto', 'off'] as SuggestMode[]).map((mode) => (
-                                <button
-                                  key={mode}
-                                  type="button"
-                                  className={cn(
-                                    'flex-1 rounded-sm px-2 py-1 text-[11px] font-medium transition-colors',
-                                    mode === suggestMode && 'bg-primary text-primary-foreground'
-                                  )}
-                                  disabled
-                                >
-                                  {feedbackModeLabels[mode as FeedbackMode] ?? mode}
-                                </button>
-                              ))}
+                              {(['always', 'auto', 'off'] as SuggestMode[]).map(
+                                (mode) => (
+                                  <button
+                                    key={mode}
+                                    type="button"
+                                    className={cn(
+                                      'flex-1 rounded-sm px-2 py-1 text-[11px] font-medium transition-colors',
+                                      mode === suggestMode &&
+                                        'bg-primary text-primary-foreground'
+                                    )}
+                                    disabled
+                                  >
+                                    {feedbackModeLabels[mode as FeedbackMode] ??
+                                      mode}
+                                  </button>
+                                )
+                              )}
                             </div>
                           </div>
                         </div>
@@ -381,12 +470,27 @@ export default function OnboardingBottomPanel({
             </div>
           </div>
 
-          <div id="glass-ai-panel" data-tour="suggestions" className={'flex items-start gap-3 pb-4 flex-1'}>
-            <div id="glass-ai-with-feedback" className={'flex items-start gap-3 w-full'}>
+          <div
+            id="glass-ai-panel"
+            data-tour="suggestions"
+            className={'flex items-start gap-3 pb-4 flex-1'}
+          >
+            <div
+              id="glass-ai-with-feedback"
+              className={'flex items-start gap-3 w-full'}
+            >
               {/* Avatar */}
               <div className={'shrink-0 relative pt-1'}>
-                <div className={'size-10 rounded-full overflow-hidden bg-card/80 border border-border/50'}>
-                  <img src="/glass-ai.png" alt="Glass AI" className={'w-full h-full object-cover'} />
+                <div
+                  className={
+                    'size-10 rounded-full overflow-hidden bg-card/80 border border-border/50'
+                  }
+                >
+                  <img
+                    src="/glass-ai.png"
+                    alt="Glass AI"
+                    className={'w-full h-full object-cover'}
+                  />
                 </div>
                 {/* Message count badge - show when multiple messages */}
                 {suggestion && feedback && (
@@ -414,7 +518,11 @@ export default function OnboardingBottomPanel({
                       initial={{ opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
                     >
-                      <div className={'p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-xl'}>
+                      <div
+                        className={
+                          'p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-xl'
+                        }
+                      >
                         <div className={'flex items-center justify-between'}>
                           <div className={'flex items-center gap-2'}>
                             <span className={'relative flex h-2.5 w-2.5'}>
@@ -423,10 +531,16 @@ export default function OnboardingBottomPanel({
                                   'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-40'
                                 }
                               />
-                              <span className={'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400'} />
+                              <span
+                                className={
+                                  'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400'
+                                }
+                              />
                             </span>
                             <span className={'text-sm text-muted-foreground'}>
-                              <Trans>Listening. Say anything when you're ready.</Trans>
+                              <Trans>
+                                Listening. Say anything when you're ready.
+                              </Trans>
                             </span>
                           </div>
                         </div>

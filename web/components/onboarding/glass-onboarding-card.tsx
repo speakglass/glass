@@ -24,9 +24,9 @@ export const GlassOnboardingCard = ({
     const width = window.innerWidth;
     const isMobile = width < 768;
 
-    // Step 2 (I help you speak) - card is above input, move up on mobile to prevent bottom cutoff
+    // Step 2 (I help you speak) - card is now above input (side: bottom)
     if (currentStep === 2) {
-      return isMobile ? '!-translate-y-[55px]' : '';
+      return '';
     }
     // Step 4 (After each conversation) - adjust positioning
     if (currentStep === 4) {
@@ -38,9 +38,9 @@ export const GlassOnboardingCard = ({
       const shouldApply = width >= 768 && width <= 1366;
       return shouldApply ? 'my-[-100px]' : '';
     }
-    // Step 5 (I remember you) on mobile - move card up so memory section is visible
+    // Step 5 (I remember you) - position card just above memory section highlight
     if (currentStep === 5) {
-      return isMobile ? '!-translate-y-[100px]' : '';
+      return '';
     }
     return '';
   })();
