@@ -24,7 +24,13 @@ interface PartnerDeleteDialogProps {
   onPartnerDeleted?: (partnerId: string) => void;
 }
 
-export function PartnerDeleteDialog({ open, partner, token, onClose, onPartnerDeleted }: PartnerDeleteDialogProps) {
+export function PartnerDeleteDialog({
+  open,
+  partner,
+  token,
+  onClose,
+  onPartnerDeleted,
+}: PartnerDeleteDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -44,8 +50,10 @@ export function PartnerDeleteDialog({ open, partner, token, onClose, onPartnerDe
     setIsDeleting(true);
     try {
       await deletePartner(token, partner.id);
-      queryClient.setQueryData<ConversationPartner[] | undefined>(['partners', token], (previous) =>
-        (previous || []).filter((existing) => existing.id !== partner.id)
+      queryClient.setQueryData<ConversationPartner[] | undefined>(
+        ['partners', token],
+        (previous) =>
+          (previous || []).filter((existing) => existing.id !== partner.id)
       );
       toast.success(t`Partner deleted`);
       onPartnerDeleted?.(partner.id);
@@ -59,7 +67,10 @@ export function PartnerDeleteDialog({ open, partner, token, onClose, onPartnerDe
   }, [token, partner, queryClient, onClose, onPartnerDeleted]);
 
   return (
-    <AlertDialog open={open} onOpenChange={(nextOpen) => !nextOpen && handleClose()}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(nextOpen) => !nextOpen && handleClose()}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
@@ -67,7 +78,10 @@ export function PartnerDeleteDialog({ open, partner, token, onClose, onPartnerDe
           </AlertDialogTitle>
           <AlertDialogDescription>
             {partner ? (
-              <Trans>Are you sure you want to delete {partner.name}? This action cannot be undone.</Trans>
+              <Trans>
+                Are you sure you want to delete {partner.name}? This action
+                cannot be undone.
+              </Trans>
             ) : (
               <Trans>This action cannot be undone.</Trans>
             )}
@@ -85,7 +99,9 @@ export function PartnerDeleteDialog({ open, partner, token, onClose, onPartnerDe
             className="bg-destructive text-white hover:bg-destructive/90"
             disabled={isDeleting}
           >
-            {isDeleting && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            {isDeleting && (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            )}
             <Trans>Delete</Trans>
           </AlertDialogAction>
         </AlertDialogFooter>

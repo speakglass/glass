@@ -9,7 +9,8 @@ import { cn } from '@/utils';
 import { Trans } from '@lingui/react/macro';
 
 export default function Controls() {
-  const { disconnect, status, isMuted, unmute, mute, micFft, elapsedSeconds } = useGlass();
+  const { disconnect, status, isMuted, unmute, mute, micFft, elapsedSeconds } =
+    useGlass();
 
   const fmt = (secs?: number) => {
     if (typeof secs !== 'number' || !isFinite(secs) || secs < 0) secs = 0;
@@ -22,7 +23,8 @@ export default function Controls() {
     return `${m}:${s}`;
   };
 
-  const elapsedLabel = typeof elapsedSeconds === 'number' ? fmt(elapsedSeconds) : null;
+  const elapsedLabel =
+    typeof elapsedSeconds === 'number' ? fmt(elapsedSeconds) : null;
 
   return (
     <div
@@ -47,7 +49,7 @@ export default function Controls() {
               opacity: 0,
             }}
             className={
-              'p-2.5 sm:p-4 bg-card/80 backdrop-blur-md border border-border/50 rounded-full flex items-center gap-2 sm:gap-4 pointer-events-auto'
+              'p-2 bg-card/80 backdrop-blur-md border border-border/50 rounded-full flex items-center gap-1.5 sm:gap-4 sm:p-4 pointer-events-auto'
             }
           >
             <Toggle
@@ -61,21 +63,31 @@ export default function Controls() {
                 }
               }}
             >
-              {isMuted ? <MicOff className={'size-4'} /> : <Mic className={'size-4'} />}
+              {isMuted ? (
+                <MicOff className={'size-3.5 sm:size-4'} />
+              ) : (
+                <Mic className={'size-3.5 sm:size-4'} />
+              )}
             </Toggle>
 
-            <div className={'relative grid h-8 w-24 sm:w-48 shrink grow-0'}>
+            <div
+              className={'relative grid h-7 w-20 shrink grow-0 sm:h-8 sm:w-48'}
+            >
               <MicFFT fft={micFft} className={'fill-current'} />
             </div>
 
             {status.value === 'connected' ? (
-              <div className={'text-xs sm:text-sm tabular-nums text-muted-foreground'}>
+              <div
+                className={
+                  'text-xs sm:text-sm tabular-nums text-muted-foreground'
+                }
+              >
                 {elapsedLabel ?? '00:00'}
               </div>
             ) : null}
 
             <Button
-              className={'flex items-center gap-1 rounded-full'}
+              className={'flex items-center gap-0.5 sm:gap-1 rounded-full h-8'}
               size="sm"
               onClick={() => {
                 disconnect();
@@ -83,7 +95,10 @@ export default function Controls() {
               variant={'destructive'}
             >
               <span>
-                <Phone className={'size-4 opacity-50 fill-current'} strokeWidth={0} />
+                <Phone
+                  className={'size-3.5 opacity-50 fill-current sm:size-4'}
+                  strokeWidth={0}
+                />
               </span>
               <span className={'hidden sm:inline'}>
                 <Trans>End Call</Trans>
