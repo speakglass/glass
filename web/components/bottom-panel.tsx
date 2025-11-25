@@ -168,11 +168,17 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
                   <LiveHighlightedText
                     text={suggestion.target_text}
                     highlight={activeHighlight}
-                    className={'text-sm text-foreground block'}
+                    className={
+                      'text-sm text-foreground block leading-[1.3] sm:leading-normal'
+                    }
                   />
                 )}
                 {suggestion.pronunciation && (
-                  <div className={'text-sm text-sky-600 opacity-80'}>
+                  <div
+                    className={
+                      'text-sm text-sky-600 opacity-80 leading-[1.3] sm:leading-normal'
+                    }
+                  >
                     {suggestion.pronunciation}
                   </div>
                 )}
@@ -184,7 +190,11 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
                     />
                   )}
                 {suggestion.native_translation && (
-                  <div className={'text-sm text-muted-foreground'}>
+                  <div
+                    className={
+                      'text-sm text-muted-foreground leading-[1.3] sm:leading-normal'
+                    }
+                  >
                     {suggestion.native_translation}
                   </div>
                 )}
@@ -260,12 +270,20 @@ const FeedbackBubble = forwardRef<HTMLDivElement, FeedbackBubbleProps>(
                   </div>
                 )}
                 {feedback.target_text && (
-                  <div className={'text-sm text-muted-foreground'}>
+                  <div
+                    className={
+                      'text-sm text-muted-foreground leading-[1.3] sm:leading-normal'
+                    }
+                  >
                     {feedback.target_text}
                   </div>
                 )}
                 {feedback.pronunciation && (
-                  <div className={'text-sm text-sky-600 opacity-80'}>
+                  <div
+                    className={
+                      'text-sm text-sky-600 opacity-80 leading-[1.3] sm:leading-normal'
+                    }
+                  >
                     {feedback.pronunciation}
                   </div>
                 )}
@@ -390,7 +408,7 @@ export default function BottomPanel() {
 
   const hasHintInput = hintInput.trim().length > 0;
   const shouldShowEnter = hintFocused && hasHintInput && !loadingHint;
-  const showButtonLabel = !shouldShowEnter && isButtonHovered;
+  const showButtonLabel = !shouldShowEnter && isButtonHovered && !isMobile;
 
   // Auto-show manual buttons when idle (no suggestions/feedbacks) for 2s; hide on activity
   useEffect(() => {
@@ -422,12 +440,8 @@ export default function BottomPanel() {
   }, [suggestions.length, feedbacks.length, isSpeaking, loadingSuggestion]);
 
   return (
-    <div className={'mx-auto w-full min-h-[50vh]'}>
-      <div
-        className={
-          'max-w-2xl mx-auto w-full px-4 h-full flex flex-col max-h-[calc(100vh-2rem)] sm:max-h-none'
-        }
-      >
+    <div className={'mx-auto w-full min-h-[50dvh]'}>
+      <div className={'max-w-2xl mx-auto w-full px-4 h-full flex flex-col'}>
         <div
           id="glass-suggestion-section"
           className={
@@ -458,11 +472,12 @@ export default function BottomPanel() {
               <button
                 type="button"
                 onClick={handleHintSubmit}
-                onMouseEnter={() => setIsButtonHovered(true)}
-                onMouseLeave={() => setIsButtonHovered(false)}
+                onMouseEnter={() => !isMobile && setIsButtonHovered(true)}
+                onMouseLeave={() => !isMobile && setIsButtonHovered(false)}
                 disabled={loadingHint}
                 className={cn(
-                  'absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 items-center rounded-md bg-primary px-1.5 text-primary-foreground group-hover:px-3.5 transition-all duration-300 cursor-pointer group overflow-hidden shadow-md hover:shadow-lg active:scale-95 sm:right-2 sm:h-7 sm:px-2',
+                  'absolute right-1.5 top-1/2 -translate-y-1/2 flex h-6 items-center rounded-md bg-primary px-1.5 text-primary-foreground transition-all duration-300 cursor-pointer group overflow-hidden shadow-md active:scale-95 sm:right-2 sm:h-7 sm:px-2',
+                  !isMobile && 'hover:shadow-lg',
                   loadingHint && 'cursor-not-allowed opacity-70'
                 )}
               >
@@ -833,7 +848,11 @@ export default function BottomPanel() {
                               }
                             />
                           </span>
-                          <span className={'text-sm text-muted-foreground'}>
+                          <span
+                            className={
+                              'text-sm text-muted-foreground leading-[1.3] sm:leading-normal'
+                            }
+                          >
                             <Trans>
                               Listening… say anything when you're ready.
                             </Trans>

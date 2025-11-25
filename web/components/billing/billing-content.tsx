@@ -421,7 +421,7 @@ function CardContent({
             aria-label="Toggle billing period"
           />
         )}
-        <div className="text-subtle text-xs sm:text-sm">{plan.billingInfo}</div>
+        <div className="text-subtle text-sm">{plan.billingInfo}</div>
       </div>
 
       <div className="flex-1 mb-6 sm:mb-8">
@@ -431,7 +431,7 @@ function CardContent({
               <span className="text-blue-500 mt-0.5 shrink-0">
                 <CheckIcon />
               </span>
-              <span className="text-emphasis text-xs sm:text-[13px]">
+              <span className="text-emphasis text-[13px]">
                 {feature.underlined ? (
                   <span className="underline decoration-1 underline-offset-2 decoration-black/30 dark:decoration-white/30">
                     {feature.text}
@@ -449,7 +449,7 @@ function CardContent({
         <Button
           variant={plan.ctaVariant || 'secondary'}
           size="lg"
-          className="w-full text-xs sm:text-sm h-9 sm:h-10"
+          className="w-full text-sm h-9 sm:h-10"
           onClick={onContact}
         >
           {plan.cta}
@@ -458,7 +458,7 @@ function CardContent({
         <Button
           variant={plan.ctaVariant || 'default'}
           size="lg"
-          className="w-full text-xs sm:text-sm h-9 sm:h-10"
+          className="w-full text-sm h-9 sm:h-10"
           onClick={() => void onCheckout(currentBillingPlan)}
           disabled={planLocked || loadingPlan !== null}
         >
@@ -472,7 +472,7 @@ function CardContent({
           <Button
             variant={plan.ctaVariant || 'secondary'}
             size="lg"
-            className="w-full text-xs sm:text-sm h-9 sm:h-10"
+            className="w-full text-sm h-9 sm:h-10"
             disabled
           >
             <Trans>Current plan</Trans>
@@ -481,7 +481,7 @@ function CardContent({
           <Button
             variant={plan.ctaVariant || 'secondary'}
             size="lg"
-            className="w-full text-xs sm:text-sm h-9 sm:h-10"
+            className="w-full text-sm h-9 sm:h-10"
             asChild
           >
             <Link
@@ -512,9 +512,7 @@ function FeatureTableRow({ row }: { row: FeatureComparisonRow }) {
     }
     return (
       <span
-        className={`text-xs md:text-sm ${
-          highlight ? 'text-emphasis' : 'text-subtle'
-        }`}
+        className={`text-sm ${highlight ? 'text-emphasis' : 'text-subtle'}`}
       >
         {value}
       </span>
@@ -523,7 +521,7 @@ function FeatureTableRow({ row }: { row: FeatureComparisonRow }) {
 
   return (
     <tr className="border-b border-black/5 dark:border-white/10">
-      <td className="py-2.5 sm:py-4 px-2 md:px-4 text-xs md:text-sm text-subtle">
+      <td className="py-2.5 sm:py-4 px-2 md:px-4 text-sm text-subtle">
         {row.feature}
       </td>
       <td className="py-2.5 sm:py-4 px-1 md:px-3 text-center">
@@ -665,7 +663,7 @@ export function BillingContent() {
     return (
       <div className="flex h-32 sm:h-40 items-center justify-center gap-2 text-muted-foreground">
         <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
-        <span className="text-xs sm:text-sm">
+        <span className="text-sm">
           <Trans>Loading billing…</Trans>
         </span>
       </div>
@@ -674,7 +672,7 @@ export function BillingContent() {
 
   if (!snapshot) {
     return (
-      <div className="rounded-xl sm:rounded-3xl border border-border/60 bg-card/60 px-4 py-8 sm:px-6 sm:py-12 text-center text-xs sm:text-sm text-muted-foreground">
+      <div className="rounded-xl sm:rounded-3xl border border-border/60 bg-card/60 px-4 py-8 sm:px-6 sm:py-12 text-center text-sm text-muted-foreground">
         <Trans>
           We couldn't load your account details. Please refresh and try again.
         </Trans>
@@ -688,7 +686,7 @@ export function BillingContent() {
         <h3 className="text-base sm:text-lg font-semibold">
           <Trans>Billing is not available</Trans>
         </h3>
-        <p className="text-xs sm:text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           <Trans>
             This Glass instance is running in self-hosted mode, so upgrades
             aren't required.
@@ -703,7 +701,7 @@ export function BillingContent() {
       <section className="rounded-xl sm:rounded-3xl border border-border/70 bg-card/70 px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
         <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-center md:justify-between">
           <div className="space-y-2 sm:space-y-3">
-            <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <Trans>Current plan</Trans>
             </p>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -711,17 +709,17 @@ export function BillingContent() {
                 {planDisplayName}
               </h2>
               {planIntervalLabel && (
-                <span className="rounded-full border border-border/70 px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="rounded-full border border-border/70 px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {planIntervalLabel}
                 </span>
               )}
               {!isFreePlan && planStatusLabel && (
-                <span className="rounded-full border border-border/70 px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="rounded-full border border-border/70 px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {planStatusLabel}
                 </span>
               )}
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {scheduledCancelAt ? (
                 <Trans>Plan ends on {scheduledCancelAt}</Trans>
               ) : planRenewalLabel ? (
@@ -757,7 +755,7 @@ export function BillingContent() {
               <Button
                 variant="outline"
                 size="lg"
-                className="cursor-pointer w-full md:w-auto text-xs sm:text-sm h-9 sm:h-10"
+                className="cursor-pointer w-full md:w-auto text-sm h-9 sm:h-10"
                 onClick={() => void handleManageSubscription()}
                 disabled={portalLoading}
               >
@@ -773,7 +771,7 @@ export function BillingContent() {
 
       <section className="rounded-xl sm:rounded-3xl border border-border/60 bg-card/60 px-3 py-6 sm:px-4 sm:py-8 md:px-8 md:py-12">
         <div className="flex flex-col items-center justify-center text-center mb-8 sm:mb-12">
-          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <Trans>Pricing</Trans>
           </p>
           <h3 className="text-2xl sm:text-4xl font-semibold text-emphasis mt-3 sm:mt-4 mb-3 sm:mb-4">
@@ -823,16 +821,16 @@ export function BillingContent() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-black/5 dark:border-white/10">
-                <th className="text-left py-2.5 sm:py-4 px-2 md:px-4 text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
+                <th className="text-left py-2.5 sm:py-4 px-2 md:px-4 text-sm md:text-base font-semibold text-foreground bg-card/95 w-1/4">
                   {t`Feature`}
                 </th>
-                <th className="text-center py-2.5 sm:py-4 px-1 md:px-3 text-[10px] sm:text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
+                <th className="text-center py-2.5 sm:py-4 px-1 md:px-3 text-sm md:text-base font-semibold text-foreground bg-card/95 w-1/4">
                   {t`Free`}
                 </th>
-                <th className="text-center py-2.5 sm:py-4 px-1 md:px-3 text-[10px] sm:text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
+                <th className="text-center py-2.5 sm:py-4 px-1 md:px-3 text-sm md:text-base font-semibold text-foreground bg-card/95 w-1/4">
                   {t`Pro`}
                 </th>
-                <th className="text-center py-2.5 sm:py-4 px-1 md:px-3 text-[10px] sm:text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
+                <th className="text-center py-2.5 sm:py-4 px-1 md:px-3 text-sm md:text-base font-semibold text-foreground bg-card/95 w-1/4">
                   {t`Enterprise`}
                 </th>
               </tr>
@@ -861,7 +859,7 @@ export function BillingContent() {
           <div className="space-y-3 sm:space-y-4">
             <div className="mt-2 grid gap-2.5 sm:gap-3 md:grid-cols-2">
               <div className="space-y-1">
-                <Label className="text-xs sm:text-sm">
+                <Label className="text-sm">
                   <Trans>Company</Trans>
                 </Label>
                 <Input
@@ -873,11 +871,11 @@ export function BillingContent() {
                     }))
                   }
                   placeholder={t`Company name`}
-                  className="h-9 sm:h-10 text-xs sm:text-sm"
+                  className="h-9 sm:h-10 text-sm"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs sm:text-sm">
+                <Label className="text-sm">
                   <Trans>Company size</Trans>
                 </Label>
                 <Select
@@ -886,7 +884,7 @@ export function BillingContent() {
                     setContactForm((prev) => ({ ...prev, companySize: value }))
                   }
                 >
-                  <SelectTrigger className="w-full h-9 sm:h-10 text-xs sm:text-sm">
+                  <SelectTrigger className="w-full h-9 sm:h-10 text-sm">
                     <SelectValue placeholder={t`Select size`} />
                   </SelectTrigger>
                   <SelectContent>
@@ -900,7 +898,7 @@ export function BillingContent() {
               </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs sm:text-sm">
+              <Label className="text-sm">
                 <Trans>Tell us about your requirements</Trans>
               </Label>
               <Textarea
@@ -913,7 +911,7 @@ export function BillingContent() {
                 }
                 rows={4}
                 placeholder={t`I'm interested in Glass for my team...`}
-                className="text-xs sm:text-sm"
+                className="text-sm"
               />
             </div>
           </div>
@@ -922,14 +920,14 @@ export function BillingContent() {
               variant="ghost"
               onClick={() => setContactDialogOpen(false)}
               disabled={contactLoading}
-              className="text-xs sm:text-sm h-9 sm:h-10"
+              className="text-sm h-9 sm:h-10"
             >
               <Trans>Cancel</Trans>
             </Button>
             <Button
               onClick={handleContactSubmit}
               disabled={contactLoading}
-              className="text-xs sm:text-sm h-9 sm:h-10"
+              className="text-sm h-9 sm:h-10"
             >
               {contactLoading && (
                 <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />

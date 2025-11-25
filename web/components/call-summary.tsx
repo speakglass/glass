@@ -966,7 +966,7 @@ const CallSummary = ({
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           className={
-            'relative w-full max-w-3xl max-h-[90vh] overflow-auto bg-card border border-border/50 rounded-xl shadow-2xl sm:rounded-2xl'
+            'relative w-full max-w-3xl max-h-[90dvh] overflow-auto bg-card border border-border/50 rounded-xl shadow-2xl sm:rounded-2xl'
           }
         >
           {/* Header */}

@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Trash2,
   Plus,
+  Phone,
 } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
 import { t, plural } from '@lingui/core/macro';
@@ -1016,7 +1017,7 @@ export function ConversationHistory() {
     <>
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_2fr]">
         {/* Left: Conversation List (Desktop only) */}
-        <div className="hidden lg:flex lg:flex-col lg:max-h-[calc(100vh-200px)]">
+        <div className="hidden lg:flex lg:flex-col lg:max-h-[calc(100dvh-200px)]">
           {/* Search Bar - Fixed */}
           <div className="shrink-0 relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1024,7 +1025,7 @@ export function ConversationHistory() {
               placeholder={t`Search conversations...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-9"
+              className="pl-9 pr-9 placeholder:text-base!"
             />
             {searchQuery && (
               <Button
@@ -1158,9 +1159,9 @@ export function ConversationHistory() {
         </div>
 
         {/* Right: Conversation Detail */}
-        <div className="rounded-2xl sm:rounded-3xl border border-border/50 bg-card/80 lg:sticky lg:top-8 lg:self-start max-h-[600px] lg:max-h-[calc(100vh-240px)] overflow-hidden flex flex-col">
+        <div className="rounded-2xl sm:rounded-3xl border border-border/50 bg-card/80 lg:sticky lg:top-8 lg:self-start max-h-[600px] lg:max-h-[calc(100dvh-240px)] overflow-hidden flex flex-col">
           {/* Mobile Dropdown Selector */}
-          <div className="lg:hidden border-b border-border/30 p-2.5 sm:p-3">
+          <div className="lg:hidden border-b border-border/30 p-2 sm:p-3">
             <Popover
               open={isMobileDropdownOpen}
               onOpenChange={setIsMobileDropdownOpen}
@@ -1168,25 +1169,25 @@ export function ConversationHistory() {
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className="w-full flex items-center justify-between gap-2 rounded-xl border border-border/40 bg-background/50 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
+                  className="w-full flex items-center justify-between gap-2 bg-background/50 px-1 py-1 text-left transition-colors hover:bg-accent/50"
                 >
-                  <div className="flex-1 min-w-0">
-                    {selected ? (
-                      <>
-                        <p className="font-semibold text-sm truncate">
-                          {selected.title || t`Conversation`}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {formatRelativeTime(selected.startedAt)}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        <Trans>Select a conversation</Trans>
-                      </p>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="font-medium text-sm">
+                      <Trans>Your saved calls</Trans>
+                    </span>
+                    {totalConversations > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        ({totalConversations})
+                      </span>
                     )}
                   </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <ChevronDown
+                    className={cn(
+                      'h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200',
+                      isMobileDropdownOpen && 'rotate-180'
+                    )}
+                  />
                 </button>
               </PopoverTrigger>
               <PopoverContent
@@ -1195,8 +1196,9 @@ export function ConversationHistory() {
                 side="bottom"
                 sideOffset={4}
                 style={{ width: 'var(--radix-popover-trigger-width)' }}
+                onOpenAutoFocus={(e) => e.preventDefault()}
               >
-                <div className="max-h-[60vh] flex flex-col rounded-xl">
+                <div className="max-h-[60dvh] flex flex-col rounded-xl">
                   {/* Search Bar */}
                   <div className="shrink-0 bg-popover border-b border-border/30 p-3 rounded-t-xl">
                     <div className="relative">
@@ -1205,7 +1207,8 @@ export function ConversationHistory() {
                         placeholder={t`Search conversations...`}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 pr-9"
+                        className="pl-9 pr-9 placeholder:text-sm!"
+                        autoFocus={false}
                       />
                       {searchQuery && (
                         <Button
@@ -2058,7 +2061,7 @@ export function ConversationHistory() {
 
               {/* Conversation History Section */}
               <section ref={conversationSectionRef} className="relative">
-                <div className="sticky top-0 z-20 pb-3 bg-card/80">
+                <div className="sticky top-[-12px] z-20 bg-card/80">
                   <button
                     onClick={() => {
                       setShowConversation(!showConversation);

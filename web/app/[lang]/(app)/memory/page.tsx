@@ -31,14 +31,14 @@ export default async function MemoryPage({
   return (
     <div className="min-h-screen pt-12 sm:pt-14">
       {/* Header Section */}
-      <div className="bg-background border-b border-border/30 sticky top-12 sm:top-14 z-10">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-4 sm:py-6">
+      <div className="bg-background border-b border-border/30 relative md:sticky md:top-12 sm:top-14 z-10">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-2 sm:py-6">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground md:mb-1 mb-0.5">
                 <Trans>Memory</Trans>
               </p>
-              <h1 className="text-2xl sm:text-3xl font-bold truncate">
+              <h1 className="text-base sm:text-3xl font-bold truncate">
                 <Trans>Your memories</Trans>
               </h1>
             </div>

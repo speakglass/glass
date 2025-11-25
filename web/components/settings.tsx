@@ -219,7 +219,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px] max-h-[90vh] overflow-y-auto gap-4">
+      <DialogContent className="sm:max-w-[420px] max-h-[90dvh] overflow-y-auto gap-4">
         <DialogHeader className="space-y-1">
           <DialogTitle className="text-lg">
             <Trans>Settings</Trans>
