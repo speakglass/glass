@@ -1343,7 +1343,7 @@ export function CustomPartnerCreator({
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <DialogContent
         className={cn(
-          'max-h-[calc(100dvh-2rem)] overflow-y-auto p-4 sm:p-6 sm:max-w-[540px]',
+          'max-h-[calc(85dvh-2rem)] overflow-y-auto p-4 sm:p-6 sm:max-w-[540px]',
           flowStep === 'meet' && 'sm:max-w-[440px]'
         )}
       >
