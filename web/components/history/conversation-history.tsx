@@ -29,7 +29,11 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PartnerAvatar } from '@/components/partner-avatar';
 import { PartnerSearchEmptyState } from '@/components/partner-search-empty-state';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,7 +67,13 @@ import {
 import { useLocale } from '@/hooks/use-locale';
 import { toast } from 'sonner';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 function formatRelativeTime(date: Date | string): string {
   const now = new Date();
@@ -121,7 +131,8 @@ function formatRelativeTime(date: Date | string): string {
   });
 }
 
-const getMessageRole = (message: ConversationMessage): string => (message.role || '').toLowerCase();
+const getMessageRole = (message: ConversationMessage): string =>
+  (message.role || '').toLowerCase();
 
 const getMessageParticipantId = (message: ConversationMessage): string => {
   if (typeof message.partner_id === 'string' && message.partner_id) {
@@ -192,9 +203,13 @@ const LANGUAGE_NAMES_BY_LOCALE: Record<string, Record<string, string>> = {
   },
 };
 
-function getLanguageName(code: string | null | undefined, currentLocale: string = 'en'): string {
+function getLanguageName(
+  code: string | null | undefined,
+  currentLocale: string = 'en'
+): string {
   if (!code) return '—';
-  const localeNames = LANGUAGE_NAMES_BY_LOCALE[currentLocale] || LANGUAGE_NAMES_BY_LOCALE.en;
+  const localeNames =
+    LANGUAGE_NAMES_BY_LOCALE[currentLocale] || LANGUAGE_NAMES_BY_LOCALE.en;
   return localeNames[code.toLowerCase()] || code;
 }
 
@@ -220,7 +235,8 @@ export function ConversationHistory() {
   const [partnerDescriptionDraft, setPartnerDescriptionDraft] = useState('');
   const [partnerSearch, setPartnerSearch] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isPartnerDeleteDialogOpen, setIsPartnerDeleteDialogOpen] = useState(false);
+  const [isPartnerDeleteDialogOpen, setIsPartnerDeleteDialogOpen] =
+    useState(false);
   const debounceTimerForTitleRef = useRef<NodeJS.Timeout>();
 
   // Pagination and search state
@@ -232,16 +248,19 @@ export function ConversationHistory() {
   const [totalConversations, setTotalConversations] = useState(0);
   const [loadingConversations, setLoadingConversations] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout>();
-  const [partnerProfile, setPartnerProfile] = useState<ConversationPartnerRef | undefined>(
-    selected?.partner || undefined
-  );
+  const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
+  const [partnerProfile, setPartnerProfile] = useState<
+    ConversationPartnerRef | undefined
+  >(selected?.partner || undefined);
   useEffect(() => {
     setPartnerProfile(selected?.partner || undefined);
   }, [selected?.partner]);
-  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(partnerProfile?.id ?? null);
-  const [editingPartnerAvatarUrl, setEditingPartnerAvatarUrl] = useState<string | null>(
-    partnerProfile?.avatarUrl || null
+  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(
+    partnerProfile?.id ?? null
   );
+  const [editingPartnerAvatarUrl, setEditingPartnerAvatarUrl] = useState<
+    string | null
+  >(partnerProfile?.avatarUrl || null);
   const currentPartnerId = partnerProfile?.id ?? null;
   const {
     data: partnerOptions = [],
@@ -274,9 +293,12 @@ export function ConversationHistory() {
     setIsPartnerManagerOpen(false);
   }, [selected?.id]);
   const isRoleplayPartner = Boolean(
-    partnerProfile?.kind === 'roleplay' || selected?.partner?.kind === 'roleplay'
+    partnerProfile?.kind === 'roleplay' ||
+      selected?.partner?.kind === 'roleplay'
   );
-  const sessionMode = (isRoleplayPartner ? 'roleplay' : 'live_call') as 'roleplay' | 'live_call';
+  const sessionMode = (isRoleplayPartner ? 'roleplay' : 'live_call') as
+    | 'roleplay'
+    | 'live_call';
   const canManagePartner = sessionMode !== 'roleplay';
   const showPartnerManager = Boolean(canManagePartner && token);
   const preparePartnerEdit = (partner?: {
@@ -293,14 +315,19 @@ export function ConversationHistory() {
   const trimmedPartnerSearch = partnerSearch.trim();
   const availablePartners: ConversationPartner[] = useMemo(() => {
     if (!partnerOptions?.length) return [];
-    return partnerOptions.filter((partner) => partner.id !== currentPartnerId && partner.kind === 'live_call');
+    return partnerOptions.filter(
+      (partner) =>
+        partner.id !== currentPartnerId && partner.kind === 'live_call'
+    );
   }, [partnerOptions, currentPartnerId]);
   const filteredPartners = useMemo(() => {
     const query = trimmedPartnerSearch.toLowerCase();
     if (!query) {
       return availablePartners;
     }
-    return availablePartners.filter((partner) => partner.name.toLowerCase().includes(query));
+    return availablePartners.filter((partner) =>
+      partner.name.toLowerCase().includes(query)
+    );
   }, [availablePartners, trimmedPartnerSearch]);
   useEffect(() => {
     if (!canManagePartner && isPartnerManagerOpen) {
@@ -333,7 +360,9 @@ export function ConversationHistory() {
     }
   };
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
@@ -438,7 +467,8 @@ export function ConversationHistory() {
       toast.success(t`Partner updated`);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : t`Failed to update partner`;
+      const message =
+        error instanceof Error ? error.message : t`Failed to update partner`;
       toast.error(message);
     },
   });
@@ -472,12 +502,17 @@ export function ConversationHistory() {
       toast.success(t`Partner deleted`);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : t`Failed to delete partner`;
+      const message =
+        error instanceof Error ? error.message : t`Failed to delete partner`;
       toast.error(message);
     },
   });
   const handleDeletePartner = () => {
-    if (!editingPartnerId || !canManagePartner || deletePartnerMutation.isPending) {
+    if (
+      !editingPartnerId ||
+      !canManagePartner ||
+      deletePartnerMutation.isPending
+    ) {
       return;
     }
     if (!token) {
@@ -487,7 +522,11 @@ export function ConversationHistory() {
     setIsPartnerDeleteDialogOpen(true);
   };
   const confirmDeletePartner = () => {
-    if (!editingPartnerId || !canManagePartner || deletePartnerMutation.isPending) {
+    if (
+      !editingPartnerId ||
+      !canManagePartner ||
+      deletePartnerMutation.isPending
+    ) {
       return;
     }
     if (!token) {
@@ -526,7 +565,8 @@ export function ConversationHistory() {
       toast.success(t`Partner created`);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : t`Failed to create partner`;
+      const message =
+        error instanceof Error ? error.message : t`Failed to create partner`;
       toast.error(message);
     },
   });
@@ -571,7 +611,8 @@ export function ConversationHistory() {
       toast.success(t`Partner created`);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : t`Failed to create partner`;
+      const message =
+        error instanceof Error ? error.message : t`Failed to create partner`;
       toast.error(message);
     },
   });
@@ -592,13 +633,17 @@ export function ConversationHistory() {
       toast.success(t`Conversation partner assigned`);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : t`Failed to assign partner`;
+      const message =
+        error instanceof Error ? error.message : t`Failed to assign partner`;
       toast.error(message);
     },
   });
   const isPartnerActionPending =
-    renamePartnerMutation.isPending || deletePartnerMutation.isPending || createPartnerAndAssignMutation.isPending;
-  const isSavingPartner = renamePartnerMutation.isPending || createPartnerAndAssignMutation.isPending;
+    renamePartnerMutation.isPending ||
+    deletePartnerMutation.isPending ||
+    createPartnerAndAssignMutation.isPending;
+  const isSavingPartner =
+    renamePartnerMutation.isPending || createPartnerAndAssignMutation.isPending;
   const partnerDeleteTarget = partnerNameDraft?.trim() || t`this partner`;
 
   // Calculate total pages
@@ -657,7 +702,9 @@ export function ConversationHistory() {
     const sectionRect = section.getBoundingClientRect();
     const headerOffset = 72; // keep some room for sticky header + first messages
     const target =
-      container.scrollTop + (sectionRect.top - containerRect.top) - headerOffset;
+      container.scrollTop +
+      (sectionRect.top - containerRect.top) -
+      headerOffset;
     container.scrollTo({
       top: Math.max(0, target),
       behavior: 'smooth',
@@ -717,7 +764,13 @@ export function ConversationHistory() {
   };
 
   const saveTitleUpdate = async (newTitle: string, isOptimistic: boolean) => {
-    if (!token || !selected || !newTitle.trim() || newTitle.trim() === selected.title) return;
+    if (
+      !token ||
+      !selected ||
+      !newTitle.trim() ||
+      newTitle.trim() === selected.title
+    )
+      return;
 
     const oldTitle = selected.title;
     const trimmedTitle = newTitle.trim();
@@ -726,7 +779,9 @@ export function ConversationHistory() {
     if (isOptimistic && selected) {
       setSelected({ ...selected, title: trimmedTitle });
       setConversations((prev) =>
-        prev.map((conv) => (conv.id === selected.id ? { ...conv, title: trimmedTitle } : conv))
+        prev.map((conv) =>
+          conv.id === selected.id ? { ...conv, title: trimmedTitle } : conv
+        )
       );
     }
 
@@ -756,7 +811,11 @@ export function ConversationHistory() {
       // Rollback on error
       if (isOptimistic && selected) {
         setSelected({ ...selected, title: oldTitle });
-        setConversations((prev) => prev.map((conv) => (conv.id === selected.id ? { ...conv, title: oldTitle } : conv)));
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.id === selected.id ? { ...conv, title: oldTitle } : conv
+          )
+        );
       }
     }
   };
@@ -861,7 +920,9 @@ export function ConversationHistory() {
       segmentStart = 80;
     }
 
-    const flexBeforeSegment = flexRatios.slice(0, segmentIndex).reduce((sum, flex) => sum + flex, 0);
+    const flexBeforeSegment = flexRatios
+      .slice(0, segmentIndex)
+      .reduce((sum, flex) => sum + flex, 0);
     const segmentStartPercent = (flexBeforeSegment / totalFlex) * 100;
 
     const segmentSize = 20;
@@ -884,7 +945,11 @@ export function ConversationHistory() {
     };
   }, [selected]);
 
-  const averageScore = scores ? Math.round((scores.fluency + scores.accuracy + scores.comprehensibility) / 3) : 0;
+  const averageScore = scores
+    ? Math.round(
+        (scores.fluency + scores.accuracy + scores.comprehensibility) / 3
+      )
+    : 0;
 
   const participantDirectory = useMemo(() => {
     const directory = new Map<
@@ -949,11 +1014,11 @@ export function ConversationHistory() {
 
   return (
     <>
-      <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
-        {/* Left: Conversation List */}
-        <div className="space-y-3">
-          {/* Search Bar */}
-          <div className="relative">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_2fr]">
+        {/* Left: Conversation List (Desktop only) */}
+        <div className="hidden lg:flex lg:flex-col lg:max-h-[calc(100vh-200px)]">
+          {/* Search Bar - Fixed */}
+          <div className="shrink-0 relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t`Search conversations...`}
@@ -975,83 +1040,96 @@ export function ConversationHistory() {
               </Button>
             )}
           </div>
-          {/* Loading State */}
-          {loadingConversations && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          )}
 
-          {/* Empty State */}
-          {!loadingConversations && conversations.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-8 text-center text-sm text-muted-foreground">
-              {searchQuery ? (
-                <>
-                  <Search className="h-8 w-8 mb-2 opacity-50" />
-                  <Trans>No conversations found</Trans>
-                </>
-              ) : (
-                <>
-                  <BookOpen className="h-8 w-8 mb-2 opacity-50" />
-                  <Trans>No conversations yet</Trans>
-                </>
-              )}
-            </div>
-          )}
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto space-y-3 min-h-0">
+            {/* Loading State */}
+            {loadingConversations && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
 
-          {/* Conversation List */}
-          {!loadingConversations &&
-            conversations.map((conversation) => {
-              const isActive = selected?.id === conversation.id;
-              const convScores = conversation.scores ?? null;
-              const avgScore = convScores
-                ? Math.round((convScores.fluency + convScores.accuracy + convScores.comprehensibility) / 3)
-                : 0;
+            {/* Empty State */}
+            {!loadingConversations && conversations.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-8 text-center text-sm text-muted-foreground">
+                {searchQuery ? (
+                  <>
+                    <Search className="h-8 w-8 mb-2 opacity-50" />
+                    <Trans>No conversations found</Trans>
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="h-8 w-8 mb-2 opacity-50" />
+                    <Trans>No conversations yet</Trans>
+                  </>
+                )}
+              </div>
+            )}
 
-              return (
-                <button
-                  key={conversation.id}
-                  onClick={() => void handleSelect(conversation)}
-                  className={cn(
-                    'w-full rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer',
-                    isActive
-                      ? 'border-primary/40 bg-primary/5 shadow-sm'
-                      : 'border-border/40 hover:border-border hover:bg-accent/50'
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{conversation.title || t`Conversation`}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {formatRelativeTime(conversation.startedAt)}
-                      </p>
-                    </div>
-                    {convScores && avgScore > 0 && (
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span
-                          className={cn(
-                            'text-base font-bold tabular-nums',
-                            isActive ? 'text-primary' : 'text-foreground/70'
-                          )}
-                        >
-                          {avgScore}
-                        </span>
-                      </div>
+            {/* Conversation List */}
+            {!loadingConversations &&
+              conversations.map((conversation) => {
+                const isActive = selected?.id === conversation.id;
+                const convScores = conversation.scores ?? null;
+                const avgScore = convScores
+                  ? Math.round(
+                      (convScores.fluency +
+                        convScores.accuracy +
+                        convScores.comprehensibility) /
+                        3
+                    )
+                  : 0;
+
+                return (
+                  <button
+                    key={conversation.id}
+                    onClick={() => void handleSelect(conversation)}
+                    className={cn(
+                      'w-full rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer',
+                      isActive
+                        ? 'border-primary/40 bg-primary/5 shadow-sm'
+                        : 'border-border/40 hover:border-border hover:bg-accent/50'
                     )}
-                  </div>
-                </button>
-              );
-            })}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">
+                          {conversation.title || t`Conversation`}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatRelativeTime(conversation.startedAt)}
+                        </p>
+                      </div>
+                      {convScores && avgScore > 0 && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={cn(
+                              'text-base font-bold tabular-nums',
+                              isActive ? 'text-primary' : 'text-foreground/70'
+                            )}
+                          >
+                            {avgScore}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+          </div>
 
-          {/* Pagination */}
+          {/* Pagination - Fixed */}
           {totalConversations > 0 && (
-            <div className="flex items-center justify-between gap-2 px-2 py-3 border-t border-border/30">
+            <div className="shrink-0 flex items-center justify-between gap-2 px-2 py-3 border-t border-border/30 mt-3">
               <div className="text-xs text-muted-foreground">
                 {plural(totalConversations, {
                   one: '# conversation',
                   other: '# conversations',
                 })}
-                {totalPages > 1 && <> • {t`Page ${page + 1} of ${totalPages}`}</>}
+                {totalPages > 1 && (
+                  <> • {t`Page ${page + 1} of ${totalPages}`}</>
+                )}
               </div>
               {totalPages > 1 && (
                 <div className="flex gap-1">
@@ -1080,19 +1158,218 @@ export function ConversationHistory() {
         </div>
 
         {/* Right: Conversation Detail */}
-        <div className="rounded-3xl border border-border/50 bg-card/80 sticky top-8 self-start max-h-[calc(100vh-240px)] overflow-hidden flex flex-col">
+        <div className="rounded-2xl sm:rounded-3xl border border-border/50 bg-card/80 lg:sticky lg:top-8 lg:self-start max-h-[600px] lg:max-h-[calc(100vh-240px)] overflow-hidden flex flex-col">
+          {/* Mobile Dropdown Selector */}
+          <div className="lg:hidden border-b border-border/30 p-2.5 sm:p-3">
+            <Popover
+              open={isMobileDropdownOpen}
+              onOpenChange={setIsMobileDropdownOpen}
+            >
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between gap-2 rounded-xl border border-border/40 bg-background/50 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
+                >
+                  <div className="flex-1 min-w-0">
+                    {selected ? (
+                      <>
+                        <p className="font-semibold text-sm truncate">
+                          {selected.title || t`Conversation`}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatRelativeTime(selected.startedAt)}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        <Trans>Select a conversation</Trans>
+                      </p>
+                    )}
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="p-0 rounded-xl overflow-hidden transition-all duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
+                align="start"
+                side="bottom"
+                sideOffset={4}
+                style={{ width: 'var(--radix-popover-trigger-width)' }}
+              >
+                <div className="max-h-[60vh] flex flex-col rounded-xl">
+                  {/* Search Bar */}
+                  <div className="shrink-0 bg-popover border-b border-border/30 p-3 rounded-t-xl">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder={t`Search conversations...`}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 pr-9"
+                      />
+                      {searchQuery && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                          onClick={() => {
+                            setSearchQuery('');
+                            setPage(0);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Scrollable Content */}
+                  <div className="flex-1 overflow-y-auto">
+                    {/* Loading State */}
+                    {loadingConversations && (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+
+                    {/* Empty State */}
+                    {!loadingConversations && conversations.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-8 text-center text-sm text-muted-foreground">
+                        {searchQuery ? (
+                          <>
+                            <Search className="h-8 w-8 mb-2 opacity-50" />
+                            <Trans>No conversations found</Trans>
+                          </>
+                        ) : (
+                          <>
+                            <BookOpen className="h-8 w-8 mb-2 opacity-50" />
+                            <Trans>No conversations yet</Trans>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Conversation List */}
+                    {!loadingConversations && conversations.length > 0 && (
+                      <div className="p-3 space-y-2">
+                        {conversations.map((conversation) => {
+                          const isActive = selected?.id === conversation.id;
+                          const convScores = conversation.scores ?? null;
+                          const avgScore = convScores
+                            ? Math.round(
+                                (convScores.fluency +
+                                  convScores.accuracy +
+                                  convScores.comprehensibility) /
+                                  3
+                              )
+                            : 0;
+
+                          return (
+                            <button
+                              key={conversation.id}
+                              onClick={() => {
+                                void handleSelect(conversation);
+                                setIsMobileDropdownOpen(false);
+                              }}
+                              className={cn(
+                                'w-full rounded-xl border px-3 py-2.5 text-left transition-all cursor-pointer',
+                                isActive
+                                  ? 'border-primary/40 bg-primary/5 shadow-sm'
+                                  : 'border-border/40 hover:border-border hover:bg-accent/50'
+                              )}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-sm truncate">
+                                    {conversation.title || t`Conversation`}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {formatRelativeTime(conversation.startedAt)}
+                                  </p>
+                                </div>
+                                {convScores && avgScore > 0 && (
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <span
+                                      className={cn(
+                                        'text-base font-bold tabular-nums',
+                                        isActive
+                                          ? 'text-primary'
+                                          : 'text-foreground/70'
+                                      )}
+                                    >
+                                      {avgScore}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Pagination */}
+                  {totalConversations > 0 && (
+                    <div className="shrink-0 bg-popover border-t border-border/30 px-3 py-3 rounded-b-xl">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-xs text-muted-foreground">
+                          {plural(totalConversations, {
+                            one: '# conversation',
+                            other: '# conversations',
+                          })}
+                          {totalPages > 1 && (
+                            <> • {t`Page ${page + 1} of ${totalPages}`}</>
+                          )}
+                        </div>
+                        {totalPages > 1 && (
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setPage(Math.max(0, page - 1))}
+                              disabled={page === 0 || loadingConversations}
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() =>
+                                setPage(Math.min(totalPages - 1, page + 1))
+                              }
+                              disabled={
+                                page >= totalPages - 1 || loadingConversations
+                              }
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
           {loadingDetail && (
-            <div className="flex flex-1 items-center justify-center">
+            <div className="flex flex-1 items-center justify-center p-8">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
             </div>
           )}
           {!loadingDetail && !selected && (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center p-6">
-              <MessageSquare className="h-12 w-12 text-muted-foreground opacity-50" />
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center p-6 sm:p-8">
+              <MessageSquare className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground opacity-50" />
               <div>
-                <p className="font-semibold text-muted-foreground">
+                <p className="font-semibold text-muted-foreground text-sm sm:text-base">
                   {debouncedSearchQuery ? (
-                    <Trans>No conversations found for "{debouncedSearchQuery}"</Trans>
+                    <Trans>
+                      No conversations found for "{debouncedSearchQuery}"
+                    </Trans>
                   ) : (
                     <Trans>Select a conversation to view details</Trans>
                   )}
@@ -1101,7 +1378,10 @@ export function ConversationHistory() {
             </div>
           )}
           {!loadingDetail && selected && (
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div
+              ref={scrollContainerRef}
+              className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6"
+            >
               {/* Header with Actions */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -1112,7 +1392,7 @@ export function ConversationHistory() {
                       onChange={(e) => handleTitleChange(e.target.value)}
                       onBlur={handleTitleBlur}
                       onKeyDown={handleTitleKeyDown}
-                      className="text-xl font-semibold h-auto px-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                      className="md:text-xl text-sm  font-semibold h-auto px-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                       autoFocus
                     />
                   ) : (
@@ -1125,20 +1405,34 @@ export function ConversationHistory() {
                     </h2>
                   )}
                   <div className="space-y-2 mt-1 relative">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                      <span>{selected.startedAt ? formatRelativeTime(selected.startedAt) : '—'}</span>
-                      {selected.durationSeconds !== null && selected.durationSeconds !== undefined && (
-                        <>
-                          <span className="text-muted-foreground/30">•</span>
-                          <span>{formatDuration(selected.durationSeconds)}</span>
-                        </>
-                      )}
+                    <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 text-xs sm:text-sm text-muted-foreground">
+                      <span>
+                        {selected.startedAt
+                          ? formatRelativeTime(selected.startedAt)
+                          : '—'}
+                      </span>
+                      {selected.durationSeconds !== null &&
+                        selected.durationSeconds !== undefined && (
+                          <>
+                            <span className="text-muted-foreground/30">•</span>
+                            <span>
+                              {formatDuration(selected.durationSeconds)}
+                            </span>
+                          </>
+                        )}
                       {(selected.learningLang || selected.nativeLang) && (
                         <>
                           <span className="text-muted-foreground/30">•</span>
                           <span>
-                            {getLanguageName(selected.learningLang as string, locale)} ↔{' '}
-                            {getLanguageName(selected.nativeLang as string, locale)}
+                            {getLanguageName(
+                              selected.learningLang as string,
+                              locale
+                            )}{' '}
+                            ↔{' '}
+                            {getLanguageName(
+                              selected.nativeLang as string,
+                              locale
+                            )}
                           </span>
                         </>
                       )}
@@ -1146,7 +1440,10 @@ export function ConversationHistory() {
                         <>
                           <span className="text-muted-foreground/30">•</span>
                           {showPartnerManager ? (
-                            <Popover open={isPartnerManagerOpen} onOpenChange={setIsPartnerManagerOpen}>
+                            <Popover
+                              open={isPartnerManagerOpen}
+                              onOpenChange={setIsPartnerManagerOpen}
+                            >
                               <PopoverTrigger asChild>
                                 <button
                                   type="button"
@@ -1181,7 +1478,9 @@ export function ConversationHistory() {
                                 <div className="border-b border-border/30 px-3 py-2">
                                   <Input
                                     value={partnerSearch}
-                                    onChange={(event) => setPartnerSearch(event.target.value)}
+                                    onChange={(event) =>
+                                      setPartnerSearch(event.target.value)
+                                    }
                                     placeholder={t`Search partners`}
                                     className="h-8 text-xs"
                                     disabled={!canManagePartner}
@@ -1196,7 +1495,10 @@ export function ConversationHistory() {
                                             className="h-6 w-6"
                                             fallbackSize="sm"
                                             name={partnerProfile.name}
-                                            src={partnerProfile.avatarUrl || undefined}
+                                            src={
+                                              partnerProfile.avatarUrl ||
+                                              undefined
+                                            }
                                           />
                                           <span className="font-medium text-foreground truncate">
                                             {partnerProfile.name || t`Partner`}
@@ -1222,7 +1524,10 @@ export function ConversationHistory() {
                                           <Trans>No partner assigned</Trans>
                                         </p>
                                         <p>
-                                          <Trans>Select an existing partner or create a new one.</Trans>
+                                          <Trans>
+                                            Select an existing partner or create
+                                            a new one.
+                                          </Trans>
                                         </p>
                                       </div>
                                     </div>
@@ -1243,18 +1548,31 @@ export function ConversationHistory() {
                                             key={partner.id}
                                             role="button"
                                             tabIndex={0}
-                                            aria-disabled={reassignPartnerMutation.isPending}
+                                            aria-disabled={
+                                              reassignPartnerMutation.isPending
+                                            }
                                             className="group relative flex w-full items-center gap-2 rounded-md px-3 py-1.5 pr-16 text-left text-sm transition hover:bg-accent/40 cursor-pointer"
                                             onClick={() => {
-                                              if (!reassignPartnerMutation.isPending) {
-                                                reassignPartnerMutation.mutate(partner.id);
+                                              if (
+                                                !reassignPartnerMutation.isPending
+                                              ) {
+                                                reassignPartnerMutation.mutate(
+                                                  partner.id
+                                                );
                                               }
                                             }}
                                             onKeyDown={(event) => {
-                                              if (event.key === 'Enter' || event.key === ' ') {
+                                              if (
+                                                event.key === 'Enter' ||
+                                                event.key === ' '
+                                              ) {
                                                 event.preventDefault();
-                                                if (!reassignPartnerMutation.isPending) {
-                                                  reassignPartnerMutation.mutate(partner.id);
+                                                if (
+                                                  !reassignPartnerMutation.isPending
+                                                ) {
+                                                  reassignPartnerMutation.mutate(
+                                                    partner.id
+                                                  );
                                                 }
                                               }
                                             }}
@@ -1264,9 +1582,13 @@ export function ConversationHistory() {
                                                 className="h-6 w-6"
                                                 fallbackSize="sm"
                                                 name={partner.name}
-                                                src={partner.avatarUrl || undefined}
+                                                src={
+                                                  partner.avatarUrl || undefined
+                                                }
                                               />
-                                              <span className="truncate">{partner.name}</span>
+                                              <span className="truncate">
+                                                {partner.name}
+                                              </span>
                                             </div>
                                             <button
                                               type="button"
@@ -1275,8 +1597,10 @@ export function ConversationHistory() {
                                                 preparePartnerEdit({
                                                   id: partner.id,
                                                   name: partner.name,
-                                                  description: partner.description || null,
-                                                  avatarUrl: partner.avatarUrl || null,
+                                                  description:
+                                                    partner.description || null,
+                                                  avatarUrl:
+                                                    partner.avatarUrl || null,
                                                 });
                                                 setIsPartnerManagerOpen(false);
                                                 setIsEditModalOpen(true);
@@ -1297,8 +1621,14 @@ export function ConversationHistory() {
                                           <button
                                             type="button"
                                             className="flex items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-left text-sm text-foreground transition hover:bg-accent cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                                            onClick={() => createPartnerMutation.mutate(trimmedPartnerSearch)}
-                                            disabled={createPartnerMutation.isPending}
+                                            onClick={() =>
+                                              createPartnerMutation.mutate(
+                                                trimmedPartnerSearch
+                                              )
+                                            }
+                                            disabled={
+                                              createPartnerMutation.isPending
+                                            }
                                           >
                                             {createPartnerMutation.isPending ? (
                                               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -1322,7 +1652,9 @@ export function ConversationHistory() {
                                 name={partnerProfile?.name || t`Partner`}
                                 src={partnerProfile?.avatarUrl || undefined}
                               />
-                              <span className="font-medium text-foreground">{partnerProfile?.name || t`Partner`}</span>
+                              <span className="font-medium text-foreground">
+                                {partnerProfile?.name || t`Partner`}
+                              </span>
                             </span>
                           )}
                         </>
@@ -1378,7 +1710,9 @@ export function ConversationHistory() {
                             className="w-1.5 rounded-full"
                             style={{
                               height: `${height}%`,
-                              backgroundColor: isActive ? color : 'rgba(100, 116, 139, 0.2)',
+                              backgroundColor: isActive
+                                ? color
+                                : 'rgba(100, 116, 139, 0.2)',
                             }}
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: `${height}%`, opacity: 1 }}
@@ -1401,7 +1735,12 @@ export function ConversationHistory() {
                         <span className="text-xs text-muted-foreground">
                           <Trans>Fluency</Trans>
                         </span>
-                        <span className={cn('text-sm font-medium', getScoreLabel(scores.fluency).color)}>
+                        <span
+                          className={cn(
+                            'text-sm font-medium',
+                            getScoreLabel(scores.fluency).color
+                          )}
+                        >
                           {getScoreLabel(scores.fluency).text}
                         </span>
                       </div>
@@ -1410,35 +1749,45 @@ export function ConversationHistory() {
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.fluency > 0 && scores.fluency <= 20 ? 'bg-red-500' : 'bg-red-500/30'
+                              scores.fluency > 0 && scores.fluency <= 20
+                                ? 'bg-red-500'
+                                : 'bg-red-500/30'
                             )}
                             style={{ flex: 0.5 }}
                           />
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.fluency > 20 && scores.fluency <= 40 ? 'bg-orange-500' : 'bg-orange-500/30'
+                              scores.fluency > 20 && scores.fluency <= 40
+                                ? 'bg-orange-500'
+                                : 'bg-orange-500/30'
                             )}
                             style={{ flex: 1 }}
                           />
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.fluency > 40 && scores.fluency <= 60 ? 'bg-amber-500' : 'bg-amber-500/30'
+                              scores.fluency > 40 && scores.fluency <= 60
+                                ? 'bg-amber-500'
+                                : 'bg-amber-500/30'
                             )}
                             style={{ flex: 2 }}
                           />
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.fluency > 60 && scores.fluency <= 80 ? 'bg-teal-500' : 'bg-teal-500/30'
+                              scores.fluency > 60 && scores.fluency <= 80
+                                ? 'bg-teal-500'
+                                : 'bg-teal-500/30'
                             )}
                             style={{ flex: 1 }}
                           />
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.fluency > 80 ? 'bg-emerald-500' : 'bg-emerald-500/30'
+                              scores.fluency > 80
+                                ? 'bg-emerald-500'
+                                : 'bg-emerald-500/30'
                             )}
                             style={{ flex: 0.5 }}
                           />
@@ -1458,7 +1807,12 @@ export function ConversationHistory() {
                         <span className="text-xs text-muted-foreground">
                           <Trans>Accuracy</Trans>
                         </span>
-                        <span className={cn('text-sm font-medium', getScoreLabel(scores.accuracy).color)}>
+                        <span
+                          className={cn(
+                            'text-sm font-medium',
+                            getScoreLabel(scores.accuracy).color
+                          )}
+                        >
                           {getScoreLabel(scores.accuracy).text}
                         </span>
                       </div>
@@ -1467,35 +1821,45 @@ export function ConversationHistory() {
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.accuracy > 0 && scores.accuracy <= 20 ? 'bg-red-500' : 'bg-red-500/30'
+                              scores.accuracy > 0 && scores.accuracy <= 20
+                                ? 'bg-red-500'
+                                : 'bg-red-500/30'
                             )}
                             style={{ flex: 0.5 }}
                           />
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.accuracy > 20 && scores.accuracy <= 40 ? 'bg-orange-500' : 'bg-orange-500/30'
+                              scores.accuracy > 20 && scores.accuracy <= 40
+                                ? 'bg-orange-500'
+                                : 'bg-orange-500/30'
                             )}
                             style={{ flex: 1 }}
                           />
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.accuracy > 40 && scores.accuracy <= 60 ? 'bg-amber-500' : 'bg-amber-500/30'
+                              scores.accuracy > 40 && scores.accuracy <= 60
+                                ? 'bg-amber-500'
+                                : 'bg-amber-500/30'
                             )}
                             style={{ flex: 2 }}
                           />
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.accuracy > 60 && scores.accuracy <= 80 ? 'bg-teal-500' : 'bg-teal-500/30'
+                              scores.accuracy > 60 && scores.accuracy <= 80
+                                ? 'bg-teal-500'
+                                : 'bg-teal-500/30'
                             )}
                             style={{ flex: 1 }}
                           />
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.accuracy > 80 ? 'bg-emerald-500' : 'bg-emerald-500/30'
+                              scores.accuracy > 80
+                                ? 'bg-emerald-500'
+                                : 'bg-emerald-500/30'
                             )}
                             style={{ flex: 0.5 }}
                           />
@@ -1515,7 +1879,12 @@ export function ConversationHistory() {
                         <span className="text-xs text-muted-foreground">
                           <Trans>Comprehensibility</Trans>
                         </span>
-                        <span className={cn('text-sm font-medium', getScoreLabel(scores.comprehensibility).color)}>
+                        <span
+                          className={cn(
+                            'text-sm font-medium',
+                            getScoreLabel(scores.comprehensibility).color
+                          )}
+                        >
                           {getScoreLabel(scores.comprehensibility).text}
                         </span>
                       </div>
@@ -1524,7 +1893,8 @@ export function ConversationHistory() {
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.comprehensibility > 0 && scores.comprehensibility <= 20
+                              scores.comprehensibility > 0 &&
+                                scores.comprehensibility <= 20
                                 ? 'bg-red-500'
                                 : 'bg-red-500/30'
                             )}
@@ -1533,7 +1903,8 @@ export function ConversationHistory() {
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.comprehensibility > 20 && scores.comprehensibility <= 40
+                              scores.comprehensibility > 20 &&
+                                scores.comprehensibility <= 40
                                 ? 'bg-orange-500'
                                 : 'bg-orange-500/30'
                             )}
@@ -1542,7 +1913,8 @@ export function ConversationHistory() {
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.comprehensibility > 40 && scores.comprehensibility <= 60
+                              scores.comprehensibility > 40 &&
+                                scores.comprehensibility <= 60
                                 ? 'bg-amber-500'
                                 : 'bg-amber-500/30'
                             )}
@@ -1551,7 +1923,8 @@ export function ConversationHistory() {
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.comprehensibility > 60 && scores.comprehensibility <= 80
+                              scores.comprehensibility > 60 &&
+                                scores.comprehensibility <= 80
                                 ? 'bg-teal-500'
                                 : 'bg-teal-500/30'
                             )}
@@ -1560,7 +1933,9 @@ export function ConversationHistory() {
                           <div
                             className={cn(
                               'rounded-full transition-opacity duration-300',
-                              scores.comprehensibility > 80 ? 'bg-emerald-500' : 'bg-emerald-500/30'
+                              scores.comprehensibility > 80
+                                ? 'bg-emerald-500'
+                                : 'bg-emerald-500/30'
                             )}
                             style={{ flex: 0.5 }}
                           />
@@ -1568,7 +1943,9 @@ export function ConversationHistory() {
                         <div
                           className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full"
                           style={{
-                            left: `${getIndicatorPosition(scores.comprehensibility)}%`,
+                            left: `${getIndicatorPosition(
+                              scores.comprehensibility
+                            )}%`,
                           }}
                         />
                       </div>
@@ -1583,7 +1960,11 @@ export function ConversationHistory() {
                   <div className="flex items-start gap-3">
                     <div className="shrink-0">
                       <Avatar className="h-10 w-10 border border-border/50 bg-card/80">
-                        <AvatarImage className="h-full w-full object-cover" src="/glass-ai.png" alt="Glass AI" />
+                        <AvatarImage
+                          className="h-full w-full object-cover"
+                          src="/glass-ai.png"
+                          alt="Glass AI"
+                        />
                         <AvatarFallback>AI</AvatarFallback>
                       </Avatar>
                     </div>
@@ -1624,9 +2005,15 @@ export function ConversationHistory() {
                       <span className="text-sm font-semibold">
                         <Trans>Memory</Trans>
                       </span>
-                      <span className="text-xs text-muted-foreground">({memoryRecords.length})</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({memoryRecords.length})
+                      </span>
                     </div>
-                    {showMemory ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                    {showMemory ? (
+                      <ChevronUp className="size-4" />
+                    ) : (
+                      <ChevronDown className="size-4" />
+                    )}
                   </button>
 
                   <AnimatePresence>
@@ -1639,7 +2026,10 @@ export function ConversationHistory() {
                       >
                         <div className="mt-2 bg-background/50 border border-border/30 rounded-lg p-3 max-h-64 overflow-auto space-y-2">
                           {memoryRecords.map((memory) => {
-                            const label = MEMORY_SCOPE_LABELS[(memory.scope || '').toLowerCase()] || t`Memory`;
+                            const label =
+                              MEMORY_SCOPE_LABELS[
+                                (memory.scope || '').toLowerCase()
+                              ] || t`Memory`;
                             return (
                               <div
                                 key={memory.id}
@@ -1653,7 +2043,9 @@ export function ConversationHistory() {
                                 >
                                   {label}
                                 </span>
-                                <div className="flex-1 min-w-0 text-sm break-words">{memory.text}</div>
+                                <div className="flex-1 min-w-0 text-sm break-words">
+                                  {memory.text}
+                                </div>
                               </div>
                             );
                           })}
@@ -1666,7 +2058,7 @@ export function ConversationHistory() {
 
               {/* Conversation History Section */}
               <section ref={conversationSectionRef} className="relative">
-                <div className="sticky top-6 z-20 pb-3 bg-card/80">
+                <div className="sticky top-0 z-20 pb-3 bg-card/80">
                   <button
                     onClick={() => {
                       setShowConversation(!showConversation);
@@ -1683,9 +2075,15 @@ export function ConversationHistory() {
                       <span className="text-sm font-semibold">
                         <Trans>Conversation History</Trans>
                       </span>
-                      <span className="text-xs text-muted-foreground">({selected.messages?.length || 0})</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({selected.messages?.length || 0})
+                      </span>
                     </div>
-                    {showConversation ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                    {showConversation ? (
+                      <ChevronUp className="size-4" />
+                    ) : (
+                      <ChevronDown className="size-4" />
+                    )}
                   </button>
                 </div>
 
@@ -1702,7 +2100,8 @@ export function ConversationHistory() {
                           selected.messages.map((message, idx) => {
                             const speakerRole = getMessageRole(message);
                             const text = message.text || '';
-                            const translation = message.translation || undefined;
+                            const translation =
+                              message.translation || undefined;
                             const isUser = speakerRole === 'user';
                             const isGlass = speakerRole === 'assistant';
                             const speakerInfo = resolveParticipantInfo(message);
@@ -1712,7 +2111,11 @@ export function ConversationHistory() {
                             return (
                               <div
                                 key={`${selected.id}-${idx}`}
-                                className={cn('flex gap-3 py-2', (isUser || isGlass) && 'flex-row-reverse text-right')}
+                                className={cn(
+                                  'flex gap-3 py-2',
+                                  (isUser || isGlass) &&
+                                    'flex-row-reverse text-right'
+                                )}
                               >
                                 {!isUser && !isGlass && (
                                   <PartnerAvatar
@@ -1733,7 +2136,9 @@ export function ConversationHistory() {
                                   </Avatar>
                                 )}
                                 <div className="space-y-1 max-w-[80%]">
-                                  <div className="text-xs text-muted-foreground">{speakerName}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {speakerName}
+                                  </div>
                                   <div
                                     className={cn(
                                       'rounded-2xl px-3 py-2 text-sm',
@@ -1746,7 +2151,9 @@ export function ConversationHistory() {
                                   >
                                     {text}
                                     {translation && (
-                                      <div className="text-xs text-muted-foreground mt-1 italic">{translation}</div>
+                                      <div className="text-xs text-muted-foreground mt-1 italic">
+                                        {translation}
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -1773,7 +2180,10 @@ export function ConversationHistory() {
         </div>
 
         {/* Delete Confirmation Alert Dialog */}
-        <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
@@ -1807,14 +2217,23 @@ export function ConversationHistory() {
               <Trans>Edit partner</Trans>
             </DialogTitle>
           </DialogHeader>
-          <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarUpload}
+          />
           <div className="flex items-start gap-4">
             <div className="flex flex-col items-center gap-1.5">
               <button
                 type="button"
                 aria-label={t`Change partner photo`}
                 disabled={
-                  !editingPartnerId || isUploadingAvatar || !canManagePartner || deletePartnerMutation.isPending
+                  !editingPartnerId ||
+                  isUploadingAvatar ||
+                  !canManagePartner ||
+                  deletePartnerMutation.isPending
                 }
                 onClick={() => avatarInputRef.current?.click()}
                 className="group relative inline-flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-border/70 bg-muted/40 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
@@ -1832,7 +2251,11 @@ export function ConversationHistory() {
                     isUploadingAvatar && 'opacity-100'
                   )}
                 >
-                  {isUploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trans>Edit</Trans>}
+                  {isUploadingAvatar ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trans>Edit</Trans>
+                  )}
                 </span>
               </button>
               <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1848,7 +2271,11 @@ export function ConversationHistory() {
                   value={partnerNameDraft}
                   onChange={(event) => setPartnerNameDraft(event.target.value)}
                   placeholder={t`Enter a name`}
-                  disabled={!editingPartnerId || !canManagePartner || isPartnerActionPending}
+                  disabled={
+                    !editingPartnerId ||
+                    !canManagePartner ||
+                    isPartnerActionPending
+                  }
                 />
               </div>
               <div className="space-y-1">
@@ -1857,9 +2284,15 @@ export function ConversationHistory() {
                 </Label>
                 <Textarea
                   value={partnerDescriptionDraft}
-                  onChange={(event) => setPartnerDescriptionDraft(event.target.value)}
+                  onChange={(event) =>
+                    setPartnerDescriptionDraft(event.target.value)
+                  }
                   placeholder={t`Add a short description`}
-                  disabled={!editingPartnerId || !canManagePartner || isPartnerActionPending}
+                  disabled={
+                    !editingPartnerId ||
+                    !canManagePartner ||
+                    isPartnerActionPending
+                  }
                   rows={3}
                 />
               </div>
@@ -1875,7 +2308,9 @@ export function ConversationHistory() {
                 disabled={isPartnerActionPending}
                 className="w-full sm:w-auto justify-center cursor-pointer disabled:cursor-not-allowed text-destructive border-destructive/40 hover:bg-destructive/10"
               >
-                {deletePartnerMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+                {deletePartnerMutation.isPending ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : null}
                 <Trans>Delete partner</Trans>
               </Button>
             ) : (
@@ -1894,17 +2329,27 @@ export function ConversationHistory() {
               <Button
                 size="sm"
                 onClick={() => renamePartnerMutation.mutate()}
-                disabled={!editingPartnerId || !canManagePartner || isPartnerActionPending || !partnerNameDraft.trim()}
+                disabled={
+                  !editingPartnerId ||
+                  !canManagePartner ||
+                  isPartnerActionPending ||
+                  !partnerNameDraft.trim()
+                }
                 className="flex-1 cursor-pointer disabled:cursor-not-allowed"
               >
-                {renamePartnerMutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                {renamePartnerMutation.isPending && (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                )}
                 <Trans>Save</Trans>
               </Button>
             </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <AlertDialog open={isPartnerDeleteDialogOpen} onOpenChange={setIsPartnerDeleteDialogOpen}>
+      <AlertDialog
+        open={isPartnerDeleteDialogOpen}
+        onOpenChange={setIsPartnerDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -1926,7 +2371,9 @@ export function ConversationHistory() {
               className="bg-destructive text-white hover:bg-destructive/90"
               disabled={deletePartnerMutation.isPending}
             >
-              {deletePartnerMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+              {deletePartnerMutation.isPending ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : null}
               <Trans>Delete</Trans>
             </AlertDialogAction>
           </AlertDialogFooter>

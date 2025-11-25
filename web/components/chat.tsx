@@ -13,7 +13,8 @@ import { Trans } from '@lingui/react/macro';
 
 export default function Chat() {
   const ref = useRef<ComponentRef<typeof Messages> | null>(null);
-  const { status, conversationAnalysis, showSummary, closeSummary } = useGlass();
+  const { status, conversationAnalysis, showSummary, closeSummary } =
+    useGlass();
   const [analysisProgress, setAnalysisProgress] = useState(0);
 
   // Fade in on mount (after onboarding transition)
@@ -51,7 +52,11 @@ export default function Chat() {
   }, [status.value, showSummary]);
 
   return (
-    <div className={'relative grow flex flex-col mx-auto w-full overflow-hidden h-0 pt-14'}>
+    <div
+      className={
+        'relative grow flex flex-col mx-auto w-full overflow-hidden h-0 pt-12 sm:pt-14'
+      }
+    >
       <Messages ref={ref} />
 
       {/* BottomPanel: persistent suggestions + controls */}
@@ -67,24 +72,38 @@ export default function Chat() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className={'fixed inset-0 z-100 flex items-center justify-center bg-background/95 backdrop-blur-md'}
+            className={
+              'fixed inset-0 z-100 flex items-center justify-center bg-background/95 backdrop-blur-md'
+            }
           >
-            <div className={'flex flex-col items-center gap-6'}>
+            <div className={'flex flex-col items-center gap-4 sm:gap-6'}>
               <div className={'relative'}>
-                <div className={'absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse'}></div>
-                <Loader2 className={'size-16 text-primary animate-spin relative'} />
+                <div
+                  className={
+                    'absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse'
+                  }
+                ></div>
+                <Loader2
+                  className={
+                    'size-12 text-primary animate-spin relative sm:size-16'
+                  }
+                />
               </div>
-              <div className={'text-center space-y-2'}>
-                <h3 className={'text-2xl font-semibold'}>
+              <div className={'text-center space-y-1.5 sm:space-y-2'}>
+                <h3 className={'text-xl font-semibold sm:text-2xl'}>
                   <Trans>Analyzing Conversation</Trans>
                 </h3>
                 <p className={'text-sm text-muted-foreground'}>
                   <Trans>Generating insights and feedback...</Trans>
                 </p>
               </div>
-              <div className={'w-[70%] max-w-md'}>
+              <div className={'w-[80%] max-w-md sm:w-[70%]'}>
                 <Progress value={analysisProgress} />
-                <div className={'mt-2 text-xs text-muted-foreground text-center'}>{Math.round(analysisProgress)}%</div>
+                <div
+                  className={'mt-2 text-xs text-muted-foreground text-center'}
+                >
+                  {Math.round(analysisProgress)}%
+                </div>
               </div>
             </div>
           </motion.div>

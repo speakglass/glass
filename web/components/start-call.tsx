@@ -1,5 +1,12 @@
-import { useGlass, LanguageSettings, SessionConfig } from '@/contexts/glass-context';
-import { useAccountSession, type SessionData } from '@/contexts/account-session-context';
+import {
+  useGlass,
+  LanguageSettings,
+  SessionConfig,
+} from '@/contexts/glass-context';
+import {
+  useAccountSession,
+  type SessionData,
+} from '@/contexts/account-session-context';
 import { AnimatePresence, motion } from 'motion/react';
 import { Loader2, Phone } from 'lucide-react';
 import { PartnerSelection } from './start-call-partner-selection';
@@ -49,54 +56,92 @@ export default function StartCall() {
 
   // Initialize languages from user profile (from onboarding)
   const [languages, setLanguages] = useState<LanguageSettings>({
-    learningLang: snapshot?.user.learningLang || settings.languages?.learningLang || '',
-    nativeLang: snapshot?.user.nativeLang || settings.languages?.nativeLang || '',
+    learningLang:
+      snapshot?.user.learningLang || settings.languages?.learningLang || '',
+    nativeLang:
+      snapshot?.user.nativeLang || settings.languages?.nativeLang || '',
   });
-  const [liveCallLanguageMode, setLiveCallLanguageMode] = useState<'shared' | 'custom'>('shared');
-  const [liveCallCustomPair, setLiveCallCustomPair] = useState<{ youLang: string; partnerLang: string }>({
+  const [liveCallLanguageMode, setLiveCallLanguageMode] = useState<
+    'shared' | 'custom'
+  >('shared');
+  const [liveCallCustomPair, setLiveCallCustomPair] = useState<{
+    youLang: string;
+    partnerLang: string;
+  }>({
     youLang: '',
     partnerLang: '',
   });
-  const [selectedMode, setSelectedMode] = useState<'roleplay' | 'live_call' | null>('roleplay');
+  const [selectedMode, setSelectedMode] = useState<
+    'roleplay' | 'live_call' | null
+  >('roleplay');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const profileLanguagesRef = useRef<LanguageSettings | null>(null);
-  const [isCustomPartnerCreatorOpen, setIsCustomPartnerCreatorOpen] = useState(false);
+  const [isCustomPartnerCreatorOpen, setIsCustomPartnerCreatorOpen] =
+    useState(false);
   const [isEditPartnerModalOpen, setIsEditPartnerModalOpen] = useState(false);
-  const [partnerToEdit, setPartnerToEdit] = useState<ConversationPartner | null>(null);
-  const [activeGenerationJob, setActiveGenerationJob] = useState<PartnerGenerationJob | null>(null);
+  const [partnerToEdit, setPartnerToEdit] =
+    useState<ConversationPartner | null>(null);
+  const [activeGenerationJob, setActiveGenerationJob] =
+    useState<PartnerGenerationJob | null>(null);
 
-  const [isDeletePartnerDialogOpen, setIsDeletePartnerDialogOpen] = useState(false);
-  const [partnerPendingDelete, setPartnerPendingDelete] = useState<ConversationPartner | null>(null);
+  const [isDeletePartnerDialogOpen, setIsDeletePartnerDialogOpen] =
+    useState(false);
+  const [partnerPendingDelete, setPartnerPendingDelete] =
+    useState<ConversationPartner | null>(null);
   const [isStartingCall, setIsStartingCall] = useState(false);
-  const [conversationQuotaDialogOpen, setConversationQuotaDialogOpen] = useState(false);
+  const [conversationQuotaDialogOpen, setConversationQuotaDialogOpen] =
+    useState(false);
   const [partnerQuotaDialogOpen, setPartnerQuotaDialogOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [screenSharePreviewStream, setScreenSharePreviewStream] = useState<MediaStream | null>(null);
+  const [screenSharePreviewStream, setScreenSharePreviewStream] =
+    useState<MediaStream | null>(null);
   const screenShareStreamRef = useRef<MediaStream | null>(null);
   const screenShareVideoRef = useRef<HTMLVideoElement | null>(null);
   const step5CardRef = useRef<HTMLDivElement | null>(null);
   const [isRequestingScreenShare, setIsRequestingScreenShare] = useState(false);
-  const [screenShareError, setScreenShareError] = useState<'denied' | 'cancelled' | 'failed' | 'no_audio' | null>(null);
+  const [screenShareError, setScreenShareError] = useState<
+    'denied' | 'cancelled' | 'failed' | 'no_audio' | null
+  >(null);
   const conversationLimit = snapshot?.limits?.conversations || null;
-  const conversationLimitEnabled = Boolean(conversationLimit?.enabled && conversationLimit?.limit);
+  const conversationLimitEnabled = Boolean(
+    conversationLimit?.enabled && conversationLimit?.limit
+  );
   const conversationLimitMax = conversationLimit?.limit ?? null;
   const conversationLimitUsed = conversationLimit?.used ?? 0;
   const conversationLimitDisplayUsed =
-    conversationLimitMax !== null ? Math.min(conversationLimitUsed, conversationLimitMax) : conversationLimitUsed;
+    conversationLimitMax !== null
+      ? Math.min(conversationLimitUsed, conversationLimitMax)
+      : conversationLimitUsed;
   const conversationLimitUsageLabel =
-    conversationLimitMax !== null ? `${conversationLimitDisplayUsed}/${conversationLimitMax}` : null;
-  const conversationLimitBlocked = Boolean(conversationLimitEnabled && conversationLimit?.blocked);
+    conversationLimitMax !== null
+      ? `${conversationLimitDisplayUsed}/${conversationLimitMax}`
+      : null;
+  const conversationLimitBlocked = Boolean(
+    conversationLimitEnabled && conversationLimit?.blocked
+  );
   const partnerLimit = snapshot?.limits?.partners || null;
-  const partnerLimitEnabled = Boolean(partnerLimit?.enabled && partnerLimit?.limit);
+  const partnerLimitEnabled = Boolean(
+    partnerLimit?.enabled && partnerLimit?.limit
+  );
   const partnerLimitMax = partnerLimit?.limit ?? null;
   const partnerLimitUsed = partnerLimit?.used ?? 0;
   const partnerLimitDisplayUsed =
-    partnerLimitMax !== null ? Math.min(partnerLimitUsed, partnerLimitMax) : partnerLimitUsed;
-  const partnerLimitUsageLabel = partnerLimitMax !== null ? `${partnerLimitDisplayUsed}/${partnerLimitMax}` : null;
-  const partnerLimitBlocked = Boolean(partnerLimitEnabled && partnerLimit?.blocked);
-  const handleGenerationJobUpdate = useCallback((job: PartnerGenerationJob | null) => {
-    setActiveGenerationJob(job);
-  }, []);
+    partnerLimitMax !== null
+      ? Math.min(partnerLimitUsed, partnerLimitMax)
+      : partnerLimitUsed;
+  const partnerLimitUsageLabel =
+    partnerLimitMax !== null
+      ? `${partnerLimitDisplayUsed}/${partnerLimitMax}`
+      : null;
+  const partnerLimitBlocked = Boolean(
+    partnerLimitEnabled && partnerLimit?.blocked
+  );
+  const handleGenerationJobUpdate = useCallback(
+    (job: PartnerGenerationJob | null) => {
+      setActiveGenerationJob(job);
+    },
+    []
+  );
   const stopOwnedScreenShare = useCallback(() => {
     const stream = screenShareStreamRef.current;
     if (stream) {
@@ -109,8 +154,11 @@ export default function StartCall() {
     languages.learningLang && languages.learningLang.length > 0
       ? getLanguageName(languages.learningLang, langSegment)
       : t`your learning language`;
-  const customLanguageSelectionReady = Boolean(liveCallCustomPair.youLang && liveCallCustomPair.partnerLang);
-  const liveLanguagesReady = liveCallLanguageMode === 'shared' || customLanguageSelectionReady;
+  const customLanguageSelectionReady = Boolean(
+    liveCallCustomPair.youLang && liveCallCustomPair.partnerLang
+  );
+  const liveLanguagesReady =
+    liveCallLanguageMode === 'shared' || customLanguageSelectionReady;
 
   const isLiveCallStarting = selectedMode === 'live_call' && isStartingCall;
   const canStartCall =
@@ -134,9 +182,15 @@ export default function StartCall() {
     refetchOnReconnect: false,
     refetchOnMount: false,
   });
-  const partnersLoading = partnersQueryEnabled ? partnersQueryLoading || partnersFetching : true;
-  const roleplayPartners: ConversationPartner[] = (partnersData ?? []).filter((partner) => partner.kind === 'roleplay');
-  const selectedRoleplayPartner = roleplayPartners.find((partner) => partner.id === selectedPartnerId);
+  const partnersLoading = partnersQueryEnabled
+    ? partnersQueryLoading || partnersFetching
+    : true;
+  const roleplayPartners: ConversationPartner[] = (partnersData ?? []).filter(
+    (partner) => partner.kind === 'roleplay'
+  );
+  const selectedRoleplayPartner = roleplayPartners.find(
+    (partner) => partner.id === selectedPartnerId
+  );
 
   useEffect(() => {
     return () => {
@@ -217,7 +271,10 @@ export default function StartCall() {
         if (cancelled) {
           return;
         }
-        console.error('[StartCall] Failed to poll partner generation job', error);
+        console.error(
+          '[StartCall] Failed to poll partner generation job',
+          error
+        );
         timeoutId = setTimeout(poll, 4000);
       }
     };
@@ -228,7 +285,12 @@ export default function StartCall() {
         clearTimeout(timeoutId);
       }
     };
-  }, [activeGenerationJob?.id, activeGenerationJob?.status, isCustomPartnerCreatorOpen, token]);
+  }, [
+    activeGenerationJob?.id,
+    activeGenerationJob?.status,
+    isCustomPartnerCreatorOpen,
+    token,
+  ]);
 
   useEffect(() => {
     if (!activeGenerationJob || activeGenerationJob.status !== 'completed') {
@@ -249,7 +311,10 @@ export default function StartCall() {
     }
     const userLanguages = { learningLang, nativeLang };
     const previous = profileLanguagesRef.current;
-    const changed = !previous || previous.learningLang !== learningLang || previous.nativeLang !== nativeLang;
+    const changed =
+      !previous ||
+      previous.learningLang !== learningLang ||
+      previous.nativeLang !== nativeLang;
     if (!changed) {
       return;
     }
@@ -281,7 +346,10 @@ export default function StartCall() {
 
   // Removed: Level completion logic moved to onboarding flow
 
-  const handleCustomLanguageSelect = (target: 'you' | 'partner', code: string) => {
+  const handleCustomLanguageSelect = (
+    target: 'you' | 'partner',
+    code: string
+  ) => {
     setLiveCallCustomPair((prev) => ({
       ...prev,
       [target === 'you' ? 'youLang' : 'partnerLang']: code,
@@ -325,7 +393,10 @@ export default function StartCall() {
     if (isRequestingScreenShare) {
       return;
     }
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getDisplayMedia) {
+    if (
+      typeof navigator === 'undefined' ||
+      !navigator.mediaDevices?.getDisplayMedia
+    ) {
       toast.error(t`Screen sharing is not supported in this browser`, {
         description: t`Try using the latest version of Chrome, Edge, or Firefox.`,
       });
@@ -359,7 +430,9 @@ export default function StartCall() {
         return;
       }
       if (screenShareStreamRef.current) {
-        screenShareStreamRef.current.getTracks().forEach((track) => track.stop());
+        screenShareStreamRef.current
+          .getTracks()
+          .forEach((track) => track.stop());
       }
       screenShareStreamRef.current = stream;
       setScreenSharePreviewStream(stream);
@@ -442,7 +515,11 @@ export default function StartCall() {
     if (selectedPartnerId === partnerId) {
       setSelectedPartnerId('');
     }
-    if (partnerPendingDelete && partnerPendingDelete.id === partnerId && partnerPendingDelete.kind === 'roleplay') {
+    if (
+      partnerPendingDelete &&
+      partnerPendingDelete.id === partnerId &&
+      partnerPendingDelete.kind === 'roleplay'
+    ) {
       adjustPartnerLimitUsage(-1);
     }
     handleCancelDeletePartner();
@@ -463,21 +540,29 @@ export default function StartCall() {
         latestSnapshot = await fetchAccountSnapshot(token);
         if (latestSnapshot) {
           const snapshotForCache = latestSnapshot;
-          queryClient.setQueryData<SessionData | undefined>(['accountSession'], (previous) => {
-            if (!previous) {
-              return previous;
+          queryClient.setQueryData<SessionData | undefined>(
+            ['accountSession'],
+            (previous) => {
+              if (!previous) {
+                return previous;
+              }
+              return { ...previous, snapshot: snapshotForCache };
             }
-            return { ...previous, snapshot: snapshotForCache };
-          });
+          );
         }
       } catch (error) {
         const statusCode =
-          typeof error === 'object' && error && 'status' in error ? (error as { status?: number }).status : null;
+          typeof error === 'object' && error && 'status' in error
+            ? (error as { status?: number }).status
+            : null;
         if (statusCode === 401) {
           const refreshed = await refresh();
           latestSnapshot = refreshed?.snapshot ?? latestSnapshot ?? snapshot;
         } else {
-          console.error('[StartCall] Failed to fetch snapshot for limit check', error);
+          console.error(
+            '[StartCall] Failed to fetch snapshot for limit check',
+            error
+          );
         }
       }
     }
@@ -495,13 +580,21 @@ export default function StartCall() {
       }
     }
 
-    const latestLimit = latestSnapshot?.limits?.conversations ?? conversationLimit;
+    const latestLimit =
+      latestSnapshot?.limits?.conversations ?? conversationLimit;
     if (latestLimit?.limit && latestLimit.used >= latestLimit.limit) {
       setConversationQuotaDialogOpen(true);
       return false;
     }
     return true;
-  }, [conversationLimitEnabled, token, refresh, snapshot, conversationLimit, queryClient]);
+  }, [
+    conversationLimitEnabled,
+    token,
+    refresh,
+    snapshot,
+    conversationLimit,
+    queryClient,
+  ]);
 
   const ensurePartnerCapacity = useCallback(async () => {
     if (!partnerLimitEnabled) {
@@ -514,21 +607,29 @@ export default function StartCall() {
         latestSnapshot = await fetchAccountSnapshot(token);
         if (latestSnapshot) {
           const snapshotForCache = latestSnapshot;
-          queryClient.setQueryData<SessionData | undefined>(['accountSession'], (previous) => {
-            if (!previous) {
-              return previous;
+          queryClient.setQueryData<SessionData | undefined>(
+            ['accountSession'],
+            (previous) => {
+              if (!previous) {
+                return previous;
+              }
+              return { ...previous, snapshot: snapshotForCache };
             }
-            return { ...previous, snapshot: snapshotForCache };
-          });
+          );
         }
       } catch (error) {
         const statusCode =
-          typeof error === 'object' && error && 'status' in error ? (error as { status?: number }).status : null;
+          typeof error === 'object' && error && 'status' in error
+            ? (error as { status?: number }).status
+            : null;
         if (statusCode === 401) {
           const refreshed = await refresh();
           latestSnapshot = refreshed?.snapshot ?? latestSnapshot ?? snapshot;
         } else {
-          console.error('[StartCall] Failed to fetch snapshot for partner limit check', error);
+          console.error(
+            '[StartCall] Failed to fetch snapshot for partner limit check',
+            error
+          );
         }
       }
     }
@@ -538,7 +639,10 @@ export default function StartCall() {
         const refreshed = await refresh();
         latestSnapshot = refreshed?.snapshot ?? snapshot;
       } catch (error) {
-        console.error('[StartCall] Failed to refresh before partner action', error);
+        console.error(
+          '[StartCall] Failed to refresh before partner action',
+          error
+        );
         toast.error(t`Unable to create partner`, {
           description: t`Please try again in a moment.`,
         });
@@ -552,34 +656,50 @@ export default function StartCall() {
       return false;
     }
     return true;
-  }, [partnerLimitEnabled, token, refresh, snapshot, partnerLimit, queryClient]);
+  }, [
+    partnerLimitEnabled,
+    token,
+    refresh,
+    snapshot,
+    partnerLimit,
+    queryClient,
+  ]);
 
   const adjustPartnerLimitUsage = useCallback(
     (delta: number) => {
-      queryClient.setQueryData<SessionData | undefined>(['accountSession'], (previous) => {
-        if (!previous?.snapshot?.limits?.partners) {
-          return previous;
-        }
-        const partnersLimit = previous.snapshot.limits.partners;
-        const limitValue = partnersLimit.limit;
-        const nextUsed = Math.max(0, partnersLimit.used + delta);
-        const nextRemaining = limitValue !== null ? Math.max(limitValue - nextUsed, 0) : partnersLimit.remaining;
-        return {
-          ...previous,
-          snapshot: {
-            ...previous.snapshot,
-            limits: {
-              ...previous.snapshot.limits,
-              partners: {
-                ...partnersLimit,
-                used: nextUsed,
-                remaining: nextRemaining,
-                blocked: limitValue !== null ? nextUsed >= limitValue : partnersLimit.blocked,
+      queryClient.setQueryData<SessionData | undefined>(
+        ['accountSession'],
+        (previous) => {
+          if (!previous?.snapshot?.limits?.partners) {
+            return previous;
+          }
+          const partnersLimit = previous.snapshot.limits.partners;
+          const limitValue = partnersLimit.limit;
+          const nextUsed = Math.max(0, partnersLimit.used + delta);
+          const nextRemaining =
+            limitValue !== null
+              ? Math.max(limitValue - nextUsed, 0)
+              : partnersLimit.remaining;
+          return {
+            ...previous,
+            snapshot: {
+              ...previous.snapshot,
+              limits: {
+                ...previous.snapshot.limits,
+                partners: {
+                  ...partnersLimit,
+                  used: nextUsed,
+                  remaining: nextRemaining,
+                  blocked:
+                    limitValue !== null
+                      ? nextUsed >= limitValue
+                      : partnersLimit.blocked,
+                },
               },
             },
-          },
-        };
-      });
+          };
+        }
+      );
     },
     [queryClient]
   );
@@ -603,7 +723,8 @@ export default function StartCall() {
     setIsStartingCall(true);
 
     try {
-      const partnerIdForSession = selectedMode === 'roleplay' ? selectedPartnerId : null;
+      const partnerIdForSession =
+        selectedMode === 'roleplay' ? selectedPartnerId : null;
       let partnerForSession: ConversationPartner | null = null;
 
       if (selectedMode === 'roleplay') {
@@ -612,7 +733,10 @@ export default function StartCall() {
           setIsStartingCall(false);
           return;
         }
-        partnerForSession = roleplayPartners.find((partner) => partner.id === partnerIdForSession) || null;
+        partnerForSession =
+          roleplayPartners.find(
+            (partner) => partner.id === partnerIdForSession
+          ) || null;
         if (!partnerForSession) {
           toast.error(t`Select a language partner`);
           setIsStartingCall(false);
@@ -642,8 +766,13 @@ export default function StartCall() {
         }
       }
 
-      const userNativeLang = languages.nativeLang || languages.learningLang || 'en';
-      const partnerNativeLang = partnerForSession?.nativeLang || languages.learningLang || languages.nativeLang || 'en';
+      const userNativeLang =
+        languages.nativeLang || languages.learningLang || 'en';
+      const partnerNativeLang =
+        partnerForSession?.nativeLang ||
+        languages.learningLang ||
+        languages.nativeLang ||
+        'en';
       let spokenLanguages: { user: string; partner: string };
 
       if (selectedMode === 'roleplay') {
@@ -668,7 +797,10 @@ export default function StartCall() {
       }
 
       const userNativeLanguage =
-        languages.nativeLang || snapshot?.user.nativeLang || settings.languages?.nativeLang || null;
+        languages.nativeLang ||
+        snapshot?.user.nativeLang ||
+        settings.languages?.nativeLang ||
+        null;
       const config: SessionConfig = {
         languages,
         mode: selectedMode,
@@ -745,7 +877,8 @@ export default function StartCall() {
     const stepLabelClass = 'text-muted-foreground/70';
     const step3CardClass = cn(
       stepCardBase,
-      !screenSharePreviewStream && 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]'
+      !screenSharePreviewStream &&
+        'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]'
     );
     const previewContainerClass = cn(
       'rounded-xl border border-dashed overflow-hidden flex items-center justify-center h-28 sm:h-32',
@@ -761,21 +894,56 @@ export default function StartCall() {
         : screenShareError === 'no_audio'
         ? t`No audio detected. Share the window that plays your call and enable audio.`
         : null;
-    const StepHeader = ({ step, title, extra }: { step: number; title: ReactNode; extra?: ReactNode }) => (
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className={cn('text-[10px] font-semibold uppercase tracking-[0.25em] mb-0.5', stepLabelClass)}>
-            {t`Step ${step}`}
-          </p>
-          <div className={`${getTextClass('title')} text-sm font-semibold`}>{title}</div>
+    const StepHeader = ({
+      step,
+      title,
+      extra,
+    }: {
+      step: number;
+      title: ReactNode;
+      extra?: ReactNode;
+    }) => {
+      const stepLabel = (() => {
+        switch (step) {
+          case 1:
+            return t`Step 1`;
+          case 2:
+            return t`Step 2`;
+          case 3:
+            return t`Step 3`;
+          case 4:
+            return t`Step 4`;
+          case 5:
+            return t`Step 5`;
+          default:
+            return t`Step ${step}`;
+        }
+      })();
+
+      return (
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p
+              className={cn(
+                'text-[10px] font-semibold uppercase tracking-[0.25em] mb-0.5',
+                stepLabelClass
+              )}
+            >
+              {stepLabel}
+            </p>
+            <div className={`${getTextClass('title')} text-sm font-semibold`}>
+              {title}
+            </div>
+          </div>
+          {extra}
         </div>
-        {extra}
-      </div>
-    );
+      );
+    };
 
     const step5CardClass = cn(
       stepCardBase,
-      screenSharePreviewStream && 'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.2)] shadow-emerald-500/30'
+      screenSharePreviewStream &&
+        'border-emerald-500/70 shadow-[0_0_0_1px_rgba(16,185,129,0.2)] shadow-emerald-500/30'
     );
 
     return (
@@ -794,59 +962,72 @@ export default function StartCall() {
                       ''
                     )}
                   >
-                    <img src={icon.src} alt={icon.alt} className="h-4 w-4 object-contain" />
+                    <img
+                      src={icon.src}
+                      alt={icon.alt}
+                      className="h-4 w-4 object-contain"
+                    />
                   </div>
                 ))}
               </div>
             }
           />
           <p className={`${getTextClass('body')} leading-relaxed`}>
-            <Trans>Open Zoom, Discord, Meet, or any call app and join the room you're about to share.</Trans>
+            <Trans>
+              Open Zoom, Discord, Meet, or any call app and join the room you're
+              about to share.
+            </Trans>
           </p>
         </div>
 
         <div className={stepCardBase}>
           <div className="space-y-2">
-            <p className={cn('text-[10px] font-semibold uppercase tracking-[0.25em] mb-0.5', stepLabelClass)}>
-              {t`Step ${2}`}
-            </p>
-            <div className="flex items-center justify-between gap-3">
-              <div className={`${getTextClass('title')} text-sm font-semibold`}>
-                {t`Both speak ${learningLanguageName} in this call?`}
-              </div>
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  className={cn(
-                    'px-3 py-1 rounded-full text-[11px] font-medium transition-all border cursor-pointer',
-                    liveCallLanguageMode === 'shared'
-                      ? 'bg-primary/10 text-primary border-primary/30'
-                      : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:border-border'
-                  )}
-                  onClick={() => setLiveCallLanguageMode('shared')}
-                >
-                  <Trans>Yes</Trans>
-                </button>
-                <button
-                  type="button"
-                  className={cn(
-                    'px-3 py-1 rounded-full text-[11px] font-medium transition-all border cursor-pointer',
-                    liveCallLanguageMode === 'custom'
-                      ? 'bg-primary/10 text-primary border-primary/30'
-                      : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:border-border'
-                  )}
-                  onClick={() => {
-                    setLiveCallLanguageMode('custom');
-                    setLiveCallCustomPair((prev) => ({
-                      youLang: prev.youLang || languages.learningLang || languages.nativeLang || '',
-                      partnerLang: prev.partnerLang || languages.nativeLang || languages.learningLang || '',
-                    }));
-                  }}
-                >
-                  <Trans>No</Trans>
-                </button>
-              </div>
-            </div>
+            <StepHeader
+              step={2}
+              title={t`Both speak ${learningLanguageName} in this call?`}
+              extra={
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    className={cn(
+                      'px-3 py-1 rounded-full text-[11px] font-medium transition-all border cursor-pointer',
+                      liveCallLanguageMode === 'shared'
+                        ? 'bg-primary/10 text-primary border-primary/30'
+                        : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:border-border'
+                    )}
+                    onClick={() => setLiveCallLanguageMode('shared')}
+                  >
+                    <Trans>Yes</Trans>
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      'px-3 py-1 rounded-full text-[11px] font-medium transition-all border cursor-pointer',
+                      liveCallLanguageMode === 'custom'
+                        ? 'bg-primary/10 text-primary border-primary/30'
+                        : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:border-border'
+                    )}
+                    onClick={() => {
+                      setLiveCallLanguageMode('custom');
+                      setLiveCallCustomPair((prev) => ({
+                        youLang:
+                          prev.youLang ||
+                          languages.learningLang ||
+                          languages.nativeLang ||
+                          '',
+                        partnerLang:
+                          prev.partnerLang ||
+                          languages.nativeLang ||
+                          languages.learningLang ||
+                          '',
+                      }));
+                    }}
+                  >
+                    <Trans>No</Trans>
+                  </button>
+                </div>
+              }
+            />
           </div>
 
           {liveCallLanguageMode === 'custom' && (
@@ -868,7 +1049,9 @@ export default function StartCall() {
                             ? 'border-primary bg-primary text-primary-foreground'
                             : 'border-border hover:border-primary/50 hover:bg-primary/5'
                         )}
-                        onClick={() => handleCustomLanguageSelect('you', lang.code)}
+                        onClick={() =>
+                          handleCustomLanguageSelect('you', lang.code)
+                        }
                       >
                         <span className="text-sm">{lang.flag}</span>
                         <span>{lang.name}</span>
@@ -883,7 +1066,8 @@ export default function StartCall() {
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {LANGUAGES.map((lang) => {
-                    const isSelected = liveCallCustomPair.partnerLang === lang.code;
+                    const isSelected =
+                      liveCallCustomPair.partnerLang === lang.code;
                     return (
                       <button
                         key={`partner-${lang.code}`}
@@ -894,7 +1078,9 @@ export default function StartCall() {
                             ? 'border-primary bg-primary text-primary-foreground'
                             : 'border-border hover:border-primary/50 hover:bg-primary/5'
                         )}
-                        onClick={() => handleCustomLanguageSelect('partner', lang.code)}
+                        onClick={() =>
+                          handleCustomLanguageSelect('partner', lang.code)
+                        }
                       >
                         <span className="text-sm">{lang.flag}</span>
                         <span>{lang.name}</span>
@@ -908,11 +1094,14 @@ export default function StartCall() {
         </div>
 
         <div className={step3CardClass}>
-          <StepHeader step={3} title={<Trans>Share your whole screen with audio</Trans>} />
+          <StepHeader
+            step={3}
+            title={<Trans>Share your whole screen with audio</Trans>}
+          />
           <p className={`${getTextClass('body')} leading-relaxed`}>
             <Trans>
-              Share the screen where your call is already open, choose "Entire screen," and toggle "Also share system
-              audio."
+              Share the screen where your call is already open, choose "Entire
+              screen," and toggle "Also share system audio."
             </Trans>
           </p>
           <div className="flex flex-wrap gap-2">
@@ -922,11 +1111,18 @@ export default function StartCall() {
               disabled={isRequestingScreenShare || isLiveCallStarting}
               className={cn(
                 'cursor-pointer',
-                (isRequestingScreenShare || isLiveCallStarting) && 'cursor-not-allowed opacity-70'
+                (isRequestingScreenShare || isLiveCallStarting) &&
+                  'cursor-not-allowed opacity-70'
               )}
             >
-              {isRequestingScreenShare && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {screenSharePreviewStream ? <Trans>Change screen</Trans> : <Trans>Select screen</Trans>}
+              {isRequestingScreenShare && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              )}
+              {screenSharePreviewStream ? (
+                <Trans>Change screen</Trans>
+              ) : (
+                <Trans>Select screen</Trans>
+              )}
             </Button>
             {screenSharePreviewStream && (
               <Button
@@ -934,7 +1130,10 @@ export default function StartCall() {
                 variant="outline"
                 onClick={handleRemoveScreenShare}
                 disabled={isLiveCallStarting}
-                className={cn('cursor-pointer', isLiveCallStarting && 'cursor-not-allowed opacity-70')}
+                className={cn(
+                  'cursor-pointer',
+                  isLiveCallStarting && 'cursor-not-allowed opacity-70'
+                )}
               >
                 <Trans>Remove</Trans>
               </Button>
@@ -942,19 +1141,29 @@ export default function StartCall() {
           </div>
           {screenSharePreviewStream && (
             <div className={previewContainerClass}>
-              <video ref={screenShareVideoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+              <video
+                ref={screenShareVideoRef}
+                autoPlay
+                muted
+                playsInline
+                className="h-full w-full object-cover"
+              />
             </div>
           )}
           {screenSharePreviewStream && (
             <p className="text-[11px] font-semibold text-emerald-500">
-              <Trans>Screen sharing ready. Keep it running so Glass can listen in.</Trans>
+              <Trans>
+                Screen sharing ready. Keep it running so Glass can listen in.
+              </Trans>
             </p>
           )}
           {screenShareStatus && (
             <p
               className={cn(
                 'text-[11px]',
-                screenShareError === 'denied' || screenShareError === 'no_audio' ? 'text-red-500' : 'text-amber-400'
+                screenShareError === 'denied' || screenShareError === 'no_audio'
+                  ? 'text-red-500'
+                  : 'text-amber-400'
               )}
             >
               {screenShareStatus}
@@ -965,7 +1174,10 @@ export default function StartCall() {
         <div className={stepCardBase}>
           <StepHeader step={4} title={<Trans>Clear your view</Trans>} />
           <p className={`${getTextClass('body')} leading-relaxed`}>
-            <Trans>Use the browser's "Hide" option on the sharing bar so it doesn't cover Glass.</Trans>
+            <Trans>
+              Use the browser's "Hide" option on the sharing bar so it doesn't
+              cover Glass.
+            </Trans>
           </p>
         </div>
 
@@ -974,12 +1186,20 @@ export default function StartCall() {
           <p className={`${getTextClass('body')} leading-relaxed`}>
             {screenSharePreviewStream ? (
               isLiveCallStarting ? (
-                <Trans>Connecting to Glass. Keep your screen share running while we join.</Trans>
+                <Trans>
+                  Connecting to Glass. Keep your screen share running while we
+                  join.
+                </Trans>
               ) : (
-                <Trans>Press Start Call below to connect. Glass will use your mic plus the shared audio.</Trans>
+                <Trans>
+                  Press Start Call below to connect. Glass will use your mic
+                  plus the shared audio.
+                </Trans>
               )
             ) : (
-              <Trans>Once your screen is shared, the Start Call button will unlock.</Trans>
+              <Trans>
+                Once your screen is shared, the Start Call button will unlock.
+              </Trans>
             )}
           </p>
         </div>
@@ -995,7 +1215,10 @@ export default function StartCall() {
 
   // Debug: Log when StartCall UI should show
   // Show StartCall UI until actually connected
-  const shouldShow = status.value === 'idle' || status.value === 'disconnected' || status.value === 'connecting';
+  const shouldShow =
+    status.value === 'idle' ||
+    status.value === 'disconnected' ||
+    status.value === 'connecting';
 
   return (
     <>
@@ -1004,7 +1227,9 @@ export default function StartCall() {
           <motion.div
             key="overlay"
             ref={containerRef}
-            className={'fixed inset-0 p-3 sm:p-4 flex items-center justify-center bg-background'}
+            className={
+              'fixed inset-0 p-3 sm:p-4 flex items-center justify-center bg-background'
+            }
             initial="initial"
             animate="enter"
             exit="exit"
@@ -1015,7 +1240,9 @@ export default function StartCall() {
             }}
           >
             {/* Start Call Button */}
-            {step === 'start' && <StartCallEntry onStart={handleInitialStart} />}
+            {step === 'start' && (
+              <StartCallEntry onStart={handleInitialStart} />
+            )}
 
             {/* Removed: Language and Level selection moved to onboarding */}
 
@@ -1048,10 +1275,17 @@ export default function StartCall() {
                   generationJob={activeGenerationJob}
                   onDismissGenerationJob={() => setActiveGenerationJob(null)}
                 />
-                <div className={'flex justify-between items-center w-full'}>
+                <div
+                  className={
+                    'flex justify-between items-center w-full gap-2 sm:gap-0 max-w-[448px]'
+                  }
+                >
                   <button
                     onClick={() => setStep('start')}
-                    className={cn(getBackButtonClass(), 'cursor-pointer')}
+                    className={cn(
+                      getBackButtonClass(),
+                      'cursor-pointer flex-shrink-0'
+                    )}
                     disabled={isStartingCall}
                   >
                     <Trans>← Back</Trans>
@@ -1061,16 +1295,27 @@ export default function StartCall() {
                     disabled={!selectedPartnerId || isStartingCall}
                     variant="default"
                     className={cn(
-                      'cursor-pointer rounded-full px-6 py-2 sm:px-7 sm:py-2.5 inline-flex items-center gap-1.5 font-semibold tracking-tight text-white bg-emerald-500 hover:bg-emerald-600',
-                      (!selectedPartnerId || isStartingCall) && 'opacity-50 cursor-not-allowed'
+                      'cursor-pointer rounded-full px-4 py-2 sm:px-7 sm:py-2.5 inline-flex items-center gap-1.5 font-semibold tracking-tight text-white bg-emerald-500 hover:bg-emerald-600 text-sm sm:text-base flex-shrink-0',
+                      (!selectedPartnerId || isStartingCall) &&
+                        'opacity-50 cursor-not-allowed'
                     )}
                   >
                     {isStartingCall ? (
-                      <Loader2 className="size-4 opacity-80 animate-spin" strokeWidth={2.25} />
+                      <Loader2
+                        className="size-4 opacity-80 animate-spin"
+                        strokeWidth={2.25}
+                      />
                     ) : (
-                      <Phone className="size-4 opacity-50 fill-current" strokeWidth={0} />
+                      <Phone
+                        className="size-4 opacity-50 fill-current"
+                        strokeWidth={0}
+                      />
                     )}
-                    {isStartingCall ? <Trans>Connecting...</Trans> : <Trans>Start Call</Trans>}
+                    {isStartingCall ? (
+                      <Trans>Connecting...</Trans>
+                    ) : (
+                      <Trans>Start Call</Trans>
+                    )}
                   </Button>
                 </div>
               </motion.div>
@@ -1078,7 +1323,11 @@ export default function StartCall() {
 
             {/* Instructions Screen */}
             {step === 'instructions' && selectedMode && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
                 <StartCallInstructions
                   selectedMode={selectedMode}
                   selectedRoleplayPartner={selectedRoleplayPartner}
@@ -1109,7 +1358,9 @@ export default function StartCall() {
         token={token ?? null}
         learningLang={languages.learningLang || undefined}
         nativeLang={languages.nativeLang || null}
-        languageLevel={settings.languageLevel || snapshot?.user.languageLevel || null}
+        languageLevel={
+          settings.languageLevel || snapshot?.user.languageLevel || null
+        }
         partnerLimitBlocked={partnerLimitBlocked}
         onQuotaBlocked={() => setPartnerQuotaDialogOpen(true)}
         onPartnerCreated={handlePartnerCreated}

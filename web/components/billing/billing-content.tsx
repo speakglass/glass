@@ -15,7 +15,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAccountSession } from '@/contexts/account-session-context';
 import {
   createCheckoutSession,
@@ -33,8 +39,18 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.speakglass.com';
 
 function CheckIcon() {
   return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+    <svg
+      className="w-3 h-3 sm:w-4 sm:h-4"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2.5}
+        d="M5 13l4 4L19 7"
+      />
     </svg>
   );
 }
@@ -316,7 +332,7 @@ function PricingCard({
 
   if (plan.popular) {
     return (
-      <div className="relative rounded-2xl lg:rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] lg:scale-[1.02] shadow-xl z-10 px-6 py-7 flex flex-col h-full transition-all">
+      <div className="relative rounded-xl sm:rounded-2xl lg:rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] lg:scale-[1.02] shadow-xl z-10 px-4 py-4 sm:px-6 sm:py-7 flex flex-col h-full transition-all">
         <CardContent
           plan={plan}
           isYearly={isYearly}
@@ -334,15 +350,17 @@ function PricingCard({
   const isFirst = index === 0;
   const isLast = index === total - 1;
   const roundedClass = isFirst
-    ? 'rounded-2xl lg:rounded-l-3xl lg:rounded-r-none'
+    ? 'rounded-xl sm:rounded-2xl lg:rounded-l-3xl lg:rounded-r-none'
     : isLast
-    ? 'rounded-2xl lg:rounded-r-3xl lg:rounded-l-none'
-    : 'rounded-2xl lg:rounded-none';
-  const borderClass = isFirst ? 'border' : 'border lg:border-t lg:border-r lg:border-b lg:border-l-0';
+    ? 'rounded-xl sm:rounded-2xl lg:rounded-r-3xl lg:rounded-l-none'
+    : 'rounded-xl sm:rounded-2xl lg:rounded-none';
+  const borderClass = isFirst
+    ? 'border'
+    : 'border lg:border-t lg:border-r lg:border-b lg:border-l-0';
 
   return (
     <div
-      className={`relative ${roundedClass} ${borderClass} border-black/5 dark:border-white/6 bg-white dark:bg-[#151515] p-6 flex flex-col h-full transition-all`}
+      className={`relative ${roundedClass} ${borderClass} border-black/5 dark:border-white/6 bg-white dark:bg-[#151515] p-4 sm:p-6 flex flex-col h-full transition-all`}
     >
       <CardContent
         plan={plan}
@@ -379,29 +397,41 @@ function CardContent({
 }) {
   return (
     <>
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold mb-4 text-emphasis">{plan.name}</h3>
+      <div className="mb-4 sm:mb-6">
+        <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-emphasis">
+          {plan.name}
+        </h3>
         <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-semibold text-emphasis">{plan.price}</span>
-          {plan.period && <span className="text-subtle text-base ml-1">{plan.period}</span>}
+          <span className="text-3xl sm:text-4xl font-semibold text-emphasis">
+            {plan.price}
+          </span>
+          {plan.period && (
+            <span className="text-subtle text-sm sm:text-base ml-1">
+              {plan.period}
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 min-h-[68px] py-5 px-6 -mx-6 mb-6 border-t border-b border-black/5 dark:border-white/6">
+      <div className="flex items-center gap-2 min-h-[56px] sm:min-h-[68px] py-3 px-4 sm:py-5 sm:px-6 -mx-4 sm:-mx-6 mb-4 sm:mb-6 border-t border-b border-black/5 dark:border-white/6">
         {plan.showBillingToggle && (
-          <Switch checked={isYearly} onCheckedChange={setIsYearly} aria-label="Toggle billing period" />
+          <Switch
+            checked={isYearly}
+            onCheckedChange={setIsYearly}
+            aria-label="Toggle billing period"
+          />
         )}
-        <div className="text-subtle text-sm">{plan.billingInfo}</div>
+        <div className="text-subtle text-xs sm:text-sm">{plan.billingInfo}</div>
       </div>
 
-      <div className="flex-1 mb-8">
-        <ul className="space-y-4">
+      <div className="flex-1 mb-6 sm:mb-8">
+        <ul className="space-y-2.5 sm:space-y-4">
           {plan.features.map((feature, index) => (
-            <li key={index} className="flex items-start gap-3">
+            <li key={index} className="flex items-start gap-2 sm:gap-3">
               <span className="text-blue-500 mt-0.5 shrink-0">
                 <CheckIcon />
               </span>
-              <span className="text-emphasis text-[13px]">
+              <span className="text-emphasis text-xs sm:text-[13px]">
                 {feature.underlined ? (
                   <span className="underline decoration-1 underline-offset-2 decoration-black/30 dark:decoration-white/30">
                     {feature.text}
@@ -416,28 +446,50 @@ function CardContent({
       </div>
 
       {plan.requiresContact && plan.cta && onContact ? (
-        <Button variant={plan.ctaVariant || 'secondary'} size="lg" className="w-full" onClick={onContact}>
+        <Button
+          variant={plan.ctaVariant || 'secondary'}
+          size="lg"
+          className="w-full text-xs sm:text-sm h-9 sm:h-10"
+          onClick={onContact}
+        >
           {plan.cta}
         </Button>
       ) : plan.requiresCheckout && plan.cta ? (
         <Button
           variant={plan.ctaVariant || 'default'}
           size="lg"
-          className="w-full"
+          className="w-full text-xs sm:text-sm h-9 sm:h-10"
           onClick={() => void onCheckout(currentBillingPlan)}
           disabled={planLocked || loadingPlan !== null}
         >
-          {loadingPlan === currentBillingPlan && !planLocked && <Loader2 className="h-4 w-4 animate-spin" />}
+          {loadingPlan === currentBillingPlan && !planLocked && (
+            <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+          )}
           {planLocked ? <Trans>Current plan</Trans> : plan.cta}
         </Button>
       ) : plan.cta && plan.ctaHref ? (
         planLocked ? (
-          <Button variant={plan.ctaVariant || 'secondary'} size="lg" className="w-full" disabled>
+          <Button
+            variant={plan.ctaVariant || 'secondary'}
+            size="lg"
+            className="w-full text-xs sm:text-sm h-9 sm:h-10"
+            disabled
+          >
             <Trans>Current plan</Trans>
           </Button>
         ) : (
-          <Button variant={plan.ctaVariant || 'secondary'} size="lg" className="w-full" asChild>
-            <Link href={plan.ctaHref} prefetch={false} target="_blank" rel="noreferrer">
+          <Button
+            variant={plan.ctaVariant || 'secondary'}
+            size="lg"
+            className="w-full text-xs sm:text-sm h-9 sm:h-10"
+            asChild
+          >
+            <Link
+              href={plan.ctaHref}
+              prefetch={false}
+              target="_blank"
+              rel="noreferrer"
+            >
               {plan.cta}
             </Link>
           </Button>
@@ -458,15 +510,31 @@ function FeatureTableRow({ row }: { row: FeatureComparisonRow }) {
         <span className="text-subtle text-lg">✗</span>
       );
     }
-    return <span className={`text-xs md:text-sm ${highlight ? 'text-emphasis' : 'text-subtle'}`}>{value}</span>;
+    return (
+      <span
+        className={`text-xs md:text-sm ${
+          highlight ? 'text-emphasis' : 'text-subtle'
+        }`}
+      >
+        {value}
+      </span>
+    );
   };
 
   return (
     <tr className="border-b border-black/5 dark:border-white/10">
-      <td className="py-4 px-2 md:px-4 text-xs md:text-sm text-subtle">{row.feature}</td>
-      <td className="py-4 px-1 md:px-3 text-center">{renderCell(row.free)}</td>
-      <td className="py-4 px-1 md:px-3 text-center bg-black/5 dark:bg-white/5">{renderCell(row.pro, true)}</td>
-      <td className="py-4 px-1 md:px-3 text-center">{renderCell(row.enterprise, true)}</td>
+      <td className="py-2.5 sm:py-4 px-2 md:px-4 text-xs md:text-sm text-subtle">
+        {row.feature}
+      </td>
+      <td className="py-2.5 sm:py-4 px-1 md:px-3 text-center">
+        {renderCell(row.free)}
+      </td>
+      <td className="py-2.5 sm:py-4 px-1 md:px-3 text-center bg-black/5 dark:bg-white/5">
+        {renderCell(row.pro, true)}
+      </td>
+      <td className="py-2.5 sm:py-4 px-1 md:px-3 text-center">
+        {renderCell(row.enterprise, true)}
+      </td>
     </tr>
   );
 }
@@ -482,19 +550,29 @@ export function BillingContent() {
     companySize: '',
     message: '',
   });
-  const billingDisabled = snapshot?.billing?.selfHosted || !snapshot?.billing?.enabled;
+  const billingDisabled =
+    snapshot?.billing?.selfHosted || !snapshot?.billing?.enabled;
   const planDisplayName = getPlanDisplayName(snapshot?.billing?.plan);
-  const planStatusLabel = getPlanStatusLabel(snapshot?.billing?.status, snapshot?.billing?.active);
-  const planRenewalLabel = formatPlanRenewalDate(snapshot?.billing?.currentPeriodEnd);
+  const planStatusLabel = getPlanStatusLabel(
+    snapshot?.billing?.status,
+    snapshot?.billing?.active
+  );
+  const planRenewalLabel = formatPlanRenewalDate(
+    snapshot?.billing?.currentPeriodEnd
+  );
   const locale = useLocale();
   const [isYearly, setIsYearly] = useState(true);
   const pricingPlans = getPricingPlans(locale, isYearly);
   const featureComparison = getFeatureComparison();
   const currentPlanKey = normalizePlanKey(snapshot?.billing?.plan);
   const isFreePlan = currentPlanKey === 'free';
-  const planIntervalLabel = getPlanIntervalLabel(snapshot?.billing?.planInterval);
+  const planIntervalLabel = getPlanIntervalLabel(
+    snapshot?.billing?.planInterval
+  );
   const planStatusRaw = snapshot?.billing?.status?.toLowerCase();
-  const scheduledCancelAt = formatPlanRenewalDate(snapshot?.billing?.cancelAt || null);
+  const scheduledCancelAt = formatPlanRenewalDate(
+    snapshot?.billing?.cancelAt || null
+  );
   const isCancelled =
     planStatusRaw === 'canceled' ||
     planStatusRaw === 'cancelled' ||
@@ -585,56 +663,65 @@ export function BillingContent() {
 
   if (status === 'loading' || status === 'idle') {
     return (
-      <div className="flex h-40 items-center justify-center gap-2 text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        <Trans>Loading billing…</Trans>
+      <div className="flex h-32 sm:h-40 items-center justify-center gap-2 text-muted-foreground">
+        <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+        <span className="text-xs sm:text-sm">
+          <Trans>Loading billing…</Trans>
+        </span>
       </div>
     );
   }
 
   if (!snapshot) {
     return (
-      <div className="rounded-3xl border border-border/60 bg-card/60 px-6 py-12 text-center text-sm text-muted-foreground">
-        <Trans>We couldn't load your account details. Please refresh and try again.</Trans>
+      <div className="rounded-xl sm:rounded-3xl border border-border/60 bg-card/60 px-4 py-8 sm:px-6 sm:py-12 text-center text-xs sm:text-sm text-muted-foreground">
+        <Trans>
+          We couldn't load your account details. Please refresh and try again.
+        </Trans>
       </div>
     );
   }
 
   if (billingDisabled) {
     return (
-      <div className="rounded-3xl border border-border/60 bg-card/60 px-6 py-12 text-center space-y-3">
-        <h3 className="text-lg font-semibold">
+      <div className="rounded-xl sm:rounded-3xl border border-border/60 bg-card/60 px-4 py-8 sm:px-6 sm:py-12 text-center space-y-2 sm:space-y-3">
+        <h3 className="text-base sm:text-lg font-semibold">
           <Trans>Billing is not available</Trans>
         </h3>
-        <p className="text-sm text-muted-foreground">
-          <Trans>This Glass instance is running in self-hosted mode, so upgrades aren't required.</Trans>
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          <Trans>
+            This Glass instance is running in self-hosted mode, so upgrades
+            aren't required.
+          </Trans>
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-10">
-      <section className="rounded-3xl border border-border/70 bg-card/70 px-6 py-6 md:px-8 md:py-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="space-y-6 sm:space-y-10">
+      <section className="rounded-xl sm:rounded-3xl border border-border/70 bg-card/70 px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
+        <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2 sm:space-y-3">
+            <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <Trans>Current plan</Trans>
             </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground">{planDisplayName}</h2>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h2 className="text-xl sm:text-3xl font-semibold tracking-tight text-foreground">
+                {planDisplayName}
+              </h2>
               {planIntervalLabel && (
-                <span className="rounded-full border border-border/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="rounded-full border border-border/70 px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {planIntervalLabel}
                 </span>
               )}
               {!isFreePlan && planStatusLabel && (
-                <span className="rounded-full border border-border/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="rounded-full border border-border/70 px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {planStatusLabel}
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {scheduledCancelAt ? (
                 <Trans>Plan ends on {scheduledCancelAt}</Trans>
               ) : planRenewalLabel ? (
@@ -644,32 +731,39 @@ export function BillingContent() {
                   <Trans>Renews on {planRenewalLabel}</Trans>
                 )
               ) : isFreePlan ? (
-                <Trans>The Free plan never expires. Upgrade anytime for unlimited history.</Trans>
+                <Trans>
+                  The Free plan never expires. Upgrade anytime for unlimited
+                  history.
+                </Trans>
               ) : (
                 <Trans>Billing active.</Trans>
               )}
             </p>
           </div>
-          <div className="flex w-full flex-col gap-3 md:w-auto">
+          <div className="flex w-full flex-col gap-2 sm:gap-3 md:w-auto">
             {isFreePlan ? (
               <Button
                 size="lg"
-                className="cursor-pointer w-full md:w-auto"
+                className="cursor-pointer w-full md:w-auto text-sm h-9 sm:h-10"
                 onClick={() => void handleCheckout(checkoutPlan)}
                 disabled={loadingPlan !== null}
               >
-                {loadingPlan === checkoutPlan && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loadingPlan === checkoutPlan && (
+                  <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+                )}
                 {checkoutLabel}
               </Button>
             ) : (
               <Button
                 variant="outline"
                 size="lg"
-                className="cursor-pointer w-full md:w-auto"
+                className="cursor-pointer w-full md:w-auto text-xs sm:text-sm h-9 sm:h-10"
                 onClick={() => void handleManageSubscription()}
                 disabled={portalLoading}
               >
-                {portalLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {portalLoading && (
+                  <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+                )}
                 <Trans>Manage subscription</Trans>
               </Button>
             )}
@@ -677,19 +771,22 @@ export function BillingContent() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-border/60 bg-card/60 px-4 py-8 md:px-8 md:py-12">
-        <div className="flex flex-col items-center justify-center text-center mb-12">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <section className="rounded-xl sm:rounded-3xl border border-border/60 bg-card/60 px-3 py-6 sm:px-4 sm:py-8 md:px-8 md:py-12">
+        <div className="flex flex-col items-center justify-center text-center mb-8 sm:mb-12">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <Trans>Pricing</Trans>
           </p>
-          <h3 className="text-4xl font-semibold text-emphasis mt-4 mb-4">
+          <h3 className="text-2xl sm:text-4xl font-semibold text-emphasis mt-3 sm:mt-4 mb-3 sm:mb-4">
             <Trans>Scale with the right plan</Trans>
           </h3>
-          <p className="text-subtle text-base">
-            <Trans>Choose monthly or yearly billing and unlock Glass features tailored to your team.</Trans>
+          <p className="text-subtle text-sm sm:text-base">
+            <Trans>
+              Choose monthly or yearly billing and unlock Glass features
+              tailored to your team.
+            </Trans>
           </p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-0 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-5 lg:gap-0 mb-6 sm:mb-8">
           {pricingPlans.map((plan, index) => (
             <PricingCard
               key={plan.name}
@@ -700,36 +797,42 @@ export function BillingContent() {
               setIsYearly={setIsYearly}
               loadingPlan={loadingPlan}
               onCheckout={handleCheckout}
-              onContact={plan.requiresContact ? () => setContactDialogOpen(true) : undefined}
+              onContact={
+                plan.requiresContact
+                  ? () => setContactDialogOpen(true)
+                  : undefined
+              }
               planLocked={PLAN_RANK[currentPlanKey] >= PLAN_RANK[plan.planKey]}
             />
           ))}
         </div>
       </section>
 
-      <section className="rounded-3xl border border-border/60 bg-card/60 px-4 py-8 md:px-8 md:py-12">
-        <div className="flex flex-col items-center justify-center text-center mb-8">
-          <h3 className="text-3xl font-semibold text-emphasis mb-3">
+      <section className="rounded-xl sm:rounded-3xl border border-border/60 bg-card/60 px-3 py-6 sm:px-4 sm:py-8 md:px-8 md:py-12">
+        <div className="flex flex-col items-center justify-center text-center mb-6 sm:mb-8">
+          <h3 className="text-xl sm:text-3xl font-semibold text-emphasis mb-2 sm:mb-3">
             <Trans>Compare plans</Trans>
           </h3>
-          <p className="text-subtle text-base">
-            <Trans>See all features across plans and find what works best for you.</Trans>
+          <p className="text-subtle text-sm sm:text-base">
+            <Trans>
+              See all features across plans and find what works best for you.
+            </Trans>
           </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-black/5 dark:border-white/10">
-                <th className="text-left py-4 px-2 md:px-4 text-sm md:text-base font-semibold text-foreground bg-card/95 w-1/4">
+                <th className="text-left py-2.5 sm:py-4 px-2 md:px-4 text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
                   {t`Feature`}
                 </th>
-                <th className="text-center py-4 px-1 md:px-3 text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
+                <th className="text-center py-2.5 sm:py-4 px-1 md:px-3 text-[10px] sm:text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
                   {t`Free`}
                 </th>
-                <th className="text-center py-4 px-1 md:px-3 text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
+                <th className="text-center py-2.5 sm:py-4 px-1 md:px-3 text-[10px] sm:text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
                   {t`Pro`}
                 </th>
-                <th className="text-center py-4 px-1 md:px-3 text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
+                <th className="text-center py-2.5 sm:py-4 px-1 md:px-3 text-[10px] sm:text-xs md:text-base font-semibold text-foreground bg-card/95 w-1/4">
                   {t`Enterprise`}
                 </th>
               </tr>
@@ -750,13 +853,15 @@ export function BillingContent() {
               <Trans>Contact sales</Trans>
             </DialogTitle>
             <DialogDescription>
-              <Trans>Tell us a little about your team and we’ll reach out shortly.</Trans>
+              <Trans>
+                Tell us a little about your team and we’ll reach out shortly.
+              </Trans>
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="mt-2 grid gap-3 md:grid-cols-2">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="mt-2 grid gap-2.5 sm:gap-3 md:grid-cols-2">
               <div className="space-y-1">
-                <Label>
+                <Label className="text-xs sm:text-sm">
                   <Trans>Company</Trans>
                 </Label>
                 <Input
@@ -768,17 +873,20 @@ export function BillingContent() {
                     }))
                   }
                   placeholder={t`Company name`}
+                  className="h-9 sm:h-10 text-xs sm:text-sm"
                 />
               </div>
               <div className="space-y-1">
-                <Label>
+                <Label className="text-xs sm:text-sm">
                   <Trans>Company size</Trans>
                 </Label>
                 <Select
                   value={contactForm.companySize}
-                  onValueChange={(value) => setContactForm((prev) => ({ ...prev, companySize: value }))}
+                  onValueChange={(value) =>
+                    setContactForm((prev) => ({ ...prev, companySize: value }))
+                  }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full h-9 sm:h-10 text-xs sm:text-sm">
                     <SelectValue placeholder={t`Select size`} />
                   </SelectTrigger>
                   <SelectContent>
@@ -792,7 +900,7 @@ export function BillingContent() {
               </div>
             </div>
             <div className="space-y-1">
-              <Label>
+              <Label className="text-xs sm:text-sm">
                 <Trans>Tell us about your requirements</Trans>
               </Label>
               <Textarea
@@ -805,15 +913,27 @@ export function BillingContent() {
                 }
                 rows={4}
                 placeholder={t`I'm interested in Glass for my team...`}
+                className="text-xs sm:text-sm"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setContactDialogOpen(false)} disabled={contactLoading}>
+          <DialogFooter className="gap-2 sm:gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => setContactDialogOpen(false)}
+              disabled={contactLoading}
+              className="text-xs sm:text-sm h-9 sm:h-10"
+            >
               <Trans>Cancel</Trans>
             </Button>
-            <Button onClick={handleContactSubmit} disabled={contactLoading}>
-              {contactLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+            <Button
+              onClick={handleContactSubmit}
+              disabled={contactLoading}
+              className="text-xs sm:text-sm h-9 sm:h-10"
+            >
+              {contactLoading && (
+                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+              )}
               <Trans>Send request</Trans>
             </Button>
           </DialogFooter>

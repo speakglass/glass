@@ -29,30 +29,59 @@ export function StartCallInstructions({
   liveCallSteps,
 }: StartCallInstructionsProps) {
   return (
-    <div className={'flex flex-col items-center gap-5 sm:gap-6 max-w-lg mx-auto px-1.5'}>
+    <div
+      className={
+        'flex flex-col items-center gap-5 sm:gap-6 max-w-lg mx-auto px-1.5'
+      }
+    >
       <div className={'text-center'}>
-        <h2 className={`${getTextClass('title')} text-2xl font-medium mb-2`}>
-          {selectedMode === 'roleplay' ? <Trans>AI Language Exchange</Trans> : <Trans>Live Language Exchange</Trans>}
+        <h2
+          className={`${getTextClass(
+            'title'
+          )} text-xl sm:text-2xl font-medium mb-1.5 sm:mb-2`}
+        >
+          {selectedMode === 'roleplay' ? (
+            <Trans>AI Language Exchange</Trans>
+          ) : (
+            <Trans>Live Language Exchange</Trans>
+          )}
         </h2>
       </div>
 
-      <div className={cn('rounded-2xl p-4 sm:p-6', 'bg-card border border-border')}>
+      <div
+        className={cn(
+          'rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6',
+          'bg-card border border-border'
+        )}
+      >
         {selectedMode === 'roleplay' ? (
           <div className={getTextClass('title')}>
             {selectedRoleplayPartner ? (
               <div>
-                <p className={`text-xs ${getTextClass('muted')} mb-1.5 sm:mb-2`}>
+                <p
+                  className={`text-[10px] sm:text-xs ${getTextClass(
+                    'muted'
+                  )} mb-1 sm:mb-1.5 md:mb-2`}
+                >
                   <Trans>Partner</Trans>
                 </p>
-                <p className={'text-base font-medium'}>{selectedRoleplayPartner.name}</p>
-                {(selectedRoleplayPartner.descriptionTranslation || selectedRoleplayPartner.description) && (
-                  <p className={`${getTextClass('body')} text-sm mt-1`}>
-                    {selectedRoleplayPartner.descriptionTranslation || selectedRoleplayPartner.description}
+                <p className={'text-sm sm:text-base font-medium'}>
+                  {selectedRoleplayPartner.name}
+                </p>
+                {(selectedRoleplayPartner.descriptionTranslation ||
+                  selectedRoleplayPartner.description) && (
+                  <p
+                    className={`${getTextClass(
+                      'body'
+                    )} text-xs sm:text-sm mt-0.5 sm:mt-1`}
+                  >
+                    {selectedRoleplayPartner.descriptionTranslation ||
+                      selectedRoleplayPartner.description}
                   </p>
                 )}
               </div>
             ) : (
-              <p className={`${getTextClass('muted')} text-sm`}>
+              <p className={`${getTextClass('muted')} text-xs sm:text-sm`}>
                 <Trans>Select a partner to see details.</Trans>
               </p>
             )}
@@ -63,7 +92,11 @@ export function StartCallInstructions({
       </div>
 
       <div className={'flex justify-between items-center w-full'}>
-        <button onClick={onBack} className={cn(getBackButtonClass(), 'cursor-pointer')} disabled={isStartingCall}>
+        <button
+          onClick={onBack}
+          className={cn(getBackButtonClass(), 'cursor-pointer')}
+          disabled={isStartingCall}
+        >
           <Trans>← Back</Trans>
         </button>
         <Button
@@ -71,16 +104,26 @@ export function StartCallInstructions({
           onClick={onStartCall}
           disabled={!canStartCall || isStartingCall}
           className={cn(
-            'cursor-pointer rounded-full px-6 py-2 sm:px-7 sm:py-2.5 inline-flex items-center gap-1.5 font-semibold tracking-tight text-white bg-emerald-500 hover:bg-emerald-600',
+            'cursor-pointer rounded-full px-4 py-1.5 sm:px-6 sm:py-2 md:px-7 md:py-2.5 inline-flex items-center gap-1 sm:gap-1.5 font-semibold tracking-tight text-xs sm:text-sm text-white bg-emerald-500 hover:bg-emerald-600',
             (!canStartCall || isStartingCall) && 'opacity-50 cursor-not-allowed'
           )}
         >
           {isStartingCall ? (
-            <Loader2 className="size-4 opacity-80 animate-spin" strokeWidth={2.25} />
+            <Loader2
+              className="size-3.5 sm:size-4 opacity-80 animate-spin"
+              strokeWidth={2.25}
+            />
           ) : (
-            <Phone className="size-4 opacity-50 fill-current" strokeWidth={0} />
+            <Phone
+              className="size-3.5 sm:size-4 opacity-50 fill-current"
+              strokeWidth={0}
+            />
           )}
-          {isStartingCall ? <Trans>Connecting...</Trans> : <Trans>Start Call</Trans>}
+          {isStartingCall ? (
+            <Trans>Connecting...</Trans>
+          ) : (
+            <Trans>Start Call</Trans>
+          )}
         </Button>
       </div>
     </div>

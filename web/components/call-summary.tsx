@@ -2,7 +2,16 @@
 import { cn } from '@/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { X, Save, ChevronDown, ChevronUp, MessageSquare, Loader2, Edit3, Trash2 } from 'lucide-react';
+import {
+  X,
+  Save,
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+  Loader2,
+  Edit3,
+  Trash2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PartnerAvatar } from '@/components/partner-avatar';
@@ -26,7 +35,10 @@ import {
   type ConversationScores,
   type Memory,
 } from '@/lib/account-api';
-import { getMessageRole, getMessageParticipantId } from '@/lib/conversation-utils';
+import {
+  getMessageRole,
+  getMessageParticipantId,
+} from '@/lib/conversation-utils';
 import {
   formatConversationDuration,
   getLanguageName,
@@ -39,9 +51,19 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { ConversationMessagesList } from '@/components/conversation/conversation-messages-list';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -100,7 +122,8 @@ const CallSummary = ({
 }: CallSummaryProps) => {
   const { token, snapshot: accountSnapshot } = useAccountSession();
   const locale = useLocale();
-  const [partnerProfile, setPartnerProfile] = useState<ConversationPartnerRef | null>(partner ?? null);
+  const [partnerProfile, setPartnerProfile] =
+    useState<ConversationPartnerRef | null>(partner ?? null);
   useEffect(() => {
     setPartnerProfile(partner ?? null);
   }, [partner]);
@@ -109,30 +132,46 @@ const CallSummary = ({
     if (!partnerProfile) {
       return null;
     }
-    if (typeof partnerProfile.avatarUrl === 'string' && partnerProfile.avatarUrl.trim()) {
+    if (
+      typeof partnerProfile.avatarUrl === 'string' &&
+      partnerProfile.avatarUrl.trim()
+    ) {
       return partnerProfile.avatarUrl;
     }
     return null;
   }, [partnerProfile]);
   const currentPartnerId = partnerProfile?.id ?? null;
-  const [memoryRecords, setMemoryRecords] = useState<Memory[]>(initialMemories ?? []);
+  const [memoryRecords, setMemoryRecords] = useState<Memory[]>(
+    initialMemories ?? []
+  );
   const [memoryProcessing, setMemoryProcessing] = useState(false);
   const [isLoadingMemories, setIsLoadingMemories] = useState(false);
   const [showMemory, setShowMemory] = useState(false);
   const [editingMemoryId, setEditingMemoryId] = useState<string | null>(null);
   const editingMemoryOriginalRef = useRef<string>('');
-  const [pendingMemoryActions, setPendingMemoryActions] = useState<Record<string, 'updating' | 'deleting'>>({});
+  const [pendingMemoryActions, setPendingMemoryActions] = useState<
+    Record<string, 'updating' | 'deleting'>
+  >({});
   const [showConversation, setShowConversation] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const memorySectionRef = useRef<HTMLElement>(null);
   const [isPartnerManagerOpen, setIsPartnerManagerOpen] = useState(false);
-  const [partnerNameDraft, setPartnerNameDraft] = useState(partnerProfile?.name || '');
-  const [partnerDescriptionDraft, setPartnerDescriptionDraft] = useState(partnerProfile?.description || '');
-  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(partnerProfile?.id ?? null);
+  const [partnerNameDraft, setPartnerNameDraft] = useState(
+    partnerProfile?.name || ''
+  );
+  const [partnerDescriptionDraft, setPartnerDescriptionDraft] = useState(
+    partnerProfile?.description || ''
+  );
+  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(
+    partnerProfile?.id ?? null
+  );
   const [partnerSearch, setPartnerSearch] = useState('');
-  const [editingPartnerAvatarUrl, setEditingPartnerAvatarUrl] = useState<string | null>(partnerAvatarUrl);
+  const [editingPartnerAvatarUrl, setEditingPartnerAvatarUrl] = useState<
+    string | null
+  >(partnerAvatarUrl);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isPartnerDeleteDialogOpen, setIsPartnerDeleteDialogOpen] = useState(false);
+  const [isPartnerDeleteDialogOpen, setIsPartnerDeleteDialogOpen] =
+    useState(false);
   const {
     data: partnerOptions = [],
     isLoading: isPartnerListLoading,
@@ -154,7 +193,13 @@ const CallSummary = ({
       setEditingPartnerAvatarUrl(partnerAvatarUrl);
       setPartnerSearch('');
     }
-  }, [isPartnerManagerOpen, partnerAvatarUrl, partnerProfile?.description, partnerProfile?.id, partnerProfile?.name]);
+  }, [
+    isPartnerManagerOpen,
+    partnerAvatarUrl,
+    partnerProfile?.description,
+    partnerProfile?.id,
+    partnerProfile?.name,
+  ]);
   useEffect(() => {
     if (!isEditModalOpen) {
       setIsPartnerDeleteDialogOpen(false);
@@ -194,7 +239,11 @@ const CallSummary = ({
         }
         setMemoryProcessing(result.processing);
         setMemoryRecords((prev) => {
-          if (result.memories.length === 0 && result.processing && prev.length > 0) {
+          if (
+            result.memories.length === 0 &&
+            result.processing &&
+            prev.length > 0
+          ) {
             return prev;
           }
           return result.memories;
@@ -205,7 +254,10 @@ const CallSummary = ({
           }, 1500);
         }
       } catch (error) {
-        console.error('[CallSummary] Failed to load conversation memories:', error);
+        console.error(
+          '[CallSummary] Failed to load conversation memories:',
+          error
+        );
         if (!cancelled) {
           toast.error(t`Unable to load memories right now.`);
         }
@@ -224,20 +276,25 @@ const CallSummary = ({
     };
   }, [conversationId, token]);
 
-  const setPendingMemoryAction = useCallback((id: string, action: 'updating' | 'deleting' | null) => {
-    setPendingMemoryActions((prev) => {
-      const next = { ...prev };
-      if (action) {
-        next[id] = action;
-      } else {
-        delete next[id];
-      }
-      return next;
-    });
-  }, []);
+  const setPendingMemoryAction = useCallback(
+    (id: string, action: 'updating' | 'deleting' | null) => {
+      setPendingMemoryActions((prev) => {
+        const next = { ...prev };
+        if (action) {
+          next[id] = action;
+        } else {
+          delete next[id];
+        }
+        return next;
+      });
+    },
+    []
+  );
 
   const handleMemoryTextChange = useCallback((id: string, text: string) => {
-    setMemoryRecords((prev) => prev.map((memory) => (memory.id === id ? { ...memory, text } : memory)));
+    setMemoryRecords((prev) =>
+      prev.map((memory) => (memory.id === id ? { ...memory, text } : memory))
+    );
   }, []);
 
   const beginEditingMemory = useCallback((memory: Memory) => {
@@ -255,7 +312,11 @@ const CallSummary = ({
       if (!trimmed) {
         toast.error(t`Memory cannot be empty.`);
         setMemoryRecords((prev) =>
-          prev.map((entry) => (entry.id === memoryId ? { ...entry, text: editingMemoryOriginalRef.current } : entry))
+          prev.map((entry) =>
+            entry.id === memoryId
+              ? { ...entry, text: editingMemoryOriginalRef.current }
+              : entry
+          )
         );
         setEditingMemoryId(null);
         editingMemoryOriginalRef.current = '';
@@ -276,13 +337,19 @@ const CallSummary = ({
       setPendingMemoryAction(memoryId, 'updating');
       try {
         const updated = await updateMemory(token, memoryId, { value: trimmed });
-        setMemoryRecords((prev) => prev.map((entry) => (entry.id === memoryId ? updated : entry)));
+        setMemoryRecords((prev) =>
+          prev.map((entry) => (entry.id === memoryId ? updated : entry))
+        );
         toast.success(t`Memory updated`);
       } catch (error) {
         console.error('[CallSummary] Failed to update memory:', error);
         toast.error(t`Failed to update memory.`);
         setMemoryRecords((prev) =>
-          prev.map((entry) => (entry.id === memoryId ? { ...entry, text: editingMemoryOriginalRef.current } : entry))
+          prev.map((entry) =>
+            entry.id === memoryId
+              ? { ...entry, text: editingMemoryOriginalRef.current }
+              : entry
+          )
         );
       } finally {
         setPendingMemoryAction(memoryId, null);
@@ -298,13 +365,17 @@ const CallSummary = ({
       const isDemo = !conversationId || !token;
       setEditingMemoryId((current) => (current === memoryId ? null : current));
       if (isDemo) {
-        setMemoryRecords((prev) => prev.filter((entry) => entry.id !== memoryId));
+        setMemoryRecords((prev) =>
+          prev.filter((entry) => entry.id !== memoryId)
+        );
         return;
       }
       setPendingMemoryAction(memoryId, 'deleting');
       try {
         await deleteMemory(token, memoryId);
-        setMemoryRecords((prev) => prev.filter((entry) => entry.id !== memoryId));
+        setMemoryRecords((prev) =>
+          prev.filter((entry) => entry.id !== memoryId)
+        );
         toast.success(t`Memory deleted`);
       } catch (error) {
         console.error('[CallSummary] Failed to delete memory:', error);
@@ -316,7 +387,9 @@ const CallSummary = ({
     [conversationId, token, setPendingMemoryAction]
   );
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
@@ -394,7 +467,8 @@ const CallSummary = ({
       toast.success(t`Partner updated`);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : t`Failed to update partner`;
+      const message =
+        error instanceof Error ? error.message : t`Failed to update partner`;
       toast.error(message);
     },
   });
@@ -426,7 +500,8 @@ const CallSummary = ({
       toast.success(t`Partner created`);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : t`Failed to create partner`;
+      const message =
+        error instanceof Error ? error.message : t`Failed to create partner`;
       toast.error(message);
     },
   });
@@ -452,7 +527,8 @@ const CallSummary = ({
       toast.success(t`Partner deleted`);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : t`Failed to delete partner`;
+      const message =
+        error instanceof Error ? error.message : t`Failed to delete partner`;
       toast.error(message);
     },
   });
@@ -501,13 +577,18 @@ const CallSummary = ({
       toast.success(t`Partner created`);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : t`Failed to create partner`;
+      const message =
+        error instanceof Error ? error.message : t`Failed to create partner`;
       toast.error(message);
     },
   });
 
   const handleDeletePartner = () => {
-    if (!editingPartnerId || !canManagePartner || deletePartnerMutation.isPending) {
+    if (
+      !editingPartnerId ||
+      !canManagePartner ||
+      deletePartnerMutation.isPending
+    ) {
       return;
     }
     if (!token) {
@@ -518,15 +599,22 @@ const CallSummary = ({
   };
 
   const isPartnerActionPending =
-    renamePartnerMutation.isPending || deletePartnerMutation.isPending || createPartnerAndAssignMutation.isPending;
-  const isSavingPartner = renamePartnerMutation.isPending || createPartnerAndAssignMutation.isPending;
+    renamePartnerMutation.isPending ||
+    deletePartnerMutation.isPending ||
+    createPartnerAndAssignMutation.isPending;
+  const isSavingPartner =
+    renamePartnerMutation.isPending || createPartnerAndAssignMutation.isPending;
 
   const reassignPartnerMutation = useMutation({
     mutationFn: async (targetPartnerId: string) => {
       if (!token || !conversationId) {
         throw new Error(t`Missing conversation`);
       }
-      return reassignConversationPartner(token, conversationId, targetPartnerId);
+      return reassignConversationPartner(
+        token,
+        conversationId,
+        targetPartnerId
+      );
     },
     onSuccess: (updated) => {
       setPartnerProfile(updated.partner ?? null);
@@ -534,7 +622,8 @@ const CallSummary = ({
       toast.success(t`Conversation partner assigned`);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : t`Failed to assign partner`;
+      const message =
+        error instanceof Error ? error.message : t`Failed to assign partner`;
       toast.error(message);
     },
   });
@@ -548,7 +637,10 @@ const CallSummary = ({
       }
     >();
     directory.set('glass', { name: t`Glass`, avatarUrl: '/glass-ai.png' });
-    directory.set('user', { name: userProfile?.name || t`You`, avatarUrl: undefined });
+    directory.set('user', {
+      name: userProfile?.name || t`You`,
+      avatarUrl: undefined,
+    });
     const partnerEntry = {
       name: partnerProfile?.name || t`Partner`,
       avatarUrl: partnerAvatarUrl || undefined,
@@ -560,8 +652,12 @@ const CallSummary = ({
     return directory;
   }, [partnerProfile, userProfile]);
 
-  const isRoleplayPartner = Boolean(partnerProfile?.kind === 'roleplay' || partner?.kind === 'roleplay');
-  const sessionMode = (isRoleplayPartner ? 'roleplay' : 'live_call') as 'roleplay' | 'live_call';
+  const isRoleplayPartner = Boolean(
+    partnerProfile?.kind === 'roleplay' || partner?.kind === 'roleplay'
+  );
+  const sessionMode = (isRoleplayPartner ? 'roleplay' : 'live_call') as
+    | 'roleplay'
+    | 'live_call';
   const canManagePartner = sessionMode !== 'roleplay';
   const preparePartnerEdit = (partner?: {
     id?: string | null;
@@ -607,7 +703,10 @@ const CallSummary = ({
 
   const availablePartners: ConversationPartner[] = useMemo(() => {
     if (!partnerOptions?.length) return [];
-    return partnerOptions.filter((partner) => partner.id !== currentPartnerId && partner.kind === 'live_call');
+    return partnerOptions.filter(
+      (partner) =>
+        partner.id !== currentPartnerId && partner.kind === 'live_call'
+    );
   }, [partnerOptions, currentPartnerId]);
   const trimmedPartnerSearch = partnerSearch.trim();
   const filteredPartners = useMemo(() => {
@@ -615,7 +714,9 @@ const CallSummary = ({
     if (!query) {
       return availablePartners;
     }
-    return availablePartners.filter((partner) => partner.name.toLowerCase().includes(query));
+    return availablePartners.filter((partner) =>
+      partner.name.toLowerCase().includes(query)
+    );
   }, [availablePartners, trimmedPartnerSearch]);
 
   const resolveParticipantInfo = (message: ConversationMessage) => {
@@ -633,42 +734,63 @@ const CallSummary = ({
     return participantDirectory.get('partner') || { name: t`Partner` };
   };
   const durationLabel =
-    typeof durationSeconds === 'number' && durationSeconds >= 0 ? formatConversationDuration(durationSeconds) : null;
+    typeof durationSeconds === 'number' && durationSeconds >= 0
+      ? formatConversationDuration(durationSeconds)
+      : null;
   const languageLabel =
     learningLang || nativeLang
-      ? `${getLanguageName(learningLang, locale)} ↔ ${getLanguageName(nativeLang, locale)}`
+      ? `${getLanguageName(learningLang, locale)} ↔ ${getLanguageName(
+          nativeLang,
+          locale
+        )}`
       : null;
 
   const handleSaveCall = useCallback(() => {
     onClose();
   }, [onClose]);
 
-  const averageScore = Math.round((scores.fluency + scores.accuracy + scores.comprehensibility) / 3);
+  const averageScore = Math.round(
+    (scores.fluency + scores.accuracy + scores.comprehensibility) / 3
+  );
 
   const showPartnerManager = Boolean(canManagePartner && token);
   const partnerChip = showPartnerManager ? (
-    <Popover open={isPartnerManagerOpen} onOpenChange={setIsPartnerManagerOpen} key="partner-chip">
+    <Popover
+      open={isPartnerManagerOpen}
+      onOpenChange={setIsPartnerManagerOpen}
+      key="partner-chip"
+    >
       <PopoverTrigger asChild>
         <button
           type="button"
           className={cn(
-            'inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm transition',
+            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs transition sm:gap-2 sm:px-3 sm:py-1 sm:text-sm',
             'bg-transparent hover:bg-accent/40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40'
           )}
         >
           <PartnerAvatar
-            className="h-7 w-7"
+            className="h-6 w-6 sm:h-7 sm:w-7"
             fallbackSize="md"
             name={partnerProfile?.name || t`Partner`}
             src={partnerAvatarUrl || undefined}
           />
-          <span className="font-medium text-foreground">{partnerProfile?.name || t`Partner`}</span>
+          <span className="font-medium text-foreground">
+            {partnerProfile?.name || t`Partner`}
+          </span>
           <ChevronDown
-            className={cn('h-4 w-4 text-muted-foreground transition-transform', isPartnerManagerOpen && 'rotate-180')}
+            className={cn(
+              'h-3.5 w-3.5 text-muted-foreground transition-transform sm:h-4 sm:w-4',
+              isPartnerManagerOpen && 'rotate-180'
+            )}
           />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 max-w-[90vw] p-0" align="center" side="bottom" sideOffset={6}>
+      <PopoverContent
+        className="w-72 max-w-[90vw] p-0"
+        align="center"
+        side="bottom"
+        sideOffset={6}
+      >
         <div className="border-b border-border/30 px-3 py-2">
           <Input
             value={partnerSearch}
@@ -703,10 +825,14 @@ const CallSummary = ({
                   src={partnerAvatarUrl || undefined}
                 />
                 <div className="min-w-0">
-                  <p className="font-medium truncate">{partnerProfile?.name || t`Partner`}</p>
+                  <p className="font-medium truncate">
+                    {partnerProfile?.name || t`Partner`}
+                  </p>
                   <p className="text-[11px] text-muted-foreground/90 truncate">
-                    {partnerProfile?.descriptionTranslation || partnerProfile?.description ? (
-                      partnerProfile?.descriptionTranslation || partnerProfile?.description
+                    {partnerProfile?.descriptionTranslation ||
+                    partnerProfile?.description ? (
+                      partnerProfile?.descriptionTranslation ||
+                      partnerProfile?.description
                     ) : (
                       <Trans>No partner assigned</Trans>
                     )}
@@ -792,7 +918,11 @@ const CallSummary = ({
               <PartnerSearchEmptyState
                 searchTerm={trimmedPartnerSearch}
                 isCreating={createPartnerMutation.isPending}
-                onCreate={trimmedPartnerSearch ? () => createPartnerMutation.mutate(trimmedPartnerSearch) : undefined}
+                onCreate={
+                  trimmedPartnerSearch
+                    ? () => createPartnerMutation.mutate(trimmedPartnerSearch)
+                    : undefined
+                }
                 isSearching={Boolean(trimmedPartnerSearch)}
               />
             )}
@@ -808,7 +938,9 @@ const CallSummary = ({
         name={partnerProfile?.name}
         src={partnerAvatarUrl || undefined}
       />
-      <span className="font-medium text-foreground">{partnerProfile?.name || t`Partner`}</span>
+      <span className="font-medium text-foreground">
+        {partnerProfile?.name || t`Partner`}
+      </span>
     </span>
   ) : null;
 
@@ -818,7 +950,9 @@ const CallSummary = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className={'fixed inset-0 z-50 flex items-center justify-center p-4'}
+        className={
+          'fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4'
+        }
         style={{
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
           backdropFilter: 'blur(8px)',
@@ -832,29 +966,36 @@ const CallSummary = ({
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           className={
-            'relative w-full max-w-3xl max-h-[90vh] overflow-auto bg-card border border-border/50 rounded-2xl shadow-2xl'
+            'relative w-full max-w-3xl max-h-[90vh] overflow-auto bg-card border border-border/50 rounded-xl shadow-2xl sm:rounded-2xl'
           }
         >
           {/* Header */}
-          <div className={'sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border/30 px-6 py-4'}>
-            <div className="space-y-3">
-              <div id="glass-call-summary-header" className={'flex items-center justify-between'}>
-                <h2 className={'text-xl font-bold'}>
+          <div
+            className={
+              'sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border/30 px-3 py-3 sm:px-6 sm:py-4'
+            }
+          >
+            <div className="space-y-2 sm:space-y-3">
+              <div
+                id="glass-call-summary-header"
+                className={'flex items-center justify-between'}
+              >
+                <h2 className={'text-lg font-bold sm:text-xl'}>
                   <Trans>Call Summary</Trans>
                 </h2>
                 <button
                   onClick={onClose}
                   className={
-                    'text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-accent/50'
+                    'text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-accent/50 sm:p-1.5'
                   }
                   aria-label="Close"
                 >
-                  <X className={'size-5'} />
+                  <X className={'size-4 sm:size-5'} />
                 </button>
               </div>
               {(durationLabel || languageLabel || partnerChip) && (
-                <div className="space-y-2 relative">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                <div className="space-y-1.5 sm:space-y-2 relative">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground sm:gap-x-3 sm:text-sm">
                     {durationLabel && <span>{durationLabel}</span>}
                     {languageLabel && (
                       <>
@@ -875,21 +1016,31 @@ const CallSummary = ({
           </div>
 
           {/* Content */}
-          <div className={'p-6 space-y-6'}>
+          <div className={'p-3 space-y-4 md:p-6 sm:p-4 sm:space-y-6'}>
             {/* Scores and Feedback Container */}
-            <div id="glass-scores-feedback" className="space-y-6">
+            <div id="glass-scores-feedback" className="space-y-4 sm:space-y-6">
               {/* Score Overview */}
               <section>
-                <div className={'flex items-center justify-between mb-6'}>
+                <div
+                  className={'flex items-center justify-between mb-4 sm:mb-6'}
+                >
                   <div>
-                    <span className={'text-sm font-medium text-muted-foreground block mb-1'}>
+                    <span
+                      className={
+                        'text-xs font-medium text-muted-foreground block mb-0.5 sm:text-sm sm:mb-1'
+                      }
+                    >
                       <Trans>Overall Score</Trans>
                     </span>
-                    <span className={'text-4xl font-bold'}>{averageScore}</span>
+                    <span className={'text-3xl font-bold sm:text-4xl'}>
+                      {averageScore}
+                    </span>
                   </div>
 
                   {/* Bar Graph Gauge */}
-                  <div className={'flex items-end gap-1 h-12'}>
+                  <div
+                    className={'flex items-end gap-0.5 h-10 sm:gap-1 sm:h-12'}
+                  >
                     {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
                       const scorePercent = averageScore / 100;
                       const segmentThreshold = i / 8;
@@ -909,10 +1060,12 @@ const CallSummary = ({
                       return (
                         <motion.div
                           key={i}
-                          className={'w-2 rounded-full'}
+                          className={'w-1.5 rounded-full sm:w-2'}
                           style={{
                             height: `${height}%`,
-                            backgroundColor: isActive ? color : 'rgba(100, 116, 139, 0.2)',
+                            backgroundColor: isActive
+                              ? color
+                              : 'rgba(100, 116, 139, 0.2)',
                           }}
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: `${height}%`, opacity: 1 }}
@@ -928,24 +1081,35 @@ const CallSummary = ({
                 </div>
 
                 {/* Segmented gauges */}
-                <div className={'space-y-2'}>
+                <div className={'space-y-1.5 sm:space-y-2'}>
                   {/* Fluency */}
                   <div>
-                    <div className={'flex items-center justify-between mb-1.5'}>
+                    <div
+                      className={
+                        'flex items-center justify-between mb-1 sm:mb-1.5'
+                      }
+                    >
                       <span className={'text-xs text-muted-foreground'}>
                         <Trans>Fluency</Trans>
                       </span>
-                      <span className={cn('text-sm font-medium', getScoreLabel(scores.fluency).color)}>
+                      <span
+                        className={cn(
+                          'text-xs font-medium sm:text-sm',
+                          getScoreLabel(scores.fluency).color
+                        )}
+                      >
                         {getScoreLabel(scores.fluency).text}
                       </span>
                     </div>
                     <div className={'relative'}>
-                      <div className={'flex gap-1 h-2'}>
+                      <div className={'flex gap-0.5 h-1.5 sm:gap-1 sm:h-2'}>
                         {/* 0-20: Low (red) - narrowest */}
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.fluency > 0 && scores.fluency <= 20 ? 'bg-red-500' : 'bg-red-500/30'
+                            scores.fluency > 0 && scores.fluency <= 20
+                              ? 'bg-red-500'
+                              : 'bg-red-500/30'
                           )}
                           style={{ flex: 0.5 }}
                           initial={{ opacity: 0 }}
@@ -956,7 +1120,9 @@ const CallSummary = ({
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.fluency > 20 && scores.fluency <= 40 ? 'bg-orange-500' : 'bg-orange-500/30'
+                            scores.fluency > 20 && scores.fluency <= 40
+                              ? 'bg-orange-500'
+                              : 'bg-orange-500/30'
                           )}
                           style={{ flex: 1 }}
                           initial={{ opacity: 0 }}
@@ -967,7 +1133,9 @@ const CallSummary = ({
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.fluency > 40 && scores.fluency <= 60 ? 'bg-amber-500' : 'bg-amber-500/30'
+                            scores.fluency > 40 && scores.fluency <= 60
+                              ? 'bg-amber-500'
+                              : 'bg-amber-500/30'
                           )}
                           style={{ flex: 2 }}
                           initial={{ opacity: 0 }}
@@ -978,7 +1146,9 @@ const CallSummary = ({
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.fluency > 60 && scores.fluency <= 80 ? 'bg-teal-500' : 'bg-teal-500/30'
+                            scores.fluency > 60 && scores.fluency <= 80
+                              ? 'bg-teal-500'
+                              : 'bg-teal-500/30'
                           )}
                           style={{ flex: 1 }}
                           initial={{ opacity: 0 }}
@@ -989,7 +1159,9 @@ const CallSummary = ({
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.fluency > 80 ? 'bg-emerald-500' : 'bg-emerald-500/30'
+                            scores.fluency > 80
+                              ? 'bg-emerald-500'
+                              : 'bg-emerald-500/30'
                           )}
                           style={{ flex: 0.5 }}
                           initial={{ opacity: 0 }}
@@ -1014,20 +1186,31 @@ const CallSummary = ({
 
                   {/* Accuracy */}
                   <div>
-                    <div className={'flex items-center justify-between mb-1.5'}>
+                    <div
+                      className={
+                        'flex items-center justify-between mb-1 sm:mb-1.5'
+                      }
+                    >
                       <span className={'text-xs text-muted-foreground'}>
                         <Trans>Accuracy</Trans>
                       </span>
-                      <span className={cn('text-sm font-medium', getScoreLabel(scores.accuracy).color)}>
+                      <span
+                        className={cn(
+                          'text-xs font-medium sm:text-sm',
+                          getScoreLabel(scores.accuracy).color
+                        )}
+                      >
                         {getScoreLabel(scores.accuracy).text}
                       </span>
                     </div>
                     <div className={'relative'}>
-                      <div className={'flex gap-1 h-2'}>
+                      <div className={'flex gap-0.5 h-1.5 sm:gap-1 sm:h-2'}>
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.accuracy > 0 && scores.accuracy <= 20 ? 'bg-red-500' : 'bg-red-500/30'
+                            scores.accuracy > 0 && scores.accuracy <= 20
+                              ? 'bg-red-500'
+                              : 'bg-red-500/30'
                           )}
                           style={{ flex: 0.5 }}
                           initial={{ opacity: 0 }}
@@ -1037,7 +1220,9 @@ const CallSummary = ({
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.accuracy > 20 && scores.accuracy <= 40 ? 'bg-orange-500' : 'bg-orange-500/30'
+                            scores.accuracy > 20 && scores.accuracy <= 40
+                              ? 'bg-orange-500'
+                              : 'bg-orange-500/30'
                           )}
                           style={{ flex: 1 }}
                           initial={{ opacity: 0 }}
@@ -1047,7 +1232,9 @@ const CallSummary = ({
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.accuracy > 40 && scores.accuracy <= 60 ? 'bg-amber-500' : 'bg-amber-500/30'
+                            scores.accuracy > 40 && scores.accuracy <= 60
+                              ? 'bg-amber-500'
+                              : 'bg-amber-500/30'
                           )}
                           style={{ flex: 2 }}
                           initial={{ opacity: 0 }}
@@ -1057,7 +1244,9 @@ const CallSummary = ({
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.accuracy > 60 && scores.accuracy <= 80 ? 'bg-teal-500' : 'bg-teal-500/30'
+                            scores.accuracy > 60 && scores.accuracy <= 80
+                              ? 'bg-teal-500'
+                              : 'bg-teal-500/30'
                           )}
                           style={{ flex: 1 }}
                           initial={{ opacity: 0 }}
@@ -1067,7 +1256,9 @@ const CallSummary = ({
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.accuracy > 80 ? 'bg-emerald-500' : 'bg-emerald-500/30'
+                            scores.accuracy > 80
+                              ? 'bg-emerald-500'
+                              : 'bg-emerald-500/30'
                           )}
                           style={{ flex: 0.5 }}
                           initial={{ opacity: 0 }}
@@ -1078,10 +1269,12 @@ const CallSummary = ({
                       {/* Current position indicator */}
                       <motion.div
                         className={
-                          'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'
+                          'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-400 rounded-full sm:w-1 sm:h-4'
                         }
                         style={{
-                          left: `${getScoreIndicatorPosition(scores.accuracy)}%`,
+                          left: `${getScoreIndicatorPosition(
+                            scores.accuracy
+                          )}%`,
                         }}
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -1092,20 +1285,30 @@ const CallSummary = ({
 
                   {/* Comprehensibility */}
                   <div>
-                    <div className={'flex items-center justify-between mb-1.5'}>
+                    <div
+                      className={
+                        'flex items-center justify-between mb-1 sm:mb-1.5'
+                      }
+                    >
                       <span className={'text-xs text-muted-foreground'}>
                         <Trans>Comprehensibility</Trans>
                       </span>
-                      <span className={cn('text-sm font-medium', getScoreLabel(scores.comprehensibility).color)}>
+                      <span
+                        className={cn(
+                          'text-xs font-medium sm:text-sm',
+                          getScoreLabel(scores.comprehensibility).color
+                        )}
+                      >
                         {getScoreLabel(scores.comprehensibility).text}
                       </span>
                     </div>
                     <div className={'relative'}>
-                      <div className={'flex gap-1 h-2'}>
+                      <div className={'flex gap-0.5 h-1.5 sm:gap-1 sm:h-2'}>
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.comprehensibility > 0 && scores.comprehensibility <= 20
+                            scores.comprehensibility > 0 &&
+                              scores.comprehensibility <= 20
                               ? 'bg-red-500'
                               : 'bg-red-500/30'
                           )}
@@ -1117,7 +1320,8 @@ const CallSummary = ({
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.comprehensibility > 20 && scores.comprehensibility <= 40
+                            scores.comprehensibility > 20 &&
+                              scores.comprehensibility <= 40
                               ? 'bg-orange-500'
                               : 'bg-orange-500/30'
                           )}
@@ -1129,7 +1333,8 @@ const CallSummary = ({
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.comprehensibility > 40 && scores.comprehensibility <= 60
+                            scores.comprehensibility > 40 &&
+                              scores.comprehensibility <= 60
                               ? 'bg-amber-500'
                               : 'bg-amber-500/30'
                           )}
@@ -1141,7 +1346,8 @@ const CallSummary = ({
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.comprehensibility > 60 && scores.comprehensibility <= 80
+                            scores.comprehensibility > 60 &&
+                              scores.comprehensibility <= 80
                               ? 'bg-teal-500'
                               : 'bg-teal-500/30'
                           )}
@@ -1153,7 +1359,9 @@ const CallSummary = ({
                         <motion.div
                           className={cn(
                             'rounded-full transition-opacity duration-300',
-                            scores.comprehensibility > 80 ? 'bg-emerald-500' : 'bg-emerald-500/30'
+                            scores.comprehensibility > 80
+                              ? 'bg-emerald-500'
+                              : 'bg-emerald-500/30'
                           )}
                           style={{ flex: 0.5 }}
                           initial={{ opacity: 0 }}
@@ -1164,10 +1372,12 @@ const CallSummary = ({
                       {/* Current position indicator */}
                       <motion.div
                         className={
-                          'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-4 bg-slate-400 rounded-full'
+                          'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-400 rounded-full sm:w-1 sm:h-4'
                         }
                         style={{
-                          left: `${getScoreIndicatorPosition(scores.comprehensibility)}%`,
+                          left: `${getScoreIndicatorPosition(
+                            scores.comprehensibility
+                          )}%`,
                         }}
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -1181,18 +1391,36 @@ const CallSummary = ({
               {/* Feedback with Glass AI Avatar */}
               {feedback && (
                 <section>
-                  <div className={'inline-flex items-start gap-3 max-w-2xl'}>
+                  <div
+                    className={
+                      'inline-flex items-start gap-2 max-w-2xl sm:gap-3'
+                    }
+                  >
                     {/* Glass AI Avatar */}
                     <div className={'shrink-0'}>
-                      <Avatar className="h-10 w-10 border border-border/50 bg-card/80">
-                        <AvatarImage className="h-full w-full object-cover" src="/glass-ai.png" alt="Glass AI" />
+                      <Avatar className="h-8 w-8 border border-border/50 bg-card/80 sm:h-10 sm:w-10">
+                        <AvatarImage
+                          className="h-full w-full object-cover"
+                          src="/glass-ai.png"
+                          alt="Glass AI"
+                        />
                         <AvatarFallback>AI</AvatarFallback>
                       </Avatar>
                     </div>
 
                     {/* Feedback Bubble */}
-                    <div className={'bg-background/50 border border-border/30 rounded-xl p-4 flex-1'}>
-                      <p className={'text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed'}>{feedback}</p>
+                    <div
+                      className={
+                        'bg-background/50 border border-border/30 rounded-lg p-3 flex-1 sm:rounded-xl sm:p-4'
+                      }
+                    >
+                      <p
+                        className={
+                          'text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed'
+                        }
+                      >
+                        {feedback}
+                      </p>
                     </div>
                   </div>
                 </section>
@@ -1228,12 +1456,21 @@ const CallSummary = ({
                     <Trans>Memory</Trans>
                   </span>
                   {isLoadingMemories || memoryProcessing ? (
-                    <Loader2 className="size-3 animate-spin text-muted-foreground" aria-label={t`Loading memories`} />
+                    <Loader2
+                      className="size-3 animate-spin text-muted-foreground"
+                      aria-label={t`Loading memories`}
+                    />
                   ) : (
-                    <span className={'text-xs text-muted-foreground'}>({memoryRecords.length})</span>
+                    <span className={'text-xs text-muted-foreground'}>
+                      ({memoryRecords.length})
+                    </span>
                   )}
                 </div>
-                {showMemory ? <ChevronUp className={'size-4'} /> : <ChevronDown className={'size-4'} />}
+                {showMemory ? (
+                  <ChevronUp className={'size-4'} />
+                ) : (
+                  <ChevronDown className={'size-4'} />
+                )}
               </button>
 
               <AnimatePresence>
@@ -1246,7 +1483,7 @@ const CallSummary = ({
                   >
                     <div
                       className={
-                        'mt-2 bg-background/50 border border-border/30 rounded-lg p-3 max-h-96 overflow-auto space-y-2'
+                        'mt-2 bg-background/50 border border-border/30 rounded-lg p-2.5 max-h-96 overflow-auto space-y-1.5 sm:p-3 sm:space-y-2'
                       }
                     >
                       {isLoadingMemories ? (
@@ -1255,9 +1492,15 @@ const CallSummary = ({
                           <Trans>Loading memories...</Trans>
                         </div>
                       ) : memoryRecords.length === 0 ? (
-                        <div className={'text-center py-6 text-xs text-muted-foreground'}>
+                        <div
+                          className={
+                            'text-center py-6 text-xs text-muted-foreground'
+                          }
+                        >
                           {memoryProcessing ? (
-                            <Trans>Analyzing conversation to extract memories...</Trans>
+                            <Trans>
+                              Analyzing conversation to extract memories...
+                            </Trans>
                           ) : (
                             <Trans>No memories available yet.</Trans>
                           )}
@@ -1293,8 +1536,15 @@ const CallSummary = ({
                                 {isEditing ? (
                                   <Input
                                     value={memory.text || ''}
-                                    onChange={(event) => handleMemoryTextChange(memory.id, event.target.value)}
-                                    onBlur={() => void commitMemoryEdit(memory.id)}
+                                    onChange={(event) =>
+                                      handleMemoryTextChange(
+                                        memory.id,
+                                        event.target.value
+                                      )
+                                    }
+                                    onBlur={() =>
+                                      void commitMemoryEdit(memory.id)
+                                    }
                                     onKeyDown={(event) => {
                                       if (event.key === 'Enter') {
                                         event.preventDefault();
@@ -1303,7 +1553,10 @@ const CallSummary = ({
                                         setMemoryRecords((prev) =>
                                           prev.map((entry) =>
                                             entry.id === memory.id
-                                              ? { ...entry, text: editingMemoryOriginalRef.current }
+                                              ? {
+                                                  ...entry,
+                                                  text: editingMemoryOriginalRef.current,
+                                                }
                                               : entry
                                           )
                                         );
@@ -1328,17 +1581,20 @@ const CallSummary = ({
                                 <button
                                   type="button"
                                   className={cn(
-                                    'rounded-full p-1.5 text-muted-foreground transition hover:bg-muted/10 hover:text-foreground',
-                                    isDeleting && 'pointer-events-none opacity-60'
+                                    'rounded-full p-1 text-muted-foreground transition hover:bg-muted/10 hover:text-foreground sm:p-1.5',
+                                    isDeleting &&
+                                      'pointer-events-none opacity-60'
                                   )}
-                                  onClick={() => void handleDeleteMemoryRecord(memory.id)}
+                                  onClick={() =>
+                                    void handleDeleteMemoryRecord(memory.id)
+                                  }
                                   aria-label={t`Remove insight`}
                                   disabled={isDeleting}
                                 >
                                   {isDeleting ? (
-                                    <Loader2 className="size-3 animate-spin" />
+                                    <Loader2 className="size-2.5 animate-spin sm:size-3" />
                                   ) : (
-                                    <Trash2 className="size-3" />
+                                    <Trash2 className="size-2.5 sm:size-3" />
                                   )}
                                 </button>
                               </div>
@@ -1378,10 +1634,18 @@ const CallSummary = ({
                     <Trans>Conversation History</Trans>
                   </span>
                   <span className={'text-xs text-muted-foreground'}>
-                    ({typeof conversationCountOverride === 'number' ? conversationCountOverride : messages.length})
+                    (
+                    {typeof conversationCountOverride === 'number'
+                      ? conversationCountOverride
+                      : messages.length}
+                    )
                   </span>
                 </div>
-                {showConversation ? <ChevronUp className={'size-4'} /> : <ChevronDown className={'size-4'} />}
+                {showConversation ? (
+                  <ChevronUp className={'size-4'} />
+                ) : (
+                  <ChevronDown className={'size-4'} />
+                )}
               </button>
               <AnimatePresence>
                 {showConversation && (
@@ -1392,9 +1656,14 @@ const CallSummary = ({
                     className={'overflow-hidden'}
                   >
                     <div
-                      className={'mt-2 bg-background/50 border border-border/30 rounded-lg p-3 max-h-96 overflow-auto'}
+                      className={
+                        'mt-2 bg-background/50 border border-border/30 rounded-lg p-2.5 max-h-96 overflow-auto sm:p-3'
+                      }
                     >
-                      <ConversationMessagesList messages={messages} resolveParticipantInfo={resolveParticipantInfo} />
+                      <ConversationMessagesList
+                        messages={messages}
+                        resolveParticipantInfo={resolveParticipantInfo}
+                      />
                     </div>
                   </motion.div>
                 )}
@@ -1403,13 +1672,28 @@ const CallSummary = ({
           </div>
 
           {/* Footer Actions */}
-          <div className={'sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border/30 px-6 py-4'}>
-            <div className={'flex items-center justify-between gap-3'}>
-              <Button variant="outline" onClick={onClose} size="sm" className={'flex-1'}>
+          <div
+            className={
+              'sticky bottom-0 bg-card/95 backdrop-blur-md border-t border-border/30 px-3 py-3 sm:px-6 sm:py-4'
+            }
+          >
+            <div className={'flex items-center justify-between gap-2 sm:gap-3'}>
+              <Button
+                variant="outline"
+                onClick={onClose}
+                size="sm"
+                className={'flex-1 h-9 text-sm sm:h-10'}
+              >
                 <Trans>Close</Trans>
               </Button>
-              <Button onClick={handleSaveCall} size="sm" className={'flex-1 bg-primary hover:bg-primary/90'}>
-                <Save className={'size-4 mr-2'} />
+              <Button
+                onClick={handleSaveCall}
+                size="sm"
+                className={
+                  'flex-1 bg-primary hover:bg-primary/90 text-sm h-9 sm:h-10'
+                }
+              >
+                <Save className={'size-3.5 mr-1.5 sm:size-4 sm:mr-2'} />
                 <Trans>Save Call</Trans>
               </Button>
             </div>
@@ -1423,14 +1707,23 @@ const CallSummary = ({
               <Trans>Edit partner</Trans>
             </DialogTitle>
           </DialogHeader>
-          <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarUpload}
+          />
           <div className="flex items-start gap-4">
             <div className="flex flex-col items-center gap-1.5">
               <button
                 type="button"
                 aria-label={t`Change partner photo`}
                 disabled={
-                  !editingPartnerId || isUploadingAvatar || !canManagePartner || deletePartnerMutation.isPending
+                  !editingPartnerId ||
+                  isUploadingAvatar ||
+                  !canManagePartner ||
+                  deletePartnerMutation.isPending
                 }
                 onClick={() => avatarInputRef.current?.click()}
                 className="group relative inline-flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-border/70 bg-muted/40 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
@@ -1448,7 +1741,11 @@ const CallSummary = ({
                     isUploadingAvatar && 'opacity-100'
                   )}
                 >
-                  {isUploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trans>Edit</Trans>}
+                  {isUploadingAvatar ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trans>Edit</Trans>
+                  )}
                 </span>
               </button>
               <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1473,7 +1770,9 @@ const CallSummary = ({
                 </Label>
                 <Textarea
                   value={partnerDescriptionDraft}
-                  onChange={(event) => setPartnerDescriptionDraft(event.target.value)}
+                  onChange={(event) =>
+                    setPartnerDescriptionDraft(event.target.value)
+                  }
                   placeholder={t`Add a short description`}
                   disabled={!canManagePartner || isPartnerActionPending}
                   rows={3}
@@ -1491,7 +1790,9 @@ const CallSummary = ({
                 disabled={isPartnerActionPending}
                 className="w-full sm:w-auto justify-center cursor-pointer disabled:cursor-not-allowed text-destructive border-destructive/40 hover:bg-destructive/10"
               >
-                {deletePartnerMutation.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+                {deletePartnerMutation.isPending ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : null}
                 <Trans>Delete partner</Trans>
               </Button>
             ) : (
@@ -1510,24 +1811,35 @@ const CallSummary = ({
               <Button
                 size="sm"
                 onClick={handlePartnerSave}
-                disabled={!canManagePartner || isPartnerActionPending || !partnerNameDraft.trim()}
+                disabled={
+                  !canManagePartner ||
+                  isPartnerActionPending ||
+                  !partnerNameDraft.trim()
+                }
                 className="flex-1 cursor-pointer disabled:cursor-not-allowed"
               >
-                {isSavingPartner && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                {isSavingPartner && (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                )}
                 <Trans>Save</Trans>
               </Button>
             </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <AlertDialog open={isPartnerDeleteDialogOpen} onOpenChange={setIsPartnerDeleteDialogOpen}>
+      <AlertDialog
+        open={isPartnerDeleteDialogOpen}
+        onOpenChange={setIsPartnerDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
               <Trans>Delete partner?</Trans>
             </AlertDialogTitle>
             <AlertDialogDescription>
-              <Trans>This will permanently remove the partner and cannot be undone.</Trans>
+              <Trans>
+                This will permanently remove the partner and cannot be undone.
+              </Trans>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1542,7 +1854,9 @@ const CallSummary = ({
               disabled={isPartnerActionPending}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              {deletePartnerMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {deletePartnerMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
               <Trans>Delete</Trans>
             </AlertDialogAction>
           </AlertDialogFooter>

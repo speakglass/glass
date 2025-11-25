@@ -26,14 +26,26 @@ import {
 } from '@/lib/account-api';
 import { useQueryClient } from '@tanstack/react-query';
 import { PartnerAvatar } from '@/components/partner-avatar';
-import { Loader2, CheckCircle2, Briefcase, MapPin, Languages } from 'lucide-react';
+import {
+  Loader2,
+  CheckCircle2,
+  Briefcase,
+  MapPin,
+  Languages,
+} from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import type { LearningLevel } from '@/types/learning-level';
 import { getLanguageName } from '@/lib/conversation-display';
 import { useLocale } from '@/hooks/use-locale';
 
-function GenderIcon({ gender, className }: { gender: string; className?: string }) {
+function GenderIcon({
+  gender,
+  className,
+}: {
+  gender: string;
+  className?: string;
+}) {
   const iconClass = className || 'h-3.5 w-3.5';
 
   if (gender === 'male') {
@@ -104,7 +116,10 @@ const universalTopics = [
 ];
 
 // Language-specific topics
-const languageSpecificTopics: Record<string, Array<{ id: string; icon: string; title: string }>> = {
+const languageSpecificTopics: Record<
+  string,
+  Array<{ id: string; icon: string; title: string }>
+> = {
   en: [
     { id: 'pop_culture', icon: '🎬', title: t`Pop culture` },
     { id: 'tech_startups', icon: '💻', title: t`Tech & Startups` },
@@ -171,15 +186,26 @@ const languageSpecificTopics: Record<string, Array<{ id: string; icon: string; t
 };
 
 const getConversationTopics = (learningLang?: string) => {
-  const specificTopics = learningLang ? languageSpecificTopics[learningLang] || [] : [];
+  const specificTopics = learningLang
+    ? languageSpecificTopics[learningLang] || []
+    : [];
   return [...universalTopics, ...specificTopics];
 };
 
-type PartnerType = 'new_friends' | 'someone_special' | 'professional' | 'figuring_out';
+type PartnerType =
+  | 'new_friends'
+  | 'someone_special'
+  | 'professional'
+  | 'figuring_out';
 type GenderPreference = 'male' | 'female' | 'beyond_binary' | 'everyone';
 type AgePreference = 'teens' | 'early20s' | 'late20s' | 'thirties' | 'forties';
 
-const partnerTypeOptions: Array<{ id: PartnerType; icon: string; title: string; description: string }> = [
+const partnerTypeOptions: Array<{
+  id: PartnerType;
+  icon: string;
+  title: string;
+  description: string;
+}> = [
   {
     id: 'new_friends',
     icon: '👋',
@@ -223,7 +249,13 @@ const ageOptions: Array<{ id: AgePreference; label: string }> = [
 
 type CreateStep = 'topics' | 'partner_type' | 'basics' | 'finding' | 'meet';
 type NarrativeStepId = PartnerGenerationStep | 'complete';
-const NARRATIVE_STEP_ORDER: NarrativeStepId[] = ['persona', 'voice', 'partner', 'avatar', 'complete'];
+const NARRATIVE_STEP_ORDER: NarrativeStepId[] = [
+  'persona',
+  'voice',
+  'partner',
+  'avatar',
+  'complete',
+];
 const STEP_PACING_MS = [0, 6000, 14000, 24000, 32000]; // Minimum elapsed time targets for each step
 
 const FALLBACK_STATUS_MESSAGES: Record<PartnerGenerationStatus, string> = {
@@ -272,8 +304,10 @@ export function CustomPartnerCreator({
   const [gender, setGender] = useState<GenderPreference>('everyone');
   const [ageRange, setAgeRange] = useState<AgePreference>('late20s');
   const [isSaving, setIsSaving] = useState(false);
-  const [createdPartner, setCreatedPartner] = useState<ConversationPartner | null>(null);
-  const [generationJob, setGenerationJob] = useState<PartnerGenerationJob | null>(null);
+  const [createdPartner, setCreatedPartner] =
+    useState<ConversationPartner | null>(null);
+  const [generationJob, setGenerationJob] =
+    useState<PartnerGenerationJob | null>(null);
   const [clientStepIndex, setClientStepIndex] = useState(0);
   const [findingStartedAt, setFindingStartedAt] = useState<number | null>(null);
   const [pacingTick, setPacingTick] = useState(0);
@@ -288,25 +322,34 @@ export function CustomPartnerCreator({
     const partner = generationJob?.partner;
     const name = partner?.name || persona?.name || undefined;
     const city = persona?.personaCityTranslation || persona?.personaCity;
-    const country = persona?.personaCountryTranslation || persona?.personaCountry;
+    const country =
+      persona?.personaCountryTranslation || persona?.personaCountry;
     let location = [city, country].filter(Boolean).join(', ');
     if (location) {
       const splitOnInterests = location.split(/interests?:/i)[0];
       location = splitOnInterests.split('\n')[0].trim();
     }
     const interestSource =
-      persona?.personaInterestsTranslation && persona.personaInterestsTranslation.length > 0
+      persona?.personaInterestsTranslation &&
+      persona.personaInterestsTranslation.length > 0
         ? persona.personaInterestsTranslation
         : persona?.personaInterests;
-    const interestList = interestSource?.filter((item) => item && item.trim()) ?? [];
+    const interestList =
+      interestSource?.filter((item) => item && item.trim()) ?? [];
     const interest = interestList[0];
     return { name, location, interest };
   }, [generationJob]);
 
-  const createdOccupation = createdPartner?.personaOccupationTranslation || createdPartner?.personaOccupation;
-  const createdCity = createdPartner?.personaCityTranslation || createdPartner?.personaCity;
-  const createdCountry = createdPartner?.personaCountryTranslation || createdPartner?.personaCountry;
-  const createdLocation = [createdCity, createdCountry].filter(Boolean).join(', ');
+  const createdOccupation =
+    createdPartner?.personaOccupationTranslation ||
+    createdPartner?.personaOccupation;
+  const createdCity =
+    createdPartner?.personaCityTranslation || createdPartner?.personaCity;
+  const createdCountry =
+    createdPartner?.personaCountryTranslation || createdPartner?.personaCountry;
+  const createdLocation = [createdCity, createdCountry]
+    .filter(Boolean)
+    .join(', ');
 
   const targetStepIndex = useMemo(() => {
     if (flowStep !== 'finding' || !generationJob) {
@@ -318,7 +361,10 @@ export function CustomPartnerCreator({
     let dataTarget = 0;
 
     // Step 1: Persona generated
-    const personaReady = Boolean(location) || steps.has('persona') || (status && status !== 'queued');
+    const personaReady =
+      Boolean(location) ||
+      steps.has('persona') ||
+      (status && status !== 'queued');
     if (personaReady) {
       dataTarget = Math.max(dataTarget, 1);
     }
@@ -330,7 +376,8 @@ export function CustomPartnerCreator({
     }
 
     // Step 3: Partner saved (completed, not in progress)
-    const profileReady = Boolean(interest) || steps.has('partner') || generationJob.partner;
+    const profileReady =
+      Boolean(interest) || steps.has('partner') || generationJob.partner;
     if (profileReady) {
       dataTarget = Math.max(dataTarget, 3);
     }
@@ -350,8 +397,14 @@ export function CustomPartnerCreator({
     if (photoReady) {
       paceTarget = NARRATIVE_STEP_ORDER.length;
     } else {
-      const elapsed = findingStartedAt && pacingTick ? Math.max(pacingTick - findingStartedAt, 0) : 0;
-      paceTarget = STEP_PACING_MS.reduce((count, threshold) => (elapsed >= threshold ? count + 1 : count), 0);
+      const elapsed =
+        findingStartedAt && pacingTick
+          ? Math.max(pacingTick - findingStartedAt, 0)
+          : 0;
+      paceTarget = STEP_PACING_MS.reduce(
+        (count, threshold) => (elapsed >= threshold ? count + 1 : count),
+        0
+      );
       paceTarget = Math.max(1, paceTarget);
     }
 
@@ -370,13 +423,20 @@ export function CustomPartnerCreator({
   const addPartnerToCache = useCallback(
     (partner: ConversationPartner) => {
       if (!token) return;
-      queryClient.setQueryData<ConversationPartner[] | undefined>(['partners', token], (previous) => {
-        const existing = previous || [];
-        if (existing.some((existingPartner) => existingPartner.id === partner.id)) {
-          return existing;
+      queryClient.setQueryData<ConversationPartner[] | undefined>(
+        ['partners', token],
+        (previous) => {
+          const existing = previous || [];
+          if (
+            existing.some(
+              (existingPartner) => existingPartner.id === partner.id
+            )
+          ) {
+            return existing;
+          }
+          return [partner, ...existing];
         }
-        return [partner, ...existing];
-      });
+      );
     },
     [queryClient, token]
   );
@@ -442,14 +502,20 @@ export function CustomPartnerCreator({
             return;
           }
         } catch (error) {
-          console.error('[CustomPartnerCreator] Failed to poll partner generation job', error);
+          console.error(
+            '[CustomPartnerCreator] Failed to poll partner generation job',
+            error
+          );
           shouldStopAfterError = true;
           stopJobPolling();
           setIsSaving(false);
           setFlowStep('basics');
-          const status = typeof error === 'object' && error && 'status' in (error as Record<string, unknown>)
-            ? (error as { status?: number }).status
-            : undefined;
+          const status =
+            typeof error === 'object' &&
+            error &&
+            'status' in (error as Record<string, unknown>)
+              ? (error as { status?: number }).status
+              : undefined;
           const description =
             status === 404
               ? t`The generation job expired. Please start again.`
@@ -468,7 +534,14 @@ export function CustomPartnerCreator({
 
       poll();
     },
-    [handleJobProgress, onGenerationJobUpdate, setFlowStep, setIsSaving, stopJobPolling, token]
+    [
+      handleJobProgress,
+      onGenerationJobUpdate,
+      setFlowStep,
+      setIsSaving,
+      stopJobPolling,
+      token,
+    ]
   );
 
   const getStepCompletedLabel = useCallback(
@@ -476,17 +549,25 @@ export function CustomPartnerCreator({
       const { name, location, interest } = previewDetails;
       switch (stepId) {
         case 'persona':
-          return location ? t`Found someone promising in ${location}.` : t`Found someone who shares your interests.`;
+          return location
+            ? t`Found someone promising in ${location}.`
+            : t`Found someone who shares your interests.`;
         case 'voice':
-          return name ? t`${name} just accepted the match request.` : t`Your match just said yes.`;
+          return name
+            ? t`${name} just accepted the match request.`
+            : t`Your match just said yes.`;
         case 'partner':
           return name
             ? t`${name} just finished writing a profile for you.`
             : t`Your match just finished writing a profile for you.`;
         case 'avatar':
-          return name ? t`${name} is picking a friendly photo for you.` : t`Your match is choosing a friendly photo.`;
+          return name
+            ? t`${name} is picking a friendly photo for you.`
+            : t`Your match is choosing a friendly photo.`;
         case 'complete':
-          return name ? t`${name} is all set!` : FALLBACK_STATUS_MESSAGES.completed;
+          return name
+            ? t`${name} is all set!`
+            : FALLBACK_STATUS_MESSAGES.completed;
         default:
           return undefined;
       }
@@ -494,7 +575,10 @@ export function CustomPartnerCreator({
     [previewDetails]
   );
 
-  const activeNarrativeIndex = Math.min(clientStepIndex, NARRATIVE_STEP_ORDER.length - 1);
+  const activeNarrativeIndex = Math.min(
+    clientStepIndex,
+    NARRATIVE_STEP_ORDER.length - 1
+  );
   const statusNarration = useMemo(() => {
     if (flowStep !== 'finding') {
       return undefined;
@@ -513,9 +597,13 @@ export function CustomPartnerCreator({
           ? t`${name} is putting together a quick profile for you...`
           : FALLBACK_STATUS_MESSAGES.saving_partner;
       case 'avatar':
-        return name ? t`${name} is snapping a friendly photo...` : FALLBACK_STATUS_MESSAGES.generating_avatar;
+        return name
+          ? t`${name} is snapping a friendly photo...`
+          : FALLBACK_STATUS_MESSAGES.generating_avatar;
       case 'complete':
-        return name ? t`${name} is ready to say hi!` : FALLBACK_STATUS_MESSAGES.completed;
+        return name
+          ? t`${name} is ready to say hi!`
+          : FALLBACK_STATUS_MESSAGES.completed;
       default:
         return FALLBACK_STATUS_MESSAGES.queued;
     }
@@ -596,7 +684,9 @@ export function CustomPartnerCreator({
 
   const toggleTopic = (topicId: string) => {
     setSelectedTopicIds((previous) =>
-      previous.includes(topicId) ? previous.filter((id) => id !== topicId) : [...previous, topicId]
+      previous.includes(topicId)
+        ? previous.filter((id) => id !== topicId)
+        : [...previous, topicId]
     );
   };
 
@@ -605,12 +695,16 @@ export function CustomPartnerCreator({
     if (!trimmed) {
       return;
     }
-    setCustomTopics((previous) => (previous.includes(trimmed) ? previous : [...previous, trimmed]));
+    setCustomTopics((previous) =>
+      previous.includes(trimmed) ? previous : [...previous, trimmed]
+    );
     setCustomTopicInput('');
     setCustomTopicInputVisible(false);
   };
 
-  const handleCustomTopicKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleCustomTopicKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
     if (event.key === 'Enter') {
       event.preventDefault();
       handleAddCustomTopic();
@@ -624,11 +718,14 @@ export function CustomPartnerCreator({
   const conversationTopics = getConversationTopics(learningLang);
 
   const mergedTopics = [
-    ...conversationTopics.filter((topic) => selectedTopicIds.includes(topic.id)).map((topic) => topic.title),
+    ...conversationTopics
+      .filter((topic) => selectedTopicIds.includes(topic.id))
+      .map((topic) => topic.title),
     ...customTopics,
   ].filter(Boolean);
 
-  const primaryButtonDisabled = flowStep === 'topics' && mergedTopics.length === 0;
+  const primaryButtonDisabled =
+    flowStep === 'topics' && mergedTopics.length === 0;
 
   const handleNext = async () => {
     if (flowStep === 'basics') {
@@ -670,11 +767,16 @@ export function CustomPartnerCreator({
         }
       } catch (error) {
         const statusCode =
-          typeof error === 'object' && error && 'status' in error ? (error as { status?: number }).status : null;
+          typeof error === 'object' && error && 'status' in error
+            ? (error as { status?: number }).status
+            : null;
         if (statusCode === 403) {
           onQuotaBlocked();
         } else {
-          console.error('[CustomPartnerCreator] Failed to start partner generation', error);
+          console.error(
+            '[CustomPartnerCreator] Failed to start partner generation',
+            error
+          );
           toast.error(t`Unable to find partner`);
         }
         setFlowStep('basics');
@@ -721,7 +823,9 @@ export function CustomPartnerCreator({
       return (
         <div className="space-y-4 py-2">
           <p className="text-sm text-muted-foreground">
-            <Trans>Select topics to find AI partners with similar interests.</Trans>
+            <Trans>
+              Select topics to find AI partners with similar interests.
+            </Trans>
           </p>
           <div className="flex flex-wrap gap-2">
             {conversationTopics.map((topic) => {
@@ -732,13 +836,15 @@ export function CustomPartnerCreator({
                   type="button"
                   onClick={() => toggleTopic(topic.id)}
                   className={cn(
-                    'flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.97] cursor-pointer',
+                    'flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.97] cursor-pointer sm:px-3.5 sm:py-2 sm:text-sm',
                     isSelected
                       ? 'border-primary bg-primary/15 text-primary shadow-sm'
                       : 'border-border bg-muted/40 hover:bg-muted/60 hover:border-muted-foreground/30'
                   )}
                 >
-                  <span className="text-base leading-none">{topic.icon}</span>
+                  <span className="text-sm leading-none sm:text-base">
+                    {topic.icon}
+                  </span>
                   <span>{topic.title}</span>
                 </button>
               );
@@ -747,20 +853,26 @@ export function CustomPartnerCreator({
               <button
                 key={topic}
                 type="button"
-                onClick={() => setCustomTopics((previous) => previous.filter((item) => item !== topic))}
-                className="group flex items-center gap-1.5 rounded-full border border-primary/60 bg-primary/10 px-3.5 py-2 text-sm font-medium text-primary transition hover:border-destructive hover:bg-destructive/10 hover:text-destructive active:scale-95 cursor-pointer"
+                onClick={() =>
+                  setCustomTopics((previous) =>
+                    previous.filter((item) => item !== topic)
+                  )
+                }
+                className="group flex items-center gap-1.5 rounded-full border border-primary/60 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary transition hover:border-destructive hover:bg-destructive/10 hover:text-destructive active:scale-95 cursor-pointer sm:px-3.5 sm:py-2 sm:text-sm"
               >
                 <span>{topic}</span>
-                <span className="text-base leading-none opacity-60 group-hover:opacity-100">×</span>
+                <span className="text-sm leading-none opacity-60 group-hover:opacity-100 sm:text-base">
+                  ×
+                </span>
               </button>
             ))}
             {!customTopicInputVisible ? (
               <button
                 type="button"
                 onClick={() => setCustomTopicInputVisible(true)}
-                className="flex items-center gap-1.5 rounded-full border border-dashed px-3.5 py-2 text-sm font-medium text-muted-foreground transition hover:border-primary hover:text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                className="flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer sm:px-3.5 sm:py-2 sm:text-sm"
               >
-                <span className="text-base leading-none">+</span>
+                <span className="text-sm leading-none sm:text-base">+</span>
                 <span>
                   <Trans>Add your own</Trans>
                 </span>
@@ -794,7 +906,7 @@ export function CustomPartnerCreator({
           <p className="text-sm text-muted-foreground">
             <Trans>What kind of AI partner are you looking for?</Trans>
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
             {partnerTypeOptions.map((option) => {
               const isSelected = partnerType === option.id;
               return (
@@ -803,13 +915,19 @@ export function CustomPartnerCreator({
                   type="button"
                   onClick={() => setPartnerType(option.id)}
                   className={cn(
-                    'rounded-xl border px-4 py-4 text-left transition hover:border-primary/50 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer',
-                    isSelected ? 'border-primary bg-primary/10 shadow-sm' : 'border-border hover:bg-muted/30'
+                    'rounded-xl border px-3 py-3 text-left transition hover:border-primary/50 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer sm:px-4 sm:py-4',
+                    isSelected
+                      ? 'border-primary bg-primary/10 shadow-sm'
+                      : 'border-border hover:bg-muted/30'
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl leading-none">{option.icon}</span>
-                    <p className="font-semibold text-sm">{option.title}</p>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <span className="text-xl leading-none sm:text-2xl">
+                      {option.icon}
+                    </span>
+                    <p className="font-semibold text-xs sm:text-sm">
+                      {option.title}
+                    </p>
                   </div>
                 </button>
               );
@@ -839,7 +957,7 @@ export function CustomPartnerCreator({
                     type="button"
                     onClick={() => setGender(option.id)}
                     className={cn(
-                      'rounded-full border px-4 py-2 text-sm font-medium transition hover:border-primary/60 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer',
+                      'rounded-full border px-3 py-1.5 text-xs font-medium transition hover:border-primary/60 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer sm:px-4 sm:py-2 sm:text-sm',
                       gender === option.id
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border hover:bg-muted/30'
@@ -863,7 +981,7 @@ export function CustomPartnerCreator({
                     type="button"
                     onClick={() => setAgeRange(option.id)}
                     className={cn(
-                      'rounded-full border px-4 py-2 text-sm font-medium transition hover:border-primary/60 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer',
+                      'rounded-full border px-3 py-1.5 text-xs font-medium transition hover:border-primary/60 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer sm:px-4 sm:py-2 sm:text-sm',
                       ageRange === option.id
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border hover:bg-muted/30'
@@ -895,7 +1013,11 @@ export function CustomPartnerCreator({
         'yui.png',
       ];
 
-      const progressSteps: Array<{ id: NarrativeStepId; label: string; icon: string }> = [
+      const progressSteps: Array<{
+        id: NarrativeStepId;
+        label: string;
+        icon: string;
+      }> = [
         {
           id: 'persona',
           label: t`Finding a great match`,
@@ -929,63 +1051,81 @@ export function CustomPartnerCreator({
       const currentTitle = statusNarration || fallbackTitle;
 
       return (
-        <div className="space-y-8 py-6">
+        <div className="space-y-4 py-3 sm:space-y-8 sm:py-6">
           <div className="text-center space-y-2">
-            <h3 className="text-xl font-semibold transition-all duration-300">{currentTitle}</h3>
+            <h3 className="text-base font-semibold transition-all duration-300 sm:text-xl">
+              {currentTitle}
+            </h3>
           </div>
 
           {/* Animated partner images carousel */}
-          <div className="relative h-32 overflow-hidden">
+          <div className="relative h-24 overflow-hidden sm:h-32">
             <div className="absolute inset-0 flex items-center">
-              <div className="flex gap-4 animate-[scrollPartners_20s_linear_infinite]">
+              <div className="flex gap-3 animate-[scrollPartners_20s_linear_infinite] sm:gap-4">
                 {[...partnerImages, ...partnerImages].map((image, idx) => (
                   <div
                     key={idx}
-                    className="flex-shrink-0 w-20 h-20 rounded-full overflow-hidden border-2 border-primary/30 shadow-lg"
+                    className="flex-shrink-0 w-16 h-16 rounded-full overflow-hidden border-2 border-primary/30 shadow-lg sm:w-20 sm:h-20"
                   >
-                    <img src={`/partners/${image}`} alt="" className="w-full h-full object-cover" />
+                    <img
+                      src={`/partners/${image}`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 ))}
               </div>
             </div>
-            <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-background via-background/80 to-transparent pointer-events-none z-10" />
-            <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background via-background/80 to-transparent pointer-events-none z-10" />
+            <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-background via-background/80 to-transparent pointer-events-none z-10 sm:w-24" />
+            <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background via-background/80 to-transparent pointer-events-none z-10 sm:w-24" />
           </div>
 
           {/* Progress steps */}
-          <div className="max-w-sm mx-auto space-y-2.5">
+          <div className="max-w-sm mx-auto space-y-2 sm:space-y-2.5">
             {progressSteps.map((step, idx) => {
               const isCompleted = idx < clientStepIndex;
-              const isActive = idx === Math.min(clientStepIndex, progressSteps.length - 1) && !isCompleted;
-              const displayLabel = isCompleted ? getStepCompletedLabel(step.id) ?? step.label : step.label;
+              const isActive =
+                idx === Math.min(clientStepIndex, progressSteps.length - 1) &&
+                !isCompleted;
+              const displayLabel = isCompleted
+                ? getStepCompletedLabel(step.id) ?? step.label
+                : step.label;
               return (
                 <div
                   key={step.id}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-500',
+                    'flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all duration-500 sm:gap-3 sm:px-3 sm:py-3',
                     isActive && 'bg-primary/5',
                     isCompleted && 'opacity-60'
                   )}
                 >
                   <div className="relative flex items-center justify-center">
                     {isCompleted ? (
-                      <div className="h-6 w-6 rounded-full bg-emerald-500/90 flex items-center justify-center">
-                        <CheckCircle2 className="h-4 w-4 text-white" strokeWidth={2.5} />
+                      <div className="h-5 w-5 rounded-full bg-emerald-500/90 flex items-center justify-center sm:h-6 sm:w-6">
+                        <CheckCircle2
+                          className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4"
+                          strokeWidth={2.5}
+                        />
                       </div>
                     ) : isActive ? (
-                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" strokeWidth={2.5} />
+                      <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center sm:h-6 sm:w-6">
+                        <Loader2
+                          className="h-3 w-3 text-primary animate-spin sm:h-3.5 sm:w-3.5"
+                          strokeWidth={2.5}
+                        />
                       </div>
                     ) : (
-                      <div className="h-6 w-6 rounded-full bg-muted/50 flex items-center justify-center">
-                        <span className="text-sm opacity-60">{step.icon}</span>
+                      <div className="h-5 w-5 rounded-full bg-muted/50 flex items-center justify-center sm:h-6 sm:w-6">
+                        <span className="text-xs opacity-60 sm:text-sm">
+                          {step.icon}
+                        </span>
                       </div>
                     )}
                   </div>
                   <div className="flex-1 space-y-0.5">
                     <p
                       className={cn(
-                        'text-sm transition-all',
+                        'text-xs transition-all sm:text-sm',
                         isActive && 'text-foreground font-medium',
                         isCompleted && 'text-muted-foreground',
                         !isActive && !isCompleted && 'text-muted-foreground'
@@ -1014,6 +1154,13 @@ export function CustomPartnerCreator({
     }
 
     if (flowStep === 'meet') {
+      const genderLabels = {
+        male: t`Male`,
+        female: t`Female`,
+        'non-binary': t`Non-binary`,
+        other: t`Other`,
+      };
+
       const relationshipTypeLabels = {
         new_friends: t`New friends`,
         someone_special: t`Someone special`,
@@ -1022,9 +1169,9 @@ export function CustomPartnerCreator({
       };
 
       return (
-        <div className="flex flex-col max-h-[600px]">
+        <div className="flex flex-col">
           {/* Scrollable content including image */}
-          <div className="overflow-y-auto space-y-4">
+          <div className="space-y-4">
             {/* Avatar image - compact square */}
             <div className="relative w-full aspect-square overflow-hidden rounded-lg">
               <PartnerAvatar
@@ -1037,12 +1184,14 @@ export function CustomPartnerCreator({
 
             {/* Name and age with verified badge */}
             <div className="space-y-1">
-              <h3 className="text-3xl font-bold flex items-center gap-2">
+              <h3 className="text-2xl font-bold flex items-center gap-1.5 sm:text-3xl sm:gap-2">
                 {createdPartner?.name || generatedName}
-                <span className="text-2xl font-normal">{createdPartner?.personaAge || '25'}</span>
-                <div className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                <span className="text-xl font-normal sm:text-2xl">
+                  {createdPartner?.personaAge || '25'}
+                </span>
+                <div className="h-5 w-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 sm:h-6 sm:w-6">
                   <svg
-                    className="h-4 w-4 text-white"
+                    className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                     xmlns="http://www.w3.org/2000/svg"
@@ -1057,10 +1206,11 @@ export function CustomPartnerCreator({
               </h3>
 
               {/* Gender, profession, location */}
-              <div className="text-sm text-muted-foreground space-y-0.5">
-                {(createdPartner?.nativeLang || createdPartner?.learningLang) && (
+              <div className="text-xs text-muted-foreground space-y-0.5 sm:text-sm">
+                {(createdPartner?.nativeLang ||
+                  createdPartner?.learningLang) && (
                   <div className="flex items-center gap-1.5">
-                    <Languages className="h-3.5 w-3.5" />
+                    <Languages className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     <span>
                       {getLanguageName(createdPartner.nativeLang, locale)} →{' '}
                       {getLanguageName(createdPartner.learningLang, locale)}
@@ -1069,19 +1219,26 @@ export function CustomPartnerCreator({
                 )}
                 {createdPartner?.personaGender && (
                   <div className="flex items-center gap-1.5">
-                    <GenderIcon gender={createdPartner.personaGender} />
-                    <span className="capitalize">{createdPartner.personaGender}</span>
+                    <GenderIcon
+                      gender={createdPartner.personaGender}
+                      className="h-3 w-3 sm:h-3.5 sm:w-3.5"
+                    />
+                    <span>
+                      {genderLabels[
+                        createdPartner.personaGender as keyof typeof genderLabels
+                      ] || createdPartner.personaGender}
+                    </span>
                   </div>
                 )}
                 {createdOccupation && (
                   <div className="flex items-center gap-1.5">
-                    <Briefcase className="h-3.5 w-3.5" />
+                    <Briefcase className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     <span className="capitalize">{createdOccupation}</span>
                   </div>
                 )}
                 {createdLocation && (
                   <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5" />
+                    <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     <span>{createdLocation}</span>
                   </div>
                 )}
@@ -1090,41 +1247,55 @@ export function CustomPartnerCreator({
 
             {/* Looking for */}
             {createdPartner?.personaRelationship && (
-              <div className="bg-muted/80 rounded-lg px-4 py-3">
-                <p className="text-sm flex items-center gap-2">
-                  <span className="text-base">😊</span>
+              <div className="bg-muted/80 rounded-lg px-3 py-2.5 sm:px-4 sm:py-3">
+                <p className="text-xs flex items-center gap-1.5 sm:text-sm sm:gap-2">
+                  <span className="text-sm sm:text-base">😊</span>
                   <span className="font-medium">
                     <Trans>Looking for</Trans>
                   </span>
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {relationshipTypeLabels[createdPartner.personaRelationship as keyof typeof relationshipTypeLabels] ||
-                    createdPartner.personaRelationship}
+                <p className="text-xs text-muted-foreground mt-1 sm:text-sm">
+                  {relationshipTypeLabels[
+                    createdPartner.personaRelationship as keyof typeof relationshipTypeLabels
+                  ] || createdPartner.personaRelationship}
                 </p>
               </div>
             )}
 
             {/* About Me */}
-            <div className="space-y-3">
-              <h4 className="text-lg font-semibold">
+            <div className="space-y-2 sm:space-y-3">
+              <h4 className="text-base font-semibold sm:text-lg">
                 <Trans>About Me</Trans>
               </h4>
-              {(createdPartner?.descriptionTranslation || createdPartner?.description) && (
-                <p className="text-sm text-foreground leading-relaxed">
-                  {createdPartner?.descriptionTranslation || createdPartner?.description}
+              {(createdPartner?.descriptionTranslation ||
+                createdPartner?.description) && (
+                <p className="text-xs text-foreground leading-relaxed sm:text-sm">
+                  {createdPartner?.descriptionTranslation ||
+                    createdPartner?.description}
                 </p>
               )}
-              {(createdPartner?.personaBackgroundTranslation || createdPartner?.personaBackground) && (
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {createdPartner?.personaBackgroundTranslation || createdPartner?.personaBackground}
+              {(createdPartner?.personaBackgroundTranslation ||
+                createdPartner?.personaBackground) && (
+                <p className="text-xs text-muted-foreground leading-relaxed sm:text-sm">
+                  {createdPartner?.personaBackgroundTranslation ||
+                    createdPartner?.personaBackground}
                 </p>
               )}
-              {(createdPartner?.personaInterestsTranslation || createdPartner?.personaInterests) && (
+              {(createdPartner?.personaInterestsTranslation ||
+                createdPartner?.personaInterests) && (
                 <div className="flex flex-wrap gap-2">
-                  {(createdPartner.personaInterestsTranslation || createdPartner.personaInterests || '')
+                  {(
+                    createdPartner.personaInterestsTranslation ||
+                    createdPartner.personaInterests ||
+                    ''
+                  )
                     .split(',')
                     .map((interest, idx) => (
-                      <Badge key={idx} variant="secondary" className="text-xs capitalize">
+                      <Badge
+                        key={idx}
+                        variant="secondary"
+                        className="text-xs capitalize"
+                      >
                         {interest.trim()}
                       </Badge>
                     ))}
@@ -1144,7 +1315,10 @@ export function CustomPartnerCreator({
             >
               <Trans>Find another</Trans>
             </Button>
-            <Button onClick={handleMeetPartner} className="flex-1 cursor-pointer">
+            <Button
+              onClick={handleMeetPartner}
+              className="flex-1 cursor-pointer"
+            >
               <Trans>Start chatting</Trans>
             </Button>
           </div>
@@ -1167,12 +1341,23 @@ export function CustomPartnerCreator({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent className={cn('sm:max-w-[540px]', flowStep === 'meet' && 'sm:max-w-[440px]')}>
-        <DialogHeader className="pb-1">
+      <DialogContent
+        className={cn(
+          'max-h-[calc(100vh-2rem)] overflow-y-auto p-4 sm:p-6 sm:max-w-[540px]',
+          flowStep === 'meet' && 'sm:max-w-[440px]'
+        )}
+      >
+        <DialogHeader className="pb-1 text-left">
           <div className="flex items-center gap-3">
-            {flowStep !== 'meet' && <span className="text-3xl leading-none">{currentStep.emoji}</span>}
+            {flowStep !== 'meet' && (
+              <span className="text-3xl leading-none">{currentStep.emoji}</span>
+            )}
             <div className="flex-1">
-              <DialogTitle className={cn('text-xl', flowStep === 'meet' && 'text-lg')}>{currentStep.title}</DialogTitle>
+              <DialogTitle
+                className={cn('text-xl', flowStep === 'meet' && 'text-lg')}
+              >
+                {currentStep.title}
+              </DialogTitle>
             </div>
           </div>
         </DialogHeader>
@@ -1187,7 +1372,11 @@ export function CustomPartnerCreator({
                 disabled={isSaving}
                 className="cursor-pointer disabled:cursor-not-allowed"
               >
-                {flowStep === 'topics' ? <Trans>Cancel</Trans> : <Trans>Back</Trans>}
+                {flowStep === 'topics' ? (
+                  <Trans>Cancel</Trans>
+                ) : (
+                  <Trans>Back</Trans>
+                )}
               </Button>
               <Button
                 type="button"
@@ -1195,7 +1384,11 @@ export function CustomPartnerCreator({
                 disabled={primaryButtonDisabled || isSaving}
                 className="cursor-pointer disabled:cursor-not-allowed"
               >
-                {flowStep === 'basics' ? <Trans>Find partner</Trans> : <Trans>Next</Trans>}
+                {flowStep === 'basics' ? (
+                  <Trans>Find partner</Trans>
+                ) : (
+                  <Trans>Next</Trans>
+                )}
               </Button>
             </div>
           </DialogFooter>
@@ -1213,7 +1406,13 @@ interface CustomPartnerEditorProps {
   onPartnerUpdated: (partner: ConversationPartner) => void;
 }
 
-export function CustomPartnerEditor({ open, onClose, partner, token, onPartnerUpdated }: CustomPartnerEditorProps) {
+export function CustomPartnerEditor({
+  open,
+  onClose,
+  partner,
+  token,
+  onPartnerUpdated,
+}: CustomPartnerEditorProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -1275,10 +1474,18 @@ export function CustomPartnerEditor({ open, onClose, partner, token, onPartnerUp
         description: description.trim() || null,
       });
       if (avatarFile) {
-        updatedPartner = await uploadPartnerAvatar(token, partner.id, avatarFile);
+        updatedPartner = await uploadPartnerAvatar(
+          token,
+          partner.id,
+          avatarFile
+        );
       }
-      queryClient.setQueryData<ConversationPartner[] | undefined>(['partners', token], (previous) =>
-        (previous || []).map((existing) => (existing.id === updatedPartner.id ? updatedPartner : existing))
+      queryClient.setQueryData<ConversationPartner[] | undefined>(
+        ['partners', token],
+        (previous) =>
+          (previous || []).map((existing) =>
+            existing.id === updatedPartner.id ? updatedPartner : existing
+          )
       );
       toast.success(t`Partner updated`);
       onPartnerUpdated(updatedPartner);
@@ -1302,18 +1509,24 @@ export function CustomPartnerEditor({ open, onClose, partner, token, onPartnerUp
             <Trans>Update your custom partner details.</Trans>
           </DialogDescription>
         </DialogHeader>
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarChange}
+        />
         <div className="flex items-start gap-4">
           <div className="flex flex-col items-center gap-1.5">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isSaving}
-              className="group relative inline-flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-border/70 bg-muted/40 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              className="group relative inline-flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-border/70 bg-muted/40 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer sm:h-20 sm:w-20"
               aria-label={t`Change partner photo`}
             >
               <PartnerAvatar
-                className="pointer-events-none h-20 w-20"
+                className="pointer-events-none h-16 w-16 sm:h-20 sm:w-20"
                 fallbackSize="lg"
                 name={partner?.name || undefined}
                 src={avatarPreview || undefined}
@@ -1324,7 +1537,11 @@ export function CustomPartnerEditor({ open, onClose, partner, token, onPartnerUp
                   isSaving && 'opacity-100'
                 )}
               >
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trans>Edit</Trans>}
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trans>Edit</Trans>
+                )}
               </span>
             </button>
             <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1373,7 +1590,9 @@ export function CustomPartnerEditor({ open, onClose, partner, token, onPartnerUp
             disabled={isSaving || !name.trim()}
             className="cursor-pointer disabled:cursor-not-allowed"
           >
-            {isSaving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            {isSaving && (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            )}
             <Trans>Save</Trans>
           </Button>
         </DialogFooter>
