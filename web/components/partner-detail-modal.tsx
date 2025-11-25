@@ -259,7 +259,7 @@ export function PartnerDetailModal({
           </div>
 
           {/* Action buttons - fixed at bottom */}
-          <div className="flex gap-2 border-t pt-4 mt-4">
+          <div className="flex gap-2 border-t py-4 bg-background sticky -bottom-[16px] sm:-bottom-[24px]">
             <Button
               variant="outline"
               onClick={onClose}
