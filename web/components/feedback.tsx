@@ -26,7 +26,7 @@ export default function Feedback() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!feedback.trim()) {
       toast.error(t`Please enter your feedback`);
       return;
@@ -49,7 +49,7 @@ export default function Feedback() {
       if (!response.ok) {
         throw new Error('Failed to submit feedback');
       }
-      
+
       toast.success(t`Thank you for your feedback!`);
       setOpen(false);
       setFeedback('');

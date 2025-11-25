@@ -163,7 +163,7 @@ const SuggestionBubble = forwardRef<HTMLDivElement, SuggestionBubbleProps>(
                   </button>
                 </div>
               </div>
-              <div className={'space-y-1.5'}>
+              <div className={'sm:space-y-1.5 space-y-1'}>
                 {suggestion.target_text && (
                   <LiveHighlightedText
                     text={suggestion.target_text}
@@ -440,15 +440,19 @@ export default function BottomPanel() {
   }, [suggestions.length, feedbacks.length, isSpeaking, loadingSuggestion]);
 
   return (
-    <div className={'mx-auto w-full min-h-[50dvh]'}>
+    <div className="mx-auto w-full h-[50vh] shrink-0">
       <div className={'max-w-2xl mx-auto w-full px-4 h-full flex flex-col'}>
         <div
           id="glass-suggestion-section"
           className={
-            'border-t h-full border-border/30 pt-2.5 pb-2.5 shrink-0 sm:pt-3 sm:pb-3'
+            'border-t flex-1 min-h-0 flex flex-col border-border/30 pt-2.5 pb-2.5 sm:pt-3 sm:pb-3'
           }
         >
-          <div className={'flex items-center gap-1.5 mb-2 md:gap-3 sm:mb-3'}>
+          <div
+            className={
+              'flex items-center gap-1.5 mb-2 md:gap-3 sm:mb-3 shrink-0'
+            }
+          >
             {/* Suggestion hint input - always visible, grows to fill space */}
             <div className={'relative flex-1 min-w-0'}>
               <Languages
@@ -671,7 +675,7 @@ export default function BottomPanel() {
             id="glass-ai-panel"
             data-tour="suggestions"
             className={
-              'flex items-start gap-2 sm:gap-3 pt-2 pb-12 flex-1 min-h-0 h-full overflow-y-auto sm:overflow-visible'
+              'flex items-start gap-2 sm:gap-3 pt-2 pb-12 flex-1 min-h-0 overflow-y-auto sm:overflow-visible sm:pb-0'
             }
           >
             {/* Avatar */}
@@ -835,7 +839,7 @@ export default function BottomPanel() {
                       }
                     >
                       <div className={'flex items-center justify-between'}>
-                        <div className={'flex items-center gap-2'}>
+                        <div className={'flex items-baseline gap-2'}>
                           <span className={'relative flex h-2.5 w-2.5'}>
                             <span
                               className={

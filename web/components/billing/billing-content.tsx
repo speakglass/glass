@@ -769,12 +769,12 @@ export function BillingContent() {
         </div>
       </section>
 
-      <section className="rounded-xl sm:rounded-3xl border border-border/60 bg-card/60 px-3 py-6 sm:px-4 sm:py-8 md:px-8 md:py-12">
+      <section className="rounded-xl sm:rounded-3xl border border-border/60 bg-card/60 px-3 py-4 sm:px-4 sm:py-8 md:px-8 md:py-12">
         <div className="flex flex-col items-center justify-center text-center mb-8 sm:mb-12">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <Trans>Pricing</Trans>
           </p>
-          <h3 className="text-2xl sm:text-4xl font-semibold text-emphasis mt-3 sm:mt-4 mb-3 sm:mb-4">
+          <h3 className="text-2xl sm:text-4xl font-semibold text-emphasis my-3 sm:my-4">
             <Trans>Scale with the right plan</Trans>
           </h3>
           <p className="text-subtle text-sm sm:text-base">
