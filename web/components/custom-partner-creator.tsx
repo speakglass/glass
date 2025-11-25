@@ -532,6 +532,7 @@ export function CustomPartnerCreator({
     setPartnerType('new_friends');
     setGender('everyone');
     setAgeRange('late20s');
+    setIsSaving(false);
     setCreatedPartner(null);
     setGenerationJob(null);
     setClientStepIndex(0);
