@@ -119,7 +119,7 @@ export function PartnerDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto p-4 sm:p-6 sm:max-w-[440px]">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-4 sm:p-6 sm:max-w-[440px]">
         <DialogHeader className="pb-1 text-left">
           <DialogTitle className="text-base sm:text-lg">
             <Trans>Partner Details</Trans>

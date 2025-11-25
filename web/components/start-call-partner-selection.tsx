@@ -171,11 +171,11 @@ export function PartnerSelection({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       className={cn(
-        'flex w-full flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5',
+        'flex w-full flex-col items-center gap-5 sm:gap-6 max-w-2xl mx-auto px-1.5 max-h-[calc(100dvh-140px)] sm:max-h-none',
         isStartingCall && 'pointer-events-none'
       )}
     >
-      <div className={'text-center'}>
+      <div className={'text-center shrink-0 md:pt-4'}>
         <h2
           className={`${getTextClass(
             'title'
@@ -188,7 +188,7 @@ export function PartnerSelection({
         </p>
       </div>
       <div
-        className="relative w-full max-w-[448px] mx-auto"
+        className="relative w-full max-w-[448px] mx-auto flex-1 sm:flex-initial overflow-hidden sm:overflow-visible"
         ref={partnerListWrapperRef}
       >
         {hoveredPartner && hoveredPartnerPreviewTop !== null && (
@@ -261,7 +261,7 @@ export function PartnerSelection({
         )}
         <div
           ref={partnerListRef}
-          className="flex flex-col w-full max-h-[60vh] overflow-y-auto pb-4 sm:pb-5"
+          className="flex flex-col w-full h-full sm:h-auto sm:max-h-[60vh] overflow-y-auto pb-4 sm:pb-5"
           style={{ scrollbarGutter: 'stable' }}
         >
           {generationJob && (
@@ -347,7 +347,7 @@ export function PartnerSelection({
                                 event.preventDefault();
                                 event.stopPropagation();
                               }}
-                              className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-foreground rounded-lg p-1 sm:p-1.5 border border-border/0 hover:border-border bg-muted/60 hover:bg-muted data-[state=open]:opacity-100 data-[state=open]:border-border data-[state=open]:bg-muted"
+                              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition text-muted-foreground hover:text-foreground rounded-lg p-1 sm:p-1.5 border border-border/0 hover:border-border bg-muted/60 hover:bg-muted data-[state=open]:opacity-100 data-[state=open]:border-border data-[state=open]:bg-muted"
                               aria-label="Partner actions"
                             >
                               <MoreHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -486,7 +486,7 @@ export function PartnerSelection({
                                 event.preventDefault();
                                 event.stopPropagation();
                               }}
-                              className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-foreground rounded-lg p-1 sm:p-1.5 border border-border/0 hover:border-border bg-muted/60 hover:bg-muted data-[state=open]:opacity-100 data-[state=open]:border-border data-[state=open]:bg-muted"
+                              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition text-muted-foreground hover:text-foreground rounded-lg p-1 sm:p-1.5 border border-border/0 hover:border-border bg-muted/60 hover:bg-muted data-[state=open]:opacity-100 data-[state=open]:border-border data-[state=open]:bg-muted"
                               aria-label="Partner actions"
                             >
                               <MoreHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
