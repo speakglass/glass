@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import GoogleSignIn
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -36,6 +37,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         // Called when the app was launched with a url. Feel free to add additional processing here,
         // but if you want the App API to support tracking app url opens, make sure to keep this call
+        
+        // Handle Google Sign-In URL
+        if GIDSignIn.sharedInstance.handle(url) {
+            print("[AppDelegate] Google Sign-In handled the URL: \(url)")
+            return true
+        }
+        
+        print("[AppDelegate] URL not handled by Google Sign-In, passing to Capacitor: \(url)")
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
     }
 

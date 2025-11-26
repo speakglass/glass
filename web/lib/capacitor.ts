@@ -7,6 +7,7 @@ import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Keyboard } from '@capacitor/keyboard';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 
 /**
  * Check if the app is running as a native mobile app
@@ -30,43 +31,54 @@ export const isAndroid = (): boolean => {
 };
 
 /**
+ * Initialize Google Auth plugin for all platforms
+ * Must be called before using GoogleAuth.signIn()
+ */
+export const initializeGoogleAuth = (): void => {
+  const platform = Capacitor.getPlatform();
+  const clientIdMap = {
+    ios: process.env.NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    android: process.env.NEXT_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    web: process.env.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  };
+
+  const clientId = clientIdMap[platform as keyof typeof clientIdMap];
+
+  if (!clientId) {
+    throw new Error(`Google OAuth client ID not found for platform: ${platform}`);
+  }
+
+  GoogleAuth.initialize({
+    clientId,
+    scopes: ['profile', 'email'],
+    grantOfflineAccess: true,
+  });
+};
+
+/**
  * Initialize mobile-specific features
  */
 export const initializeNativeFeatures = async (): Promise<void> => {
-  if (!isNativePlatform()) {
-    return;
-  }
+  initializeGoogleAuth();
+
+  if (!isNativePlatform()) return;
 
   try {
-    // Set status bar style
     if (isIOS()) {
       await StatusBar.setStyle({ style: Style.Dark });
     }
 
-    // Listen for app state changes
     CapApp.addListener('appStateChange', ({ isActive }) => {
-      console.log('App state changed. Active:', isActive);
+      console.log('[Capacitor] App state:', isActive ? 'active' : 'inactive');
     });
 
-    // Listen for back button on Android
     if (isAndroid()) {
       CapApp.addListener('backButton', ({ canGoBack }) => {
-        if (!canGoBack) {
-          CapApp.exitApp();
-        }
+        if (!canGoBack) CapApp.exitApp();
       });
     }
-
-    // Keyboard listeners
-    Keyboard.addListener('keyboardWillShow', (info) => {
-      console.log('Keyboard will show:', info);
-    });
-
-    Keyboard.addListener('keyboardWillHide', () => {
-      console.log('Keyboard will hide');
-    });
   } catch (error) {
-    console.error('Error initializing native features:', error);
+    console.error('[Capacitor] Error initializing native features:', error);
   }
 };
 

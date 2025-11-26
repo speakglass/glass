@@ -50,7 +50,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 import {
   Popover,
   PopoverContent,

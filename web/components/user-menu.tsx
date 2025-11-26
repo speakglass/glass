@@ -29,6 +29,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAccountSession } from '@/contexts/account-session-context';
 import { cn } from '@/utils';
+import { isNativePlatform } from '@/lib/capacitor';
 
 export function UserMenu({
   historyHref,
@@ -53,8 +54,9 @@ export function UserMenu({
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = typeof open === 'boolean';
   const menuOpen = isControlled ? Boolean(open) : internalOpen;
+  const isNative = isNativePlatform();
   const showBillingLink = Boolean(
-    snapshot?.billing && !snapshot.billing.selfHosted
+    snapshot?.billing && !snapshot.billing.selfHosted && !isNative
   );
 
   const user = session?.user;

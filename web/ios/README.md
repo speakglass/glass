@@ -160,7 +160,7 @@ pnpm run cap:sync
 
 ## 📱 App Store Deployment
 
-1. Set Bundle Identifier in Xcode (`com.glass.app`)
+1. Set Bundle Identifier in Xcode (`com.speakglass.app`)
 2. Configure Development Team
 3. Update Version and Build Number
 4. Create Archive (`Product > Archive`)

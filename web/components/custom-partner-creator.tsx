@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Trans } from '@lingui/react/macro';
 import { t } from '@lingui/core/macro';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 import { cn } from '@/utils';
 import {
   ConversationPartner,

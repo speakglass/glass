@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 import { t } from '@lingui/core/macro';
 import { useAccountSession } from '@/contexts/account-session-context';
 import type {

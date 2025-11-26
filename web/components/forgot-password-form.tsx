@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 import { Trans } from '@lingui/react/macro';
 
 export function ForgotPasswordForm({ className, ...props }: React.ComponentProps<'div'>) {

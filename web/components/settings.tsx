@@ -11,13 +11,15 @@ import {
   Palette,
   EyeOff,
   BookOpen,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useGlass } from '@/contexts/glass-context';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { Trans } from '@lingui/react/macro';
 import { t } from '@lingui/core/macro';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { LOCALIZED_LANGUAGE_CODES } from '@/lib/supported-languages';
 import { changeLanguage } from '@/utils/language';
 import {
@@ -26,21 +28,28 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useAccountSession } from '@/contexts/account-session-context';
-import { updateLanguageSettings } from '@/lib/account-api';
+import { updateLanguageSettings, deleteAccount } from '@/lib/account-api';
 import { useQueryClient } from '@tanstack/react-query';
 import type { LearningLevel } from '@/types/learning-level';
 import { isLearningLevel } from '@/types/learning-level';
+import { signOut } from 'next-auth/react';
+import { toast } from '@/utils/toast';
 
 interface AudioDevice {
   deviceId: string;
@@ -67,15 +76,15 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
   const { settings, updateSettings } = voice;
   const [devices, setDevices] = useState<AudioDevice[]>([]);
   const pathname = usePathname();
+  const router = useRouter();
   const { snapshot, token } = useAccountSession();
   const queryClient = useQueryClient();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const localMicDeviceId = settings.micDeviceId || 'default';
 
-  const audioInputs = useMemo(
-    () => devices.filter((d) => d.kind === 'audioinput'),
-    [devices]
-  );
+  const audioInputs = useMemo(() => devices.filter((d) => d.kind === 'audioinput'), [devices]);
   const appearance: 'light' | 'dark' = (theme as 'light' | 'dark') || 'light';
 
   // Define language level options inside component so translations update when language changes
@@ -110,8 +119,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
       // Remove duplicates by deviceId and filter out 'default' to avoid conflict
       const seen = new Set<string>();
       const uniqueDevices = mapped.filter((d) => {
-        if (!d.deviceId || d.deviceId === 'default' || seen.has(d.deviceId))
-          return false;
+        if (!d.deviceId || d.deviceId === 'default' || seen.has(d.deviceId)) return false;
         seen.add(d.deviceId);
         return true;
       });
@@ -119,10 +127,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
       setDevices(uniqueDevices);
 
       // If saved device is not in the list, reset to default
-      if (
-        settings.micDeviceId &&
-        !uniqueDevices.some((d) => d.deviceId === settings.micDeviceId)
-      ) {
+      if (settings.micDeviceId && !uniqueDevices.some((d) => d.deviceId === settings.micDeviceId)) {
         updateSettings({ micDeviceId: null });
       }
     } catch (e) {
@@ -158,11 +163,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
         };
       });
       // Change UI language to match native language
-      const newPath = changeLanguage(
-        langCode,
-        pathname,
-        LOCALIZED_LANGUAGE_CODES
-      );
+      const newPath = changeLanguage(langCode, pathname, LOCALIZED_LANGUAGE_CODES);
       window.location.href = newPath;
     } catch (error) {
       console.error('Failed to update native language:', error);
@@ -217,6 +218,24 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!token) return;
+    setIsDeleting(true);
+    try {
+      await deleteAccount(token);
+      toast.success('Your account has been deleted');
+      // Sign out and redirect to home
+      await signOut({ redirect: false });
+      router.push('/');
+    } catch (error) {
+      console.error('Failed to delete account:', error);
+      toast.error('Failed to delete account. Please try again.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[420px] max-h-[90vh] overflow-y-auto gap-4">
@@ -232,10 +251,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
         <div className="space-y-3">
           {/* Microphone Section */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <Label
-              htmlFor="microphone"
-              className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0"
-            >
+            <Label htmlFor="microphone" className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0">
               <Mic className="size-3.5" />
               <Trans>Microphone</Trans>
             </Label>
@@ -267,9 +283,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
             </Label>
             <Select
               value={settings.pronunciationMode || 'native'}
-              onValueChange={(value: 'native' | 'romaji') =>
-                updateSettings({ pronunciationMode: value })
-              }
+              onValueChange={(value: 'native' | 'romaji') => updateSettings({ pronunciationMode: value })}
             >
               <SelectTrigger id="pronunciation" className="h-8 w-full sm:w-48">
                 <SelectValue />
@@ -287,23 +301,15 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
 
           {/* Auto-hide messages */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <Label
-              htmlFor="duration"
-              className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0"
-            >
+            <Label htmlFor="duration" className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0">
               <EyeOff className="size-3.5" />
               <Trans>Hide messages</Trans>
             </Label>
             <Select
-              value={
-                settings.aiMessageDurationSec === null
-                  ? 'none'
-                  : String(settings.aiMessageDurationSec ?? 'none')
-              }
+              value={settings.aiMessageDurationSec === null ? 'none' : String(settings.aiMessageDurationSec ?? 'none')}
               onValueChange={(value) => {
                 updateSettings({
-                  aiMessageDurationSec:
-                    value === 'none' ? null : parseInt(value, 10),
+                  aiMessageDurationSec: value === 'none' ? null : parseInt(value, 10),
                 });
               }}
             >
@@ -324,17 +330,11 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
 
           {/* Native Language Selection */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <Label
-              htmlFor="native-lang"
-              className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0"
-            >
+            <Label htmlFor="native-lang" className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0">
               <Globe className="size-3.5" />
               <Trans>Native language</Trans>
             </Label>
-            <Select
-              value={snapshot?.user?.nativeLang || ''}
-              onValueChange={handleNativeLangChange}
-            >
+            <Select value={snapshot?.user?.nativeLang || ''} onValueChange={handleNativeLangChange}>
               <SelectTrigger id="native-lang" className="h-8 w-full sm:w-48">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
@@ -360,10 +360,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
               <BookOpen className="size-3.5" />
               <Trans>Learning language</Trans>
             </Label>
-            <Select
-              value={snapshot?.user?.learningLang || ''}
-              onValueChange={handleLearningLangChange}
-            >
+            <Select value={snapshot?.user?.learningLang || ''} onValueChange={handleLearningLangChange}>
               <SelectTrigger id="learning-lang" className="h-8 w-full sm:w-48">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
@@ -389,10 +386,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
               <Clock className="size-3.5" />
               <Trans>Language level</Trans>
             </Label>
-            <Select
-              value={snapshot?.user?.languageLevel || ''}
-              onValueChange={handleLanguageLevelChange}
-            >
+            <Select value={snapshot?.user?.languageLevel || ''} onValueChange={handleLanguageLevelChange}>
               <SelectTrigger id="language-level" className="h-8 w-full sm:w-48">
                 <SelectValue placeholder="Select level" />
               </SelectTrigger>
@@ -420,11 +414,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => selectAppearance('light')}
-                    className={`h-8 w-10 ${
-                      appearance === 'light'
-                        ? 'bg-accent text-accent-foreground'
-                        : ''
-                    }`}
+                    className={`h-8 w-10 ${appearance === 'light' ? 'bg-accent text-accent-foreground' : ''}`}
                   >
                     <Sun className="size-4" />
                   </Button>
@@ -440,11 +430,7 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => selectAppearance('dark')}
-                    className={`h-8 w-10  ${
-                      appearance === 'dark'
-                        ? 'bg-accent text-accent-foreground'
-                        : ''
-                    }`}
+                    className={`h-8 w-10  ${appearance === 'dark' ? 'bg-accent text-accent-foreground' : ''}`}
                   >
                     <Moon className="size-4" />
                   </Button>
@@ -455,8 +441,76 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
               </Tooltip>
             </div>
           </div>
+
+          {/* Delete Account - Danger Zone */}
+          <div className="pt-4 mt-4 border-t border-border">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+                <AlertTriangle className="size-3.5" />
+                <Trans>Danger Zone</Trans>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+                className="w-full sm:w-auto"
+              >
+                <Trash2 className="size-3.5 mr-1.5" />
+                <Trans>Delete Account</Trans>
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                <Trans>Permanently delete your account and all data. This action cannot be undone.</Trans>
+              </p>
+            </div>
+          </div>
         </div>
       </DialogContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="size-5 text-destructive" />
+              <Trans>Delete Account?</Trans>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                <Trans>This will permanently delete your account and all associated data, including:</Trans>
+              </p>
+              <ul className="list-disc list-inside text-sm space-y-1 ml-2">
+                <li>
+                  <Trans>All conversations and messages</Trans>
+                </li>
+                <li>
+                  <Trans>All conversation partners</Trans>
+                </li>
+                <li>
+                  <Trans>All saved memories</Trans>
+                </li>
+                <li>
+                  <Trans>Your account settings</Trans>
+                </li>
+              </ul>
+              <p className="font-semibold text-destructive">
+                <Trans>This action cannot be undone.</Trans>
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? <Trans>Deleting...</Trans> : <Trans>Delete Account</Trans>}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

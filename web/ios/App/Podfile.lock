@@ -1,4 +1,10 @@
 PODS:
+  - AppAuth (1.7.6):
+    - AppAuth/Core (= 1.7.6)
+    - AppAuth/ExternalUserAgent (= 1.7.6)
+  - AppAuth/Core (1.7.6)
+  - AppAuth/ExternalUserAgent (1.7.6):
+    - AppAuth/Core
   - Capacitor (7.4.4):
     - CapacitorCordova
   - CapacitorApp (7.1.0):
@@ -10,37 +16,69 @@ PODS:
     - Capacitor
   - CapacitorStatusBar (7.0.3):
     - Capacitor
+  - CapacitorToast (7.0.2):
+    - Capacitor
+  - CodetrixStudioCapacitorGoogleAuth (0.0.1):
+    - Capacitor
+    - GoogleSignIn (~> 6.2.4)
+  - GoogleSignIn (6.2.4):
+    - AppAuth (~> 1.5)
+    - GTMAppAuth (~> 1.3)
+    - GTMSessionFetcher/Core (< 3.0, >= 1.1)
+  - GTMAppAuth (1.3.1):
+    - AppAuth/Core (~> 1.6)
+    - GTMSessionFetcher/Core (< 3.0, >= 1.5)
+  - GTMSessionFetcher/Core (2.3.0)
 
 DEPENDENCIES:
-  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
-  - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
-  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
-  - "CapacitorHaptics (from `../../node_modules/@capacitor/haptics`)"
-  - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
-  - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
+  - "Capacitor (from `../../node_modules/.pnpm/@capacitor+ios@7.4.4_@capacitor+core@7.4.4/node_modules/@capacitor/ios`)"
+  - "CapacitorApp (from `../../node_modules/.pnpm/@capacitor+app@7.1.0_@capacitor+core@7.4.4/node_modules/@capacitor/app`)"
+  - "CapacitorCordova (from `../../node_modules/.pnpm/@capacitor+ios@7.4.4_@capacitor+core@7.4.4/node_modules/@capacitor/ios`)"
+  - "CapacitorHaptics (from `../../node_modules/.pnpm/@capacitor+haptics@7.0.2_@capacitor+core@7.4.4/node_modules/@capacitor/haptics`)"
+  - "CapacitorKeyboard (from `../../node_modules/.pnpm/@capacitor+keyboard@7.0.3_@capacitor+core@7.4.4/node_modules/@capacitor/keyboard`)"
+  - "CapacitorStatusBar (from `../../node_modules/.pnpm/@capacitor+status-bar@7.0.3_@capacitor+core@7.4.4/node_modules/@capacitor/status-bar`)"
+  - "CapacitorToast (from `../../node_modules/.pnpm/@capacitor+toast@7.0.2_@capacitor+core@7.4.4/node_modules/@capacitor/toast`)"
+  - "CodetrixStudioCapacitorGoogleAuth (from `../../node_modules/.pnpm/@codetrix-studio+capacitor-google-auth@3.4.0-rc.4_@capacitor+core@7.4.4/node_modules/@codetrix-studio/capacitor-google-auth`)"
+
+SPEC REPOS:
+  trunk:
+    - AppAuth
+    - GoogleSignIn
+    - GTMAppAuth
+    - GTMSessionFetcher
 
 EXTERNAL SOURCES:
   Capacitor:
-    :path: "../../node_modules/@capacitor/ios"
+    :path: "../../node_modules/.pnpm/@capacitor+ios@7.4.4_@capacitor+core@7.4.4/node_modules/@capacitor/ios"
   CapacitorApp:
-    :path: "../../node_modules/@capacitor/app"
+    :path: "../../node_modules/.pnpm/@capacitor+app@7.1.0_@capacitor+core@7.4.4/node_modules/@capacitor/app"
   CapacitorCordova:
-    :path: "../../node_modules/@capacitor/ios"
+    :path: "../../node_modules/.pnpm/@capacitor+ios@7.4.4_@capacitor+core@7.4.4/node_modules/@capacitor/ios"
   CapacitorHaptics:
-    :path: "../../node_modules/@capacitor/haptics"
+    :path: "../../node_modules/.pnpm/@capacitor+haptics@7.0.2_@capacitor+core@7.4.4/node_modules/@capacitor/haptics"
   CapacitorKeyboard:
-    :path: "../../node_modules/@capacitor/keyboard"
+    :path: "../../node_modules/.pnpm/@capacitor+keyboard@7.0.3_@capacitor+core@7.4.4/node_modules/@capacitor/keyboard"
   CapacitorStatusBar:
-    :path: "../../node_modules/@capacitor/status-bar"
+    :path: "../../node_modules/.pnpm/@capacitor+status-bar@7.0.3_@capacitor+core@7.4.4/node_modules/@capacitor/status-bar"
+  CapacitorToast:
+    :path: "../../node_modules/.pnpm/@capacitor+toast@7.0.2_@capacitor+core@7.4.4/node_modules/@capacitor/toast"
+  CodetrixStudioCapacitorGoogleAuth:
+    :path: "../../node_modules/.pnpm/@codetrix-studio+capacitor-google-auth@3.4.0-rc.4_@capacitor+core@7.4.4/node_modules/@codetrix-studio/capacitor-google-auth"
 
 SPEC CHECKSUMS:
+  AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
   Capacitor: 358dd1c3fdd71d969547b17e159fd8a7736cb45f
   CapacitorApp: 26587c2ce485d88ddb39adb21cac64f8e481afe3
   CapacitorCordova: bf648a636f3c153f652d312ae145fb508b6ffced
   CapacitorHaptics: b3fb2869e72c4466e18ce9ccbeb60a3d8723b3d4
   CapacitorKeyboard: 62f36104f26d53d8b3a2a43f2a69fe714f1777d5
   CapacitorStatusBar: 0659ddc7b1713764a05831463d215b177a15d054
+  CapacitorToast: 166611aea815418fc08894b77a915773e3d059d5
+  CodetrixStudioCapacitorGoogleAuth: 9dcfabfb7dd804ad6231a1513bc6e81e620cbec6
+  GoogleSignIn: 5651ce3a61e56ca864160e79b484cd9ed3f49b7a
+  GTMAppAuth: 0ff230db599948a9ad7470ca667337803b3fc4dd
+  GTMSessionFetcher: 3a63d75eecd6aa32c2fc79f578064e1214dfdec2
 
-PODFILE CHECKSUM: f8c95c38f42283ff8d7c6bf6fa1435ecdce85ae9
+PODFILE CHECKSUM: d6ab5889478b00e657ead6031f3514be583d0c96
 
 COCOAPODS: 1.16.2

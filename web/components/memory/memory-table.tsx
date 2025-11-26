@@ -7,7 +7,7 @@ import { useAccountSession } from '@/contexts/account-session-context';
 import { createColumns, Memory } from './columns';
 import { DataTable } from './data-table';
 import { fetchMemories, deleteMemory, updateMemory, createMemories } from '@/lib/account-api';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 import { MemoryDialog } from './memory-dialog';
 import { plural, t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';

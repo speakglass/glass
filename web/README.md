@@ -33,13 +33,22 @@ npm install
 pnpm install
 ```
 
-2. Create `.env.local` file:
+2. Create `.env` file:
 
 ```bash
 # Required
 NEXT_PUBLIC_GLASS_API_URL=http://localhost:8000
 NEXTAUTH_SECRET=your-secret-here
 GLASS_AUTH_JWT_SECRET=your-jwt-secret
+
+# Google OAuth (Optional - for social login)
+GOOGLE_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-web-client-secret
+
+# Google OAuth - Native Apps (Required for iOS/Android)
+NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID=your-ios-client-id.apps.googleusercontent.com
+NEXT_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=your-android-client-id.apps.googleusercontent.com
 ```
 
 3. Start the development server:
@@ -54,11 +63,36 @@ pnpm dev
 
 ## Environment Variables
 
-| Variable                    | Description                     | Required | Default                 |
-| --------------------------- | ------------------------------- | -------- | ----------------------- |
-| `NEXT_PUBLIC_GLASS_API_URL` | Glass API URL (WebSocket auto)  | Yes      | `http://localhost:8000` |
-| `NEXTAUTH_SECRET`           | NextAuth encryption secret      | Yes      | -                       |
-| `GLASS_AUTH_JWT_SECRET`     | JWT secret (must match backend) | Yes      | -                       |
+| Variable                               | Description                         | Required         | Default                 |
+| -------------------------------------- | ----------------------------------- | ---------------- | ----------------------- |
+| `NEXT_PUBLIC_GLASS_API_URL`            | Glass API URL (WebSocket auto)      | Yes              | `http://localhost:8000` |
+| `NEXTAUTH_SECRET`                      | NextAuth encryption secret          | Yes              | -                       |
+| `GLASS_AUTH_JWT_SECRET`                | JWT secret (must match backend)     | Yes              | -                       |
+| `GOOGLE_CLIENT_ID`                     | Google OAuth Web Client ID          | No (for OAuth)   | -                       |
+| `GOOGLE_CLIENT_SECRET`                 | Google OAuth Web Client Secret      | No (for OAuth)   | -                       |
+| `NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID`     | Google OAuth Web Client ID (public) | No (for native)  | -                       |
+| `NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID`     | Google OAuth iOS Client ID          | No (for iOS)     | -                       |
+| `NEXT_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` | Google OAuth Android Client ID      | No (for Android) | -                       |
+
+### Google OAuth Setup
+
+**Quick Setup:**
+
+```bash
+# 1. Set environment variables in .env
+NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-client-id.apps.googleusercontent.com
+NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID=your-ios-client-id.apps.googleusercontent.com
+
+# 2. Auto-sync to native projects
+npm run cap:sync
+```
+
+Native configuration files (iOS `Info.plist`, Android `strings.xml`) are **automatically generated** from environment variables when you run `cap:sync`. No manual XML editing required!
+
+For detailed instructions, see:
+
+- [GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md) - Complete setup guide
+- [NATIVE_CONFIG_AUTO_SYNC.md](./NATIVE_CONFIG_AUTO_SYNC.md) - How auto-sync works
 
 ## Usage
 
@@ -131,7 +165,11 @@ Glass can also be used as a native iOS app using Capacitor.
 
 ```bash
 # Build web app with static export and sync to iOS
+# This also auto-updates native config files from .env
 pnpm run cap:build
+
+# Sync native config files and Capacitor plugins
+pnpm run cap:sync
 
 # Open iOS project in Xcode
 pnpm run cap:ios
@@ -139,6 +177,8 @@ pnpm run cap:ios
 # Run directly in iOS simulator
 pnpm run ios:dev
 ```
+
+**Note**: `cap:sync` automatically updates iOS/Android configuration files from environment variables.
 
 ### Development Mode
 
@@ -152,12 +192,22 @@ For more details, see the [iOS README](./ios/README.md).
 
 ### Native Features
 
-The iOS app supports the following native features:
+The iOS/Android app supports the following native features:
 
 - 🔊 Status Bar styling
 - ⌨️ Keyboard management
 - 📳 Haptic Feedback
 - 📱 App State management
 - 🔙 Android Back Button handling
+- 🔐 Native Google OAuth Sign-In
 
 Native features are managed in `lib/capacitor.ts` and automatically disabled in the web version.
+
+### Google OAuth for Mobile
+
+The app uses native Google Sign-In SDKs for iOS and Android, providing a seamless authentication experience:
+
+- **Web**: Uses standard OAuth 2.0 flow via Next Auth
+- **iOS/Android**: Uses native Google Sign-In SDK via Capacitor plugin
+
+The authentication flow is automatically detected based on the platform. See [GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md) for configuration details.

@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 import { Memory as MemoryType } from '@/lib/account-api';
 import { Trans } from '@lingui/react/macro';
 import { t } from '@lingui/core/macro';

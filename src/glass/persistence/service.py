@@ -34,6 +34,12 @@ class AccountUserNotFoundError(Exception):
     """Raised when ensure_user cannot find an existing account record."""
 
 
+ACCOUNT_USER_COLUMN_NAMES = tuple(column.name for column in AccountUser.__table__.columns)
+
+
+def _placeholder_email_for_migration(user_id: str) -> str:
+    return f"{user_id}@migrated.local"[:255]
+
 
 async def _migrate_account_user_id(
     session: AsyncSession,
@@ -49,13 +55,43 @@ async def _migrate_account_user_id(
             raise ValueError("Account user not found for migration")
         return user
 
+    existing_user = await session.get(AccountUser, old_user_id)
+    if existing_user is None:
+        raise ValueError("Account user not found for migration")
+
     logger.info(
         "[ensure_user] Reassigning account user id from %s to %s to match auth claims",
         old_user_id,
         new_user_id,
     )
+
+    original_values = {column: getattr(existing_user, column) for column in ACCOUNT_USER_COLUMN_NAMES}
+
+    existing_user.email = _placeholder_email_for_migration(old_user_id)
+    if existing_user.verification_token:
+        existing_user.verification_token = None
+    if existing_user.stripe_customer_id:
+        existing_user.stripe_customer_id = None
+    if existing_user.stripe_subscription_id:
+        existing_user.stripe_subscription_id = None
+    await session.flush()
+
+    target_user = await session.get(AccountUser, new_user_id)
+    if target_user is None:
+        cloned_values = dict(original_values)
+        cloned_values["id"] = new_user_id
+        target_user = AccountUser(**cloned_values)
+        session.add(target_user)
+        await session.flush()
+    else:
+        for column in ACCOUNT_USER_COLUMN_NAMES:
+            if column == "id":
+                continue
+            setattr(target_user, column, original_values[column])
+
     tables = (
         ConversationPartner,
+        PartnerGenerationJobRecord,
         AccountConversation,
         ConversationMessage,
         ConversationEvaluation,
@@ -64,9 +100,7 @@ async def _migrate_account_user_id(
         PasswordResetToken,
     )
     for model in tables:
-        result = await session.execute(
-            update(model).where(model.user_id == old_user_id).values(user_id=new_user_id)
-        )
+        result = await session.execute(update(model).where(model.user_id == old_user_id).values(user_id=new_user_id))
         if result.rowcount:
             logger.debug(
                 "[ensure_user] Updated %s rows in %s during user id migration",
@@ -74,12 +108,9 @@ async def _migrate_account_user_id(
                 model.__tablename__,
             )
 
-    await session.execute(update(AccountUser).where(AccountUser.id == old_user_id).values(id=new_user_id))
+    await session.execute(delete(AccountUser).where(AccountUser.id == old_user_id))
     await session.flush()
-    migrated_user = await session.get(AccountUser, new_user_id)
-    if migrated_user is None:
-        raise RuntimeError("Failed to reload migrated account user")
-    return migrated_user
+    return target_user
 
 
 def _clean_text(value: Any) -> str | None:
@@ -620,9 +651,7 @@ async def ensure_user(
                     )
                     session.add(user)
                 else:
-                    raise AccountUserNotFoundError(
-                        f"Account user {claims.user_id} not found and auto-create disabled"
-                    )
+                    raise AccountUserNotFoundError(f"Account user {claims.user_id} not found and auto-create disabled")
             await session.commit()
             await session.refresh(user)
             LOGGER.info(f"[ensure_user] Success for user_id={claims.user_id}")
@@ -1122,6 +1151,51 @@ async def clear_user_subscription(
         cancel_at=None,
         cancel_at_period_end=None,
     )
+
+
+async def delete_user(
+    db: PersistenceDatabase,
+    user_id: str,
+) -> None:
+    """Delete a user and all their associated data.
+
+    This includes:
+    - All conversations and messages
+    - All conversation partners
+    - All memory records
+    - All partner generation jobs
+    - All password reset tokens
+    - The user account itself
+
+    This operation is irreversible.
+    """
+    async_session_factory = db.session()
+    async with async_session_factory() as session:
+        # Verify user exists
+        user = await session.scalar(select(AccountUser).where(AccountUser.id == user_id))
+        if user is None:
+            raise ValueError("User not found")
+
+        # Delete all user's conversations (cascade will handle messages, evaluations, feedback)
+        await session.execute(delete(AccountConversation).where(AccountConversation.user_id == user_id))
+
+        # Delete all user's conversation partners
+        await session.execute(delete(ConversationPartner).where(ConversationPartner.user_id == user_id))
+
+        # Delete all user's memory records
+        await session.execute(delete(MemoryRecord).where(MemoryRecord.user_id == user_id))
+
+        # Delete all user's partner generation jobs
+        await session.execute(delete(PartnerGenerationJobRecord).where(PartnerGenerationJobRecord.user_id == user_id))
+
+        # Delete all user's password reset tokens
+        await session.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == user_id))
+
+        # Finally, delete the user
+        await session.delete(user)
+
+        await session.commit()
+        LOGGER.info(f"Deleted user {user_id} and all associated data")
 
 
 async def mark_onboarding_completed(

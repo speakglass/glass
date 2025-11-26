@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { GlassProvider } from '@/contexts/glass-context';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 import { initAnalytics } from '@/utils/analytics';
 import { NextStepProvider } from 'nextstepjs';
 import { SessionProvider } from 'next-auth/react';

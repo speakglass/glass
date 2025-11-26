@@ -16,7 +16,7 @@ import { PartnerDeleteDialog } from './partner-delete-dialog';
 import { PartnerDetailModal } from './partner-detail-modal';
 import { CallLimitDialog } from './call-limit-dialog';
 import { StartCallEntry } from './start-call-entry';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 import { useRef, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';

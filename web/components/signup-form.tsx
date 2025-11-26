@@ -3,13 +3,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useLocale } from '@/hooks/use-locale';
 import { useFirstTouchAttribution } from '@/hooks/use-utm-attribution';
+import { useNativeGoogleAuth } from '@/hooks/use-native-google-auth';
 import { cn } from '@/utils/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { signIn } from 'next-auth/react';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 import { Eye, EyeOff, X, Check } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
 import { useLingui } from '@lingui/react';
@@ -30,6 +31,9 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasGoogleOAuth, setHasGoogleOAuth] = useState(false);
   const utm = useFirstTouchAttribution();
+
+  // Native Google Auth hook (handles both web and native)
+  const { signInWithGoogle, isLoading: isGoogleLoading } = useNativeGoogleAuth();
 
   // Check if Google OAuth is configured
   useEffect(() => {
@@ -59,7 +63,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
   const isPasswordValid = passwordRequirements.every((req) => req.met);
 
   const handleGoogleSignUp = async () => {
-    await signIn('google', { callbackUrl: `/${lang}/onboarding` });
+    await signInWithGoogle(`/${lang}/onboarding`);
   };
 
   const handleEmailSignup = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -150,34 +154,32 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'div'>)
             <Trans>Create an account</Trans>
           </CardTitle>
           <CardDescription>
-            {hasGoogleOAuth ? (
-              <Trans>Sign up with your Google account or email</Trans>
-            ) : (
-              <Trans>Sign up with your email</Trans>
-            )}
+            <Trans>Sign up with your Google account or email</Trans>
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleEmailSignup}>
             <FieldGroup>
-              {hasGoogleOAuth && (
-                <>
-                  <Field>
-                    <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignUp}>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4">
-                        <path
-                          d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                      <Trans>Sign up with Google</Trans>
-                    </Button>
-                  </Field>
-                  <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-                    <Trans>Or continue with</Trans>
-                  </FieldSeparator>
-                </>
-              )}
+              <Field>
+                <Button
+                  variant="outline"
+                  type="button"
+                  className="w-full"
+                  onClick={handleGoogleSignUp}
+                  disabled={isGoogleLoading || !hasGoogleOAuth}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-4">
+                    <path
+                      d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  {isGoogleLoading ? <Trans>Signing up...</Trans> : <Trans>Sign up with Google</Trans>}
+                </Button>
+              </Field>
+              <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
+                <Trans>Or continue with</Trans>
+              </FieldSeparator>
               <Field>
                 <FieldLabel htmlFor="name">
                   <Trans>Full Name</Trans>

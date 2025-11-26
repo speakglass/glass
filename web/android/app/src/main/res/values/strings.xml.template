@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Glass</string>
+    <!-- Auto-generated from NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID -->
+    <!-- This file is automatically created by scripts/sync-native-config.js -->
+    <!-- Run 'npm run cap:sync' to populate this value -->
+    <string name="server_client_id">YOUR_WEB_CLIENT_ID_HERE</string>
+</resources>
+

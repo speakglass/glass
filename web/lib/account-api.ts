@@ -1186,3 +1186,18 @@ export async function bulkDeleteMemories(token: string, memoryIds: string[]): Pr
     body: JSON.stringify({ memory_ids: memoryIds }),
   });
 }
+
+export interface DeleteAccountResponse {
+  success: boolean;
+  message: string;
+}
+
+/**
+ * Permanently delete the user's account and all associated data.
+ * This action cannot be undone.
+ */
+export async function deleteAccount(token: string): Promise<DeleteAccountResponse> {
+  return await authedFetch<DeleteAccountResponse>('/accounts/me', token, {
+    method: 'DELETE',
+  });
+}

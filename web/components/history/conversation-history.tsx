@@ -65,7 +65,7 @@ import {
   deletePartner,
 } from '@/lib/account-api';
 import { useLocale } from '@/hooks/use-locale';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   Dialog,

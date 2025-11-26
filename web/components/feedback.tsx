@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 
 const REACTIONS = [
   { icon: ThumbsUp, value: 'good', label: 'Good' },

@@ -59,5 +59,27 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- Auto-generated from NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID -->
+				<!-- Run 'npm run cap:sync' to populate this value -->
+				<string>com.speakglass.app</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>Google OAuth</string>
+		</dict>
+	</array>
+	<key>GIDClientID</key>
+	<!-- Auto-generated from NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID -->
+	<!-- Run 'npm run cap:sync' to populate this value -->
+	<string>YOUR_IOS_CLIENT_ID_HERE</string>
+	<key>GIDServerClientID</key>
+	<!-- Auto-generated from NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID -->
+	<!-- Run 'npm run cap:sync' to populate this value -->
+	<string>YOUR_WEB_CLIENT_ID_HERE</string>
 </dict>
 </plist>
+

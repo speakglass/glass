@@ -11,6 +11,7 @@ from ..persistence.service import (
     create_password_reset_token,
     create_verification_token,
     count_total_users,
+    delete_user,
     get_user_by_email,
     get_user_by_id,
     mark_onboarding_completed,
@@ -652,3 +653,39 @@ async def update_utm(
 
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+class DeleteAccountResponse(BaseModel):
+    """Response for account deletion."""
+
+    success: bool
+    message: str
+
+
+@router.delete("/accounts/me", response_model=DeleteAccountResponse)
+async def delete_account(
+    request: Request,
+    user: AuthenticatedUser = Depends(require_authenticated_user),
+) -> DeleteAccountResponse:
+    """Delete the current user's account and all associated data.
+
+    This is a permanent action that:
+    - Deletes all conversations and messages
+    - Deletes all conversation partners
+    - Deletes all memory records
+    - Deletes the user account
+
+    This action cannot be undone.
+    """
+    db = request.app.state.history_store
+
+    try:
+        # Delete the user and all associated data
+        await delete_user(db, user.user_id)
+
+        return DeleteAccountResponse(success=True, message="Account has been permanently deleted")
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Failed to delete user account")
+        raise HTTPException(status_code=500, detail="Failed to delete account")

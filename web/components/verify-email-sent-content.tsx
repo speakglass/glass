@@ -9,7 +9,7 @@ import { Mail, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldGroup } from '@/components/ui/field';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast';
 import { cn } from '@/utils/index';
 
 const apiBase = process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
