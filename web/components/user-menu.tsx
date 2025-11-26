@@ -11,9 +11,13 @@ import {
   BookOpen,
   ArrowUpRight,
   CreditCard,
+  MessageSquare,
+  Users,
 } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
 import Settings from './settings';
+import Feedback from './feedback';
+import Discord from './logos/discord';
 
 import {
   DropdownMenu,
@@ -153,6 +157,9 @@ export function UserMenu({
               <SettingsIcon />
               <Trans>Settings</Trans>
             </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
             <DropdownMenuItem asChild className="cursor-pointer">
               <a
                 href="https://docs.speakglass.com"
@@ -166,6 +173,22 @@ export function UserMenu({
                 </span>
                 <ArrowUpRight className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
               </a>
+            </DropdownMenuItem>
+            <Feedback variant="menu" />
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <button
+                onClick={() => {
+                  window.open(
+                    'https://discord.gg/GxJwcgnchM',
+                    '_blank',
+                    'noopener noreferrer'
+                  );
+                }}
+                className="flex w-full items-center"
+              >
+                <Discord className="size-4" />
+                <Trans>Community</Trans>
+              </button>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />

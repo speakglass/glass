@@ -92,7 +92,7 @@ export function MemoryDialog({
                 required={!readOnly}
                 className={
                   readOnly
-                    ? 'resize-none border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm'
+                    ? 'resize-none border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm '
                     : 'resize-none'
                 }
               />

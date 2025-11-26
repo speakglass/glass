@@ -29,9 +29,9 @@ export default async function HistoryPage({
   }
 
   return (
-    <div className="min-h-screen pt-12 sm:pt-14">
+    <div className="h-dvh pt-12 sm:pt-14 flex flex-col overflow-hidden">
       {/* Header Section */}
-      <div className="md:block hidden bg-background border-b border-border/30 sticky top-12 sm:top-14 z-10">
+      <div className="md:block hidden bg-background border-b border-border/30 shrink-0">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-3 sm:py-6">
           <div className="flex items-center justify-between gap-3 sm:gap-6">
             <div className="space-y-0.5 sm:space-y-2 min-w-0">
@@ -54,7 +54,7 @@ export default async function HistoryPage({
       </div>
 
       {/* Content Section */}
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-4 sm:py-8">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-4 sm:py-8 flex-1 min-h-0 overflow-auto">
         <ConversationHistory />
       </div>
     </div>

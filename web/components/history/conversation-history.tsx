@@ -1015,9 +1015,9 @@ export function ConversationHistory() {
 
   return (
     <>
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_2fr]">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_2fr] h-full overflow-hidden">
         {/* Left: Conversation List (Desktop only) */}
-        <div className="hidden lg:flex lg:flex-col lg:max-h-[calc(100dvh-200px)]">
+        <div className="hidden lg:flex lg:flex-col min-h-0">
           {/* Search Bar - Fixed */}
           <div className="shrink-0 relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1159,9 +1159,9 @@ export function ConversationHistory() {
         </div>
 
         {/* Right: Conversation Detail */}
-        <div className="rounded-2xl sm:rounded-3xl border border-border/50 bg-card/80 lg:sticky lg:top-8 lg:self-start max-h-[600px] lg:max-h-[calc(100dvh-240px)] overflow-hidden flex flex-col">
+        <div className="rounded-2xl sm:rounded-3xl border border-border/50 bg-card/80 h-full overflow-hidden flex flex-col min-h-0">
           {/* Mobile Dropdown Selector */}
-          <div className="lg:hidden border-b border-border/30 p-2 sm:p-3">
+          <div className="lg:hidden border-b border-border/30 p-2 sm:p-3 shrink-0">
             <Popover
               open={isMobileDropdownOpen}
               onOpenChange={setIsMobileDropdownOpen}
@@ -1360,12 +1360,12 @@ export function ConversationHistory() {
           </div>
 
           {loadingDetail && (
-            <div className="flex flex-1 items-center justify-center p-8">
+            <div className="flex flex-1 items-center justify-center p-8 min-h-0">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
             </div>
           )}
           {!loadingDetail && !selected && (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center p-6 sm:p-8">
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center p-6 sm:p-8 min-h-0">
               <MessageSquare className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground opacity-50" />
               <div>
                 <p className="font-semibold text-muted-foreground text-sm sm:text-base">
@@ -1383,7 +1383,7 @@ export function ConversationHistory() {
           {!loadingDetail && selected && (
             <div
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6"
+              className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 min-h-0"
             >
               {/* Header with Actions */}
               <div className="flex items-start justify-between gap-3">
@@ -2176,7 +2176,7 @@ export function ConversationHistory() {
             </div>
           )}
           {error && (
-            <div className="p-6">
+            <div className="p-6 shrink-0">
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
