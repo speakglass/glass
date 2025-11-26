@@ -12,7 +12,8 @@
 .env
 .env.*
 !.env.example
-!web/.env.example
+!packages/web/.env.example
+!packages/mobile/.env.example
 
 # Logs
 logs/
@@ -38,7 +39,6 @@ downloads/
 eggs/
 .eggs/
 lib/
-!web/lib/
 lib64/
 parts/
 sdist/
@@ -47,6 +47,7 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+!packages/web/lib/
 
 # Virtual environments
 .venv/

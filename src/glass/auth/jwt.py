@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
 import jwt
@@ -40,17 +41,18 @@ def _parse_bearer_token(raw_header: str | None, required: bool) -> str | None:
 def decode_service_token(token: str, settings: Settings) -> AuthenticatedUser:
     """Validate and decode the JWT coming from the frontend."""
     import logging
+
     logger = logging.getLogger(__name__)
-    
+
     if not settings.auth_jwt_secret:
         logger.error("[JWT] Auth secret is not configured on the API")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Auth secret is not configured on the API",
         )
-    
+
     logger.debug(f"[JWT] Attempting to decode token (secret length: {len(settings.auth_jwt_secret)})")
-    
+
     try:
         decode_kwargs: dict[str, Any] = {
             "algorithms": ["HS256"],
@@ -74,7 +76,7 @@ def decode_service_token(token: str, settings: Settings) -> AuthenticatedUser:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication token",
         ) from exc
-    
+
     return AuthenticatedUser(
         user_id=str(payload["sub"]),
         email=str(payload["email"]),
@@ -106,3 +108,46 @@ def optional_authenticated_user(
     if token is None:
         return None
     return decode_service_token(token, settings)
+
+
+def create_jwt_token(
+    user_id: str,
+    email: str,
+    name: str | None = None,
+    avatar_url: str | None = None,
+    settings: Settings | None = None,
+    expires_hours: int = 24,
+) -> str:
+    """Create a JWT token for mobile app authentication."""
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    if settings is None:
+        settings = get_settings()
+
+    if not settings.auth_jwt_secret:
+        logger.error("[JWT] Auth secret is not configured")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Auth secret is not configured",
+        )
+
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(hours=expires_hours)
+
+    payload = {
+        "sub": user_id,
+        "email": email,
+        "name": name,
+        "picture": avatar_url,
+        "iss": "glass-mobile",
+        "aud": "glass-api",
+        "iat": int(now.timestamp()),
+        "exp": int(expire.timestamp()),
+    }
+
+    token = jwt.encode(payload, settings.auth_jwt_secret, algorithm="HS256")
+    logger.debug(f"[JWT] Created token for user: {user_id}")
+
+    return token

@@ -5,7 +5,8 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from ..auth.jwt import AuthenticatedUser, require_authenticated_user
+from ..auth.jwt import AuthenticatedUser, create_jwt_token, require_authenticated_user
+from ..config import get_settings
 from ..persistence.service import (
     create_local_user,
     create_password_reset_token,
@@ -70,6 +71,74 @@ class AuthenticatedUserResponse(BaseModel):
     name: str | None = None
     avatar_url: str | None = None
     message: str | None = None  # Optional message for special cases
+
+
+class MobileLoginResponse(BaseModel):
+    """Response for mobile login with JWT token."""
+
+    token: str
+    user: AuthenticatedUserResponse
+
+
+@router.post("/accounts/mobile-register", response_model=MobileLoginResponse)
+async def mobile_register(
+    request: Request,
+    payload: RegisterRequest,
+    settings=Depends(get_settings),
+) -> MobileLoginResponse:
+    """Mobile registration endpoint that returns JWT token."""
+    db = request.app.state.history_store
+
+    # Check if user already exists
+    existing = await get_user_by_email(db, payload.email)
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Require password for mobile registration
+    if not payload.password:
+        raise HTTPException(status_code=400, detail="Password is required")
+
+    # Create user
+    password_hash = hash_password(payload.password)
+    user = await create_local_user(
+        db,
+        email=payload.email,
+        password_hash=password_hash,
+        name=payload.name,
+        utm_source=payload.utm_source,
+        utm_campaign=payload.utm_campaign,
+        utm_content=payload.utm_content,
+    )
+
+    # Send verification email (optional - can be done in background)
+    try:
+        from ..services.email import send_verification_email
+
+        token = await create_verification_token(db, user.id)
+        await send_verification_email(user.email, token.token, user.name)
+    except Exception as e:
+        logger.warning(f"Failed to send verification email: {e}")
+
+    # Generate JWT token
+    token_str = create_jwt_token(
+        user_id=user.id,
+        email=user.email,
+        name=user.name,
+        avatar_url=user.avatar_url,
+        settings=settings,
+        expires_hours=24 * 30,  # 30 days for mobile
+    )
+
+    return MobileLoginResponse(
+        token=token_str,
+        user=AuthenticatedUserResponse(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            avatar_url=user.avatar_url,
+            message="Verification email sent. Please check your inbox.",
+        ),
+    )
 
 
 @router.post("/accounts/register", response_model=AuthenticatedUserResponse)
@@ -211,6 +280,51 @@ async def verify_account(request: Request, payload: VerifyRequest) -> Authentica
         email=user.email,
         name=user.name,
         avatar_url=user.avatar_url,
+    )
+
+
+@router.post("/accounts/login", response_model=MobileLoginResponse)
+async def mobile_login(
+    request: Request,
+    payload: VerifyRequest,
+    settings=Depends(get_settings),
+) -> MobileLoginResponse:
+    """Mobile login endpoint that returns JWT token."""
+    db = request.app.state.history_store
+
+    user = await get_user_by_email(db, payload.email)
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Check if user has a password set (OAuth users might not have one)
+    if not user.password_hash:
+        raise HTTPException(
+            status_code=401,
+            detail="This account uses Google Sign-In. Please login with Google or use 'Forgot Password' to set a password.",
+        )
+
+    if not verify_password(payload.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Generate JWT token
+    token = create_jwt_token(
+        user_id=user.id,
+        email=user.email,
+        name=user.name,
+        avatar_url=user.avatar_url,
+        settings=settings,
+        expires_hours=24 * 30,  # 30 days for mobile
+    )
+
+    return MobileLoginResponse(
+        token=token,
+        user=AuthenticatedUserResponse(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            avatar_url=user.avatar_url,
+        ),
     )
 
 

@@ -50,6 +50,21 @@ Glass gives you real-time feedback and suggestions during live conversations. Ta
 - 🗣️ Speaking practice for language learning with AI partners
 - 🎯 Interview prep and presentation rehearsal
 
+## Project Structure
+
+Glass is a monorepo containing:
+
+```
+glass/
+├── packages/
+│   ├── shared/      # Common code (types, API client, utils)
+│   ├── web/         # Next.js web app
+│   └── mobile/      # React Native Expo app
+└── src/glass/       # Python backend (FastAPI)
+```
+
+For mobile app setup, see [SETUP_MOBILE.md](./SETUP_MOBILE.md).
+
 ## Setup
 
 **Prerequisites:**
@@ -63,7 +78,7 @@ Glass gives you real-time feedback and suggestions during live conversations. Ta
 
 ```bash
 cp .env.example .env
-cp web/.env.example web/.env
+cp packages/web/.env.example packages/web/.env
 ```
 
 3. Edit `.env` with your provider API keys:
@@ -78,7 +93,7 @@ cp web/.env.example web/.env
    - `GLASS_DATABASE_URL` - Postgres connection string (default: `postgresql+asyncpg://glass:glass@db:5432/glass`)
    - `GLASS_REDIS_URL` - Redis connection string (default: `redis://redis:6379/0`)
 
-4. Edit `web/.env` with the same JWT secret:
+4. Edit `packages/web/.env` with the same JWT secret:
 
    - `GLASS_AUTH_JWT_SECRET` - Must match backend
    - `AUTH_SECRET` - Generate with `openssl rand -hex 32`
@@ -97,7 +112,9 @@ docker compose up --build
 ## Tech stack
 
 - **Backend:** Python 3.11+, FastAPI, WebSockets, SQLAlchemy, pgvector, Redis, Deepgram, Gemini (default) with OpenAI fallback, ElevenLabs
-- **Frontend:** Next.js 16 App Router, React 18, NextAuth, TanStack Query/Table, Lingui, Tailwind tooling
+- **Web Frontend:** Next.js 16 App Router, React 18, NextAuth, TanStack Query/Table, Lingui, Tailwind tooling
+- **Mobile:** React Native, Expo SDK 52, Expo Router, TanStack Query, AsyncStorage
+- **Shared:** TypeScript, platform-independent API client, type definitions
 - **Data & infra:** Postgres + pgvector for semantic memory, Redis for usage metering, Docker images for api/web, pnpm-managed frontend
 - **Testing & tooling:** Pytest, Next lint, Lingui extraction/compile, Husky + Commitlint
 
@@ -120,6 +137,7 @@ When you talk, Glass embeds your context, searches by vector similarity, and inc
 | Persistent memory/personalization         | ✅ Done    | Postgres + Redis memory core  |
 | Docker/Compose support                    | ✅ Done    | Backend/Web images + compose  |
 | pgvector semantic memory search           | ✅ Done    | Vector-based memory retrieval |
+| Mobile app (iOS/Android)                  | ✅ Done    | React Native Expo app         |
 | Desktop app                               | 🚧 Planned | macOS app with full Glass UI  |
 | Speaker diarization                       | 🚧 Planned | Multi-speaker labeling        |
 | Local-hosted model adapters (LLM/ASR/TTS) | 🚧 Planned | Self-hosted runtime           |
