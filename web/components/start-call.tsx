@@ -1208,10 +1208,11 @@ export default function StartCall() {
   };
 
   // Redirect to onboarding if not completed
-  if (onboardingStatus !== null && !onboardingStatus.completed) {
-    router.push(`/${langSegment}/onboarding`);
-    return null;
-  }
+  useEffect(() => {
+    if (onboardingStatus !== null && !onboardingStatus.completed) {
+      router.push(`/${langSegment}/onboarding`);
+    }
+  }, [onboardingStatus, langSegment, router]);
 
   // Debug: Log when StartCall UI should show
   // Show StartCall UI until actually connected

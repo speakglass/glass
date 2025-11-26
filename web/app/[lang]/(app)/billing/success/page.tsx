@@ -1,28 +1,18 @@
-import { auth } from '@/auth';
+'use client';
+
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
-import { initLingui } from '@/lib/init-lingui';
-import { DEFAULT_LANGUAGE, LOCALIZED_LANGUAGE_CODES } from '@/lib/supported-languages';
+import { AuthGate } from '@/components/auth-gate';
+import { useParams } from 'next/navigation';
 
-type PageProps = {
-  params: Promise<{ lang: string }>;
-};
-
-export default async function BillingSuccessPage({ params }: PageProps) {
-  const session = await auth();
-  const rawLang = (await params).lang;
-  const lang = (LOCALIZED_LANGUAGE_CODES as readonly string[]).includes(rawLang as any) ? rawLang : DEFAULT_LANGUAGE;
-
-  initLingui(lang);
-
-  if (!session?.user) {
-    redirect(`/${lang}/login`);
-  }
+export default function BillingSuccessPage() {
+  const params = useParams();
+  const lang = params.lang as string;
 
   return (
+    <AuthGate>
     <div className="min-h-screen bg-background px-6 py-16 flex items-center justify-center">
       <div className="w-full max-w-3xl space-y-10">
         <div className="text-center space-y-4">
@@ -98,5 +88,6 @@ export default async function BillingSuccessPage({ params }: PageProps) {
         </div>
       </div>
     </div>
+    </AuthGate>
   );
 }

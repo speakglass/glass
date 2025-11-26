@@ -12,7 +12,6 @@ import {
   EyeOff,
   BookOpen,
   Trash2,
-  AlertTriangle,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useGlass } from '@/contexts/glass-context';
@@ -442,26 +441,19 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
             </div>
           </div>
 
-          {/* Delete Account - Danger Zone */}
-          <div className="pt-4 mt-4 border-t border-border">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-1.5 text-sm font-medium text-destructive">
-                <AlertTriangle className="size-3.5" />
-                <Trans>Danger Zone</Trans>
-              </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setShowDeleteDialog(true)}
-                className="w-full sm:w-auto"
-              >
-                <Trash2 className="size-3.5 mr-1.5" />
-                <Trans>Delete Account</Trans>
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                <Trans>Permanently delete your account and all data. This action cannot be undone.</Trans>
-              </p>
-            </div>
+          {/* Delete Account */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-4 mt-4 border-t border-border">
+            <Label className="flex items-center gap-1.5 text-sm font-medium sm:w-36 sm:shrink-0 text-muted-foreground">
+              <Trash2 className="size-3.5" />
+              <Trans>Account</Trans>
+            </Label>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(true)}
+              className="h-8 w-full sm:w-48 text-destructive border-destructive/30 hover:bg-destructive hover:text-white"
+            >
+              <Trans>Delete Account</Trans>
+            </Button>
           </div>
         </div>
       </DialogContent>
@@ -470,31 +462,11 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="size-5 text-destructive" />
-              <Trans>Delete Account?</Trans>
+            <AlertDialogTitle>
+              <Trans>Delete your account?</Trans>
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                <Trans>This will permanently delete your account and all associated data, including:</Trans>
-              </p>
-              <ul className="list-disc list-inside text-sm space-y-1 ml-2">
-                <li>
-                  <Trans>All conversations and messages</Trans>
-                </li>
-                <li>
-                  <Trans>All conversation partners</Trans>
-                </li>
-                <li>
-                  <Trans>All saved memories</Trans>
-                </li>
-                <li>
-                  <Trans>Your account settings</Trans>
-                </li>
-              </ul>
-              <p className="font-semibold text-destructive">
-                <Trans>This action cannot be undone.</Trans>
-              </p>
+            <AlertDialogDescription>
+              <Trans>All your data including conversations, messages, and memories will be permanently deleted. This action cannot be undone.</Trans>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -504,9 +476,9 @@ export default function Settings({ open, onOpenChange }: SettingsProps) {
             <AlertDialogAction
               onClick={handleDeleteAccount}
               disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90 hover:text-white"
             >
-              {isDeleting ? <Trans>Deleting...</Trans> : <Trans>Delete Account</Trans>}
+              {isDeleting ? <Trans>Deleting...</Trans> : <Trans>Delete Forever</Trans>}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

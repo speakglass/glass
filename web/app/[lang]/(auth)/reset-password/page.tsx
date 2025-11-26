@@ -1,19 +1,25 @@
+'use client';
+
 import { AuthPageLayout } from '@/components/auth-page-layout';
 import { ResetPasswordForm } from '@/components/reset-password-form';
-import { redirect } from 'next/navigation';
+import { useSearchParams, useParams, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-export default async function ResetPasswordPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ lang: string }>;
-  searchParams: Promise<{ token?: string }>;
-}) {
-  const { lang } = await params;
-  const { token } = await searchParams;
+export default function ResetPasswordPage() {
+  const searchParams = useSearchParams();
+  const params = useParams();
+  const router = useRouter();
+  const token = searchParams.get('token');
+  const lang = params.lang as string;
+
+  useEffect(() => {
+    if (!token) {
+      router.push(`/${lang}/forgot-password`);
+    }
+  }, [token, lang, router]);
 
   if (!token) {
-    redirect(`/${lang}/forgot-password`);
+    return null;
   }
 
   return (

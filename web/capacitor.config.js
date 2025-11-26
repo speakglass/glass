@@ -12,10 +12,14 @@ const capacitorServerUrl = process.env.CAPACITOR_SERVER_URL;
 console.log('[Capacitor Config] Loading configuration...');
 console.log('[Capacitor Config] CAPACITOR_SERVER_URL:', capacitorServerUrl || 'not set');
 
+// Read version from package.json
+const packageJson = require('./package.json');
+
 const config = {
   appId: 'com.speakglass.app',
   appName: 'Glass',
   webDir: 'out',
+  version: packageJson.version,
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,

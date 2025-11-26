@@ -1,84 +1,10 @@
-import { auth } from '@/auth';
-import { issueSessionToken } from '@/lib/session-token';
-import { redirect } from 'next/navigation';
-import type { Session } from 'next-auth';
+'use client';
 
-// ============================================================================
-// API Configuration
-// ============================================================================
-
-const API_BASE_URL =
-  process.env.GLASS_API_URL_INTERNAL || process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
-
-// ============================================================================
-// Type Definitions
-// ============================================================================
-
-interface OnboardingStatusResponse {
-  completed: boolean;
-  completed_at: string | null;
-}
-
-type UnauthorizedError = Error & { status: number };
-
-// ============================================================================
-// Error Handling
-// ============================================================================
-
-function isUnauthorizedError(error: unknown): error is UnauthorizedError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'status' in error &&
-    typeof (error as { status?: unknown }).status === 'number' &&
-    (error as { status: number }).status === 401
-  );
-}
-
-// ============================================================================
-// API Functions
-// ============================================================================
-
-/**
- * Fetches the user's onboarding completion status from the API.
- * @throws {UnauthorizedError} If the user is not authenticated
- * @returns {Promise<boolean>} True if onboarding is completed, false otherwise
- */
-async function getOnboardingStatus(user: Session['user']): Promise<boolean> {
-  try {
-    const token = await issueSessionToken(user);
-    const response = await fetch(`${API_BASE_URL}/accounts/me/onboarding`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: 'no-store',
-    });
-
-    if (response.status === 401) {
-      const error = new Error('Unauthorized') as UnauthorizedError;
-      error.status = 401;
-      throw error;
-    }
-
-    if (!response.ok) {
-      console.error('Failed to fetch onboarding status:', response.status);
-      return false;
-    }
-
-    const data: OnboardingStatusResponse = await response.json();
-    return data.completed;
-  } catch (error) {
-    if (isUnauthorizedError(error)) {
-      throw error;
-    }
-    console.error('Error fetching onboarding status:', error);
-    return false;
-  }
-}
-
-// ============================================================================
-// Page Component
-// ============================================================================
+import { useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { useAccountSession } from '@/contexts/account-session-context';
+import { Loader2 } from 'lucide-react';
 
 /**
  * Root page that handles routing logic based on authentication and onboarding status.
@@ -88,32 +14,39 @@ async function getOnboardingStatus(user: Session['user']): Promise<boolean> {
  * 2. Authenticated users without onboarding → /onboarding
  * 3. Authenticated users with onboarding → /dashboard
  */
-export default async function RootPage({ params }: { params: Promise<{ lang: string }> }) {
-  const session = await auth();
-  const { lang } = await params;
+export default function RootPage() {
+  const router = useRouter();
+  const params = useParams();
+  const lang = params.lang as string;
+  const { status: sessionStatus } = useSession();
+  const { status: accountStatus, onboardingStatus } = useAccountSession();
 
-  // Step 1: Check authentication
-  // Note: Proxy middleware should catch this, but we handle it here as a safety measure
-  if (!session?.user) {
-    redirect(`/${lang}/login`);
-  }
-
-  // Step 2: Check onboarding status
-  let onboardingCompleted = false;
-  try {
-    onboardingCompleted = await getOnboardingStatus(session.user);
-  } catch (error) {
-    if (isUnauthorizedError(error)) {
-      // Session may have expired or been invalidated
-      redirect(`/${lang}/login`);
+  useEffect(() => {
+    // Wait for both sessions to be loaded
+    if (sessionStatus === 'loading' || accountStatus === 'loading' || accountStatus === 'idle') {
+      return;
     }
-    throw error;
-  }
 
-  // Step 3: Route based on onboarding status
-  if (!onboardingCompleted) {
-    redirect(`/${lang}/onboarding`);
-  }
+    // Redirect unauthenticated users to login
+    if (sessionStatus === 'unauthenticated') {
+      router.push(`/${lang}/login`);
+      return;
+    }
 
-  redirect(`/${lang}/dashboard`);
+    // Redirect based on onboarding status
+    if (sessionStatus === 'authenticated' && accountStatus === 'ready') {
+      if (!onboardingStatus?.completed) {
+        router.push(`/${lang}/onboarding`);
+      } else {
+        router.push(`/${lang}/dashboard`);
+      }
+    }
+  }, [sessionStatus, accountStatus, onboardingStatus, lang, router]);
+
+  // Show loading state while determining redirect
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <Loader2 className="size-6 animate-spin text-muted-foreground" />
+    </div>
+  );
 }
