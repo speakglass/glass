@@ -6,7 +6,12 @@ import type { VisibilityState } from '@tanstack/react-table';
 import { useAccountSession } from '@/contexts/account-session-context';
 import { createColumns, Memory } from './columns';
 import { DataTable } from './data-table';
-import { fetchMemories, deleteMemory, updateMemory, createMemories } from '@/lib/account-api';
+import {
+  fetchMemories,
+  deleteMemory,
+  updateMemory,
+  createMemories,
+} from '@/lib/account-api';
 import { toast } from 'sonner';
 import { MemoryDialog } from './memory-dialog';
 import { plural, t } from '@lingui/core/macro';
@@ -22,7 +27,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Info, Loader2 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const MEMORY_VISIBLE_LIMIT = 50;
 
@@ -42,14 +51,19 @@ export function MemoryTable() {
   const [viewingMemory, setViewingMemory] = useState<Memory | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [memoryToDelete, setMemoryToDelete] = useState<Memory | null>(null);
-  const [memoriesToDelete, setMemoriesToDelete] = useState<Memory[] | null>(null);
+  const [memoriesToDelete, setMemoriesToDelete] = useState<Memory[] | null>(
+    null
+  );
   const deleteToastIdRef = useRef<string | number | null>(null);
   const bulkDeleteToastIdRef = useRef<string | number | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   useEffect(() => {
-    const handle = setTimeout(() => setDebouncedSearch(searchInput.trim()), 350);
+    const handle = setTimeout(
+      () => setDebouncedSearch(searchInput.trim()),
+      350
+    );
     return () => clearTimeout(handle);
   }, [searchInput]);
 
@@ -59,7 +73,10 @@ export function MemoryTable() {
     queryKey: ['memories', searchQuery],
     queryFn: async () => {
       if (!token) throw new Error('No access token');
-      return await fetchMemories(token, searchQuery ? { search: searchQuery } : undefined);
+      return await fetchMemories(
+        token,
+        searchQuery ? { search: searchQuery } : undefined
+      );
     },
     enabled: !!token,
     placeholderData: (prevData) => prevData,
@@ -95,7 +112,9 @@ export function MemoryTable() {
       return await bulkDeleteMemories(token, memoryIds);
     },
     onMutate: (memoryIds) => {
-      bulkDeleteToastIdRef.current = toast.loading(t`Deleting ${memoryIds.length} selected memories...`);
+      bulkDeleteToastIdRef.current = toast.loading(
+        t`Deleting ${memoryIds.length} selected memories...`
+      );
     },
     onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['memories'] });
@@ -138,7 +157,13 @@ export function MemoryTable() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { value?: string } }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { value?: string };
+    }) => {
       if (!token) throw new Error('No access token');
       return await updateMemory(token, id, data);
     },
@@ -222,7 +247,8 @@ export function MemoryTable() {
   }
 
   const visibleCount = data?.items.length ?? 0;
-  const shouldShowLimitNotice = !searchQuery && visibleCount >= MEMORY_VISIBLE_LIMIT;
+  const shouldShowLimitNotice =
+    !searchQuery && visibleCount >= MEMORY_VISIBLE_LIMIT;
   const limitTooltipIcon = shouldShowLimitNotice ? (
     <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
@@ -231,8 +257,9 @@ export function MemoryTable() {
       <TooltipContent side="top" align="start">
         <p className="max-w-xs text-sm">
           <Trans>
-            This table highlights the latest {MEMORY_VISIBLE_LIMIT} memories. Older ones stay archived, so use the
-            search field whenever you want to surface something specific.
+            This table highlights the latest {MEMORY_VISIBLE_LIMIT} memories.
+            Older ones stay archived, so use the search field whenever you want
+            to surface something specific.
           </Trans>
         </p>
       </TooltipContent>
@@ -240,18 +267,8 @@ export function MemoryTable() {
   ) : null;
 
   return (
-    <>
-      <div className="mb-3 flex flex-col gap-1 text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">{totalSummaryMessage}</span>
-        {shouldShowLimitNotice && (
-          <div className="flex items-center gap-1">
-            <Trans>Showing the latest {MEMORY_VISIBLE_LIMIT} memories</Trans>
-            {limitTooltipIcon}
-          </div>
-        )}
-      </div>
-
-      <div className="relative">
+    <div className="flex flex-col h-full">
+      <div className="relative flex-1 min-h-0 flex flex-col">
         <DataTable
           columns={columns}
           data={data?.items || []}
@@ -261,6 +278,21 @@ export function MemoryTable() {
           searchValue={searchInput}
           onSearchChange={setSearchInput}
           defaultHiddenColumns={DEFAULT_COLUMN_VISIBILITY}
+          headerContent={
+            <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">
+                {totalSummaryMessage}
+              </span>
+              {shouldShowLimitNotice && (
+                <div className="flex items-center gap-1">
+                  <Trans>
+                    Showing the latest {MEMORY_VISIBLE_LIMIT} memories
+                  </Trans>
+                  {limitTooltipIcon}
+                </div>
+              )}
+            </div>
+          }
         />
         {isFetching && !isInitialLoad && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/70">
@@ -306,7 +338,10 @@ export function MemoryTable() {
               <Trans>Delete memory?</Trans>
             </AlertDialogTitle>
             <AlertDialogDescription>
-              <Trans>This will permanently remove the selected memory from your knowledge graph.</Trans>
+              <Trans>
+                This will permanently remove the selected memory from your
+                knowledge graph.
+              </Trans>
             </AlertDialogDescription>
             {deleteMutation.isPending && (
               <p className="text-sm text-muted-foreground flex items-center gap-2">
@@ -319,8 +354,13 @@ export function MemoryTable() {
             <AlertDialogCancel disabled={deleteMutation.isPending}>
               <Trans>Cancel</Trans>
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSingleDelete} disabled={deleteMutation.isPending}>
-              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <AlertDialogAction
+              onClick={confirmSingleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               <Trans>Delete</Trans>
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -356,13 +396,18 @@ export function MemoryTable() {
             <AlertDialogCancel disabled={bulkDeleteMutation.isPending}>
               <Trans>Cancel</Trans>
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmBulkDelete} disabled={bulkDeleteMutation.isPending}>
-              {bulkDeleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <AlertDialogAction
+              onClick={confirmBulkDelete}
+              disabled={bulkDeleteMutation.isPending}
+            >
+              {bulkDeleteMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               <Trans>Delete</Trans>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

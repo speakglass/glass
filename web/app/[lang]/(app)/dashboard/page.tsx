@@ -107,7 +107,7 @@ export default async function Page({
   }
 
   return (
-    <div className={'grow flex flex-col h-dvh'}>
+    <div className={'grow flex flex-col h-dvh overflow-hidden'}>
       <Chat />
     </div>
   );

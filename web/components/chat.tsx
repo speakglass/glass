@@ -54,7 +54,7 @@ export default function Chat() {
   return (
     <div
       className={
-        'relative grow flex flex-col mx-auto w-full overflow-hidden h-0 pt-12 sm:pt-14'
+        'relative grow flex flex-col mx-auto w-full overflow-hidden h-dvh pt-12 sm:pt-14'
       }
     >
       <Messages ref={ref} />
