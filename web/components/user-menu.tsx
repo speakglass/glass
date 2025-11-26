@@ -174,22 +174,26 @@ export function UserMenu({
                 <ArrowUpRight className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
               </a>
             </DropdownMenuItem>
-            <Feedback variant="menu" />
-            <DropdownMenuItem asChild className="cursor-pointer">
-              <button
-                onClick={() => {
-                  window.open(
-                    'https://discord.gg/GxJwcgnchM',
-                    '_blank',
-                    'noopener noreferrer'
-                  );
-                }}
-                className="flex w-full items-center"
-              >
-                <Discord className="size-4" />
-                <Trans>Community</Trans>
-              </button>
-            </DropdownMenuItem>
+            <div className="md:hidden">
+              <Feedback variant="menu" />
+            </div>
+            <div className="md:hidden">
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <button
+                  onClick={() => {
+                    window.open(
+                      'https://discord.gg/GxJwcgnchM',
+                      '_blank',
+                      'noopener noreferrer'
+                    );
+                  }}
+                  className="flex w-full items-center"
+                >
+                  <Discord className="size-4" />
+                  <Trans>Community</Trans>
+                </button>
+              </DropdownMenuItem>
+            </div>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
