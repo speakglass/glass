@@ -36,7 +36,7 @@ export default async function BillingPage({
               <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-0.5 sm:mb-1">
                 <Trans>Upgrade</Trans>
               </p>
-              <h1 className="text-xl sm:text-3xl font-bold">
+              <h1 className="text-base sm:text-3xl font-bold">
                 <Trans>Billing</Trans>
               </h1>
             </div>

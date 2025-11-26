@@ -240,18 +240,8 @@ export function MemoryTable() {
   ) : null;
 
   return (
-    <>
-      <div className="mb-3 flex flex-col gap-1 text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">{totalSummaryMessage}</span>
-        {shouldShowLimitNotice && (
-          <div className="flex items-center gap-1">
-            <Trans>Showing the latest {MEMORY_VISIBLE_LIMIT} memories</Trans>
-            {limitTooltipIcon}
-          </div>
-        )}
-      </div>
-
-      <div className="relative">
+    <div className="flex flex-col h-full">
+      <div className="relative flex-1 min-h-0 flex flex-col">
         <DataTable
           columns={columns}
           data={data?.items || []}
@@ -261,6 +251,17 @@ export function MemoryTable() {
           searchValue={searchInput}
           onSearchChange={setSearchInput}
           defaultHiddenColumns={DEFAULT_COLUMN_VISIBILITY}
+          headerContent={
+            <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{totalSummaryMessage}</span>
+              {shouldShowLimitNotice && (
+                <div className="flex items-center gap-1">
+                  <Trans>Showing the latest {MEMORY_VISIBLE_LIMIT} memories</Trans>
+                  {limitTooltipIcon}
+                </div>
+              )}
+            </div>
+          }
         />
         {isFetching && !isInitialLoad && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/70">
@@ -363,6 +364,6 @@ export function MemoryTable() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

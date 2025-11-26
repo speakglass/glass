@@ -66,6 +66,7 @@ interface DataTableProps<TData, TValue> {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   defaultHiddenColumns?: VisibilityState;
+  headerContent?: React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -78,6 +79,7 @@ export function DataTable<TData, TValue>({
   searchValue,
   onSearchChange,
   defaultHiddenColumns,
+  headerContent,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -88,6 +90,18 @@ export function DataTable<TData, TValue>({
       ...(defaultHiddenColumns || {}),
     }));
   const [rowSelection, setRowSelection] = React.useState({});
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  // Detect screen size for mobile/desktop differences
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const table = useReactTable({
     data,
@@ -106,9 +120,21 @@ export function DataTable<TData, TValue>({
       columnVisibility,
       rowSelection,
     },
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
     globalFilterFn: 'includesString',
     meta,
   });
+
+  // Set initial page size based on screen size
+  React.useEffect(() => {
+    if (isMobile && table.getState().pagination.pageSize > 10) {
+      table.setPageSize(8);
+    }
+  }, [isMobile, table]);
 
   const handleDeleteSelected = () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
@@ -123,11 +149,32 @@ export function DataTable<TData, TValue>({
     }
   };
 
+  const mobileDeleteButton = table.getFilteredSelectedRowModel().rows.length >
+    0 && (
+    <Button
+      variant="outline"
+      size="sm"
+      className="h-8 text-xs text-destructive hover:text-destructive shrink-0 sm:hidden"
+      onClick={handleDeleteSelected}
+    >
+      <Trash2 className="h-4 w-4" />
+      <Trans>Delete</Trans> ({table.getFilteredSelectedRowModel().rows.length})
+    </Button>
+  );
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col h-full gap-3">
+      {/* Header content with mobile delete button */}
+      {headerContent && (
+        <div className="flex items-center justify-between gap-2 shrink-0">
+          <div className="flex-1 min-w-0">{headerContent}</div>
+          {mobileDeleteButton}
+        </div>
+      )}
+
       {/* Toolbar */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col gap-3 shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between sm:gap-3 gap-0">
           <div className="flex flex-1 items-center gap-2">
             <Input
               placeholder={t`Search memories...`}
@@ -145,30 +192,41 @@ export function DataTable<TData, TValue>({
               }}
               className="h-9 w-full sm:w-[250px] lg:w-[400px] sm:placeholder:text-base placeholder:text-sm"
             />
+            {onAddNew && (
+              <Button
+                size="sm"
+                className="h-9 lg:hidden shrink-0"
+                onClick={onAddNew}
+              >
+                <Plus className="h-4 w-4" />
+                <span className="sr-only">
+                  <Trans>Add memory</Trans>
+                </span>
+              </Button>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {table.getFilteredSelectedRowModel().rows.length > 0 && (
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 text-destructive hover:text-destructive flex-1 sm:flex-none"
+                className="h-9 text-destructive hover:text-destructive hidden sm:flex"
                 onClick={handleDeleteSelected}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">
-                  <Trans>Delete</Trans>
-                </span>
-                <span className="sm:hidden">
-                  <Trans>Del</Trans>
-                </span>{' '}
-                ({table.getFilteredSelectedRowModel().rows.length})
+                <Trans>Delete</Trans> (
+                {table.getFilteredSelectedRowModel().rows.length})
               </Button>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 hidden lg:flex"
+                >
                   <LayoutGrid className="h-4 w-4" />
-                  <span className="hidden sm:inline ml-2">
+                  <span className="ml-2">
                     <Trans>Columns</Trans>
                   </span>
                   <ChevronDown className="h-4 w-4 ml-2" />
@@ -201,15 +259,12 @@ export function DataTable<TData, TValue>({
             {onAddNew && (
               <Button
                 size="sm"
-                className="h-9 flex-1 sm:flex-none"
+                className="h-9 hidden lg:flex"
                 onClick={onAddNew}
               >
                 <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline ml-2">
+                <span className="ml-2">
                   <Trans>Add memory</Trans>
-                </span>
-                <span className="sm:hidden ml-2">
-                  <Trans>Add</Trans>
                 </span>
               </Button>
             )}
@@ -218,7 +273,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto overflow-y-hidden rounded-lg border">
+      <div className="overflow-x-auto overflow-y-auto rounded-lg border flex-1 min-h-0">
         <Table>
           <TableHeader className="bg-muted sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -270,7 +325,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 sm:px-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 sm:px-4 shrink-0">
         <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
           {footerNote ??
             t`${table.getFilteredSelectedRowModel().rows.length} of ${
@@ -278,10 +333,10 @@ export function DataTable<TData, TValue>({
             } rows selected`}
         </div>
         <div className="flex w-full sm:w-fit items-center gap-4 sm:gap-8">
-          <div className="hidden items-center gap-2 lg:flex">
+          <div className="flex items-center gap-2">
             <Label
               htmlFor="rows-per-page"
-              className="text-sm font-medium whitespace-nowrap"
+              className="text-xs sm:text-sm font-medium whitespace-nowrap"
             >
               <Trans>Rows per page</Trans>
             </Label>
@@ -291,17 +346,19 @@ export function DataTable<TData, TValue>({
                 table.setPageSize(Number(value));
               }}
             >
-              <SelectTrigger className="h-8 w-20" id="rows-per-page">
+              <SelectTrigger className="h-8 w-16 sm:w-20" id="rows-per-page">
                 <SelectValue
                   placeholder={table.getState().pagination.pageSize}
                 />
               </SelectTrigger>
               <SelectContent side="top">
-                {[10, 20, 30, 40, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
-                    {pageSize}
-                  </SelectItem>
-                ))}
+                {(isMobile ? [5, 8, 10, 15] : [10, 20, 30, 40, 50]).map(
+                  (pageSize) => (
+                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                      {pageSize}
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
           </div>

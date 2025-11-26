@@ -12,9 +12,13 @@ import {
   ArrowUpRight,
   CreditCard,
   User,
+  MessageSquare,
+  Users,
 } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
 import Settings from './settings';
+import Feedback from './feedback';
+import Discord from './logos/discord';
 
 import {
   DropdownMenu,
@@ -55,9 +59,7 @@ export function UserMenu({
   const isControlled = typeof open === 'boolean';
   const menuOpen = isControlled ? Boolean(open) : internalOpen;
   const isNative = isNativePlatform();
-  const showBillingLink = Boolean(
-    snapshot?.billing && !snapshot.billing.selfHosted && !isNative
-  );
+  const showBillingLink = Boolean(snapshot?.billing && !snapshot.billing.selfHosted && !isNative);
 
   const user = session?.user;
   const avatar = user?.image || null;
@@ -71,12 +73,7 @@ export function UserMenu({
 
   if (!session?.user) {
     if (sessionStatus === 'loading') {
-      return (
-        <div
-          className="h-8 w-8 rounded-full border border-border/60 bg-muted animate-pulse"
-          aria-hidden
-        />
-      );
+      return <div className="h-8 w-8 rounded-full border border-border/60 bg-muted animate-pulse" aria-hidden />;
     }
     return null;
   }
@@ -112,20 +109,12 @@ export function UserMenu({
       <Button
         id="glass-user-menu"
         variant="ghost"
-        className={cn(
-          'relative sm:h-8 sm:w-8 h-7 w-7 rounded-full p-0 hover:bg-transparent cursor-pointer',
-          className
-        )}
+        className={cn('relative sm:h-8 sm:w-8 h-7 w-7 rounded-full p-0 hover:bg-transparent cursor-pointer', className)}
         aria-label="Open user menu"
       >
         <Avatar className="sm:h-8 sm:w-8 h-7 w-7 cursor-pointer">
-          <AvatarImage
-            src={avatar || undefined}
-            alt={user?.name || 'User'}
-          />
-          <AvatarFallback className="text-sm font-semibold">
-            {initials}
-          </AvatarFallback>
+          <AvatarImage src={avatar || undefined} alt={user?.name || 'User'} />
+          <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
         </Avatar>
       </Button>
     );
@@ -143,29 +132,16 @@ export function UserMenu({
       <Settings open={settingsOpen} onOpenChange={setSettingsOpen} />
       <DropdownMenu open={menuOpen} onOpenChange={handleOpenChange}>
         <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-        <DropdownMenuContent
-          className="w-64 border-t-2 border-border"
-          align="end"
-          sideOffset={8}
-        >
+        <DropdownMenuContent className="w-64 border-t-2 border-border" align="end" sideOffset={8}>
           <DropdownMenuLabel className="p-0 font-normal">
             <div className="flex items-center gap-2.5 px-2 py-2">
               <Avatar className="h-9 w-9">
-                <AvatarImage
-                  src={avatar || undefined}
-                  alt={user?.name || 'User'}
-                />
-                <AvatarFallback className="text-sm font-semibold">
-                  {initials}
-                </AvatarFallback>
+                <AvatarImage src={avatar || undefined} alt={user?.name || 'User'} />
+                <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col space-y-0.5 flex-1 min-w-0">
-                <p className="text-sm font-semibold leading-none truncate">
-                  {user?.name || '—'}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {user?.email || ''}
-                </p>
+                <p className="text-sm font-semibold leading-none truncate">{user?.name || '—'}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email || ''}</p>
               </div>
             </div>
           </DropdownMenuLabel>
@@ -173,20 +149,13 @@ export function UserMenu({
 
           <DropdownMenuGroup>
             <DropdownMenuItem asChild>
-              <Link
-                id="glass-history-link"
-                href={historyHref}
-                className="cursor-pointer"
-              >
+              <Link id="glass-history-link" href={historyHref} className="cursor-pointer">
                 <History />
                 <Trans>Conversation history</Trans>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link
-                href={historyHref.replace('/history', '/memory')}
-                className="cursor-pointer"
-              >
+              <Link href={historyHref.replace('/history', '/memory')} className="cursor-pointer">
                 <Brain />
                 <Trans>Memory</Trans>
               </Link>
@@ -199,13 +168,13 @@ export function UserMenu({
                 </Link>
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem
-              onClick={() => setSettingsOpen(true)}
-              className="cursor-pointer"
-            >
+            <DropdownMenuItem onClick={() => setSettingsOpen(true)} className="cursor-pointer">
               <SettingsIcon />
               <Trans>Settings</Trans>
             </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
             <DropdownMenuItem asChild className="cursor-pointer">
               <a
                 href="https://docs.speakglass.com"
@@ -220,6 +189,22 @@ export function UserMenu({
                 <ArrowUpRight className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
               </a>
             </DropdownMenuItem>
+            <div className="md:hidden">
+              <Feedback variant="menu" />
+            </div>
+            <div className="md:hidden">
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <button
+                  onClick={() => {
+                    window.open('https://discord.gg/GxJwcgnchM', '_blank', 'noopener noreferrer');
+                  }}
+                  className="flex w-full items-center"
+                >
+                  <Discord className="size-4" />
+                  <Trans>Community</Trans>
+                </button>
+              </DropdownMenuItem>
+            </div>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem

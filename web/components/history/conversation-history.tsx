@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Trash2,
   Plus,
+  Phone,
 } from 'lucide-react';
 import { Trans } from '@lingui/react/macro';
 import { t, plural } from '@lingui/core/macro';
@@ -1014,9 +1015,9 @@ export function ConversationHistory() {
 
   return (
     <>
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_2fr]">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_2fr] h-full overflow-hidden">
         {/* Left: Conversation List (Desktop only) */}
-        <div className="hidden lg:flex lg:flex-col lg:max-h-[calc(100vh-200px)]">
+        <div className="hidden lg:flex lg:flex-col min-h-0">
           {/* Search Bar - Fixed */}
           <div className="shrink-0 relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1024,7 +1025,7 @@ export function ConversationHistory() {
               placeholder={t`Search conversations...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-9"
+              className="pl-9 pr-9 placeholder:text-base!"
             />
             {searchQuery && (
               <Button
@@ -1158,9 +1159,9 @@ export function ConversationHistory() {
         </div>
 
         {/* Right: Conversation Detail */}
-        <div className="rounded-2xl sm:rounded-3xl border border-border/50 bg-card/80 lg:sticky lg:top-8 lg:self-start max-h-[600px] lg:max-h-[calc(100vh-240px)] overflow-hidden flex flex-col">
+        <div className="rounded-2xl sm:rounded-3xl border border-border/50 bg-card/80 h-full overflow-hidden flex flex-col min-h-0">
           {/* Mobile Dropdown Selector */}
-          <div className="lg:hidden border-b border-border/30 p-2.5 sm:p-3">
+          <div className="lg:hidden border-b border-border/30 p-2 sm:p-3 shrink-0">
             <Popover
               open={isMobileDropdownOpen}
               onOpenChange={setIsMobileDropdownOpen}
@@ -1168,25 +1169,25 @@ export function ConversationHistory() {
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className="w-full flex items-center justify-between gap-2 rounded-xl border border-border/40 bg-background/50 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
+                  className="w-full flex items-center justify-between gap-2 bg-background/50 px-1 py-1 text-left transition-colors hover:bg-accent/50"
                 >
-                  <div className="flex-1 min-w-0">
-                    {selected ? (
-                      <>
-                        <p className="font-semibold text-sm truncate">
-                          {selected.title || t`Conversation`}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {formatRelativeTime(selected.startedAt)}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        <Trans>Select a conversation</Trans>
-                      </p>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="font-medium text-sm">
+                      <Trans>Your saved calls</Trans>
+                    </span>
+                    {totalConversations > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        ({totalConversations})
+                      </span>
                     )}
                   </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <ChevronDown
+                    className={cn(
+                      'h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200',
+                      isMobileDropdownOpen && 'rotate-180'
+                    )}
+                  />
                 </button>
               </PopoverTrigger>
               <PopoverContent
@@ -1195,8 +1196,9 @@ export function ConversationHistory() {
                 side="bottom"
                 sideOffset={4}
                 style={{ width: 'var(--radix-popover-trigger-width)' }}
+                onOpenAutoFocus={(e) => e.preventDefault()}
               >
-                <div className="max-h-[60vh] flex flex-col rounded-xl">
+                <div className="max-h-[60dvh] flex flex-col rounded-xl">
                   {/* Search Bar */}
                   <div className="shrink-0 bg-popover border-b border-border/30 p-3 rounded-t-xl">
                     <div className="relative">
@@ -1205,7 +1207,8 @@ export function ConversationHistory() {
                         placeholder={t`Search conversations...`}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 pr-9"
+                        className="pl-9 pr-9 placeholder:text-sm!"
+                        autoFocus={false}
                       />
                       {searchQuery && (
                         <Button
@@ -1357,12 +1360,12 @@ export function ConversationHistory() {
           </div>
 
           {loadingDetail && (
-            <div className="flex flex-1 items-center justify-center p-8">
+            <div className="flex flex-1 items-center justify-center p-8 min-h-0">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
             </div>
           )}
           {!loadingDetail && !selected && (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center p-6 sm:p-8">
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center p-6 sm:p-8 min-h-0">
               <MessageSquare className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground opacity-50" />
               <div>
                 <p className="font-semibold text-muted-foreground text-sm sm:text-base">
@@ -1380,7 +1383,7 @@ export function ConversationHistory() {
           {!loadingDetail && selected && (
             <div
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6"
+              className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 min-h-0"
             >
               {/* Header with Actions */}
               <div className="flex items-start justify-between gap-3">
@@ -1968,8 +1971,8 @@ export function ConversationHistory() {
                         <AvatarFallback>AI</AvatarFallback>
                       </Avatar>
                     </div>
-                    <div className="flex-1 bg-background/50 border border-border/30 rounded-xl p-4">
-                      <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                    <div className="flex-1 bg-background/50 border border-border/30 rounded-xl p-3 sm:p-4">
+                      <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-[1.3] sm:leading-normal">
                         {selected.feedback}
                       </p>
                     </div>
@@ -2058,7 +2061,7 @@ export function ConversationHistory() {
 
               {/* Conversation History Section */}
               <section ref={conversationSectionRef} className="relative">
-                <div className="sticky top-0 z-20 pb-3 bg-card/80">
+                <div className="sticky sm:top-[-24px] top-[-12px] z-20 bg-card/80">
                   <button
                     onClick={() => {
                       setShowConversation(!showConversation);
@@ -2095,7 +2098,7 @@ export function ConversationHistory() {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="mt-2 bg-background/50 border border-border/30 rounded-lg p-3 space-y-3">
+                      <div className="mt-2 bg-background/50 border border-border/30 rounded-lg p-3 sm:space-y-3 space-y-1">
                         {selected.messages && selected.messages.length > 0 ? (
                           selected.messages.map((message, idx) => {
                             const speakerRole = getMessageRole(message);
@@ -2141,7 +2144,7 @@ export function ConversationHistory() {
                                   </div>
                                   <div
                                     className={cn(
-                                      'rounded-2xl px-3 py-2 text-sm',
+                                      'rounded-2xl px-3 py-2 text-sm leading-[1.3] sm:leading-normal',
                                       isUser
                                         ? 'bg-primary/10 ml-auto'
                                         : isGlass
@@ -2173,7 +2176,7 @@ export function ConversationHistory() {
             </div>
           )}
           {error && (
-            <div className="p-6">
+            <div className="p-6 shrink-0">
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}

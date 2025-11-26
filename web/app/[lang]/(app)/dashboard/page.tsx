@@ -5,7 +5,10 @@ import { redirect } from 'next/navigation';
 import type { Session } from 'next-auth';
 import Chat from '@/components/chat';
 
-const apiBase = process.env.GLASS_API_URL_INTERNAL || process.env.NEXT_PUBLIC_GLASS_API_URL || 'http://localhost:8000';
+const apiBase =
+  process.env.GLASS_API_URL_INTERNAL ||
+  process.env.NEXT_PUBLIC_GLASS_API_URL ||
+  'http://localhost:8000';
 
 type UnauthorizedError = Error & { status: number };
 
@@ -56,7 +59,11 @@ async function getOnboardingStatus(user: Session['user']): Promise<boolean> {
   }
 }
 
-export default async function Page({ params }: { params: Promise<{ lang: string }> }) {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}) {
   const session = await auth();
   const { lang } = await params;
 
@@ -78,7 +85,11 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
   }
 
   if (!snapshot.user.emailVerified) {
-    redirect(`/${lang}/verify-email-sent?email=${encodeURIComponent(snapshot.user.email)}`);
+    redirect(
+      `/${lang}/verify-email-sent?email=${encodeURIComponent(
+        snapshot.user.email
+      )}`
+    );
   }
 
   // Check onboarding status on server side
@@ -96,7 +107,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
   }
 
   return (
-    <div className={'grow flex flex-col'}>
+    <div className={'grow flex flex-col h-dvh overflow-hidden'}>
       <Chat />
     </div>
   );

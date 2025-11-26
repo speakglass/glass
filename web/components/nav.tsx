@@ -29,23 +29,6 @@ export const Nav = ({ userMenuOpen, onUserMenuOpenChange }: NavProps = {}) => {
     setMounted(true);
   }, []);
 
-  // 뷰포트가 데스크톱 사이즈가 되면 모바일 메뉴를 강제로 닫고 언마운트
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768; // tailwind md 브레이크포인트 기준
-      setIsMobile(mobile);
-      if (!mobile) {
-        setMobileMenuOpen(false);
-      }
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   const isDark = mounted ? theme === 'dark' : false;
   const logoSrc = isDark ? '/logo-white.png' : '/logo-black.png';
 
