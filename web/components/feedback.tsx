@@ -18,7 +18,11 @@ const REACTIONS = [
   { icon: ThumbsDown, value: 'bad', label: 'Bad' },
 ];
 
-export default function Feedback() {
+interface FeedbackProps {
+  variant?: 'default' | 'menu';
+}
+
+export default function Feedback({ variant = 'default' }: FeedbackProps) {
   const [open, setOpen] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [reaction, setReaction] = useState<string | null>(null);
@@ -62,19 +66,34 @@ export default function Feedback() {
     }
   };
 
+  const isMenuVariant = variant === 'menu';
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 h-8 px-3 cursor-pointer"
-        >
-          <MessageSquare className="size-3.5" />
-          <span>
+        {isMenuVariant ? (
+          <button
+            className="flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50"
+            onClick={(e) => {
+              e.preventDefault();
+              setOpen(true);
+            }}
+          >
+            <MessageSquare className="mr-2 h-4 w-4" />
             <Trans>Feedback</Trans>
-          </span>
-        </Button>
+          </button>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 h-8 px-3 cursor-pointer"
+          >
+            <MessageSquare className="size-3.5" />
+            <span>
+              <Trans>Feedback</Trans>
+            </span>
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
         <form onSubmit={handleSubmit} className="space-y-3">
