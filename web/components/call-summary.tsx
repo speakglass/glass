@@ -1269,7 +1269,7 @@ const CallSummary = ({
                       {/* Current position indicator */}
                       <motion.div
                         className={
-                          'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-400 rounded-full sm:w-1 sm:h-4'
+                          'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-400 rounded-full w-1 h-4'
                         }
                         style={{
                           left: `${getScoreIndicatorPosition(
@@ -1372,7 +1372,7 @@ const CallSummary = ({
                       {/* Current position indicator */}
                       <motion.div
                         className={
-                          'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-400 rounded-full sm:w-1 sm:h-4'
+                          'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-400 rounded-full w-1 h-4'
                         }
                         style={{
                           left: `${getScoreIndicatorPosition(

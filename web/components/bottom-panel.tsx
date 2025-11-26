@@ -440,7 +440,7 @@ export default function BottomPanel() {
   }, [suggestions.length, feedbacks.length, isSpeaking, loadingSuggestion]);
 
   return (
-    <div className="mx-auto w-full h-[50vh] shrink-0">
+    <div className="mx-auto w-full h-[50dvh] shrink-0">
       <div className={'max-w-2xl mx-auto w-full px-4 h-full flex flex-col'}>
         <div
           id="glass-suggestion-section"
