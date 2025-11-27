@@ -2,6 +2,7 @@
   "expo": {
     "name": "Glass",
     "slug": "glass-mobile",
+    "owner": "speakglass",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,9 +18,7 @@
       "bundleIdentifier": "com.speakglass.app",
       "buildNumber": "1",
       "infoPlist": {
-        "UIBackgroundModes": [
-          "audio"
-        ],
+        "UIBackgroundModes": ["audio"],
         "NSMicrophoneUsageDescription": "Glass needs access to your microphone for voice conversations with AI language partners.",
         "NSSpeechRecognitionUsageDescription": "Glass uses speech recognition to help you practice speaking your target language."
       }
@@ -31,11 +30,7 @@
       },
       "package": "com.speakglass.app",
       "versionCode": 1,
-      "permissions": [
-        "RECORD_AUDIO",
-        "MODIFY_AUDIO_SETTINGS",
-        "INTERNET"
-      ]
+      "permissions": ["RECORD_AUDIO", "MODIFY_AUDIO_SETTINGS", "INTERNET"]
     },
     "web": {
       "bundler": "metro",

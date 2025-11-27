@@ -1,0 +1,7 @@
+# Ignore everything except mobile package
+/*
+!/packages/
+/packages/*
+!/packages/mobile/
+!/packages/shared/
+
