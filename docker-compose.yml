@@ -42,7 +42,7 @@ services:
     environment:
       GLASS_DATABASE_URL: postgresql+asyncpg://glass:glass@db:5432/glass
       GLASS_REDIS_URL: redis://redis:6379/0
-      GLASS_ALLOW_ORIGIN: http://localhost:3000
+      GLASS_ALLOW_ORIGIN: '*'
       GLASS_LOG_LEVEL: INFO
       PORT: 8000
     depends_on:
@@ -62,10 +62,10 @@ services:
 
   web:
     build:
-      context: ./web
+      context: ./packages/web
       dockerfile: Dockerfile
     env_file:
-      - web/.env
+      - packages/web/.env
     environment:
       # Client-side: Use localhost for browser access
       NEXT_PUBLIC_GLASS_API_URL: http://localhost:8000
@@ -79,17 +79,17 @@ services:
     ports:
       - '3000:3000'
     volumes:
-      - ./web/app:/app/app
-      - ./web/components:/app/components
-      - ./web/contexts:/app/contexts
-      - ./web/data:/app/data
-      - ./web/hooks:/app/hooks
-      - ./web/lib:/app/lib
-      - ./web/types:/app/types
-      - ./web/auth.ts:/app/auth.ts
-      - ./web/proxy.ts:/app/proxy.ts
-      - ./web/public:/app/public
-      - ./web/locales:/app/locales
+      - ./packages/web/app:/app/app
+      - ./packages/web/components:/app/components
+      - ./packages/web/contexts:/app/contexts
+      - ./packages/web/data:/app/data
+      - ./packages/web/hooks:/app/hooks
+      - ./packages/web/lib:/app/lib
+      - ./packages/web/types:/app/types
+      - ./packages/web/auth.ts:/app/auth.ts
+      - ./packages/web/proxy.ts:/app/proxy.ts
+      - ./packages/web/public:/app/public
+      - ./packages/web/locales:/app/locales
 
 volumes:
   pgdata:
