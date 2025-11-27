@@ -12,7 +12,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "http://localhost:8000"
-      }
+      },
+      "workingDirectory": "packages/mobile"
     },
     "preview": {
       "distribution": "internal",
@@ -24,7 +25,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.sparkglass.com"
-      }
+      },
+      "workingDirectory": "packages/mobile"
     },
     "production": {
       "autoIncrement": true,
@@ -33,7 +35,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.sparkglass.com"
-      }
+      },
+      "workingDirectory": "packages/mobile"
     }
   },
   "submit": {
