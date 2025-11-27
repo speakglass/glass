@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useApi } from '@/contexts/api-context';
@@ -45,6 +45,68 @@ const getAvatarColor = (name?: string | null) => {
   const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
   const index = name.charCodeAt(0) % colors.length;
   return colors[index];
+};
+
+// Partner images for avatar animation
+const PARTNER_AVATARS = [
+  require('@/assets/partners/emma.png'),
+  require('@/assets/partners/jiwoo.png'),
+  require('@/assets/partners/alex.png'),
+  require('@/assets/partners/mei.png'),
+  require('@/assets/partners/diego.png'),
+  require('@/assets/partners/claire.png'),
+  require('@/assets/partners/haruto.png'),
+  require('@/assets/partners/yui.png'),
+];
+
+// Animated avatars stack component with carousel effect
+const AnimatedAvatarsStack = () => {
+  const [currentAvatars, setCurrentAvatars] = useState([0, 1, 2, 3]);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Fade out all avatars
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => {
+        // Update avatars: shift left and add new one at the end
+        setCurrentAvatars((prev) => {
+          const newLast = (prev[3] + 1) % PARTNER_AVATARS.length;
+          return [prev[1], prev[2], prev[3], newLast];
+        });
+
+        // Fade in new avatars
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [fadeAnim]);
+
+  return (
+    <Animated.View style={[styles.avatarsStack, { opacity: fadeAnim }]}>
+      {currentAvatars.map((avatarIdx, idx) => (
+        <Image
+          key={`${idx}-${avatarIdx}`}
+          source={PARTNER_AVATARS[avatarIdx]}
+          style={[
+            styles.stackedAvatar,
+            {
+              left: idx * 32,
+              zIndex: 4 - idx,
+            },
+          ]}
+        />
+      ))}
+    </Animated.View>
+  );
 };
 
 export default function HomeScreen() {
@@ -229,7 +291,14 @@ export default function HomeScreen() {
                     style={styles.startCallButton}
                     onPress={(e) => {
                       e.stopPropagation();
-                      router.push(`/(app)/partner-conversation?partnerId=${partner.id}` as any);
+                      router.push({
+                        pathname: '/(app)/partner-conversation',
+                        params: {
+                          partnerId: partner.id,
+                          partnerName: partner.name,
+                          partnerAvatarUrl: partner.avatarUrl || '',
+                        },
+                      } as any);
                     }}
                     activeOpacity={0.8}
                   >
@@ -255,17 +324,18 @@ export default function HomeScreen() {
           conversations.length === 0 && (
             <View style={styles.gettingStartedSection}>
               <View style={styles.gettingStartedCard}>
-                <Text style={styles.gettingStartedIcon}>🎯</Text>
-                <Text style={styles.gettingStartedTitle}>Start Your First Call</Text>
+                {/* Overlapping Avatars */}
+                <AnimatedAvatarsStack />
+                <Text style={styles.gettingStartedTitle}>Match Your First AI Partner</Text>
                 <Text style={styles.gettingStartedDescription}>
-                  Find an AI Partner and begin your language learning journey
+                  Meet conversation partners that match your preferences
                 </Text>
                 <TouchableOpacity
                   style={styles.gettingStartedButton}
                   onPress={() => router.push('/(app)/new-partner')}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.gettingStartedButtonText}>Find a Partner</Text>
+                  <Text style={styles.gettingStartedButtonText}>Discover Partners</Text>
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </TouchableOpacity>
               </View>
@@ -896,14 +966,29 @@ const styles = StyleSheet.create({
   gettingStartedCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 32,
+    padding: 20,
     borderWidth: 1,
     borderColor: '#e0e0e0',
     alignItems: 'center',
   },
-  gettingStartedIcon: {
-    fontSize: 48,
-    marginBottom: 12,
+  avatarsStack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 56,
+    width: 168,
+    marginBottom: 16,
+    position: 'relative',
+  },
+  stackedAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    position: 'absolute',
+    left: 0,
+    borderWidth: 3,
+    borderColor: '#fff',
+    backgroundColor: '#fff',
   },
   gettingStartedTitle: {
     fontSize: 18,
@@ -917,7 +1002,7 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   gettingStartedButton: {
     flexDirection: 'row',

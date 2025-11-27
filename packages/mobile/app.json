@@ -14,14 +14,28 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.speakglass.mobile"
+      "bundleIdentifier": "com.speakglass.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "audio"
+        ],
+        "NSMicrophoneUsageDescription": "Glass needs access to your microphone for voice conversations with AI language partners.",
+        "NSSpeechRecognitionUsageDescription": "Glass uses speech recognition to help you practice speaking your target language."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.speakglass.mobile"
+      "package": "com.speakglass.app",
+      "versionCode": 1,
+      "permissions": [
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
+        "INTERNET"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -38,11 +52,19 @@
             "kotlinVersion": "1.9.0"
           }
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "0f88143a-c5f4-4147-894e-42a640a2cf26"
+      }
     }
   }
 }
-

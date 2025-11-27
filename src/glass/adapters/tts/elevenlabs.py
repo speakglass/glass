@@ -26,7 +26,7 @@ class ElevenLabsTTSAdapter:
         timeout: float = 30.0,
     ) -> None:
         """Initialize ElevenLabs TTS adapter.
-        
+
         Args:
             api_key: ElevenLabs API key
             model: Model ID to use
@@ -38,7 +38,7 @@ class ElevenLabsTTSAdapter:
         if not api_key:
             msg = "ElevenLabs API key is required."
             raise ValueError(msg)
-        
+
         self.api_key = api_key
         self.model = model
         self.default_voice_id = default_voice_id
@@ -54,26 +54,27 @@ class ElevenLabsTTSAdapter:
         language: str | None = None,
     ) -> AsyncIterable[dict[str, Any]]:
         """Stream synthesized audio from ElevenLabs.
-        
+
         Args:
             text: Text to synthesize
             voice_id: Voice ID (uses default if None)
             language: Language code (not used by ElevenLabs, voice determines language)
-            
+
         Yields:
             Audio data chunks (MP3 format)
         """
         voice = voice_id or self.default_voice_id
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice}/stream/with-timestamps"
-        
+
         headers = {
             "xi-api-key": self.api_key,
             "Content-Type": "application/json",
         }
-        
+
         payload = {
             "text": text,
             "model_id": self.model,
+            # with-timestamps always returns MP3, no need to specify output_format
             "voice_settings": {
                 "stability": self.stability,
                 "similarity_boost": self.similarity_boost,
@@ -81,7 +82,7 @@ class ElevenLabsTTSAdapter:
                 "use_speaker_boost": True,
             },
         }
-        
+
         LOGGER.info(f"[ElevenLabs] Synthesizing text: {text[:50]}...")
         collected_characters: list[str] = []
         collected_starts: list[float | None] = []
@@ -94,7 +95,7 @@ class ElevenLabsTTSAdapter:
                         error_text = await response.aread()
                         LOGGER.error(f"[ElevenLabs] API error: {error_text.decode()}")
                         return
-                    
+
                     async for line in response.aiter_lines():
                         if not line:
                             continue

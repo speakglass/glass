@@ -12,7 +12,7 @@ import {
   Image,
   Animated,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -175,6 +175,7 @@ export default function NewPartnerScreen() {
   const api = useApi();
   const { snapshot } = useAuth();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   const [step, setStep] = useState<Step>('topics');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [customTopics, setCustomTopics] = useState<string[]>([]);
@@ -676,7 +677,7 @@ export default function NewPartnerScreen() {
         <PartnerDetail partner={createdPartner} />
 
         {/* Fixed Bottom Buttons */}
-        <View style={styles.completeButtonsContainer}>
+        <View style={[styles.completeButtonsContainer, { paddingBottom: 16 + insets.bottom }]}>
           <TouchableOpacity style={styles.findAnotherButton} onPress={handleFindAnother}>
             <Text style={styles.findAnotherButtonText}>Keep Looking</Text>
           </TouchableOpacity>

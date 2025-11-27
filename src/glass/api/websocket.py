@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconn
 from ..adapters.websocket import WebSocketEventsAdapter
 from ..auth.jwt import AuthenticatedUser, decode_service_token
 from ..config import get_settings
-from ..utils.audio import iter_multiplexed_audio, resolve_session_languages
+from ..utils.audio import iter_multiplexed_audio, iter_mobile_audio, resolve_session_languages
 from ..persistence.service import (
     upsert_conversation,
     get_partner_by_id,
@@ -93,6 +93,7 @@ def _is_origin_allowed(origin: str | None) -> bool:
     """Check Origin against GLASS_ALLOW_ORIGIN, supporting comma-separated values and wildcard.
 
     Mirrors the logic used in HTTP CORS setup so WS behaves consistently.
+    Mobile apps may send the API URL as origin or no origin at all.
     """
     settings = get_settings()
     # Build list from comma-separated env string
@@ -101,7 +102,19 @@ def _is_origin_allowed(origin: str | None) -> bool:
     # Wildcard or empty means allow all
     if not allow_list or "*" in allow_list:
         return True
-    return origin in allow_list
+    # Allow connections without Origin header (typical for mobile apps)
+    if origin is None:
+        return True
+    # Allow if origin matches any allowed origin
+    if origin in allow_list:
+        return True
+    # Allow localhost origins for mobile development (React Native sends API URL as origin)
+    if origin and origin.startswith(("http://localhost:", "http://127.0.0.1:", "http://192.168.")):
+        return True
+    # Allow ngrok origins for mobile development with real devices
+    if origin and ".ngrok" in origin:
+        return True
+    return False
 
 
 async def _resolve_ws_user(websocket: WebSocket, token: str | None) -> AuthenticatedUser:
@@ -132,6 +145,7 @@ async def audio_stream(
     """Multiplexed audio: 0x01=mic, 0x02=system."""
     origin = websocket.headers.get("origin")
     if not _is_origin_allowed(origin):
+        LOGGER.warning("[WebSocket] Origin not allowed: %s", origin)
         await websocket.close(code=1008)
         return
 
@@ -286,6 +300,155 @@ async def _queue_to_iter(queue: asyncio.Queue):
         if item is None:
             break
         yield item
+
+
+@router.websocket("/ws/mobile")
+async def mobile_audio_stream(
+    websocket: WebSocket,
+    sid: str,
+    auth_token: str | None = Query(default=None, alias="auth_token"),
+    events: bool = Query(default=True),
+    learning_lang: str = Query(default="en"),
+    native_lang: str = Query(default="ko"),
+    mode: str = Query(default="roleplay"),
+    partner_id: str | None = Query(default=None),
+    user_spoken_lang: str | None = Query(default=None, alias="user_spoken_lang"),
+    partner_spoken_lang: str | None = Query(default=None, alias="partner_spoken_lang"),
+) -> None:
+    """Mobile audio endpoint - microphone only, no source byte prefix required.
+
+    Unlike /ws/audio which expects multiplexed audio with source byte prefix,
+    this endpoint treats all binary data as microphone audio.
+    """
+    origin = websocket.headers.get("origin")
+    if not _is_origin_allowed(origin):
+        LOGGER.warning("[WebSocket/Mobile] Origin not allowed: %s", origin)
+        await websocket.close(code=1008)
+        return
+
+    await websocket.accept()
+    app_state = _get_state(websocket)
+    user = await _resolve_ws_user(websocket, auth_token)
+    if user:
+        await app_state.set_session_owner(sid, user.user_id)
+
+    history_store = getattr(websocket.app.state, "history_store", None)
+    partner_profile: dict[str, Any] | None = None
+    account_user = None
+    resolved_learning_lang = (learning_lang or "").strip().lower()
+    resolved_native_lang = (native_lang or "").strip().lower()
+
+    if history_store and user:
+        try:
+            account_user = await get_user_by_id(history_store, user.user_id)
+        except Exception as exc:
+            account_user = None
+            LOGGER.warning("[WebSocket/Mobile] Failed to load account user %s: %s", user.user_id, exc)
+
+        if account_user:
+            billing_service = getattr(app_state, "billing_service", None)
+            if billing_service:
+                billing_payload = billing_service.user_status_payload(account_user)
+                total_conversations = await count_conversations(history_store, user_id=user.user_id)
+                limit_state = conversation_limit_status(
+                    app_state.settings,
+                    billing_payload,
+                    used=total_conversations,
+                )
+                if limit_state.blocked:
+                    await websocket.close(code=4403, reason="conversation limit reached")
+                    return
+
+            if not resolved_learning_lang and account_user.learning_lang:
+                resolved_learning_lang = account_user.learning_lang.strip().lower()
+            if not resolved_native_lang and account_user.native_lang:
+                resolved_native_lang = account_user.native_lang.strip().lower()
+
+    if not resolved_learning_lang:
+        resolved_learning_lang = "en"
+    if not resolved_native_lang:
+        resolved_native_lang = "en"
+
+    # Fetch partner profile for roleplay mode
+    normalized_mode = (mode or "").strip().lower() or "roleplay"
+    if partner_id and user and history_store:
+        partner_model = await get_partner_by_id(history_store, partner_id, user_id=user.user_id)
+        if partner_model:
+            partner_profile = _partner_to_profile(partner_model)
+        else:
+            LOGGER.warning(f"[Mobile/Roleplay] Partner {partner_id} not found for user {user.user_id}")
+
+    learning_lang, native_lang = resolve_session_languages(
+        normalized_mode,
+        resolved_learning_lang,
+        resolved_native_lang,
+        partner_profile,
+    )
+
+    events_adapter = WebSocketEventsAdapter(websocket) if events else None
+    pipeline = await app_state.session_manager.get_or_create(sid, events_port=events_adapter)
+
+    # Initialize session for user
+    await pipeline.initialize_for_user(
+        user_id=user.user_id,
+        email=user.email,
+        name=user.name,
+        avatar_url=user.avatar_url,
+        learning_lang=learning_lang,
+        native_lang=native_lang,
+        mode=normalized_mode,
+        partner=partner_profile,
+        language_level=getattr(account_user, "language_level", None),
+        user_spoken_lang=user_spoken_lang,
+        partner_spoken_lang=partner_spoken_lang,
+    )
+
+    # Discord notification
+    if not getattr(pipeline, "_discord_notified_start", False):
+        setattr(pipeline, "_discord_notified_start", True)
+        await send_discord_notification(
+            app_state.settings.discord_webhook_url,
+            embeds=[
+                {
+                    "title": "📱 Mobile Session Started",
+                    "color": 0x3B82F6,
+                    "fields": [
+                        {"name": "User", "value": f"{user.name or 'Unknown'} ({user.email})", "inline": False},
+                        {"name": "Session ID", "value": sid, "inline": True},
+                        {"name": "Mode", "value": normalized_mode, "inline": True},
+                        {"name": "Languages", "value": f"{learning_lang} → {native_lang}", "inline": True},
+                    ],
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            ],
+        )
+
+    LOGGER.info(
+        f"[Mobile] WebSocket connected - learning_lang={learning_lang}, native_lang={native_lang}, "
+        f"mode={normalized_mode}, partner_id={partner_id}, user_id={user.user_id}"
+    )
+
+    # Single queue for microphone audio (no system audio on mobile)
+    mic_queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=64)
+    mic_task = asyncio.create_task(pipeline.process_audio_stream(_queue_to_iter(mic_queue), source="mic"))
+
+    try:
+        await iter_mobile_audio(
+            websocket,
+            mic_queue,
+            pipeline,
+            db=history_store,
+            user=user,
+        )
+        await mic_task
+    except WebSocketDisconnect:
+        mic_task.cancel()
+    except Exception:
+        mic_task.cancel()
+        raise
+    finally:
+        if user and pipeline.memory.get_full_conversation():
+            asyncio.create_task(_auto_save_conversation(websocket.app, sid, user, pipeline))
 
 
 @router.websocket("/ws/session")

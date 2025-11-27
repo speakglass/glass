@@ -140,54 +140,57 @@ export default function PartnersScreen() {
                 <Text style={styles.sectionTitle}>Frequently Contacted</Text>
               </View>
               <View style={styles.cardGroup}>
-                {frequentPartners.map((item, index) => (
-                  <Swipeable key={item.id} renderRightActions={() => renderRightActions(item)} overshootRight={false}>
-                    <TouchableOpacity
-                      style={styles.listItem}
-                      onPress={() => router.push(`/(app)/partner/${item.id}` as Href)}
-                    >
-                      <View style={styles.avatarContainer}>
-                        {item.avatarUrl ? (
-                          <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
-                        ) : (
-                          <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                            <Ionicons name="person" size={24} color="#999" />
-                          </View>
-                        )}
-                      </View>
-                      <View style={styles.partnerInfo}>
-                        <View style={styles.nameRow}>
-                          <Text style={styles.partnerName}>{item.name}</Text>
-                          {item.nativeLang && getFlagImage(item.nativeLang) && (
-                            <View style={styles.flagBadge}>
-                              <Image source={getFlagImage(item.nativeLang)} style={styles.flagBadgeImage} />
+                {frequentPartners.map((item, index) => {
+                  const flagSource = item.nativeLang ? getFlagImage(item.nativeLang) : null;
+                  return (
+                    <Swipeable key={item.id} renderRightActions={() => renderRightActions(item)} overshootRight={false}>
+                      <TouchableOpacity
+                        style={styles.listItem}
+                        onPress={() => router.push(`/(app)/partner/${item.id}` as Href)}
+                      >
+                        <View style={styles.avatarContainer}>
+                          {item.avatarUrl ? (
+                            <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+                          ) : (
+                            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                              <Ionicons name="person" size={24} color="#999" />
                             </View>
                           )}
                         </View>
-                        <Text style={styles.partnerDescription} numberOfLines={1}>
-                          {(item.conversationCount ?? 0).toLocaleString()} conversations
-                        </Text>
-                      </View>
-                      <TouchableOpacity
-                        style={styles.callButton}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          router.push({
-                            pathname: '/(app)/partner-conversation',
-                            params: {
-                              partnerId: item.id,
-                              partnerName: item.name,
-                              partnerAvatarUrl: item.avatarUrl || '',
-                            },
-                          } as any);
-                        }}
-                      >
-                        <Ionicons name="call" size={22} color="#0052FF" />
+                        <View style={styles.partnerInfo}>
+                          <View style={styles.nameRow}>
+                            <Text style={styles.partnerName}>{item.name}</Text>
+                            {flagSource && (
+                              <View style={styles.flagBadge}>
+                                <Image source={flagSource} style={styles.flagBadgeImage} />
+                              </View>
+                            )}
+                          </View>
+                          <Text style={styles.partnerDescription} numberOfLines={1}>
+                            {(item.conversationCount ?? 0).toLocaleString()} conversations
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.callButton}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            router.push({
+                              pathname: '/(app)/partner-conversation',
+                              params: {
+                                partnerId: item.id,
+                                partnerName: item.name,
+                                partnerAvatarUrl: item.avatarUrl || '',
+                              },
+                            } as any);
+                          }}
+                        >
+                          <Ionicons name="call" size={22} color="#0052FF" />
+                        </TouchableOpacity>
                       </TouchableOpacity>
-                    </TouchableOpacity>
-                    {index < frequentPartners.length - 1 && <View style={styles.separator} />}
-                  </Swipeable>
-                ))}
+                      {index < frequentPartners.length - 1 && <View style={styles.separator} />}
+                    </Swipeable>
+                  );
+                })}
               </View>
             </View>
           )}
@@ -199,54 +202,57 @@ export default function PartnersScreen() {
                 <Text style={styles.sectionTitle}>{letter}</Text>
               </View>
               <View style={styles.cardGroup}>
-                {groupedPartners[letter].map((item: ConversationPartner, index: number) => (
-                  <Swipeable key={item.id} renderRightActions={() => renderRightActions(item)} overshootRight={false}>
-                    <TouchableOpacity
-                      style={styles.listItem}
-                      onPress={() => router.push(`/(app)/partner/${item.id}` as Href)}
-                    >
-                      <View style={styles.avatarContainer}>
-                        {item.avatarUrl ? (
-                          <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
-                        ) : (
-                          <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                            <Ionicons name="person" size={24} color="#999" />
-                          </View>
-                        )}
-                      </View>
-                      <View style={styles.partnerInfo}>
-                        <View style={styles.nameRow}>
-                          <Text style={styles.partnerName}>{item.name}</Text>
-                          {item.nativeLang && getFlagImage(item.nativeLang) && (
-                            <View style={styles.flagBadge}>
-                              <Image source={getFlagImage(item.nativeLang)} style={styles.flagBadgeImage} />
+                {groupedPartners[letter].map((item: ConversationPartner, index: number) => {
+                  const flagSource = item.nativeLang ? getFlagImage(item.nativeLang) : null;
+                  return (
+                    <Swipeable key={item.id} renderRightActions={() => renderRightActions(item)} overshootRight={false}>
+                      <TouchableOpacity
+                        style={styles.listItem}
+                        onPress={() => router.push(`/(app)/partner/${item.id}` as Href)}
+                      >
+                        <View style={styles.avatarContainer}>
+                          {item.avatarUrl ? (
+                            <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+                          ) : (
+                            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                              <Ionicons name="person" size={24} color="#999" />
                             </View>
                           )}
                         </View>
-                        <Text style={styles.partnerDescription} numberOfLines={1}>
-                          {(item.conversationCount ?? 0).toLocaleString()} conversations
-                        </Text>
-                      </View>
-                      <TouchableOpacity
-                        style={styles.callButton}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          router.push({
-                            pathname: '/(app)/partner-conversation',
-                            params: {
-                              partnerId: item.id,
-                              partnerName: item.name,
-                              partnerAvatarUrl: item.avatarUrl || '',
-                            },
-                          } as any);
-                        }}
-                      >
-                        <Ionicons name="call" size={22} color="#0052FF" />
+                        <View style={styles.partnerInfo}>
+                          <View style={styles.nameRow}>
+                            <Text style={styles.partnerName}>{item.name}</Text>
+                            {flagSource && (
+                              <View style={styles.flagBadge}>
+                                <Image source={flagSource} style={styles.flagBadgeImage} />
+                              </View>
+                            )}
+                          </View>
+                          <Text style={styles.partnerDescription} numberOfLines={1}>
+                            {(item.conversationCount ?? 0).toLocaleString()} conversations
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.callButton}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            router.push({
+                              pathname: '/(app)/partner-conversation',
+                              params: {
+                                partnerId: item.id,
+                                partnerName: item.name,
+                                partnerAvatarUrl: item.avatarUrl || '',
+                              },
+                            } as any);
+                          }}
+                        >
+                          <Ionicons name="call" size={22} color="#0052FF" />
+                        </TouchableOpacity>
                       </TouchableOpacity>
-                    </TouchableOpacity>
-                    {index < groupedPartners[letter].length - 1 && <View style={styles.separator} />}
-                  </Swipeable>
-                ))}
+                      {index < groupedPartners[letter].length - 1 && <View style={styles.separator} />}
+                    </Swipeable>
+                  );
+                })}
               </View>
             </View>
           ))}

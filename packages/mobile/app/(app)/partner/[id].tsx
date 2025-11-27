@@ -81,7 +81,7 @@ export default function PartnerDetailScreen() {
       <PartnerDetail partner={partner} />
 
       {/* Fixed Bottom Buttons */}
-      <View style={styles.buttonsContainer}>
+      <View style={[styles.buttonsContainer, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
           <Text style={styles.closeButtonText}>Close</Text>
         </TouchableOpacity>

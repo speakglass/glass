@@ -54,15 +54,19 @@ export default function ForgotPasswordScreen() {
         <Text style={styles.title}>Reset Password</Text>
         <Text style={styles.subtitle}>Enter your email and we'll send you a link to reset your password</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoComplete="email"
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your email"
+            placeholderTextColor="#999"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoComplete="email"
+          />
+        </View>
 
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
@@ -117,6 +121,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
+  inputGroup: {
+    gap: 6,
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 4,
+  },
   input: {
     height: 50,
     borderWidth: 1,
@@ -124,7 +138,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 16,
-    marginBottom: 16,
+    backgroundColor: '#fafafa',
   },
   button: {
     height: 50,

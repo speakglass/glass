@@ -13,28 +13,36 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="partners"
         options={{
           title: 'Partners',
-          tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+            <Ionicons name="people" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
           title: 'Calls',
-          tabBarIcon: ({ color, size }) => <Ionicons name="call" size={size} color={color} />,
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+            <Ionicons name="call" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+            <Ionicons name="settings" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen

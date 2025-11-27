@@ -99,18 +99,11 @@ export default function SettingsScreen() {
   };
 
   const handleAccount = () => {
-    Alert.alert('Account', 'Account settings coming soon!');
+    router.push('/(app)/account' as Href);
   };
 
   const handleLanguages = () => {
-    const nativeLang = snapshot?.user.nativeLang?.toUpperCase() || 'Not set';
-    const learningLang = snapshot?.user.learningLang?.toUpperCase() || 'Not set';
-    const level = snapshot?.user.languageLevel || 'Not set';
-
-    Alert.alert(
-      'Language Settings',
-      `Native Language: ${nativeLang}\nLearning: ${learningLang}\nLevel: ${level}\n\nLanguage settings will be available soon!`
-    );
+    router.push('/(app)/languages' as Href);
   };
 
   return (

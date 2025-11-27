@@ -42,7 +42,7 @@ services:
     environment:
       GLASS_DATABASE_URL: postgresql+asyncpg://glass:glass@db:5432/glass
       GLASS_REDIS_URL: redis://redis:6379/0
-      GLASS_ALLOW_ORIGIN: http://localhost:3000
+      GLASS_ALLOW_ORIGIN: '*'
       GLASS_LOG_LEVEL: INFO
       PORT: 8000
     depends_on:

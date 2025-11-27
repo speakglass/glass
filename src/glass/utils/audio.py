@@ -85,6 +85,139 @@ def resolve_session_languages(
     return resolved_learning or "en", resolved_native or "en"
 
 
+async def iter_mobile_audio(
+    websocket,
+    mic_queue: asyncio.Queue,
+    pipeline=None,
+    *,
+    db=None,
+    user=None,
+) -> None:
+    """Process mobile audio stream (microphone only, no source byte prefix).
+
+    Mobile clients send raw PCM16 audio without the source byte prefix.
+    All binary data is treated as microphone input.
+    """
+    try:
+        from ..config import get_settings
+
+        max_bytes = int(get_settings().ws_max_message_bytes)
+    except Exception:
+        max_bytes = 131072
+
+    try:
+        while True:
+            message = await websocket.receive()
+            if message["type"] == "websocket.disconnect":
+                break
+
+            if "bytes" in message and message["bytes"] is not None:
+                data = message["bytes"]
+                if len(data) > max_bytes:
+                    try:
+                        await websocket.close(code=1009)
+                    except Exception:
+                        pass
+                    break
+
+                # All binary data is microphone audio (no source byte prefix)
+                await mic_queue.put(data)
+
+            elif "text" in message:
+                text = message["text"]
+                if text == "close":
+                    break
+                # Handle JSON messages (same as multiplexed handler)
+                try:
+                    data = json.loads(text)
+                    msg_type = data.get("type")
+
+                    if msg_type == "ping":
+                        await websocket.send_json({"type": "pong"})
+                    elif msg_type == "client_init":
+                        LOGGER.info(
+                            "Mobile client init: session=%s rate=%s encoding=%s",
+                            data.get("session_id"),
+                            data.get("sample_rate"),
+                            data.get("encoding"),
+                        )
+                    elif msg_type == "set_feedback_mode" and pipeline:
+                        mode = data.get("mode", "auto")
+                        pipeline.set_feedback_mode(mode)
+                        LOGGER.info(f"Feedback mode set to: {mode}")
+                    elif msg_type == "session_config" and pipeline:
+                        learning_lang = data.get("learning_lang", "en")
+                        native_lang = data.get("native_lang", "ko")
+                        user_spoken_lang = data.get("user_spoken_lang")
+                        partner_spoken_lang = data.get("partner_spoken_lang")
+                        requested_mode = data.get("mode", "roleplay")
+                        normalized_mode = (requested_mode or "").strip().lower() or "roleplay"
+                        partner_profile = None
+                        partner_id = data.get("partner_id")
+                        if partner_id and db and user:
+                            partner = await get_partner_by_id(db, partner_id, user_id=user.user_id)
+                            if partner:
+                                partner_profile = _partner_to_profile(partner)
+                        if partner_profile is None:
+                            partner_profile = getattr(pipeline, "partner_profile", None)
+                        resolved_learning, resolved_native = resolve_session_languages(
+                            normalized_mode,
+                            learning_lang,
+                            native_lang,
+                            partner_profile,
+                        )
+                        await pipeline.set_session_config(
+                            resolved_learning,
+                            resolved_native,
+                            normalized_mode,
+                            partner=partner_profile,
+                            user_spoken_lang=user_spoken_lang,
+                            partner_spoken_lang=partner_spoken_lang,
+                        )
+                        LOGGER.info(
+                            f"Mobile session config - learning: {resolved_learning}, native: {resolved_native}, "
+                            f"mode: {normalized_mode}, partner_id: {partner_id}"
+                        )
+                    elif msg_type == "set_suggest_mode" and pipeline:
+                        mode = data.get("mode", "auto")
+                        pipeline.set_suggest_mode(mode)
+                    elif msg_type == "set_suggest_length" and pipeline:
+                        mode = data.get("mode", "auto")
+                        pipeline.set_suggest_length_mode(mode)
+                    elif msg_type == "set_profile" and pipeline:
+                        language_level = data.get("language_level")
+                        pronunciation_mode = data.get("pronunciation_mode")
+                        pipeline.set_user_profile(language_level=language_level, pronunciation_mode=pronunciation_mode)
+                    elif msg_type == "request_suggestion" and pipeline:
+                        text = data.get("text", "")
+                        request_id = data.get("request_id")
+                        asyncio.create_task(_handle_suggestion_request(pipeline, text, request_id))
+                    elif msg_type == "request_tts":
+                        text = data.get("text", "")
+                        voice_id = data.get("voice_id")
+                        language = data.get("language")
+                        source = data.get("source", "user")
+                        request_id = data.get("request_id")
+                        if text:
+                            asyncio.create_task(
+                                _handle_tts_request(pipeline, websocket, text, voice_id, language, source, request_id)
+                            )
+                    elif msg_type == "end_call":
+                        LOGGER.info("Mobile client requested end_call")
+                        if pipeline is not None:
+                            setattr(pipeline, "client_requested_end", True)
+                        try:
+                            await websocket.close(code=1000)
+                        except Exception:
+                            pass
+                        break
+                except (json.JSONDecodeError, KeyError):
+                    pass
+
+    finally:
+        await mic_queue.put(None)
+
+
 async def iter_multiplexed_audio(
     websocket,
     source_queues: dict[str, asyncio.Queue],
