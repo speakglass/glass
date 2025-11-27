@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.1.15](https://github.com/speakglass/glass/compare/v0.1.14...v0.1.15) (2025-11-27)
+
+
+### Features
+
+* **api:** add UTM attribution fields and update user account handling ([6bd22a4](https://github.com/speakglass/glass/commit/6bd22a4a3d4358b364c8fe3588c4d7aa39a4503a))
+* **mobile:** add audio utilities and storage implementation ([ef57f58](https://github.com/speakglass/glass/commit/ef57f58f7933f51ac8bc4220cf38d81bcc8a9daf))
+* **mobile:** enhance mobile app functionality and responsiveness ([32a4430](https://github.com/speakglass/glass/commit/32a4430a63f13368d9ad6c8fd0e783a73beba775))
+* **mobile:** update app configuration and simplify settings ([9ac8d6d](https://github.com/speakglass/glass/commit/9ac8d6d7d943e8d34b1fcf5e66156dbbb69a42b2))
+* **ui:** add currentStep prop to OnboardingBottomPanel for dynamic height adjustment ([fc1e2cd](https://github.com/speakglass/glass/commit/fc1e2cd442e3d8679c54ca6ad41853372ac14abc))
+
+
+### Bug Fixes
+
+* mobile ([8b193c9](https://github.com/speakglass/glass/commit/8b193c9d359b6ef4c96c8cf1e11d28ea7f23b30c))
+* mobile ([7c46c85](https://github.com/speakglass/glass/commit/7c46c85687166a609d8c6b4cab03bcc8751a7d4f))
+* mobile ui ([4681000](https://github.com/speakglass/glass/commit/46810005a7da59e168ab64bbd96825e4b6463666))
+* **mobile:** configure EAS for monorepo build ([6850f8d](https://github.com/speakglass/glass/commit/6850f8d2be5bf984447d0777e71e50e3862ea592))
+* **mobile:** update app owner in configuration ([0f9166c](https://github.com/speakglass/glass/commit/0f9166c8615775e1475af50ddf9ea28490809eca))
+
+
+### Documentation
+
+* update README with new features and tech stack details ([ac96610](https://github.com/speakglass/glass/commit/ac966100df9508b6cef059ebee8dc7ed4a1d8ec9))
+
+
+### Code Refactoring
+
+* **ui:** adjust max height for dialog components ([bc631b8](https://github.com/speakglass/glass/commit/bc631b873039c3db0d7688477333ff04aee0347e))
+* **ui:** enhance layout and styling in partner-related components ([1682618](https://github.com/speakglass/glass/commit/1682618d4c30d089d5b5a80e42f3f5eb14965c30))
+* **ui:** enhance mobile responsiveness in UserMenu component ([390e421](https://github.com/speakglass/glass/commit/390e421dabe9778461a60ad4a64c6bfcc0f1c513))
+* **ui:** enhance onboarding component layout and structure ([983efcd](https://github.com/speakglass/glass/commit/983efcd4430c957fbb02fffd6b3982b81fcd74b0))
+* **ui:** improve code formatting and layout in onboarding compon… ([2700dd0](https://github.com/speakglass/glass/commit/2700dd07a1510c5b3167e6edd86564104e3fea85))
+* **ui:** improve code formatting and layout in onboarding components ([9503832](https://github.com/speakglass/glass/commit/950383241a2179b53f2d3b0daed3cd68851e1a2d))
+* **ui:** improve code formatting and readability in dashboard page ([c8209b0](https://github.com/speakglass/glass/commit/c8209b0c97f86e6e0d922a2713a6c4152f14523d))
+* **ui:** improve code formatting and readability in dashboard page ([749ff2f](https://github.com/speakglass/glass/commit/749ff2f47a09b95f0773807cdae00fd4b0c61a36))
+* **ui:** improve layout and formatting in globals.css and layout.tsx ([1706119](https://github.com/speakglass/glass/commit/170611928056687b2394ced4a7fe6235069aec67))
+* **ui:** improve layout and spacing in CallSummary, SignupForm, and ConversationHistory components ([6b53dd2](https://github.com/speakglass/glass/commit/6b53dd2b4d9dd9ca85c47bb641c3c86d3240799e))
+* **ui:** improve layout and styling across multiple components ([b53efc7](https://github.com/speakglass/glass/commit/b53efc76fab33cc9531bcbfce4298976825220a3))
+* **ui:** standardize text sizes and improve layout in multiple components ([1b7df61](https://github.com/speakglass/glass/commit/1b7df619e782eaf62c27716401896e01a9278948))
+* **ui:** update action button styling in PartnerDetailModal ([2c69327](https://github.com/speakglass/glass/commit/2c69327f7ed8d1ac49e8ce758dc9c107fa4cf8fb))
+* **ui:** update height properties for improved responsiveness in BottomPanel and CallSummary ([95c0e9e](https://github.com/speakglass/glass/commit/95c0e9e95a871b53580091455c2910851955f2bd))
+* **ui:** update layout properties for improved responsiveness in multiple components ([6c01c0e](https://github.com/speakglass/glass/commit/6c01c0ea3711085fd3ec7208af86b42cd6952492))
+* **ui:** update styling for BottomPanel, CallSummary, Controls, and ConversationHistory components ([c476af6](https://github.com/speakglass/glass/commit/c476af63789abe3fd0b2d40f73556a96028e2346))
+
 ## [0.1.14](https://github.com/speakglass/glass/compare/v0.1.13...v0.1.14) (2025-11-24)
 
 
